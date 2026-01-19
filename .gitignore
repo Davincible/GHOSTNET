@@ -1,0 +1,90 @@
+# ============================================================================
+# ENVIRONMENT & SECRETS - NEVER COMMIT
+# ============================================================================
+.env
+.env.*
+!.env.example
+
+# Private keys and keystores - CRITICAL
+*.keystore
+*.json.enc
+secrets/
+
+# ============================================================================
+# WEB APP (apps/web)
+# ============================================================================
+
+# Dependencies
+node_modules
+
+# Build output
+build
+dist
+.svelte-kit
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Package manager lock files (optional - uncomment if you want to track)
+# bun.lockb
+# package-lock.json
+# pnpm-lock.yaml
+
+# Deployment
+.vercel
+.netlify
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================================================
+# SMART CONTRACTS (packages/contracts)
+# ============================================================================
+
+# Foundry build artifacts
+out/
+cache/
+broadcast/
+
+# Dependencies (git submodules)
+# lib/ is tracked but submodule contents are not
+
+# Coverage and reports
+lcov.info
+gas-report.txt
+
+# Slither output
+slither-report.json
+
+# Mythril output
+mythril-report.json
+
+# ============================================================================
+# IDE & EDITOR
+# ============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ============================================================================
+# OS
+# ============================================================================
+.DS_Store
+Thumbs.db
+
+# ============================================================================
+# NIX / DIRENV
+# ============================================================================
+.direnv/
+result
+
+# ============================================================================
+# LOGS
+# ============================================================================
+*.log

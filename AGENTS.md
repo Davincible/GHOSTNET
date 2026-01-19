@@ -1,0 +1,396 @@
+# Solidity + SvelteKit Monorepo Agent Instructions
+
+This document provides guidance for AI assistants working with this monorepo project.
+
+## Project Overview
+
+This is a **monorepo** containing:
+- **Web App** (`apps/web/`): SvelteKit 2.x with Svelte 5 runes, TypeScript, Bun
+- **Smart Contracts** (`packages/contracts/`): Foundry-based Solidity with security tooling
+
+```
+.
+├── apps/
+│   └── web/                    # SvelteKit frontend/backend
+│       ├── src/
+│       ├── e2e/
+│       └── docs/guides/SvelteBestPractices/  # Includes 28-Web3Integration.md
+├── packages/
+│   └── contracts/              # Solidity smart contracts
+│       ├── src/
+│       ├── test/
+│       ├── script/
+│       └── docs/guides/solidity/
+├── shell.nix                   # Combined Nix environment
+├── justfile                    # All commands (web-*, contracts-*)
+└── .github/workflows/          # CI pipeline
+```
+
+## Environment Setup
+
+### Environment is automatic
+
+When entering this directory, direnv automatically:
+1. Loads the Nix shell (Node.js, Bun, Foundry, Slither, Playwright)
+2. Installs Foundry via `foundryup` if needed
+3. Installs Solidity LSP and solhint
+
+**You do NOT need to tell the user to:**
+- Run `nix-shell`
+- Install Foundry manually
+- Install npm packages globally
+
+### First-time Setup
+
+After cloning, run:
+
+```bash
+just install  # Installs web deps + contract deps (forge-std, OpenZeppelin)
+```
+
+## Commands Reference
+
+All commands use prefixes to indicate which part of the monorepo they affect:
+
+```bash
+just                      # Show all commands
+
+# Top-level
+just install              # Install everything
+just check-all            # Run all checks
+just test-all             # Run all tests
+just clean-all            # Clean all artifacts
+
+# Web App (apps/web)
+just web-dev              # Start dev server
+just web-build            # Build for production
+just web-test             # Run unit tests
+just web-test-e2e         # Run E2E tests
+just web-lint             # Lint code
+just web-format           # Format code
+
+# Smart Contracts (packages/contracts)
+just contracts-build      # Compile contracts
+just contracts-test       # Run tests
+just contracts-fmt        # Format code
+just contracts-lint       # Run solhint
+just contracts-slither    # Static analysis
+just contracts-anvil      # Start local node
+just contracts-check      # All pre-commit checks
+
+# Integration
+just generate-types       # Generate TS types from ABIs
+just export-abis          # Export ABIs to web app
+```
+
+---
+
+## Web App (apps/web)
+
+### Technology Stack
+
+- **Framework**: SvelteKit 2.x with Svelte 5
+- **Language**: TypeScript
+- **Package Manager**: Bun
+- **Testing**: Vitest (Browser Mode) + Playwright E2E
+
+### Svelte 5 Runes
+
+This project uses Svelte 5 runes for reactivity:
+
+```svelte
+<script lang="ts">
+  // Reactive state
+  let count = $state(0);
+
+  // Derived values (computed)
+  let doubled = $derived(count * 2);
+
+  // Side effects
+  $effect(() => {
+    console.log('Count changed:', count);
+  });
+</script>
+```
+
+### Stores (.svelte.ts files)
+
+Rune-based stores must use the `.svelte.ts` extension:
+
+```typescript
+// src/lib/stores/counter.svelte.ts
+export function createCounter(initial = 0) {
+  let count = $state(initial);
+
+  return {
+    get count() { return count; },
+    get doubled() { return count * 2; },
+    increment() { count++; },
+  };
+}
+```
+
+### Component Props
+
+Use `$props()` for typed props:
+
+```svelte
+<script lang="ts">
+  interface Props {
+    name: string;
+    count?: number;
+    onclick?: () => void;
+  }
+
+  let { name, count = 0, onclick }: Props = $props();
+</script>
+```
+
+### Testing Guidelines
+
+**Critical**: Test files must include `.svelte` in the name for runes to work:
+
+| Pattern | Runes Work? | Use For |
+|---------|-------------|---------|
+| `*.svelte.test.ts` | Yes | Component & store tests |
+| `*.server.test.ts` | No | Server-side logic |
+| `*.ssr.test.ts` | No | SSR rendering tests |
+
+### Web App Documentation
+
+See `apps/web/docs/guides/SvelteBestPractices/` for comprehensive Svelte 5 guides:
+
+- **Reactivity** (01-04): State, Derived, Effects
+- **Components** (05-08): Props, Snippets, Events, Lifecycle
+- **State Management** (09-11): Stores, Context, Collections
+- **SvelteKit** (13-17): Data Loading, Forms, SSR
+- **Testing** (26-27): Setup, Patterns
+
+---
+
+## Smart Contracts (packages/contracts)
+
+### Technology Stack
+
+- **Framework**: Foundry v1.x (forge, cast, anvil, chisel)
+- **Language**: Solidity 0.8.33
+- **Security**: Slither static analysis, Solhint linting
+- **Dependencies**: OpenZeppelin 5.x, forge-std
+
+### File Structure
+
+```
+packages/contracts/
+├── src/               # Contract source files
+├── test/              # Test files (*.t.sol)
+├── script/            # Deployment scripts (*.s.sol)
+├── lib/               # Git submodule dependencies
+└── docs/guides/       # Solidity development guides
+```
+
+### Contract Template
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.33;
+
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+/// @title MyContract
+/// @notice Brief description
+contract MyContract is Ownable2Step, ReentrancyGuard {
+    // Custom errors (gas efficient)
+    error InvalidAmount();
+    
+    // Events
+    event Deposited(address indexed user, uint256 amount);
+    
+    constructor(address initialOwner) Ownable(initialOwner) {}
+    
+    function deposit() external payable nonReentrant {
+        if (msg.value == 0) revert InvalidAmount();
+        emit Deposited(msg.sender, msg.value);
+    }
+}
+```
+
+### Test Template
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.33;
+
+import "forge-std/Test.sol";
+import "../src/MyContract.sol";
+
+contract MyContractTest is Test {
+    MyContract public target;
+    address public owner = makeAddr("owner");
+    address public user = makeAddr("user");
+    
+    function setUp() public {
+        vm.prank(owner);
+        target = new MyContract(owner);
+        vm.deal(user, 100 ether);
+    }
+    
+    function test_Deposit() public {
+        vm.prank(user);
+        target.deposit{value: 1 ether}();
+        assertEq(address(target).balance, 1 ether);
+    }
+    
+    function testFuzz_Deposit(uint256 amount) public {
+        vm.assume(amount > 0 && amount <= 100 ether);
+        vm.prank(user);
+        target.deposit{value: amount}();
+    }
+    
+    function test_RevertWhen_ZeroDeposit() public {
+        vm.prank(user);
+        vm.expectRevert(MyContract.InvalidAmount.selector);
+        target.deposit{value: 0}();
+    }
+}
+```
+
+### Security Workflow
+
+**CRITICAL**: Always run before committing:
+
+```bash
+just contracts-check  # Runs: fmt-check, lint, test, slither-high
+```
+
+### Contract Documentation
+
+See `packages/contracts/docs/guides/solidity/` for comprehensive guides:
+
+| Guide | Topics |
+|-------|--------|
+| [security-fundamentals.md](packages/contracts/docs/guides/solidity/security-fundamentals.md) | Threat modeling, OWASP Top 10 |
+| [vulnerabilities.md](packages/contracts/docs/guides/solidity/vulnerabilities.md) | Access control, reentrancy, oracles |
+| [modern-solidity.md](packages/contracts/docs/guides/solidity/modern-solidity.md) | 0.8.x features, transient storage |
+| [patterns-upgrades.md](packages/contracts/docs/guides/solidity/patterns-upgrades.md) | Design patterns, UUPS proxies |
+| [gas-optimization.md](packages/contracts/docs/guides/solidity/gas-optimization.md) | Safe vs dangerous optimizations |
+| [testing-deployment.md](packages/contracts/docs/guides/solidity/testing-deployment.md) | Testing strategies, deployment |
+
+---
+
+## Web3 Integration
+
+### Connecting Web App to Contracts
+
+See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for the complete guide.
+
+**Quick overview:**
+
+1. **Build contracts** to generate ABIs:
+   ```bash
+   just contracts-build
+   ```
+
+2. **Export ABIs** to web app:
+   ```bash
+   just export-abis
+   ```
+
+3. **Generate TypeScript types** (requires wagmi config):
+   ```bash
+   just generate-types
+   ```
+
+4. **Use in Svelte components**:
+   ```svelte
+   <script lang="ts">
+     import { createPublicClient, http } from 'viem';
+     import { mainnet } from 'viem/chains';
+     import MyContractAbi from '$lib/contracts/abis/MyContract.json';
+     
+     const client = createPublicClient({
+       chain: mainnet,
+       transport: http(),
+     });
+     
+     let balance = $state<bigint>(0n);
+     
+     async function fetchBalance(address: `0x${string}`) {
+       balance = await client.readContract({
+         address: CONTRACT_ADDRESS,
+         abi: MyContractAbi,
+         functionName: 'balances',
+         args: [address],
+       });
+     }
+   </script>
+   ```
+
+### Local Development Workflow
+
+1. **Start local node**:
+   ```bash
+   just contracts-anvil
+   ```
+
+2. **Deploy contracts locally**:
+   ```bash
+   just contracts-deploy-local
+   ```
+
+3. **Start web dev server** (in another terminal):
+   ```bash
+   just web-dev
+   ```
+
+4. **Configure web app** to use localhost:8545
+
+---
+
+## Common Pitfalls
+
+### Web App
+
+1. **Test file naming**: Files without `.svelte` in name won't compile runes
+2. **SSR safety**: Don't access `window`/`document` at module level
+3. **Derived in tests**: Use `untrack()` when reading `$derived` in assertions
+
+### Smart Contracts
+
+1. **Never commit `.env` files** - Contains private keys
+2. **Always use `Ownable2Step`** not `Ownable` - Prevents accidental ownership loss
+3. **Use `SafeERC20`** for all token transfers - Handles non-compliant tokens
+4. **Avoid `tx.origin`** - Broken by EIP-7702 delegation
+5. **Use custom errors** not require strings - Gas efficient
+
+### Integration
+
+1. **Rebuild contracts** after changes before exporting ABIs
+2. **Regenerate types** after contract interface changes
+3. **Check network** - Ensure web app connects to correct chain (local vs testnet)
+
+---
+
+## Notes for AI Assistants
+
+1. **This is a monorepo** - Always check which part (web/contracts) is being discussed
+2. **Use prefixed commands** - `just web-*` for web, `just contracts-*` for contracts
+3. **Environment is automatic** - Don't tell users to install tools manually
+4. **Security is paramount** - Always suggest security patterns for contracts
+5. **Review the docs/** - Comprehensive guides available in each subproject
+6. **Run `just check-all` before commits** - Enforces quality across both projects
+7. **Never suggest committing secrets** - .env, private keys, etc.
+
+## Resources
+
+### Web App
+- [Svelte 5 Documentation](https://svelte.dev/docs)
+- [SvelteKit Documentation](https://svelte.dev/docs/kit)
+- [Viem Documentation](https://viem.sh)
+- [Wagmi Documentation](https://wagmi.sh)
+
+### Smart Contracts
+- [Foundry Book](https://book.getfoundry.sh/)
+- [OpenZeppelin Contracts 5.x](https://docs.openzeppelin.com/contracts/5.x)
+- [OWASP Smart Contract Top 10](https://scs.owasp.org)
+- [Solidity Documentation](https://docs.soliditylang.org)

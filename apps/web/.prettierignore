@@ -1,0 +1,19 @@
+# Package managers
+node_modules
+bun.lockb
+package-lock.json
+pnpm-lock.yaml
+
+# Build output
+build
+.svelte-kit
+dist
+
+# Test output
+playwright-report
+test-results
+coverage
+
+# Cache
+.vercel
+.netlify
