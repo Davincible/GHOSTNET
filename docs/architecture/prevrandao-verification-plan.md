@@ -2,7 +2,8 @@
 
 **Status:** Pending Verification  
 **Blocking:** Smart contract randomness strategy decision  
-**Priority:** CRITICAL - Must complete before proceeding with contract development
+**Priority:** CRITICAL - Must complete before proceeding with contract development  
+**Network:** MegaETH Testnet V2 (Chain ID 6343) - See `docs/architecture/megaeth-networks.md`
 
 ---
 
@@ -55,24 +56,29 @@ cp .env.example .env
 ### Step 2: Get Testnet ETH
 
 ```bash
-# Option 1: MegaETH Faucet
-# Visit: https://testnet.megaeth.com (click FAUCET)
-# Limit: 0.005 ETH per 24h
+# Option 1: thirdweb (0.01 ETH/day)
+# Visit: https://thirdweb.com/megaeth-testnet
 
 # Option 2: Chainlink Faucet
 # Visit: https://faucets.chain.link/megaeth-testnet
 
+# Option 3: gas.zip (0.0025 ETH/day)
+# Visit: https://www.gas.zip/faucet/megaeth
+
+# Option 4: Official testnet page
+# Visit: https://testnet.megaeth.com/ -> FAUCET tab
+
 # Verify balance
-cast balance $YOUR_ADDRESS --rpc-url https://timothy.megaeth.com/rpc
+cast balance $YOUR_ADDRESS --rpc-url https://carrot.megaeth.com/rpc
 ```
 
 ### Step 3: Deploy Test Contract
 
 ```bash
 # Deploy to MegaETH testnet
-# IMPORTANT: Use --skip-simulation due to MegaEVM gas differences
+# IMPORTANT: Use --skip-simulation and --gas-limit due to MegaEVM gas differences
 forge script script/DeployPrevRandaoTest.s.sol:DeployPrevRandaoTest \
-  --rpc-url https://timothy.megaeth.com/rpc \
+  --rpc-url https://carrot.megaeth.com/rpc \
   --broadcast \
   --skip-simulation \
   --gas-limit 10000000
@@ -88,9 +94,10 @@ We need samples from different blocks to verify variance. Run this multiple time
 ```bash
 # Method A: Using forge script (recommended)
 forge script script/DeployPrevRandaoTest.s.sol:VerifyPrevRandao \
-  --rpc-url https://timothy.megaeth.com/rpc \
+  --rpc-url https://carrot.megaeth.com/rpc \
   --broadcast \
-  --skip-simulation
+  --skip-simulation \
+  --gas-limit 10000000
 
 # Wait at least 2 seconds between calls (for different EVM blocks)
 sleep 2
@@ -101,12 +108,13 @@ sleep 2
 ```bash
 # Method B: Using cast directly
 cast send $PREVRANDAO_TEST_CONTRACT "recordSample()" \
-  --rpc-url https://timothy.megaeth.com/rpc \
-  --private-key $PRIVATE_KEY
+  --rpc-url https://carrot.megaeth.com/rpc \
+  --private-key $PRIVATE_KEY \
+  --gas-limit 1000000
 
 # Check the emitted event
 cast logs --address $PREVRANDAO_TEST_CONTRACT \
-  --rpc-url https://timothy.megaeth.com/rpc \
+  --rpc-url https://carrot.megaeth.com/rpc \
   --from-block latest
 ```
 
@@ -115,11 +123,11 @@ cast logs --address $PREVRANDAO_TEST_CONTRACT \
 ```bash
 # Run analysis script
 forge script script/DeployPrevRandaoTest.s.sol:AnalyzePrevRandao \
-  --rpc-url https://timothy.megaeth.com/rpc
+  --rpc-url https://carrot.megaeth.com/rpc
 
 # Or check directly via cast
 cast call $PREVRANDAO_TEST_CONTRACT "analyze()" \
-  --rpc-url https://timothy.megaeth.com/rpc
+  --rpc-url https://carrot.megaeth.com/rpc
 ```
 
 **Expected Output (GOOD):**
@@ -150,7 +158,7 @@ VERDICT: prevrandao may NOT be working properly
 ```bash
 # Test trace scan simulation
 forge script script/DeployPrevRandaoTest.s.sol:SimulateTraceScan \
-  --rpc-url https://timothy.megaeth.com/rpc
+  --rpc-url https://carrot.megaeth.com/rpc
 ```
 
 **Expected Output (GOOD):**
@@ -283,25 +291,25 @@ Block Explorer Link:
 
 # 1. Deploy
 forge script script/DeployPrevRandaoTest.s.sol:DeployPrevRandaoTest \
-  --rpc-url https://timothy.megaeth.com/rpc \
-  --broadcast --skip-simulation
+  --rpc-url https://carrot.megaeth.com/rpc \
+  --broadcast --skip-simulation --gas-limit 10000000
 
 # 2. Record samples (run 5-10 times with 2s delay)
 for i in {1..10}; do
   echo "Recording sample $i..."
   forge script script/DeployPrevRandaoTest.s.sol:VerifyPrevRandao \
-    --rpc-url https://timothy.megaeth.com/rpc \
-    --broadcast --skip-simulation
+    --rpc-url https://carrot.megaeth.com/rpc \
+    --broadcast --skip-simulation --gas-limit 10000000
   sleep 2
 done
 
 # 3. Analyze
 forge script script/DeployPrevRandaoTest.s.sol:AnalyzePrevRandao \
-  --rpc-url https://timothy.megaeth.com/rpc
+  --rpc-url https://carrot.megaeth.com/rpc
 
 # 4. Simulate
 forge script script/DeployPrevRandaoTest.s.sol:SimulateTraceScan \
-  --rpc-url https://timothy.megaeth.com/rpc
+  --rpc-url https://carrot.megaeth.com/rpc
 ```
 
 ---

@@ -14,7 +14,9 @@ This prevents re-learning the same lessons.
 
 ## Lessons
 
-*No lessons documented yet - project is in planning phase.*
+| # | Title | Category | Summary |
+|---|-------|----------|---------|
+| [001](./001-prevrandao-megaeth.md) | prevrandao on MegaETH | Smart Contracts | `block.prevrandao` stays constant for ~60s on MegaETH, unlike Ethereum. Mitigated with lock period. |
 
 ## Template
 

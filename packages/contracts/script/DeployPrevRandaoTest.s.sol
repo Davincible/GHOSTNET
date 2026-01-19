@@ -6,7 +6,7 @@ import {PrevRandaoTest} from "../src/test/PrevRandaoTest.sol";
 
 /// @title DeployPrevRandaoTest
 /// @notice Deployment script for PrevRandaoTest contract on MegaETH testnet
-/// @dev Run with: forge script script/DeployPrevRandaoTest.s.sol --rpc-url megaeth_testnet --broadcast --skip-simulation
+/// @dev Run with: forge script script/DeployPrevRandaoTest.s.sol --rpc-url megaeth_testnet --broadcast --skip-simulation --gas-limit 10000000
 contract DeployPrevRandaoTest is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

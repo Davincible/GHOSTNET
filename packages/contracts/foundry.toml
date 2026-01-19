@@ -46,9 +46,11 @@ sepolia = "${SEPOLIA_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
-# MegaETH - Primary target chain
-megaeth = "${MEGAETH_RPC_URL}"
-megaeth_testnet = "https://timothy.megaeth.com/rpc"
+# MegaETH - Primary target chain for GHOSTNET
+# Default to testnet for development (free faucet ETH)
+megaeth = "${MEGAETH_RPC_URL}"                              # Defaults to testnet in .env
+megaeth_testnet = "https://carrot.megaeth.com/rpc"          # Testnet V2 - Chain ID 6343
+megaeth_mainnet = "${MEGAETH_MAINNET_RPC_URL}"              # Frontier - Chain ID 4326 (requires bridged ETH)
 
 # Etherscan API keys for verification
 [etherscan]

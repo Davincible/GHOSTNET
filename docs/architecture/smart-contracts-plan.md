@@ -1,9 +1,10 @@
 # GHOSTNET Smart Contracts Architecture Plan
 
-**Version:** 0.1 (Preliminary)  
+**Version:** 0.3  
 **Date:** January 2026  
-**Status:** Planning - Pending prevrandao Verification  
-**Network:** MegaETH (Chain ID 6343 testnet, 4326 mainnet)
+**Status:** Ready for Implementation - All Core Decisions Finalized  
+**Network:** MegaETH (Chain ID 6343 testnet, 4326 mainnet)  
+**Testnet RPC:** https://carrot.megaeth.com/rpc
 
 ---
 
@@ -38,15 +39,27 @@ GHOSTNET is a real-time survival game on MegaETH requiring smart contracts for:
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Randomness** | Block-based (prevrandao) | Zero latency, zero cost, no external deps. VRF not trustless on-chain anyway. |
+| **Randomness** | Block-based (prevrandao) + 60s lock | Zero latency, zero cost. Lock period prevents front-running. Verified on MegaETH. |
 | **Token** | Immutable | Trust anchor - users need certainty tax rates won't change |
 | **Game Logic** | UUPS Upgradeable | Game parameters need tuning, bugs need fixing |
 | **Reward Distribution** | Share-based (MasterChef pattern) | O(1) gas regardless of participant count |
 | **Mini-game Boosts** | Server signatures | Games are off-chain, server validates and signs boost claims |
+| **Position Model** | Single per user, upgradeable stake | Simpler model, level change requires extract (10% tax friction) |
+| **Death Processing** | Trustless batch verification | On-chain verifiable, permissionless, scales to thousands |
+| **Cascade Split** | 30/30/30/10 absolute | Same-level/upstream/burn/protocol (matches product spec) |
+| **Network Modifier** | DATA-based thresholds | No oracle dependency, configurable via admin |
+| **Yield Sources** | Emissions + Cascade | Both additive to accRewardsPerShare |
 
-### Critical Dependency
+### Verification Status
 
-**`prevrandao` verification on MegaETH** - Must confirm this opcode returns usable randomness on MegaETH before finalizing randomness strategy. Test contract and verification plan included below.
+| Item | Status | Notes |
+|------|--------|-------|
+| prevrandao on MegaETH | **VERIFIED** | Constant for ~60s, acceptable with lock period |
+| Position model design | **FINALIZED** | Single position per user |
+| Death processing design | **FINALIZED** | Trustless batch verification |
+| Cascade distribution | **FINALIZED** | 30/30/30/10 absolute split per product spec |
+| Gelato Automate | Pending | Verify availability before mainnet |
+| DEX Integration | Pending | Bronto/Bebop for buybacks |
 
 ---
 
@@ -54,7 +67,9 @@ GHOSTNET is a real-time survival game on MegaETH requiring smart contracts for:
 
 ### 2.1 Randomness: Block-Based vs VRF
 
-**Decision: Block-based randomness using `prevrandao`**
+**Decision: Block-based randomness using `prevrandao` + 60-second lock period**
+
+**Status:** VERIFIED on MegaETH testnet (January 2026)
 
 **Analysis:**
 
@@ -70,9 +85,11 @@ GHOSTNET is a real-time survival game on MegaETH requiring smart contracts for:
 
 **Key insight:** Gelato VRF is NOT on-chain verifiable either (BLS12-381 proofs can't be verified on-chain until EIP-2537). Both options require trusting a reputable party.
 
-**Risk assessment:** MegaETH sequencer manipulation is theoretical, not practical. The sequencer (MegaETH Labs) has vastly more at stake in reputation than any GHOSTNET position value.
+**MegaETH-Specific Finding:** `prevrandao` stays constant for ~60 seconds on MegaETH (unlike Ethereum mainnet where it changes every block). This was verified via on-chain testing.
 
-**Fallback:** If `prevrandao` doesn't work on MegaETH, implement commit-reveal pattern.
+**Mitigation:** 60-second pre-scan lock period prevents extraction when scan is imminent. Combined with multi-component seed (prevrandao + timestamp + block number + nonce) and 19% economic cost of front-running, this is acceptable.
+
+**Risk assessment:** MegaETH sequencer manipulation is theoretical, not practical. The sequencer (MegaETH Labs) has vastly more at stake in reputation than any GHOSTNET position value. The lock period eliminates the practical exploit window.
 
 ### 2.2 Token Upgradeability
 
@@ -346,11 +363,13 @@ packages/contracts/src/
 │ STRUCTS:                                                             │
 │                                                                      │
 │ Position {                                                           │
-│   uint256 amount;           // Staked DATA                          │
-│   uint8   level;            // 1-5 (Vault to Black Ice)             │
-│   uint64  timestamp;        // When jacked in                       │
+│   uint256 amount;           // Total staked DATA (can increase)     │
+│   uint8   level;            // 1-5 (locked once chosen)             │
+│   uint64  entryTimestamp;   // When first jacked in                 │
+│   uint64  lastAddTimestamp; // When last added stake (for lock)     │
 │   uint256 rewardDebt;       // For share-based accounting           │
 │   bool    alive;            // false = traced                       │
+│   uint16  ghostStreak;      // Consecutive scan survivals           │
 │   Boost[] activeBoosts;     // From mini-games                      │
 │ }                                                                    │
 │                                                                      │
@@ -358,8 +377,9 @@ packages/contracts/src/
 │   uint16  baseDeathRateBps; // e.g., 4000 = 40%                     │
 │   uint32  scanInterval;     // Seconds between scans                │
 │   uint256 minStake;         // Minimum to jack in                   │
-│   uint256 totalStaked;      // Sum of all positions                 │
-│   uint256 accRewardsPerShare; // For cascade distribution           │
+│   uint256 totalStaked;      // Sum of all alive positions           │
+│   uint256 aliveCount;       // Number of alive positions            │
+│   uint256 accRewardsPerShare; // For reward distribution (1e18)     │
 │   uint64  nextScanTime;     // Timestamp of next scan               │
 │ }                                                                    │
 │                                                                      │
@@ -369,58 +389,108 @@ packages/contracts/src/
 │   uint64  expiry;           // Timestamp when boost expires         │
 │ }                                                                    │
 │                                                                      │
+│ SystemReset {                                                        │
+│   uint256 deadline;         // When system resets if no deposits    │
+│   address lastDepositor;    // Eligible for jackpot if reset        │
+│   uint256 lastDepositTime;  // Timestamp of last deposit            │
+│ }                                                                    │
+│                                                                      │
 │ STATE:                                                               │
 │ ├── dataToken:        IDataToken                                    │
-│ ├── positions:        mapping(address => Position[])                │
+│ ├── positions:        mapping(address => Position)  // ONE per user │
 │ ├── levels:           mapping(uint8 => LevelConfig)                 │
-│ ├── systemResetDeadline: uint256                                    │
+│ ├── systemReset:      SystemReset                                   │
 │ ├── boostSigner:      address                                       │
-│ └── treasury:         address                                       │
+│ ├── treasury:         address                                       │
+│ └── networkModThresholds: uint256[4]  // DATA thresholds            │
+│                                                                      │
+│ CONSTANTS:                                                           │
+│ ├── LOCK_PERIOD:         60 seconds                                 │
+│ ├── CASCADE_SAME_LEVEL:  3000 (30% of dead capital)                 │
+│ ├── CASCADE_UPSTREAM:    3000 (30% of dead capital)                 │
+│ ├── CASCADE_BURN:        3000 (30% of dead capital)                 │
+│ └── CASCADE_PROTOCOL:    1000 (10% of dead capital)                 │
 │                                                                      │
 │ CORE FUNCTIONS:                                                      │
 │                                                                      │
 │ jackIn(uint256 amount, uint8 level)                                 │
-│ ├── Transfers DATA from user (tax-exempt, whitelisted)              │
-│ ├── Creates Position with alive=true                                │
-│ ├── Updates level.totalStaked                                       │
-│ ├── Extends systemResetDeadline based on amount                     │
-│ └── Emits JackedIn(user, positionId, amount, level)                 │
+│ ├── If no position: create new with level                           │
+│ ├── If has position: require same level, add to amount              │
+│ ├── Update lastAddTimestamp (resets lock period)                    │
+│ ├── Update level.totalStaked, level.aliveCount                      │
+│ ├── Extend systemReset.deadline based on amount                     │
+│ ├── Update systemReset.lastDepositor                                │
+│ └── Emits JackedIn(user, amount, level, newTotal)                   │
 │                                                                      │
-│ extract(uint256 positionId)                                         │
-│ ├── Requires position.alive == true                                 │
-│ ├── Calculates pending rewards (share-based)                        │
+│ extract() - note: no positionId needed (one per user)               │
+│ ├── Requires position exists and alive == true                      │
+│ ├── Requires NOT in lock period (60s before next scan)              │
+│ ├── Claims pending rewards (emissions + cascade)                    │
 │ ├── Transfers amount + rewards to user                              │
-│ ├── Updates level.totalStaked                                       │
-│ └── Emits Extracted(user, positionId, amount, rewards)              │
+│ ├── Deletes position, updates level.totalStaked                     │
+│ └── Emits Extracted(user, amount, rewards)                          │
 │                                                                      │
-│ processDeaths(uint8 level, address[] deadUsers)                     │
+│ addStake(uint256 amount)                                            │
+│ ├── Requires existing alive position                                │
+│ ├── Adds to position.amount                                         │
+│ ├── Updates lastAddTimestamp                                        │
+│ ├── Updates rewardDebt (settle pending first)                       │
+│ └── Emits StakeAdded(user, amount, newTotal)                        │
+│                                                                      │
+│ processDeaths(address[] deadUsers)                                  │
 │ ├── onlyRole(SCANNER_ROLE)                                          │
 │ ├── For each dead user:                                             │
-│ │   ├── Mark position.alive = false                                 │
-│ │   ├── Calculate cascade split (60/30/10)                          │
-│ │   └── Update level.totalStaked                                    │
-│ ├── Distribute 60% via accRewardsPerShare                           │
-│ ├── Burn 30%                                                        │
-│ ├── Send 10% to treasury                                            │
-│ └── Emits TraceScanCompleted(level, deathCount, totalBurned)        │
+│ │   ├── Verify isDead(scanSeed, user) == true                       │
+│ │   ├── Mark position.alive = false, ghostStreak = 0                │
+│ │   ├── Accumulate dead capital                                     │
+│ │   └── Update level.totalStaked, level.aliveCount                  │
+│ ├── Calculate cascade: 60% rewards, 30% burn, 10% protocol          │
+│ ├── Distribute rewards:                                             │
+│ │   ├── 30% to same-level (accRewardsPerShare)                      │
+│ │   └── 30% to upstream levels (by TVL weight)                      │
+│ ├── Execute burn (30%)                                              │
+│ ├── Send to treasury (10%)                                          │
+│ └── Emits DeathsProcessed(level, count, burned, distributed)        │
 │                                                                      │
-│ applyBoost(positionId, boostType, valueBps, expiry, signature)      │
+│ incrementGhostStreak(address[] survivors)                           │
+│ ├── onlyRole(SCANNER_ROLE)                                          │
+│ ├── For each survivor: position.ghostStreak++                       │
+│ └── Emits SurvivorsUpdated(level, count)                            │
+│                                                                      │
+│ triggerSystemReset()                                                │
+│ ├── Requires block.timestamp >= systemReset.deadline                │
+│ ├── Calculate penalty (25% of all positions)                        │
+│ ├── Distribute: 50% to lastDepositor, 30% burn, 20% protocol        │
+│ ├── Apply penalty to all positions                                  │
+│ ├── Reset deadline to default                                       │
+│ └── Emits SystemReset(penalty, jackpotWinner, jackpotAmount)        │
+│                                                                      │
+│ addEmissionRewards(uint8 level, uint256 amount)                     │
+│ ├── onlyRole(DISTRIBUTOR_ROLE) - RewardsDistributor                 │
+│ ├── Adds to level.accRewardsPerShare                                │
+│ └── Emits EmissionsAdded(level, amount)                             │
+│                                                                      │
+│ applyBoost(boostType, valueBps, expiry, signature)                  │
 │ ├── Verifies ECDSA signature from boostSigner                       │
 │ ├── Checks expiry > block.timestamp                                 │
 │ ├── Adds Boost to position.activeBoosts                             │
-│ └── Emits BoostApplied(user, positionId, boostType, valueBps)       │
+│ └── Emits BoostApplied(user, boostType, valueBps)                   │
 │                                                                      │
 │ VIEW FUNCTIONS:                                                      │
-│ ├── getPosition(address, positionId) → Position                     │
-│ ├── getPendingRewards(address, positionId) → uint256                │
-│ ├── getEffectiveDeathRate(address, positionId) → uint16             │
+│ ├── getPosition(address) → Position                                 │
+│ ├── getPendingRewards(address) → uint256                            │
+│ ├── getEffectiveDeathRate(address) → uint16                         │
 │ ├── getLevelStats(uint8 level) → LevelConfig                        │
-│ └── getSystemResetCountdown() → uint256                             │
+│ ├── getSystemResetCountdown() → uint256                             │
+│ ├── getNetworkModifier() → uint16                                   │
+│ ├── isInLockPeriod(address) → bool                                  │
+│ └── getTotalValueLocked() → uint256                                 │
 │                                                                      │
 │ ADMIN FUNCTIONS:                                                     │
 │ ├── pause() / unpause() - onlyRole(DEFAULT_ADMIN_ROLE)              │
 │ ├── updateLevelConfig() - onlyRole(DEFAULT_ADMIN_ROLE)              │
 │ ├── setBoostSigner() - onlyRole(DEFAULT_ADMIN_ROLE)                 │
+│ ├── setNetworkModThresholds() - onlyRole(DEFAULT_ADMIN_ROLE)        │
 │ └── emergencyWithdraw() - when paused, users can exit               │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
@@ -432,49 +502,131 @@ packages/contracts/src/
 ┌─────────────────────────────────────────────────────────────────────┐
 │ CONTRACT: TraceScan                                                  │
 ├─────────────────────────────────────────────────────────────────────┤
-│ Type:        Randomness + Death Selection                           │
+│ Type:        Randomness + Trustless Death Verification              │
 │ Upgradeable: YES (UUPS)                                             │
 │ Inherits:    UUPSUpgradeable, AccessControlUpgradeable              │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
+│ DESIGN: Trustless Batch Verification                                │
+│ ─────────────────────────────────────                               │
+│ Deaths are DETERMINISTIC from (seed, address). Anyone can verify.   │
+│ No iteration in critical path - deaths submitted in batches.        │
+│                                                                      │
 │ ROLES:                                                               │
 │ ├── DEFAULT_ADMIN_ROLE  - Timelock                                  │
-│ └── KEEPER_ROLE         - Gelato Automate / manual keeper           │
+│ └── KEEPER_ROLE         - Gelato Automate (optional, anyone can call)│
+│                                                                      │
+│ STRUCTS:                                                             │
+│                                                                      │
+│ Scan {                                                               │
+│   uint256 seed;             // Deterministic seed for this scan     │
+│   uint64  executedAt;       // When scan was executed               │
+│   uint64  finalizedAt;      // When cascade was distributed         │
+│   uint8   level;            // Which level this scan targets        │
+│   uint256 totalDead;        // Accumulated dead capital             │
+│   uint256 deathCount;       // Number of deaths processed           │
+│   bool    finalized;        // Has cascade been distributed         │
+│ }                                                                    │
 │                                                                      │
 │ STATE:                                                               │
-│ ├── ghostCore:      IGhostCore                                      │
-│ ├── scanNonce:      uint256 (prevents replay)                       │
-│ └── lastScanBlock:  mapping(uint8 => uint256)                       │
+│ ├── ghostCore:          IGhostCore                                  │
+│ ├── currentScans:       mapping(uint8 => Scan)  // Per level        │
+│ ├── scanNonce:          uint256 (prevents replay)                   │
+│ ├── submissionWindow:   uint256 (default: 120 seconds)              │
+│ └── processedInScan:    mapping(uint8 => mapping(address => bool))  │
 │                                                                      │
-│ FUNCTIONS:                                                           │
+│ CONSTANTS:                                                           │
+│ └── MAX_BATCH_SIZE:     100 (deaths per submission tx)              │
+│                                                                      │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ PHASE 1: SCAN EXECUTION (O(1) - stores seed only)                   │
+│ ═══════════════════════════════════════════════════════════════════ │
 │                                                                      │
 │ executeScan(uint8 level) external                                   │
-│ ├── Anyone can call when timer expired (or KEEPER_ROLE)             │
+│ ├── Anyone can call when timer expired                              │
 │ ├── require(block.timestamp >= ghostCore.nextScanTime(level))       │
-│ ├── Generate seed from prevrandao + state                           │
-│ ├── Iterate positions, determine deaths                             │
-│ ├── Call ghostCore.processDeaths(level, deadAddresses)              │
-│ └── Emits ScanExecuted(level, seed, deathCount)                     │
+│ ├── require(!currentScans[level].active) // No pending scan         │
+│ ├── Generate seed: keccak256(prevrandao, timestamp, level, nonce++) │
+│ ├── Store Scan{seed, executedAt, level, ...}                        │
+│ ├── Update ghostCore.nextScanTime(level)                            │
+│ └── Emits ScanExecuted(level, seed, executedAt)                     │
 │                                                                      │
-│ _generateSeed(uint8 level) internal view → uint256                  │
-│ └── keccak256(prevrandao, block.timestamp, level, scanNonce)        │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ PHASE 2: DEATH PROOF SUBMISSION (Batched, trustless)                │
+│ ═══════════════════════════════════════════════════════════════════ │
 │                                                                      │
-│ _selectDeaths(uint8 level, uint256 seed) internal view              │
-│ ├── Get all alive positions for level                               │
-│ ├── For each position:                                              │
-│ │   ├── positionSeed = keccak256(seed, positionIndex)               │
-│ │   ├── effectiveDeathRate = baseRate * networkMod * boostMod       │
-│ │   └── if (positionSeed % 10000 < effectiveDeathRate) → dead       │
-│ └── Return array of dead addresses                                  │
+│ submitDeaths(uint8 level, address[] deadUsers) external             │
+│ ├── Anyone can call (permissionless)                                │
+│ ├── require(scan.executedAt > 0 && !scan.finalized)                 │
+│ ├── For each user in batch (max 100):                               │
+│ │   ├── require(!processedInScan[level][user]) // Not duplicate     │
+│ │   ├── require(ghostCore.isAlive(user, level)) // Has position     │
+│ │   ├── uint256 deathRate = ghostCore.getEffectiveDeathRate(user)   │
+│ │   ├── bool shouldDie = isDead(scan.seed, user, deathRate)         │
+│ │   ├── require(shouldDie, "User should not die") // VERIFY!        │
+│ │   ├── processedInScan[level][user] = true                         │
+│ │   └── scan.totalDead += position.amount; scan.deathCount++        │
+│ ├── Call ghostCore.processDeaths(deadUsers) // Mark dead            │
+│ └── Emits DeathsSubmitted(level, deadUsers.length, submitter)       │
 │                                                                      │
-│ VIEW FUNCTIONS:                                                      │
-│ ├── canExecuteScan(uint8 level) → bool                              │
-│ ├── getExpectedDeaths(uint8 level) → uint256 (estimate)             │
-│ └── getNetworkModifier() → uint16 (based on TVL)                    │
+│ isDead(uint256 seed, address user, uint16 deathRateBps) pure → bool │
+│ ├── uint256 roll = uint256(keccak256(seed, user)) % 10000           │
+│ └── return roll < deathRateBps                                      │
 │                                                                      │
-│ KEEPER INTERFACE (Gelato Automate compatible):                       │
-│ ├── checker() → (bool canExec, bytes execPayload)                   │
-│ └── Returns true + encoded executeScan() when any level ready       │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ PHASE 3: CASCADE FINALIZATION                                       │
+│ ═══════════════════════════════════════════════════════════════════ │
+│                                                                      │
+│ finalizeScan(uint8 level) external                                  │
+│ ├── Anyone can call after submission window                         │
+│ ├── require(block.timestamp >= scan.executedAt + submissionWindow)  │
+│ ├── require(!scan.finalized)                                        │
+│ ├── Call ghostCore.distributeCascade(level, scan.totalDead)         │
+│ ├── Call ghostCore.incrementGhostStreak(level) // Survivors         │
+│ ├── scan.finalized = true; scan.finalizedAt = now                   │
+│ ├── Clear processedInScan mapping for level                         │
+│ └── Emits ScanFinalized(level, deathCount, totalDead, distributed)  │
+│                                                                      │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ VIEW FUNCTIONS                                                       │
+│ ═══════════════════════════════════════════════════════════════════ │
+│                                                                      │
+│ canExecuteScan(uint8 level) → bool                                  │
+│ ├── Timer expired AND no pending unfinalized scan                   │
+│                                                                      │
+│ canFinalizeScan(uint8 level) → bool                                 │
+│ ├── Scan exists AND submission window passed AND not finalized      │
+│                                                                      │
+│ wouldDie(uint8 level, address user) → bool                          │
+│ ├── Check if user would die in current pending scan                 │
+│ ├── Returns false if no pending scan                                │
+│                                                                      │
+│ getCurrentScan(uint8 level) → Scan                                  │
+│                                                                      │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ KEEPER INTERFACE (Gelato Automate compatible)                       │
+│ ═══════════════════════════════════════════════════════════════════ │
+│                                                                      │
+│ checker() → (bool canExec, bytes execPayload)                       │
+│ ├── Check all levels for:                                           │
+│ │   ├── Scan ready to execute → return executeScan calldata         │
+│ │   ├── Scan ready to finalize → return finalizeScan calldata       │
+│ └── Returns first actionable item found                             │
+│                                                                      │
+│ ═══════════════════════════════════════════════════════════════════ │
+│ TRUSTLESS PROPERTIES                                                 │
+│ ═══════════════════════════════════════════════════════════════════ │
+│                                                                      │
+│ ✓ Keeper cannot lie about deaths (contract verifies isDead())       │
+│ ✓ Anyone can submit death proofs (permissionless)                   │
+│ ✓ Deaths are deterministic and reproducible from seed               │
+│ ✓ No iteration required in critical path                            │
+│ ✓ Scales to thousands of positions via batching                     │
+│                                                                      │
+│ GAS ESTIMATES:                                                       │
+│ ├── executeScan(): ~50,000 gas (seed storage only)                  │
+│ ├── submitDeaths(100): ~2,500,000 gas (verification + marking)      │
+│ └── finalizeScan(): ~200,000 gas (cascade distribution)             │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -553,42 +705,110 @@ packages/contracts/src/
 
 ## 5. Randomness Strategy
 
-### Primary: Block-Based (prevrandao)
+### Decision: Block-Based (prevrandao) + Pre-Scan Lock Period
+
+**Status:** VERIFIED AND APPROVED (January 2026)
+
+After testing on MegaETH testnet, we confirmed that `prevrandao` stays constant for ~60 seconds across multiple blocks. After analysis, we determined this is **acceptable for GHOSTNET** with mitigations.
+
+### Implementation
 
 ```solidity
 function _generateSeed(uint8 level) internal returns (uint256) {
     return uint256(keccak256(abi.encode(
-        block.prevrandao,     // RANDAO from L1 or L2 equivalent
-        block.timestamp,      // Current block time
-        block.number,         // Block height
+        block.prevrandao,     // RANDAO - constant for ~60s on MegaETH
+        block.timestamp,      // Changes every 1s (EVM block)
+        block.number,         // Changes every block
         level,                // Which level
-        _scanNonce++          // Incrementing nonce
+        _scanNonce++          // Incrementing nonce (prevents replay)
     )));
 }
 ```
 
-### Fallback: Commit-Reveal (If prevrandao Fails)
+### Pre-Scan Lock Period
+
+To prevent last-second extraction when a scan is imminent:
 
 ```solidity
-// Phase 1: Commit
-function commitScan(uint8 level) external {
-    require(block.timestamp >= nextScanTime[level], "Too early");
-    scanCommitBlock[level] = block.number + 1;
+uint256 public constant LOCK_PERIOD = 60 seconds;
+
+modifier notInLockPeriod(uint8 level) {
+    uint256 nextScan = levels[level].nextScanTime;
+    require(
+        block.timestamp < nextScan - LOCK_PERIOD || block.timestamp >= nextScan,
+        "Position locked: scan imminent"
+    );
+    _;
 }
 
-// Phase 2: Reveal (after 1 EVM block = 1 second)
-function revealScan(uint8 level) external {
-    uint256 commitBlock = scanCommitBlock[level];
-    require(block.number > commitBlock, "Wait for next block");
-    
-    uint256 seed = uint256(blockhash(commitBlock));
-    _processDeaths(level, seed);
+function extract(uint256 positionId) external notInLockPeriod(position.level) {
+    // ... extraction logic
 }
 ```
 
-### Verification Required
+### Why prevrandao is Acceptable (Analysis)
 
-**CRITICAL:** Must verify `prevrandao` behavior on MegaETH before finalizing. See Section 11.
+#### The Concern
+On MegaETH, `prevrandao` stays constant for ~60 seconds. This theoretically allows:
+1. Observing the current prevrandao value
+2. Calculating if you'll die in the upcoming scan
+3. Extracting before the scan to avoid death
+
+#### Why It Doesn't Break the Game
+
+**1. You can't change your fate, only observe it**
+- Death selection: `keccak256(seed, yourAddress) % 10000 < deathRate`
+- Your address is fixed - you can only see the outcome early, not change it
+
+**2. Front-running is expensive (19% cost)**
+| Action | Result |
+|--------|--------|
+| Stay and die | Lose 100% of position |
+| Extract (10% tax) + Re-enter (10% tax) | Lose ~19% of position |
+
+At 40% death rate, expected loss = 40%, so front-running (19% loss) is rational.
+BUT: players who constantly front-run burn themselves via taxes anyway.
+
+**3. The lock period eliminates the exploit window**
+With a 60-second lock before scans, players cannot extract once they can predict.
+
+**4. Multi-component seed adds uncertainty**
+Even with constant prevrandao, `block.timestamp` and `block.number` change every second.
+Exact scan execution block is unpredictable (Gelato keeper timing).
+
+**5. Statistical fairness is preserved**
+Selection remains uniformly random. Every address has equal probability.
+Predictability doesn't change fairness - only gives brief reaction window.
+
+#### Economic Analysis
+
+| Player Type | Behavior | Outcome |
+|-------------|----------|---------|
+| Casual | Plays normally, accepts death lottery | Fun game experience |
+| Sophisticated | Builds prediction bots | Pays 19% "skill tax" per cycle |
+| Front-runner | Extracts before predicted death | Burns tokens via taxes (good for tokenomics) |
+
+### Alternatives Considered
+
+#### Commit-Reveal Pattern
+```solidity
+// Would require 2 transactions and ~1-2 second delay
+function commitScan(uint8 level) external { ... }
+function revealScan(uint8 level) external { ... }
+```
+
+**Rejected because:**
+- Adds latency (1-2 seconds per scan)
+- Adds complexity (2-phase execution)
+- Marginal security benefit given lock period mitigation
+- Front-running cost (19%) is sufficient deterrent
+
+#### Gelato VRF
+**Rejected because:**
+- Not on-chain verifiable (BLS12-381 requires EIP-2537)
+- Same trust model as prevrandao (trust Gelato vs trust sequencer)
+- Adds external dependency and per-request costs
+- ~1500ms latency per request
 
 ---
 
@@ -601,14 +821,34 @@ function revealScan(uint8 level) external {
 │                    TRACED POSITION: 100 DATA                         │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
+│  ABSOLUTE SPLIT: 30 / 30 / 30 / 10                                  │
+│                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
-│  │ 60% → REWARD POOL (60 DATA)                                 │    │
+│  │ 30% → SAME-LEVEL SURVIVORS (30 DATA)                        │    │
 │  │                                                              │    │
-│  │ Distribution:                                                │    │
-│  │ ├── 50% → Same-level survivors (proportional to stake)      │    │
-│  │ └── 50% → Upstream levels (split by TVL weight)             │    │
+│  │ • Distributed proportionally by stake size                  │    │
+│  │ • Creates within-level competition                          │    │
+│  │ • "Jackpot" for surviving high-risk levels                  │    │
+│  │ • Implementation: Increment level's accRewardsPerShare      │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │ 30% → UPSTREAM LEVELS (30 DATA)                             │    │
 │  │                                                              │    │
-│  │ Implementation: Increment accRewardsPerShare for each level │    │
+│  │ • Flows UP to safer levels (lower risk tiers)               │    │
+│  │ • Split by TVL weight of each upstream level                │    │
+│  │ • Creates "degens feed whales" dynamic                      │    │
+│  │                                                              │    │
+│  │ Example (DARKNET death):                                     │    │
+│  │ ├── SUBNET receives share based on SUBNET TVL               │    │
+│  │ ├── MAINFRAME receives share based on MAINFRAME TVL         │    │
+│  │ └── VAULT receives share based on VAULT TVL                 │    │
+│  │                                                              │    │
+│  │ Example (BLACK ICE death):                                   │    │
+│  │ └── Flows to all 4 levels above (DARKNET→VAULT)             │    │
+│  │                                                              │    │
+│  │ Edge case (VAULT death):                                     │    │
+│  │ └── No upstream → this 30% goes to same-level survivors     │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
@@ -625,10 +865,118 @@ function revealScan(uint8 level) external {
 │  │ Use: Operations, development, growth                        │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                      │
+│  ═══════════════════════════════════════════════════════════════    │
+│                                                                      │
+│  IMPLEMENTATION CONSTANTS:                                           │
+│                                                                      │
+│  // Primary split (of total dead capital)                           │
+│  uint16 constant CASCADE_SAME_LEVEL = 3000;  // 30%                 │
+│  uint16 constant CASCADE_UPSTREAM   = 3000;  // 30%                 │
+│  uint16 constant CASCADE_BURN       = 3000;  // 30%                 │
+│  uint16 constant CASCADE_PROTOCOL   = 1000;  // 10%                 │
+│                                                                      │
+│  // Note: Same-level + Upstream = 60% total rewards                 │
+│  // This is equivalent to "60% rewards split 50/50"                 │
+│                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Multi-Source Burns
+### 6.2 Emissions (The Mine)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    THE MINE: 60,000,000 DATA                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  SOURCE: RewardsDistributor contract holding 60% of supply          │
+│  DURATION: 24 months linear vesting                                  │
+│  RATE: ~82,000 DATA per day                                         │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │ DISTRIBUTION BY LEVEL (of daily 82,000 DATA):               │    │
+│  │                                                              │    │
+│  │ Level        │ Weight │ Daily Allocation │ Purpose           │    │
+│  │ ─────────────┼────────┼──────────────────┼─────────────────  │    │
+│  │ VAULT        │   5%   │   ~4,100 DATA    │ Safe haven yield  │    │
+│  │ MAINFRAME    │  10%   │   ~8,200 DATA    │ Conservative      │    │
+│  │ SUBNET       │  20%   │  ~16,400 DATA    │ Balanced          │    │
+│  │ DARKNET      │  30%   │  ~24,600 DATA    │ Degen rewards     │    │
+│  │ BLACK ICE    │  35%   │  ~28,700 DATA    │ High risk premium │    │
+│  │                                                              │    │
+│  │ Within each level: proportional to stake size                │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  IMPLEMENTATION:                                                     │
+│  ├── RewardsDistributor.distribute() called periodically            │
+│  ├── Calculates elapsed time × emission rate                        │
+│  ├── Splits by level weights                                        │
+│  └── Calls ghostCore.addEmissionRewards(level, amount)              │
+│                                                                      │
+│  RELATIONSHIP TO CASCADE:                                            │
+│  ├── Emissions = BASE yield (predictable, from token supply)        │
+│  ├── Cascade = BONUS yield (variable, from deaths)                  │
+│  └── Both accumulate to accRewardsPerShare (additive)               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.3 System Reset Mechanics
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SYSTEM RESET TIMER & JACKPOT                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  PURPOSE: Create urgency for deposits, prevent stagnation           │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │ TIMER MECHANICS:                                             │    │
+│  │                                                              │    │
+│  │ • Global countdown timer visible to all                      │    │
+│  │ • Any deposit extends timer based on amount:                 │    │
+│  │   ├── < 50 DATA:      +1 hour                               │    │
+│  │   ├── 50-200 DATA:    +4 hours                              │    │
+│  │   ├── 200-500 DATA:   +8 hours                              │    │
+│  │   ├── 500-1000 DATA:  +16 hours                             │    │
+│  │   └── > 1000 DATA:    Full reset (24 hours)                 │    │
+│  │                                                              │    │
+│  │ • Timer is capped at max (24 hours)                         │    │
+│  │ • Last depositor tracked for jackpot eligibility            │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  ┌─────────────────────────────────────────────────────────────┐    │
+│  │ IF TIMER HITS ZERO (System Reset):                          │    │
+│  │                                                              │    │
+│  │ PENALTY: 25% of ALL positions across ALL levels             │    │
+│  │                                                              │    │
+│  │ DISTRIBUTION OF PENALTY POOL:                                │    │
+│  │ ├── 50% → Last depositor (JACKPOT)                          │    │
+│  │ ├── 30% → Burned                                            │    │
+│  │ └── 20% → Protocol treasury                                 │    │
+│  │                                                              │    │
+│  │ EXAMPLE: 1,000,000 DATA total staked                        │    │
+│  │ ├── Penalty pool: 250,000 DATA                              │    │
+│  │ ├── Jackpot winner: 125,000 DATA                            │    │
+│  │ ├── Burned: 75,000 DATA                                     │    │
+│  │ └── Treasury: 50,000 DATA                                   │    │
+│  └─────────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│  GAME THEORY:                                                        │
+│  ├── Creates "chicken" game as timer approaches zero                │
+│  ├── Large deposits become heroic (full reset)                      │
+│  ├── Last-second deposits are risky but jackpot-eligible            │
+│  └── Content moments when timer gets low (urgency in feed)          │
+│                                                                      │
+│  IMPLEMENTATION:                                                     │
+│  ├── systemReset.deadline: timestamp when reset triggers            │
+│  ├── systemReset.lastDepositor: address eligible for jackpot        │
+│  ├── triggerSystemReset(): callable by anyone when deadline passed  │
+│  └── Applied proportionally to all positions (not instant death)    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.4 Multi-Source Burns
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -642,6 +990,7 @@ function revealScan(uint8 level) external {
 │  3. ETH Toll Buyback (90% of $2)  │  FeeRouter swaps + burns        │
 │  4. Dead Pool Rake (5%)           │  DeadPool.resolveRound()        │
 │  5. Consumables (100%)            │  ConsumablesShop purchases      │
+│  6. System Reset (30% of penalty) │  triggerSystemReset()           │
 │                                                                      │
 │  BREAK-EVEN ANALYSIS:                                                │
 │  ─────────────────────────────────────────────────────────────────  │
@@ -839,40 +1188,61 @@ function processETHToll() external {
 
 ## 11. Open Questions
 
-### Critical (Blocking)
+### Resolved
 
-1. **prevrandao on MegaETH**
-   - Does it return usable randomness?
-   - Is it different per block?
-   - Verification plan in next section
+1. ~~**prevrandao on MegaETH**~~ ✅
+   - VERIFIED: Returns usable randomness, constant for ~60s
+   - Acceptable with 60s lock period
 
-2. **Gelato Automate on MegaETH**
-   - Is it available on mainnet?
-   - What's the execution latency?
+2. ~~**Position model**~~ ✅
+   - Single position per user, can add stake
+   - Level locked, must extract to change
+
+3. ~~**Cascade split**~~ ✅
+   - 30/30/30/10 absolute (same-level/upstream/burn/protocol)
+   - Matches product specification
+   - VAULT deaths: upstream portion goes to same-level
+
+4. ~~**Death processing at scale**~~ ✅
+   - Trustless batch verification
+   - No off-chain trust required
+
+5. ~~**Network modifier**~~ ✅
+   - DATA-based thresholds (no oracle)
+   - Configurable via admin setter
+
+6. ~~**Yield sources**~~ ✅
+   - Emissions (The Mine) + Cascade (deaths)
+   - Both additive to accRewardsPerShare
 
 ### Important (Should Resolve Before Launch)
 
-3. **DEX for buyback**
+7. **Gelato Automate on MegaETH**
+   - Is it available on mainnet?
+   - What's the execution latency?
+   - Fallback: Permissionless execution works without keeper
+
+8. **DEX for buyback**
    - Bronto vs Bebop integration?
    - Liquidity depth concerns?
 
-4. **Team multisig composition**
+9. **Team multisig composition**
    - Who are the 5 signers?
    - What's the geographic distribution?
 
-5. **Audit budget/timeline**
-   - Can we get audited before launch?
-   - Which firm?
+10. **Audit budget/timeline**
+    - Can we get audited before launch?
+    - Which firm?
 
 ### Nice to Have
 
-6. **Gas optimization targets**
-   - What's the max acceptable gas for executeScan()?
-   - How many positions can we process per scan?
+11. **Gas optimization**
+    - Batch size tuning for submitDeaths()
+    - Target: 100 deaths per tx (~2.5M gas)
 
-7. **Indexer strategy**
-   - Envio? Custom subgraph?
-   - Real-time feed requirements
+12. **Indexer strategy**
+    - Envio? Custom subgraph?
+    - Real-time feed requirements
 
 ---
 
@@ -882,34 +1252,48 @@ function processETHToll() external {
 
 | Decision | Choice | Confidence | Revisit If |
 |----------|--------|------------|------------|
-| Randomness source | Block-based (prevrandao) | Medium | prevrandao fails on MegaETH |
+| Randomness source | Block-based (prevrandao) + 60s lock | High | Evidence of systematic exploitation |
 | Token upgradeability | Immutable | High | - |
 | Game logic upgradeability | UUPS + Timelock | High | - |
 | Reward distribution | Share-based (MasterChef) | High | - |
 | Mini-game boosts | Server signatures | High | - |
-| VRF integration | Deferred (not needed) | Medium | User demand, regulatory |
+| Position model | Single per user, upgradeable stake | High | User demand for multiple |
+| Death processing | Trustless batch verification | High | Gas issues at extreme scale |
+| Cascade split | 30/30/30/10 absolute | High | - |
+| System reset | Include jackpot in V1 | Medium | Complexity issues |
+| Network modifier | DATA-based thresholds | High | Need for USD precision |
+| Yield sources | Emissions + Cascade (additive) | High | - |
 
-### Assumptions Made
+### Assumptions Verified
+
+| Assumption | Result | Notes |
+|------------|--------|-------|
+| prevrandao works on MegaETH | ✅ VERIFIED | Constant for ~60s, acceptable with lock |
+| Single position sufficient | ✅ DECIDED | Simplifies implementation significantly |
+| Batch verification scales | ✅ DESIGNED | ~100 deaths per tx, ~2.5M gas |
+
+### Assumptions Pending Verification
 
 | Assumption | Basis | Verification Needed |
 |------------|-------|---------------------|
-| prevrandao works on MegaETH | EVM compatibility claim | Yes - test contract |
 | MegaETH sequencer won't manipulate | Reputation economics | No - accepted risk |
 | Gelato Automate available | Listed as partner | Yes - confirm mainnet |
-| 10B gas limit sufficient | MegaETH docs | Yes - test at scale |
+| 10B gas limit sufficient | MegaETH docs | Yes - test batch sizes |
+| 120s submission window adequate | Keeper reliability | Yes - monitor in production |
 
 ### Research Completed
 
 - [x] MegaETH platform capabilities (docs/MEGAETH.md)
 - [x] Gelato VRF analysis (docs/GelatoVRF.md)
 - [x] Product requirements (docs/product/master-design.md)
+- [x] prevrandao behavior verification (deployed test contract)
+- [x] Product vs architecture alignment review
 
 ### Research Pending
 
-- [ ] prevrandao behavior verification
 - [ ] Bronto Finance integration docs
 - [ ] Gelato Automate on MegaETH mainnet
-- [ ] Actual gas costs on MegaETH
+- [ ] Actual gas costs on MegaETH for batch operations
 
 ---
 
