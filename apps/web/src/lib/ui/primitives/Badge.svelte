@@ -9,6 +9,8 @@
 		glow?: boolean;
 		/** Pulsing animation */
 		pulse?: boolean;
+		/** Compact size (smaller padding) */
+		compact?: boolean;
 		children: Snippet;
 	}
 
@@ -16,6 +18,7 @@
 		variant = 'default',
 		glow = false,
 		pulse = false,
+		compact = false,
 		children
 	}: Props = $props();
 </script>
@@ -24,6 +27,7 @@
 	class="badge badge-{variant}"
 	class:badge-glow={glow}
 	class:badge-pulse={pulse}
+	class:badge-compact={compact}
 >
 	{@render children()}
 </span>
@@ -73,6 +77,12 @@
 		color: var(--color-green-dim);
 		border-color: var(--color-bg-tertiary);
 		font-weight: var(--font-normal);
+	}
+
+	/* Compact size */
+	.badge-compact {
+		padding: 0 var(--space-1);
+		font-size: 0.5625rem; /* ~9px */
 	}
 
 	/* Glow effect */

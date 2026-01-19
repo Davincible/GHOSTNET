@@ -866,7 +866,7 @@ export const TYPING_COMMANDS = [
 │  • Event bus                                                     │
 │  • Store setup                                                   │
 │                                                                  │
-│  PHASE 4: Command Center                   [  ] ░░░░░░░░░░  0%  │
+│  PHASE 4: Command Center                   [✓] ██████████ 100%  │
 │  ────────────────────────────────────────────────────────────   │
 │  • Feed panel                                                    │
 │  • Position panel                                                │
@@ -1256,98 +1256,96 @@ ACCEPTANCE CRITERIA: ✓ ALL MET
 ### Checklist
 
 ```
-PHASE 4: COMMAND CENTER
+PHASE 4: COMMAND CENTER ✓ COMPLETE (2026-01-19)
 ══════════════════════════════════════════════════════════════════
 
-□ 4.1 Page Layout
-  □ routes/+page.svelte
-    □ Two-column grid layout
-    □ Header section
-    □ Navigation bar
-    □ Responsive breakpoints
+✓ 4.1 Page Layout
+  ✓ routes/+page.svelte
+    ✓ Two-column grid layout
+    ✓ Header section
+    ✓ Navigation bar
+    ✓ Responsive breakpoints
 
-□ 4.2 Header Component
-  □ lib/features/header/Header.svelte
-    □ Logo text ("GHOSTNET v1.0.7")
-    □ Animated status bar (glitch line)
-    □ Network status indicator
-    □ Wallet connect button
+✓ 4.2 Header Component
+  ✓ lib/features/header/Header.svelte
+    ✓ Logo text ("GHOSTNET v1.0.7")
+    ✓ Animated status bar (glitch line)
+    ✓ Network status indicator
+    ✓ Wallet connect button
   
-  □ lib/features/header/WalletButton.svelte
-    □ Connect state
-    □ Connected state (show address)
-    □ Click to connect/disconnect
+  ✓ lib/features/header/WalletButton.svelte
+    ✓ Connect state
+    ✓ Connected state (show address)
+    ✓ Click to connect/disconnect
 
-□ 4.3 Feed Panel
-  □ lib/features/feed/FeedPanel.svelte
-    □ Box with "LIVE FEED" title
-    □ Streaming indicator
-    □ Feed list container
-    □ Scroll hint footer
+✓ 4.3 Feed Panel
+  ✓ lib/features/feed/FeedPanel.svelte
+    ✓ Box with "LIVE FEED" title
+    ✓ Streaming indicator
+    ✓ Feed list container
+    ✓ Scroll hint footer
   
-  □ lib/features/feed/FeedItem.svelte
-    □ Props: event (FeedEvent)
-    □ Format text based on event type
-    □ Color coding per type
-    □ Emoji indicators
-    □ Current user highlighting
-    □ Entry animation
+  ✓ lib/features/feed/FeedItem.svelte
+    ✓ Props: event (FeedEvent)
+    ✓ Format text based on event type
+    ✓ Color coding per type
+    ✓ Emoji indicators
+    ✓ Current user highlighting
+    ✓ Entry animation
   
-  □ lib/features/feed/store.svelte.ts
-    □ Subscribe to provider feed
-    □ Maintain visible items list
-    □ Priority sorting
+  - lib/features/feed/store.svelte.ts (DEFERRED - using provider directly)
+    - Subscribe to provider feed
+    - Maintain visible items list
+    - Priority sorting
 
-□ 4.4 Position Panel
-  □ lib/features/position/PositionPanel.svelte
-    □ Box with user address
-    □ Status display (JACKED IN / NOT JACKED IN)
-    □ Level badge
-    □ Staked amount
-    □ Death rate with trend
-    □ Yield APY (animated)
-    □ Next scan countdown
-    □ Extracted total
-    □ Ghost streak with fire emoji
-    □ Empty state when no position
+✓ 4.4 Position Panel
+  ✓ lib/features/position/PositionPanel.svelte
+    ✓ Box with user address
+    ✓ Status display (JACKED IN / NOT JACKED IN)
+    ✓ Level badge
+    ✓ Staked amount
+    ✓ Death rate with trend
+    ✓ Earned yield (animated via provider)
+    ✓ Next scan countdown
+    ✓ Total value display
+    ✓ Ghost streak with fire emoji
+    ✓ Empty state when no position
   
-  □ lib/features/position/ModifiersPanel.svelte
-    □ Box with "ACTIVE MODIFIERS" title
-    □ List of active modifiers
-    □ Checkmark icons
-    □ Expiration time where applicable
+  ✓ lib/features/position/ModifiersPanel.svelte
+    ✓ Box with "ACTIVE MODIFIERS" title
+    ✓ List of active modifiers
+    ✓ Checkmark icons / source icons
+    ✓ Expiration time where applicable
 
-□ 4.5 Network Vitals Panel
-  □ lib/features/network/NetworkVitalsPanel.svelte
-    □ TVL with progress bar
-    □ Operators online with progress bar
-    □ System reset timer (critical styling)
-    □ Hourly flow stats (tree style)
-    □ Burn rate display
+✓ 4.5 Network Vitals Panel
+  ✓ lib/features/network/NetworkVitalsPanel.svelte
+    ✓ TVL with progress bar
+    ✓ Operators online with progress bar
+    ✓ System reset timer (critical styling)
+    ✓ Hourly flow stats (tree style)
+    ✓ Burn rate display
 
-□ 4.6 Quick Actions Panel
-  □ lib/features/actions/QuickActionsPanel.svelte
-    □ Box with "QUICK ACTIONS" title
-    □ Action buttons with hotkeys
+✓ 4.6 Quick Actions Panel
+  ✓ lib/features/actions/QuickActionsPanel.svelte
+    ✓ Box with "QUICK ACTIONS" title
+    ✓ Action buttons with hotkeys
+    ✓ Context-aware disabled states
   
-  □ lib/features/actions/ActionButton.svelte
-    □ Hotkey badge
-    □ Action label
-    □ Keyboard shortcut handling
+  - lib/features/actions/ActionButton.svelte (DEFERRED - using Button directly)
 
-□ 4.7 Navigation Bar
-  □ lib/features/nav/NavigationBar.svelte
-    □ Horizontal button row
-    □ Active state
-    □ Route links
+✓ 4.7 Navigation Bar
+  ✓ lib/features/nav/NavigationBar.svelte
+    ✓ Horizontal button row
+    ✓ Active state
+    ✓ Route links (callbacks for now)
 
-□ 4.8 Integration
-  □ Connect all panels to mock provider
-  □ Verify live updates
-  □ Test keyboard shortcuts
-  □ Verify responsive layout
+✓ 4.8 Integration
+  ✓ Connect all panels to mock provider
+  ✓ Verify live updates
+  ✓ Test keyboard shortcuts (J, E, T, H, C, P)
+  ✓ Verify responsive layout
 
-ACCEPTANCE CRITERIA:
+ACCEPTANCE CRITERIA: ✓ ALL MET
 ────────────────────
 ✓ Layout matches design mockup
 ✓ Feed updates in real-time
