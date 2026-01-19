@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Header } from '$lib/features/header';
 	import { FeedPanel } from '$lib/features/feed';
 	import { PositionPanel, ModifiersPanel } from '$lib/features/position';
@@ -24,8 +25,7 @@
 	}
 
 	function handleTraceEvasion() {
-		// TODO: Navigate to typing game
-		console.log('Trace Evasion clicked');
+		goto('/typing');
 	}
 
 	function handleHackRun() {
