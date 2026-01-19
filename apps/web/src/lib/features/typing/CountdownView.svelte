@@ -4,9 +4,15 @@
 	interface Props {
 		/** Seconds remaining in countdown */
 		secondsLeft: number;
+		/** Current round (1-indexed) */
+		currentRound?: number;
+		/** Total rounds */
+		totalRounds?: number;
 	}
 
-	let { secondsLeft }: Props = $props();
+	let { secondsLeft, currentRound = 1, totalRounds = 1 }: Props = $props();
+
+	let showRoundInfo = $derived(totalRounds > 1);
 
 	// Animate the number
 	let isAnimating = $state(true);
@@ -24,7 +30,13 @@
 <div class="countdown-view">
 	<Box>
 		<div class="countdown-content">
-			<h2 class="title">PREPARE FOR EVASION SEQUENCE</h2>
+			<h2 class="title">
+				{#if showRoundInfo}
+					ROUND {currentRound}/{totalRounds}
+				{:else}
+					PREPARE FOR EVASION SEQUENCE
+				{/if}
+			</h2>
 
 			<div class="countdown-display" aria-live="polite" aria-atomic="true">
 				<span class="countdown-number" class:animate={isAnimating}>

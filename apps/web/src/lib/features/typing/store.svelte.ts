@@ -3,10 +3,22 @@
  * ==================================
  * State machine for the typing mini-game that reduces death rate.
  *
- * States: idle → countdown → active → complete → idle
+ * States: idle → countdown → active → roundComplete → ... → complete → idle
+ *
+ * The game consists of multiple rounds (default 5), with cumulative scoring.
  */
 
 import type { TypingChallenge, TypingResult, TypingGameState } from '$lib/core/types';
+
+// ════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ════════════════════════════════════════════════════════════════
+
+/** Number of rounds per game */
+export const TOTAL_ROUNDS = 3;
+
+/** Delay between rounds (ms) */
+const ROUND_TRANSITION_DELAY = 1500;
 
 // ════════════════════════════════════════════════════════════════
 // TYPES
@@ -26,16 +38,38 @@ export interface TypingProgress {
 	currentTime: number;
 }
 
-/** Complete result after typing */
-export interface TypingGameResult {
-	/** Final accuracy (0-1) */
+/** Result for a single round */
+export interface RoundResult {
+	/** Accuracy for this round (0-1) */
 	accuracy: number;
-	/** Words per minute */
+	/** WPM for this round */
 	wpm: number;
-	/** Time elapsed in milliseconds */
+	/** Time elapsed in ms */
 	timeElapsed: number;
-	/** Whether the challenge was completed (vs timed out) */
+	/** Correct characters */
+	correctChars: number;
+	/** Total characters typed */
+	totalChars: number;
+	/** Whether round was completed (vs timed out) */
 	completed: boolean;
+}
+
+/** Complete result after all rounds */
+export interface TypingGameResult {
+	/** Final accuracy (0-1) - average across rounds */
+	accuracy: number;
+	/** Average WPM across rounds */
+	wpm: number;
+	/** Total time elapsed in milliseconds */
+	timeElapsed: number;
+	/** Whether all challenges were completed (vs any timed out) */
+	completed: boolean;
+	/** Number of rounds completed */
+	roundsCompleted: number;
+	/** Total rounds */
+	totalRounds: number;
+	/** Per-round results */
+	roundResults: RoundResult[];
 	/** Reward earned, if any */
 	reward: {
 		type: 'death_rate_reduction';
@@ -47,9 +81,10 @@ export interface TypingGameResult {
 /** Discriminated union for game state */
 export type GameState =
 	| { status: 'idle' }
-	| { status: 'countdown'; secondsLeft: number }
-	| { status: 'active'; challenge: TypingChallenge; progress: TypingProgress }
-	| { status: 'complete'; challenge: TypingChallenge; result: TypingGameResult };
+	| { status: 'countdown'; secondsLeft: number; currentRound: number; totalRounds: number }
+	| { status: 'active'; challenge: TypingChallenge; progress: TypingProgress; currentRound: number; totalRounds: number }
+	| { status: 'roundComplete'; lastRoundResult: RoundResult; currentRound: number; totalRounds: number }
+	| { status: 'complete'; result: TypingGameResult };
 
 // ════════════════════════════════════════════════════════════════
 // REWARD CALCULATION
@@ -126,8 +161,8 @@ export function calculateAccuracy(correct: number, total: number): number {
 export interface TypingGameStore {
 	/** Current game state (reactive) */
 	readonly state: GameState;
-	/** Start the game with a challenge */
-	start(challenge: TypingChallenge): void;
+	/** Start the game with a challenge generator function */
+	start(getChallenges: () => TypingChallenge[]): void;
 	/** Handle a keystroke during active state */
 	handleKey(key: string): void;
 	/** Reset to idle state */
@@ -149,15 +184,21 @@ export function createTypingGameStore(): TypingGameStore {
 	// Intervals for countdown and time tracking
 	let countdownInterval: ReturnType<typeof setInterval> | null = null;
 	let timeInterval: ReturnType<typeof setInterval> | null = null;
+	let transitionTimeout: ReturnType<typeof setTimeout> | null = null;
 
-	// Challenge stored for transition from countdown to active
-	let pendingChallenge: TypingChallenge | null = null;
+	// Challenges for all rounds
+	let challenges: TypingChallenge[] = [];
+	let currentRoundIndex = 0;
+
+	// Accumulated results across rounds
+	let roundResults: RoundResult[] = [];
+	let totalTimeElapsed = 0;
 
 	// ─────────────────────────────────────────────────────────────
 	// CLEANUP
 	// ─────────────────────────────────────────────────────────────
 
-	function clearIntervals(): void {
+	function clearTimers(): void {
 		if (countdownInterval) {
 			clearInterval(countdownInterval);
 			countdownInterval = null;
@@ -166,6 +207,10 @@ export function createTypingGameStore(): TypingGameStore {
 			clearInterval(timeInterval);
 			timeInterval = null;
 		}
+		if (transitionTimeout) {
+			clearTimeout(transitionTimeout);
+			transitionTimeout = null;
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────
@@ -173,27 +218,52 @@ export function createTypingGameStore(): TypingGameStore {
 	// ─────────────────────────────────────────────────────────────
 
 	/**
-	 * Start game: idle → countdown
+	 * Start game: idle → countdown (round 1)
 	 */
-	function start(challenge: TypingChallenge): void {
+	function start(getChallenges: () => TypingChallenge[]): void {
 		if (state.status !== 'idle') return;
 
-		clearIntervals();
-		pendingChallenge = challenge;
-		state = { status: 'countdown', secondsLeft: 3 };
+		clearTimers();
 
-		// Countdown interval
+		// Get all challenges upfront
+		challenges = getChallenges();
+		currentRoundIndex = 0;
+		roundResults = [];
+		totalTimeElapsed = 0;
+
+		// Start countdown for first round
+		startCountdown();
+	}
+
+	/**
+	 * Start countdown for current round
+	 */
+	function startCountdown(): void {
+		clearTimers();
+
+		const totalRounds = challenges.length;
+		const currentRound = currentRoundIndex + 1;
+
+		state = {
+			status: 'countdown',
+			secondsLeft: 3,
+			currentRound,
+			totalRounds
+		};
+
 		countdownInterval = setInterval(() => {
 			if (state.status !== 'countdown') {
-				clearIntervals();
+				clearTimers();
 				return;
 			}
 
 			if (state.secondsLeft <= 1) {
-				// Transition to active
 				transitionToActive();
 			} else {
-				state = { status: 'countdown', secondsLeft: state.secondsLeft - 1 };
+				state = {
+					...state,
+					secondsLeft: state.secondsLeft - 1
+				};
 			}
 		}, 1000);
 	}
@@ -202,17 +272,23 @@ export function createTypingGameStore(): TypingGameStore {
 	 * Transition from countdown to active
 	 */
 	function transitionToActive(): void {
-		clearIntervals();
+		clearTimers();
 
-		if (!pendingChallenge) {
+		const challenge = challenges[currentRoundIndex];
+		if (!challenge) {
 			state = { status: 'idle' };
 			return;
 		}
 
 		const now = Date.now();
+		const totalRounds = challenges.length;
+		const currentRound = currentRoundIndex + 1;
+
 		state = {
 			status: 'active',
-			challenge: pendingChallenge,
+			challenge,
+			currentRound,
+			totalRounds,
 			progress: {
 				typed: '',
 				correctChars: 0,
@@ -225,7 +301,7 @@ export function createTypingGameStore(): TypingGameStore {
 		// Time tracking interval
 		timeInterval = setInterval(() => {
 			if (state.status !== 'active') {
-				clearIntervals();
+				clearTimers();
 				return;
 			}
 
@@ -233,10 +309,8 @@ export function createTypingGameStore(): TypingGameStore {
 			const timeLimit = state.challenge.timeLimit * 1000;
 
 			if (elapsed >= timeLimit) {
-				// Time's up - complete with current progress
-				completeGame(false);
+				completeRound(false);
 			} else {
-				// Update current time for display
 				state = {
 					...state,
 					progress: {
@@ -246,8 +320,6 @@ export function createTypingGameStore(): TypingGameStore {
 				};
 			}
 		}, 100);
-
-		pendingChallenge = null;
 	}
 
 	/**
@@ -256,7 +328,7 @@ export function createTypingGameStore(): TypingGameStore {
 	function handleKey(key: string): void {
 		if (state.status !== 'active') return;
 
-		const { challenge, progress } = state;
+		const { challenge, progress, currentRound, totalRounds } = state;
 		const targetChar = challenge.command[progress.typed.length];
 
 		// Ignore if already complete
@@ -268,7 +340,10 @@ export function createTypingGameStore(): TypingGameStore {
 			const wasCorrect = lastChar === challenge.command[progress.typed.length - 1];
 
 			state = {
-				...state,
+				status: 'active',
+				challenge,
+				currentRound,
+				totalRounds,
 				progress: {
 					...progress,
 					typed: progress.typed.slice(0, -1),
@@ -287,7 +362,10 @@ export function createTypingGameStore(): TypingGameStore {
 		const newTyped = progress.typed + key;
 
 		state = {
-			...state,
+			status: 'active',
+			challenge,
+			currentRound,
+			totalRounds,
 			progress: {
 				...progress,
 				typed: newTyped,
@@ -297,35 +375,86 @@ export function createTypingGameStore(): TypingGameStore {
 			}
 		};
 
-		// Check if complete
+		// Check if round complete
 		if (newTyped.length >= challenge.command.length) {
-			completeGame(true);
+			completeRound(true);
 		}
 	}
 
 	/**
-	 * Complete the game and calculate results
+	 * Complete current round
 	 */
-	function completeGame(completed: boolean): void {
+	function completeRound(completed: boolean): void {
 		if (state.status !== 'active') return;
 
-		clearIntervals();
+		clearTimers();
 
-		const { challenge, progress } = state;
+		const { challenge, progress, currentRound, totalRounds } = state;
 		const timeElapsed = progress.currentTime - progress.startTime;
 		const totalChars = progress.typed.length;
 		const accuracy = calculateAccuracy(progress.correctChars, totalChars);
 		const wpm = calculateWpm(progress.correctChars, timeElapsed);
-		const reward = calculateReward(accuracy, wpm);
+
+		// Store round result
+		const roundResult: RoundResult = {
+			accuracy,
+			wpm,
+			timeElapsed,
+			correctChars: progress.correctChars,
+			totalChars,
+			completed
+		};
+		roundResults.push(roundResult);
+		totalTimeElapsed += timeElapsed;
+
+		// Check if more rounds
+		const hasMoreRounds = currentRoundIndex < challenges.length - 1;
+
+		if (hasMoreRounds) {
+			// Show round complete briefly, then start next round
+			state = {
+				status: 'roundComplete',
+				lastRoundResult: roundResult,
+				currentRound,
+				totalRounds
+			};
+
+			// Auto-advance to next round after delay
+			transitionTimeout = setTimeout(() => {
+				currentRoundIndex++;
+				startCountdown();
+			}, ROUND_TRANSITION_DELAY);
+		} else {
+			// All rounds done - calculate final result
+			completeGame();
+		}
+	}
+
+	/**
+	 * Complete the entire game and calculate aggregate results
+	 */
+	function completeGame(): void {
+		clearTimers();
+
+		// Calculate aggregate stats
+		const totalCorrectChars = roundResults.reduce((sum, r) => sum + r.correctChars, 0);
+		const totalChars = roundResults.reduce((sum, r) => sum + r.totalChars, 0);
+		const avgAccuracy = calculateAccuracy(totalCorrectChars, totalChars);
+		const avgWpm = Math.round(roundResults.reduce((sum, r) => sum + r.wpm, 0) / roundResults.length);
+		const allCompleted = roundResults.every((r) => r.completed);
+
+		const reward = calculateReward(avgAccuracy, avgWpm);
 
 		state = {
 			status: 'complete',
-			challenge,
 			result: {
-				accuracy,
-				wpm,
-				timeElapsed,
-				completed,
+				accuracy: avgAccuracy,
+				wpm: avgWpm,
+				timeElapsed: totalTimeElapsed,
+				completed: allCompleted,
+				roundsCompleted: roundResults.filter((r) => r.completed).length,
+				totalRounds: challenges.length,
+				roundResults,
 				reward
 			}
 		};
@@ -335,8 +464,11 @@ export function createTypingGameStore(): TypingGameStore {
 	 * Reset to idle state
 	 */
 	function reset(): void {
-		clearIntervals();
-		pendingChallenge = null;
+		clearTimers();
+		challenges = [];
+		currentRoundIndex = 0;
+		roundResults = [];
+		totalTimeElapsed = 0;
 		state = { status: 'idle' };
 	}
 

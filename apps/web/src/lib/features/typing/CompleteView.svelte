@@ -1,16 +1,13 @@
 <script lang="ts">
 	import { Box } from '$lib/ui/terminal';
 	import { Button, Badge } from '$lib/ui/primitives';
-	import { Stack, Row } from '$lib/ui/layout';
+	import { Stack } from '$lib/ui/layout';
 	import { PercentDisplay } from '$lib/ui/data-display';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { LEVEL_CONFIG } from '$lib/core/types';
-	import type { TypingChallenge } from '$lib/core/types';
 	import type { TypingGameResult } from './store.svelte';
 
 	interface Props {
-		/** The completed challenge */
-		challenge: TypingChallenge;
 		/** Game result */
 		result: TypingGameResult;
 		/** Callback when practice again is clicked */
@@ -19,7 +16,7 @@
 		onReturn: () => void;
 	}
 
-	let { challenge, result, onPracticeAgain, onReturn }: Props = $props();
+	let { result, onPracticeAgain, onReturn }: Props = $props();
 
 	const provider = getProvider();
 
@@ -85,15 +82,15 @@
 			<div class="stats-grid">
 				<div class="stat-box">
 					<span class="stat-value">{result.wpm}</span>
-					<span class="stat-label">WPM</span>
+					<span class="stat-label">AVG WPM</span>
 				</div>
 				<div class="stat-box">
 					<span class="stat-value">{Math.round(result.accuracy * 100)}%</span>
 					<span class="stat-label">ACCURACY</span>
 				</div>
 				<div class="stat-box">
-					<span class="stat-value">{timeFormatted}</span>
-					<span class="stat-label">TIME</span>
+					<span class="stat-value">{result.roundsCompleted}/{result.totalRounds}</span>
+					<span class="stat-label">ROUNDS</span>
 				</div>
 			</div>
 

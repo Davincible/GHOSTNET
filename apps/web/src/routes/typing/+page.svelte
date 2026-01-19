@@ -3,19 +3,29 @@
 	import { browser } from '$app/environment';
 	import { Shell } from '$lib/ui/terminal';
 	import { getProvider } from '$lib/core/stores/index.svelte';
-	import { createTypingGameStore } from '$lib/features/typing/store.svelte';
+	import { createTypingGameStore, TOTAL_ROUNDS } from '$lib/features/typing/store.svelte';
 	import IdleView from '$lib/features/typing/IdleView.svelte';
 	import CountdownView from '$lib/features/typing/CountdownView.svelte';
 	import ActiveView from '$lib/features/typing/ActiveView.svelte';
 	import CompleteView from '$lib/features/typing/CompleteView.svelte';
+	import RoundCompleteView from '$lib/features/typing/RoundCompleteView.svelte';
 
 	const provider = getProvider();
 	const gameStore = createTypingGameStore();
 
+	// Track if we've submitted the current result to avoid infinite loops
+	let hasSubmittedResult = $state(false);
+
 	// Handle starting the game
 	function handleStart(): void {
-		const challenge = provider.getTypingChallenge();
-		gameStore.start(challenge);
+		// Generate multiple challenges for the game
+		gameStore.start(() => {
+			const challenges = [];
+			for (let i = 0; i < TOTAL_ROUNDS; i++) {
+				challenges.push(provider.getTypingChallenge());
+			}
+			return challenges;
+		});
 	}
 
 	// Handle practice again
@@ -28,21 +38,18 @@
 	}
 
 	// Handle return to network
-	async function handleReturn(): Promise<void> {
-		// Submit result if we have one
-		const result = gameStore.getResult();
-		if (result) {
-			await provider.submitTypingResult(result);
-		}
+	function handleReturn(): void {
+		// Result is already auto-submitted when game completes
 		gameStore.reset();
 		goto('/');
 	}
 
 	// Global keyboard handler for typing
 	function handleKeydown(event: KeyboardEvent): void {
-		// Handle Escape to abort during active/countdown
+		// Handle Escape to abort during active/countdown/roundComplete
 		if (event.key === 'Escape') {
-			if (gameStore.state.status === 'active' || gameStore.state.status === 'countdown') {
+			const status = gameStore.state.status;
+			if (status === 'active' || status === 'countdown' || status === 'roundComplete') {
 				event.preventDefault();
 				gameStore.reset();
 			}
@@ -72,13 +79,17 @@
 		};
 	});
 
-	// Auto-submit result when game completes
+	// Auto-submit result when game completes (only once)
 	$effect(() => {
-		if (gameStore.state.status === 'complete') {
+		if (gameStore.state.status === 'complete' && !hasSubmittedResult) {
+			hasSubmittedResult = true;
 			const result = gameStore.getResult();
 			if (result) {
 				provider.submitTypingResult(result);
 			}
+		} else if (gameStore.state.status === 'idle') {
+			// Reset flag when game resets
+			hasSubmittedResult = false;
 		}
 	});
 </script>
@@ -107,15 +118,26 @@
 			{#if gameStore.state.status === 'idle'}
 				<IdleView onStart={handleStart} />
 			{:else if gameStore.state.status === 'countdown'}
-				<CountdownView secondsLeft={gameStore.state.secondsLeft} />
+				<CountdownView
+					secondsLeft={gameStore.state.secondsLeft}
+					currentRound={gameStore.state.currentRound}
+					totalRounds={gameStore.state.totalRounds}
+				/>
 			{:else if gameStore.state.status === 'active'}
 				<ActiveView
 					challenge={gameStore.state.challenge}
 					progress={gameStore.state.progress}
+					currentRound={gameStore.state.currentRound}
+					totalRounds={gameStore.state.totalRounds}
+				/>
+			{:else if gameStore.state.status === 'roundComplete'}
+				<RoundCompleteView
+					result={gameStore.state.lastRoundResult}
+					currentRound={gameStore.state.currentRound}
+					totalRounds={gameStore.state.totalRounds}
 				/>
 			{:else if gameStore.state.status === 'complete'}
 				<CompleteView
-					challenge={gameStore.state.challenge}
 					result={gameStore.state.result}
 					onPracticeAgain={handlePracticeAgain}
 					onReturn={handleReturn}

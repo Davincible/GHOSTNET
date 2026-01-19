@@ -143,6 +143,7 @@
 
 			<!-- Start Button -->
 			<div class="action-section">
+				<p class="rounds-info">3 ROUNDS · BACKSPACE ALLOWED · ESC TO ABORT</p>
 				<Button
 					variant="primary"
 					size="lg"
@@ -247,5 +248,13 @@
 
 	.action-section {
 		padding-top: var(--space-2);
+	}
+
+	.rounds-info {
+		color: var(--color-green-dim);
+		font-size: var(--text-xs);
+		text-align: center;
+		letter-spacing: var(--tracking-wide);
+		margin-bottom: var(--space-2);
 	}
 </style>

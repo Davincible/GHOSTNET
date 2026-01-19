@@ -11,9 +11,16 @@
 		challenge: TypingChallenge;
 		/** Current typing progress */
 		progress: TypingProgress;
+		/** Current round number (1-indexed) */
+		currentRound?: number;
+		/** Total number of rounds */
+		totalRounds?: number;
 	}
 
-	let { challenge, progress }: Props = $props();
+	let { challenge, progress, currentRound = 1, totalRounds = 1 }: Props = $props();
+
+	// Reference to the scrollable command display
+	let commandDisplayEl = $state<HTMLDivElement | null>(null);
 
 	// Calculate stats
 	let timeElapsed = $derived(progress.currentTime - progress.startTime);
@@ -50,16 +57,38 @@
 		}
 		return progress.typed[index] === challenge.command[index] ? 'correct' : 'incorrect';
 	}
+
+	// Auto-scroll to keep cursor visible with lookahead
+	$effect(() => {
+		if (!commandDisplayEl) return;
+
+		const cursorIndex = progress.typed.length;
+		const charWidth = 10; // Approximate width of a monospace character in pixels
+		const containerWidth = commandDisplayEl.clientWidth;
+		const promptWidth = 24; // Approximate width of "$ " prompt
+
+		// Calculate cursor position (rough estimate)
+		const cursorPosition = promptWidth + cursorIndex * charWidth;
+
+		// Keep cursor at ~40% from left edge when scrolling is needed
+		const targetScrollLeft = Math.max(0, cursorPosition - containerWidth * 0.4);
+
+		// Smooth scroll to position
+		commandDisplayEl.scrollTo({
+			left: targetScrollLeft,
+			behavior: 'smooth'
+		});
+	});
 </script>
 
 <div class="active-view">
-	<Box title="SCRAMBLE SEQUENCE ACTIVE">
+	<Box title={totalRounds > 1 ? `ROUND ${currentRound}/${totalRounds}` : 'SCRAMBLE SEQUENCE ACTIVE'}>
 		<div class="typing-container">
 			<!-- Command prompt -->
 			<div class="prompt-section">
 				<div class="prompt-label">TYPE THE FOLLOWING COMMAND:</div>
 
-				<div class="command-display" role="textbox" aria-label="Typing target">
+				<div class="command-display" role="textbox" aria-label="Typing target" bind:this={commandDisplayEl}>
 					<span class="prompt-symbol">$</span>
 					<span class="command-text">
 						{#each commandChars as char, i (i)}
