@@ -84,6 +84,66 @@
 </script>
 ```
 
+## Avoiding Hydration Flicker (Theme Example)
+
+For client-only data like localStorage, the standard pattern causes a flash:
+
+```svelte
+<script>
+  import { browser } from '$app/environment';
+  
+  // ❌ WRONG - flickers on hydration
+  // Server renders 'light', then client switches to 'dark'
+  let theme = $state(browser ? localStorage.getItem('theme') : 'light');
+</script>
+
+<div class={theme}>...</div>
+```
+
+**Solution: Inline script in app.html**
+
+Set the class before any rendering occurs:
+
+```html
+<!-- src/app.html -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <script>
+      // Runs before any rendering - no flicker
+      const theme = localStorage.getItem('theme') || 'light';
+      document.documentElement.classList.add(theme);
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>
+```
+
+```svelte
+<!-- Component reads from what app.html set -->
+<script>
+  import { browser } from '$app/environment';
+  
+  let theme = $state('light');
+  
+  if (browser) {
+    // Read from DOM class that was set before hydration
+    theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
+  
+  function toggleTheme() {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    theme = newTheme;
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(newTheme);
+    localStorage.setItem('theme', newTheme);
+  }
+</script>
+```
+
 ## Client-Only Components
 
 ```svelte
