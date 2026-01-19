@@ -46,6 +46,9 @@ sepolia = "${SEPOLIA_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 optimism = "${OPTIMISM_RPC_URL}"
 base = "${BASE_RPC_URL}"
+# MegaETH - Primary target chain
+megaeth = "${MEGAETH_RPC_URL}"
+megaeth_testnet = "https://timothy.megaeth.com/rpc"
 
 # Etherscan API keys for verification
 [etherscan]
@@ -54,6 +57,9 @@ sepolia = { key = "${ETHERSCAN_API_KEY}" }
 arbitrum = { key = "${ARBISCAN_API_KEY}" }
 optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
 base = { key = "${BASESCAN_API_KEY}" }
+# MegaETH uses Blockscout - verification may require different approach
+megaeth = { key = "${MEGAETH_API_KEY}", url = "https://megaeth.blockscout.com/api" }
+megaeth_testnet = { key = "", url = "https://megaeth-testnet-v2.blockscout.com/api" }
 
 # CI profile - stricter settings
 [profile.ci]
