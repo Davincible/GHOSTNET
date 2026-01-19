@@ -6,22 +6,28 @@
 	import { NetworkVitalsPanel } from '$lib/features/network';
 	import { QuickActionsPanel } from '$lib/features/actions';
 	import { NavigationBar } from '$lib/features/nav';
+	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
+	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 
 	const provider = getProvider();
+	const toast = getToasts();
 
 	// Navigation state
 	let activeNav = $state('network');
 
+	// Modal state
+	let showJackInModal = $state(false);
+	let showExtractModal = $state(false);
+	let showSettingsModal = $state(false);
+
 	// Action handlers
 	function handleJackIn() {
-		// TODO: Open Jack In modal
-		console.log('Jack In clicked');
+		showJackInModal = true;
 	}
 
 	function handleExtract() {
-		// TODO: Confirm and extract
-		provider.extract().catch(console.error);
+		showExtractModal = true;
 	}
 
 	function handleTraceEvasion() {
@@ -29,18 +35,15 @@
 	}
 
 	function handleHackRun() {
-		// TODO: Navigate to hack run
-		console.log('Hack Run clicked');
+		toast.info('Hack Run coming soon...');
 	}
 
 	function handleCrew() {
-		// TODO: Navigate to crew page
-		console.log('Crew clicked');
+		toast.info('Crew system coming soon...');
 	}
 
 	function handleDeadPool() {
-		// TODO: Navigate to Dead Pool
-		console.log('Dead Pool clicked');
+		toast.info('Dead Pool coming soon...');
 	}
 
 	function handleNavigate(id: string) {
@@ -59,22 +62,52 @@
 
 		switch (event.key.toLowerCase()) {
 			case 'j':
-				handleJackIn();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet to Jack In');
+				} else {
+					handleJackIn();
+				}
 				break;
 			case 'e':
-				if (provider.position) handleExtract();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet first');
+				} else if (!provider.position) {
+					toast.warning('Jack In first to Extract');
+				} else {
+					handleExtract();
+				}
 				break;
 			case 't':
-				if (provider.position) handleTraceEvasion();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet first');
+				} else if (!provider.position) {
+					toast.warning('Jack In first to play Trace Evasion');
+				} else {
+					handleTraceEvasion();
+				}
 				break;
 			case 'h':
-				if (provider.position) handleHackRun();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet first');
+				} else if (!provider.position) {
+					toast.warning('Jack In first to play Hack Run');
+				} else {
+					handleHackRun();
+				}
 				break;
 			case 'c':
-				if (provider.currentUser) handleCrew();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet to access Crew');
+				} else {
+					handleCrew();
+				}
 				break;
 			case 'p':
-				if (provider.currentUser) handleDeadPool();
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet to access Dead Pool');
+				} else {
+					handleDeadPool();
+				}
 				break;
 		}
 	}
@@ -88,7 +121,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="command-center">
-	<Header />
+	<Header onSettings={() => showSettingsModal = true} />
 
 	<main class="main-content">
 		<div class="content-grid">
@@ -116,6 +149,14 @@
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />
 </div>
+
+<!-- Modals -->
+<JackInModal open={showJackInModal} onclose={() => showJackInModal = false} />
+<ExtractModal open={showExtractModal} onclose={() => showExtractModal = false} />
+<SettingsModal open={showSettingsModal} onclose={() => showSettingsModal = false} />
+
+<!-- Toast notifications -->
+<ToastContainer />
 
 <style>
 	.command-center {
