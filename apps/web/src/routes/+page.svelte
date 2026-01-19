@@ -1,44 +1,109 @@
 <script lang="ts">
-	// GHOSTNET Design System Test Page
-	// Phase 1 & 2: Component Showcase
+	// GHOSTNET Test Page
+	// Phase 3: Live Data from Mock Provider
 
 	import { Button, ProgressBar, AnimatedNumber, Countdown, Badge, Spinner } from '$lib/ui/primitives';
 	import { AddressDisplay, AmountDisplay, PercentDisplay, LevelBadge } from '$lib/ui/data-display';
 	import { Stack, Row } from '$lib/ui/layout';
 	import { Box, Panel } from '$lib/ui/terminal';
+	import { getProvider } from '$lib/core/stores/index.svelte';
+	import type { FeedEvent } from '$lib/core/types';
 
-	// Test state
-	let progressValue = $state(75);
-	let animatedValue = $state(1234);
-	let isLoading = $state(false);
+	// Get provider from context
+	const provider = getProvider();
 
-	// Countdown target (2 minutes from now)
-	let countdownTarget = $state(Date.now() + 2 * 60 * 1000);
+	// Local UI state
+	let isConnecting = $state(false);
 
-	// Test data
-	const testAddress = '0x7a3f9c2d8b1e4a5f6c7d8e9f0a1b2c3d4e5f6789' as const;
-	const testAmount = 500000000000000000000n; // 500 tokens
-	const testGain = 47000000000000000000n; // +47 tokens
-
-	function handleClick() {
-		isLoading = true;
-		setTimeout(() => {
-			isLoading = false;
-			animatedValue += Math.floor(Math.random() * 500);
-		}, 1000);
+	// Connect/disconnect wallet
+	async function toggleWallet() {
+		if (provider.currentUser) {
+			provider.disconnectWallet();
+		} else {
+			isConnecting = true;
+			await provider.connectWallet();
+			isConnecting = false;
+		}
 	}
 
-	function updateProgress() {
-		progressValue = Math.floor(Math.random() * 100);
+	// Format feed event for display
+	function formatFeedEvent(event: FeedEvent): { text: string; color: string } {
+		const addr = (a: `0x${string}`) => `${a.slice(0, 6)}...${a.slice(-4)}`;
+		const amt = (a: bigint) => `${Number(a / 10n ** 18n)}Đ`;
+
+		switch (event.data.type) {
+			case 'JACK_IN':
+				return {
+					text: `> ${addr(event.data.address)} jacked in [${event.data.level}] ${amt(event.data.amount)}`,
+					color: 'text-green'
+				};
+			case 'EXTRACT':
+				return {
+					text: `> ${addr(event.data.address)} extracted ${amt(event.data.amount)} [+${amt(event.data.gain)} gain]`,
+					color: 'text-profit'
+				};
+			case 'TRACED':
+				return {
+					text: `> ${addr(event.data.address)} ████ TRACED ████ -${amt(event.data.amountLost)}`,
+					color: 'text-red'
+				};
+			case 'SURVIVED':
+				return {
+					text: `> ${addr(event.data.address)} survived [${event.data.level}] streak: ${event.data.streak}`,
+					color: 'text-green-mid'
+				};
+			case 'TRACE_SCAN_WARNING':
+				return {
+					text: `> ⚠ TRACE SCAN [${event.data.level}] in ${event.data.secondsUntil}s`,
+					color: 'text-amber'
+				};
+			case 'TRACE_SCAN_COMPLETE':
+				return {
+					text: `> SCAN COMPLETE [${event.data.level}] ${event.data.survivors} survived, ${event.data.traced} traced`,
+					color: 'text-cyan'
+				};
+			case 'WHALE_ALERT':
+				return {
+					text: `> 🐋 WHALE: ${addr(event.data.address)} [${event.data.level}] ${amt(event.data.amount)}`,
+					color: 'text-gold'
+				};
+			case 'JACKPOT':
+				return {
+					text: `> 🔥 JACKPOT: ${addr(event.data.address)} [${event.data.level}] +${amt(event.data.amount)}`,
+					color: 'text-gold'
+				};
+			case 'CREW_EVENT':
+				return {
+					text: `> [${event.data.crewName}] ${event.data.message}`,
+					color: 'text-cyan'
+				};
+			case 'MINIGAME_RESULT':
+				return {
+					text: `> ${addr(event.data.address)} ${event.data.game}: ${event.data.result}`,
+					color: 'text-cyan'
+				};
+			default:
+				return { text: `> Unknown event`, color: 'text-green-dim' };
+		}
 	}
 
-	function resetCountdown() {
-		countdownTarget = Date.now() + 2 * 60 * 1000;
-	}
+	// Calculate TVL percentage
+	let tvlPercent = $derived(
+		provider.networkState.tvlCapacity > 0n
+			? Number((provider.networkState.tvl * 100n) / provider.networkState.tvlCapacity)
+			: 0
+	);
+
+	// Calculate operators percentage
+	let operatorsPercent = $derived(
+		provider.networkState.operatorsAth > 0
+			? Math.round((provider.networkState.operatorsOnline / provider.networkState.operatorsAth) * 100)
+			: 0
+	);
 </script>
 
 <svelte:head>
-	<title>GHOSTNET v1.0.7 - Design System</title>
+	<title>GHOSTNET v1.0.7</title>
 	<meta name="description" content="Jack In. Don't Get Traced." />
 </svelte:head>
 
@@ -46,308 +111,195 @@
 	<!-- Header -->
 	<header class="header">
 		<h1 class="logo glow-green">GHOSTNET <span class="text-green-dim">v1.0.7</span></h1>
-		<div class="status">
+		<Row gap={4} align="center">
 			<span class="text-green-mid text-sm">NETWORK:</span>
-			<Badge variant="success" glow>ONLINE</Badge>
-		</div>
+			{#if provider.connectionStatus === 'connected'}
+				<Badge variant="success" glow>ONLINE</Badge>
+			{:else if provider.connectionStatus === 'connecting'}
+				<Badge variant="warning" pulse>CONNECTING</Badge>
+			{:else}
+				<Badge variant="danger">OFFLINE</Badge>
+			{/if}
+		</Row>
 	</header>
 
-	<!-- Design System Test -->
 	<div class="content">
-		<Stack gap={6}>
-			<h2 class="text-xl glow-green">Phase 1: Component Library</h2>
-
-			<!-- Buttons -->
-			<section class="test-section">
-				<h3 class="section-title">Buttons</h3>
-				<Stack gap={4}>
-					<Row gap={4} wrap>
-						<Button variant="primary" onclick={handleClick} loading={isLoading}>
-							Primary
-						</Button>
-						<Button variant="secondary">Secondary</Button>
-						<Button variant="danger">Danger</Button>
-						<Button variant="ghost">Ghost</Button>
-					</Row>
-					<Row gap={4} wrap>
-						<Button size="sm">Small</Button>
-						<Button size="md">Medium</Button>
-						<Button size="lg">Large</Button>
-					</Row>
-					<Row gap={4} wrap>
-						<Button hotkey="J">Jack In</Button>
-						<Button hotkey="E" variant="danger">Extract</Button>
-						<Button hotkey="T" variant="secondary">Trace Evasion</Button>
-					</Row>
-					<Row gap={4}>
-						<Button disabled>Disabled</Button>
-						<Button loading={true}>Loading</Button>
-					</Row>
-				</Stack>
-			</section>
-
-			<!-- Progress Bars -->
-			<section class="test-section">
-				<h3 class="section-title">Progress Bars</h3>
-				<Stack gap={3}>
-					<ProgressBar value={progressValue} showPercent label="TVL CAPACITY" />
-					<ProgressBar value={89} variant="success" showPercent label="OPERATORS" />
-					<ProgressBar value={45} variant="warning" showPercent label="SCAN TIME" />
-					<ProgressBar value={92} variant="danger" showPercent animated label="DEATH RATE" />
-					<ProgressBar value={60} variant="cyan" showPercent label="XP PROGRESS" />
-					<Button size="sm" variant="ghost" onclick={updateProgress}>Randomize</Button>
-				</Stack>
-			</section>
-
-			<!-- Animated Numbers -->
-			<section class="test-section">
-				<h3 class="section-title">Animated Numbers</h3>
-				<Stack gap={3}>
-					<Row gap={6}>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">BASIC</span>
-							<span class="text-2xl">
-								<AnimatedNumber value={animatedValue} />
-							</span>
-						</Stack>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">CURRENCY</span>
-							<span class="text-2xl">
-								<AnimatedNumber value={animatedValue} format="currency" prefix="$" decimals={2} />
-							</span>
-						</Stack>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">COMPACT</span>
-							<span class="text-2xl">
-								<AnimatedNumber value={animatedValue * 1000} format="compact" decimals={1} />
-							</span>
-						</Stack>
-					</Row>
-					<Row gap={6}>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">PROFIT</span>
-							<span class="text-xl">
-								<AnimatedNumber value={347} showSign colorize prefix="$" />
-							</span>
-						</Stack>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">LOSS</span>
-							<span class="text-xl">
-								<AnimatedNumber value={-128} showSign colorize prefix="$" />
-							</span>
-						</Stack>
-					</Row>
-				</Stack>
-			</section>
-
-			<!-- Countdown -->
-			<section class="test-section">
-				<h3 class="section-title">Countdown Timers</h3>
-				<Stack gap={3}>
-					<Row gap={6}>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">NEXT SCAN</span>
-							<span class="text-xl">
-								<Countdown targetTime={countdownTarget} />
-							</span>
-						</Stack>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">URGENT (30s)</span>
-							<span class="text-xl">
-								<Countdown targetTime={Date.now() + 25000} urgentThreshold={30} />
-							</span>
-						</Stack>
-						<Stack gap={1}>
-							<span class="text-green-dim text-xs">WITH LABEL</span>
-							<span class="text-lg">
-								<Countdown targetTime={countdownTarget} label="SYSTEM RESET" />
-							</span>
-						</Stack>
-					</Row>
-					<Button size="sm" variant="ghost" onclick={resetCountdown}>Reset Countdown</Button>
-				</Stack>
-			</section>
-
-			<!-- Badges -->
-			<section class="test-section">
-				<h3 class="section-title">Badges</h3>
-				<Row gap={4} wrap>
-					<Badge>Default</Badge>
-					<Badge variant="success">Success</Badge>
-					<Badge variant="warning">Warning</Badge>
-					<Badge variant="danger">Danger</Badge>
-					<Badge variant="info">Info</Badge>
-					<Badge variant="hotkey">[J]</Badge>
-					<Badge variant="success" glow>Glow</Badge>
-					<Badge variant="warning" pulse>Pulse</Badge>
-				</Row>
-			</section>
-
-			<!-- Spinners -->
-			<section class="test-section">
-				<h3 class="section-title">Spinners</h3>
-				<Row gap={6} align="center">
-					<Stack gap={1} align="center">
-						<Spinner size="sm" />
-						<span class="text-xs text-green-dim">Small</span>
-					</Stack>
-					<Stack gap={1} align="center">
-						<Spinner size="md" />
-						<span class="text-xs text-green-dim">Medium</span>
-					</Stack>
-					<Stack gap={1} align="center">
-						<Spinner size="lg" />
-						<span class="text-xs text-green-dim">Large</span>
-					</Stack>
-					<Stack gap={1} align="center">
-						<Spinner variant="dots" />
-						<span class="text-xs text-green-dim">Dots</span>
-					</Stack>
-					<Stack gap={1} align="center">
-						<Spinner variant="bar" />
-						<span class="text-xs text-green-dim">Bar</span>
-					</Stack>
-				</Row>
-			</section>
-
-			<!-- Data Display -->
-			<section class="test-section">
-				<h3 class="section-title">Data Display</h3>
-				<Stack gap={4}>
-					<!-- Address -->
-					<Row gap={4} align="baseline">
-						<span class="text-green-dim text-sm" style="min-width: 100px;">Address:</span>
-						<AddressDisplay address={testAddress} />
-					</Row>
-
-					<!-- Amounts -->
-					<Row gap={4} align="baseline">
-						<span class="text-green-dim text-sm" style="min-width: 100px;">Amount:</span>
-						<AmountDisplay amount={testAmount} />
-						<span class="text-green-dim">|</span>
-						<AmountDisplay amount={testAmount} format="full" />
-						<span class="text-green-dim">|</span>
-						<AmountDisplay amount={testAmount} symbol="$DATA" useDataSymbol={false} />
-					</Row>
-
-					<!-- Gains/Losses -->
-					<Row gap={4} align="baseline">
-						<span class="text-green-dim text-sm" style="min-width: 100px;">Gain/Loss:</span>
-						<AmountDisplay amount={testGain} showSign colorize />
-						<span class="text-green-dim">|</span>
-						<AmountDisplay amount={-testGain} showSign colorize />
-					</Row>
-
-					<!-- Percentages -->
-					<Row gap={4} align="baseline">
-						<span class="text-green-dim text-sm" style="min-width: 100px;">Percent:</span>
-						<PercentDisplay value={32} trend="down" colorMode="inverted" />
-						<span class="text-green-dim">|</span>
-						<PercentDisplay value={15.5} decimals={1} trend="up" />
-						<span class="text-green-dim">|</span>
-						<PercentDisplay value={95} trend="up" colorMode="default" urgentAbove={90} />
-					</Row>
-				</Stack>
-			</section>
-
-			<!-- Level Badges -->
-			<section class="test-section">
-				<h3 class="section-title">Security Clearances</h3>
-				<Row gap={4} wrap>
-					<LevelBadge level="VAULT" />
-					<LevelBadge level="MAINFRAME" />
-					<LevelBadge level="SUBNET" />
-					<LevelBadge level="DARKNET" />
-					<LevelBadge level="BLACK_ICE" />
-				</Row>
-				<Row gap={4} wrap class="mt-4">
-					<LevelBadge level="VAULT" glow compact />
-					<LevelBadge level="MAINFRAME" glow compact />
-					<LevelBadge level="SUBNET" glow compact />
-					<LevelBadge level="DARKNET" glow compact />
-					<LevelBadge level="BLACK_ICE" glow compact />
-				</Row>
-			</section>
-
-			<!-- Layout Demo -->
-			<section class="test-section">
-				<h3 class="section-title">Layout Components</h3>
-				<Stack gap={4}>
-					<div>
-						<span class="text-green-dim text-xs">Stack (vertical, gap=2)</span>
-						<Stack gap={2}>
-							<div class="demo-box">Item 1</div>
-							<div class="demo-box">Item 2</div>
-							<div class="demo-box">Item 3</div>
-						</Stack>
-					</div>
-					<div>
-						<span class="text-green-dim text-xs">Row (horizontal, justify=between)</span>
-						<Row gap={2} justify="between">
-							<div class="demo-box">Left</div>
-							<div class="demo-box">Center</div>
-							<div class="demo-box">Right</div>
-						</Row>
-					</div>
-				</Stack>
-			</section>
-
-			<!-- Terminal Box Components -->
-			<section class="test-section">
-				<h3 class="section-title">Terminal Boxes</h3>
-				<Stack gap={4}>
-					<Row gap={4} wrap>
-						<div style="flex: 1; min-width: 250px;">
-							<Box title="Single Border" variant="single">
-								<p class="text-sm">Default single-line ASCII border style.</p>
-							</Box>
-						</div>
-						<div style="flex: 1; min-width: 250px;">
-							<Box title="Double Border" variant="double" borderColor="cyan">
-								<p class="text-sm">Double-line border with cyan color.</p>
-							</Box>
-						</div>
-					</Row>
-					<Row gap={4} wrap>
-						<div style="flex: 1; min-width: 250px;">
-							<Box title="Glowing" variant="single" borderColor="bright" glow>
-								<p class="text-sm">Glowing border effect for emphasis.</p>
-							</Box>
-						</div>
-						<div style="flex: 1; min-width: 250px;">
-							<Box title="Danger" variant="single" borderColor="red">
-								<p class="text-sm text-red">Red border for warnings/errors.</p>
-							</Box>
-						</div>
-					</Row>
-				</Stack>
-			</section>
-
-			<!-- Panel with Scroll -->
-			<section class="test-section">
-				<h3 class="section-title">Scrollable Panel</h3>
-				<Panel title="LIVE FEED" scrollable maxHeight="150px">
-					<Stack gap={2}>
-						<p class="text-sm">> 0x7a3f jacked in [DARKNET] 500Đ</p>
-						<p class="text-sm text-red">> 0x9c2d ████ TRACED ████ -Loss 120Đ</p>
-						<p class="text-sm text-profit">> 0x3b1a extracted 847Đ [+312 gain]</p>
-						<p class="text-sm text-amber">> TRACE SCAN [DARKNET] in 00:45</p>
-						<p class="text-sm">> 0x8f2e jacked in [BLACK ICE] 50Đ</p>
-						<p class="text-sm text-red">> 0x1d4c ████ TRACED ████ -Loss 200Đ</p>
-						<p class="text-sm">> 0x5e7b survived [SUBNET] streak: 12</p>
-						<p class="text-sm text-amber">> SYSTEM RESET in 04:32:17</p>
-						<p class="text-sm text-cyan">> 0x2a9f crew [PHANTOMS] +10% boost</p>
-						<p class="text-sm">> 0x6c3d perfect hack run [3x mult]</p>
+		<div class="grid-layout">
+			<!-- Left Column -->
+			<div class="left-column">
+				<!-- Live Feed -->
+				<Panel title="LIVE FEED" scrollable maxHeight="300px">
+					<Stack gap={1}>
+						{#each provider.feedEvents.slice(0, 15) as event (event.id)}
+							{@const formatted = formatFeedEvent(event)}
+							<p class="feed-item text-sm {formatted.color}">
+								{formatted.text}
+							</p>
+						{/each}
+						{#if provider.feedEvents.length === 0}
+							<p class="text-sm text-green-dim">Waiting for events...</p>
+						{/if}
 					</Stack>
 				</Panel>
-			</section>
-		</Stack>
+
+				<!-- Network Vitals -->
+				<Box title="NETWORK VITALS">
+					<Stack gap={3}>
+						<div>
+							<Row justify="between" class="mb-1">
+								<span class="text-green-dim text-sm">TOTAL VALUE LOCKED</span>
+								<AmountDisplay amount={provider.networkState.tvl} format="compact" />
+							</Row>
+							<ProgressBar value={tvlPercent} showPercent />
+						</div>
+
+						<div>
+							<Row justify="between" class="mb-1">
+								<span class="text-green-dim text-sm">OPERATORS ONLINE</span>
+								<span class="text-green">
+									<AnimatedNumber value={provider.networkState.operatorsOnline} />
+								</span>
+							</Row>
+							<ProgressBar value={operatorsPercent} variant="cyan" showPercent />
+						</div>
+
+						<div>
+							<Row justify="between">
+								<span class="text-green-dim text-sm">SYSTEM RESET</span>
+								<Countdown
+									targetTime={provider.networkState.systemResetTimestamp}
+									urgentThreshold={300}
+								/>
+							</Row>
+						</div>
+
+						<div class="stats-tree">
+							<p class="text-green-dim text-sm">LAST HOUR:</p>
+							<p class="text-sm">├─ Jacked In: <AmountDisplay amount={provider.networkState.hourlyStats.jackedIn} format="compact" /></p>
+							<p class="text-sm">├─ Extracted: <AmountDisplay amount={provider.networkState.hourlyStats.extracted} format="compact" /></p>
+							<p class="text-sm">└─ Traced: <AmountDisplay amount={provider.networkState.hourlyStats.traced} format="compact" /></p>
+						</div>
+
+						<Row justify="between">
+							<span class="text-green-dim text-sm">BURN RATE</span>
+							<span class="text-amber">
+								<AmountDisplay amount={provider.networkState.burnRatePerHour} />/hr 🔥
+							</span>
+						</Row>
+					</Stack>
+				</Box>
+			</div>
+
+			<!-- Right Column -->
+			<div class="right-column">
+				<!-- Wallet Connection -->
+				<Box title="WALLET">
+					{#if provider.currentUser}
+						<Stack gap={3}>
+							<Row justify="between">
+								<span class="text-green-dim text-sm">ADDRESS</span>
+								<AddressDisplay address={provider.currentUser.address} />
+							</Row>
+							<Row justify="between">
+								<span class="text-green-dim text-sm">$DATA BALANCE</span>
+								<AmountDisplay amount={provider.currentUser.tokenBalance} />
+							</Row>
+							<Button variant="danger" size="sm" onclick={toggleWallet}>
+								Disconnect
+							</Button>
+						</Stack>
+					{:else}
+						<Stack gap={3} align="center">
+							<p class="text-green-dim text-sm">Connect wallet to play</p>
+							<Button variant="primary" onclick={toggleWallet} loading={isConnecting}>
+								Connect Wallet
+							</Button>
+						</Stack>
+					{/if}
+				</Box>
+
+				<!-- Position -->
+				{#if provider.currentUser}
+					<Box title="YOUR POSITION">
+						{#if provider.position}
+							<Stack gap={3}>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">STATUS</span>
+									<Badge variant="success" glow>JACKED IN</Badge>
+								</Row>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">LEVEL</span>
+									<LevelBadge level={provider.position.level} glow />
+								</Row>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">STAKED</span>
+									<AmountDisplay amount={provider.position.stakedAmount} />
+								</Row>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">EARNED</span>
+									<AmountDisplay amount={provider.position.earnedYield} showSign colorize />
+								</Row>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">NEXT SCAN</span>
+									<Countdown
+										targetTime={provider.position.nextScanTimestamp}
+										urgentThreshold={60}
+									/>
+								</Row>
+								<Row justify="between">
+									<span class="text-green-dim text-sm">GHOST STREAK</span>
+									<span class="text-amber">{provider.position.ghostStreak} 🔥</span>
+								</Row>
+							</Stack>
+						{:else}
+							<Stack gap={3} align="center">
+								<p class="text-green-dim text-sm">Not jacked in</p>
+								<Button variant="primary" hotkey="J">Jack In</Button>
+							</Stack>
+						{/if}
+					</Box>
+
+					<!-- Modifiers -->
+					{#if provider.modifiers.length > 0}
+						<Box title="ACTIVE MODIFIERS">
+							<Stack gap={2}>
+								{#each provider.modifiers as modifier (modifier.id)}
+									<Row justify="between">
+										<span class="text-sm">✓ {modifier.label}</span>
+										{#if modifier.expiresAt}
+											<Countdown targetTime={modifier.expiresAt} format="mm:ss" />
+										{:else}
+											<span class="text-green-dim text-xs">PERMANENT</span>
+										{/if}
+									</Row>
+								{/each}
+							</Stack>
+						</Box>
+					{/if}
+				{/if}
+
+				<!-- Quick Actions -->
+				<Box title="QUICK ACTIONS">
+					<Stack gap={2}>
+						<Button variant="secondary" hotkey="J" fullWidth disabled={!provider.currentUser}>
+							Jack In More
+						</Button>
+						<Button variant="danger" hotkey="E" fullWidth disabled={!provider.position}>
+							Extract All
+						</Button>
+						<Button variant="secondary" hotkey="T" fullWidth disabled={!provider.position}>
+							Trace Evasion
+						</Button>
+					</Stack>
+				</Box>
+			</div>
+		</div>
 	</div>
 
 	<!-- Footer -->
 	<footer class="footer">
 		<p class="text-sm text-green-dim">
-			Phase 1 & 2 Complete - Design System & Terminal Shell Ready
+			Phase 3 Complete - Mock Provider with Live Data
 		</p>
 	</footer>
 </main>
@@ -355,6 +307,7 @@
 <style>
 	.terminal {
 		padding: var(--space-4);
+		min-height: 100vh;
 	}
 
 	.header {
@@ -372,36 +325,42 @@
 		letter-spacing: var(--tracking-wider);
 	}
 
-	.status {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
 	.content {
-		max-width: 900px;
+		max-width: 1200px;
 		margin: 0 auto;
 	}
 
-	.test-section {
-		padding: var(--space-4);
-		border: 1px solid var(--color-bg-tertiary);
+	.grid-layout {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-4);
 	}
 
-	.section-title {
-		font-size: var(--text-lg);
-		color: var(--color-cyan);
-		margin-bottom: var(--space-4);
-		padding-bottom: var(--space-2);
+	@media (max-width: 768px) {
+		.grid-layout {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.left-column,
+	.right-column {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.feed-item {
+		padding: var(--space-1) 0;
 		border-bottom: 1px solid var(--color-bg-tertiary);
+		animation: fade-in-up 0.3s ease-out;
 	}
 
-	.demo-box {
-		padding: var(--space-2) var(--space-4);
-		background: var(--color-bg-tertiary);
-		border: 1px solid var(--color-green-dim);
-		color: var(--color-green-mid);
-		font-size: var(--text-sm);
+	.feed-item:last-child {
+		border-bottom: none;
+	}
+
+	.stats-tree {
+		padding-left: var(--space-2);
 	}
 
 	.footer {
@@ -411,8 +370,19 @@
 		text-align: center;
 	}
 
-	/* Utility classes used in this page */
-	:global(.mt-4) {
-		margin-top: var(--space-4);
+	/* Utility overrides */
+	:global(.mb-1) {
+		margin-bottom: var(--space-1);
+	}
+
+	@keyframes fade-in-up {
+		from {
+			opacity: 0;
+			transform: translateY(-5px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>
