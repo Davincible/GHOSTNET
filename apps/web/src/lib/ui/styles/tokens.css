@@ -1,0 +1,232 @@
+/**
+ * GHOSTNET Design Tokens
+ * ======================
+ * Terminal/hacker aesthetic design system
+ * Based on master-design.md specifications
+ */
+
+:root {
+  /* ══════════════════════════════════════════════════════════════
+     COLORS - Core Palette
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Backgrounds */
+  --color-bg-primary: #0a0a0a;      /* Near black - main background */
+  --color-bg-secondary: #0f0f0f;    /* Slightly lighter - panels */
+  --color-bg-tertiary: #1a1a1a;     /* Borders, dividers */
+  --color-bg-elevated: #151515;     /* Elevated surfaces */
+
+  /* Terminal Green (Primary) */
+  --color-green-bright: #00ff00;    /* Primary text, highlights */
+  --color-green-mid: #00cc00;       /* Secondary text */
+  --color-green-dim: #00aa00;       /* Tertiary text, disabled */
+  --color-green-faint: #008800;     /* Very subtle accents */
+  --color-green-glow: rgba(0, 255, 0, 0.3);  /* Glow effects */
+
+  /* Status Colors */
+  --color-cyan: #00ffff;            /* Info, links, interactive */
+  --color-cyan-dim: #00cccc;        /* Dimmed cyan */
+  --color-cyan-glow: rgba(0, 255, 255, 0.3);
+
+  --color-amber: #ffaa00;           /* Warnings, caution */
+  --color-amber-dim: #cc8800;
+  --color-amber-glow: rgba(255, 170, 0, 0.3);
+
+  --color-red: #ff0000;             /* Danger, deaths, losses */
+  --color-red-dim: #cc0000;
+  --color-red-glow: rgba(255, 0, 0, 0.4);
+
+  /* Success/Money */
+  --color-gold: #ffd700;            /* Big wins, jackpots */
+  --color-gold-glow: rgba(255, 215, 0, 0.4);
+
+  --color-profit: #00ff88;          /* Gains, positive numbers */
+  --color-loss: #ff4444;            /* Losses, negative numbers */
+
+  /* Special Effects */
+  --color-scan-line: rgba(0, 255, 0, 0.03);  /* CRT scan lines */
+  --color-flicker: rgba(0, 255, 0, 0.1);      /* Text flicker */
+
+  /* Level Colors (Security Clearances) */
+  --color-level-vault: #00ff88;     /* Safe, green-ish */
+  --color-level-mainframe: #00ffff; /* Cyan */
+  --color-level-subnet: #ffaa00;    /* Amber */
+  --color-level-darknet: #ff6600;   /* Orange */
+  --color-level-black-ice: #ff0000; /* Red/Danger */
+
+  /* ══════════════════════════════════════════════════════════════
+     TYPOGRAPHY
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Font Family */
+  --font-mono: 'IBM Plex Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+
+  /* Font Sizes */
+  --text-xs: 0.625rem;    /* 10px - Timestamps, minor data */
+  --text-sm: 0.75rem;     /* 12px - Secondary info */
+  --text-base: 0.875rem;  /* 14px - Primary text */
+  --text-lg: 1rem;        /* 16px - Headers, important */
+  --text-xl: 1.25rem;     /* 20px - Section titles */
+  --text-2xl: 1.75rem;    /* 28px - Major numbers */
+  --text-3xl: 2.25rem;    /* 36px - Hero stats */
+  --text-4xl: 3rem;       /* 48px - Huge displays */
+
+  /* Font Weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-bold: 700;
+
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.05em;
+  --tracking-wider: 0.1em;
+
+  /* ══════════════════════════════════════════════════════════════
+     SPACING
+     ══════════════════════════════════════════════════════════════ */
+
+  --space-0: 0;
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+
+  /* ══════════════════════════════════════════════════════════════
+     BORDERS & RADIUS
+     ══════════════════════════════════════════════════════════════ */
+
+  --border-width: 1px;
+  --border-width-2: 2px;
+
+  --border-color: var(--color-green-dim);
+  --border-color-bright: var(--color-green-bright);
+  --border-color-subtle: var(--color-bg-tertiary);
+
+  /* Terminal UI has no border radius typically */
+  --radius-none: 0;
+  --radius-sm: 2px;     /* Rare, subtle rounding */
+
+  /* ══════════════════════════════════════════════════════════════
+     SHADOWS & GLOWS
+     ══════════════════════════════════════════════════════════════ */
+
+  --shadow-glow-green: 0 0 5px var(--color-green-glow),
+                       0 0 10px var(--color-green-glow),
+                       0 0 20px var(--color-green-glow);
+
+  --shadow-glow-cyan: 0 0 5px var(--color-cyan-glow),
+                      0 0 10px var(--color-cyan-glow);
+
+  --shadow-glow-red: 0 0 5px var(--color-red-glow),
+                     0 0 10px var(--color-red-glow);
+
+  --shadow-glow-gold: 0 0 5px var(--color-gold-glow),
+                      0 0 10px var(--color-gold-glow),
+                      0 0 30px var(--color-gold-glow);
+
+  --shadow-glow-amber: 0 0 5px var(--color-amber-glow),
+                       0 0 10px var(--color-amber-glow);
+
+  /* ══════════════════════════════════════════════════════════════
+     ANIMATION TIMING
+     ══════════════════════════════════════════════════════════════ */
+
+  --duration-instant: 50ms;
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-slower: 800ms;
+
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ══════════════════════════════════════════════════════════════
+     Z-INDEX SCALE
+     ══════════════════════════════════════════════════════════════ */
+
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-modal: 30;
+  --z-popover: 40;
+  --z-tooltip: 50;
+  --z-effects: 100;     /* Scanlines, flicker overlays */
+  --z-flash: 200;       /* Screen flashes */
+
+  /* ══════════════════════════════════════════════════════════════
+     LAYOUT
+     ══════════════════════════════════════════════════════════════ */
+
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+
+  /* Panel dimensions */
+  --panel-min-width: 280px;
+  --panel-max-width: 600px;
+
+  /* Feed dimensions */
+  --feed-max-items: 15;
+
+  /* ══════════════════════════════════════════════════════════════
+     ASCII BOX CHARACTERS
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Single line box */
+  --box-top-left: '\250C';      /* ┌ */
+  --box-top-right: '\2510';     /* ┐ */
+  --box-bottom-left: '\2514';   /* └ */
+  --box-bottom-right: '\2518';  /* ┘ */
+  --box-horizontal: '\2500';    /* ─ */
+  --box-vertical: '\2502';      /* │ */
+  --box-t-down: '\252C';        /* ┬ */
+  --box-t-up: '\2534';          /* ┴ */
+  --box-t-right: '\251C';       /* ├ */
+  --box-t-left: '\2524';        /* ┤ */
+  --box-cross: '\253C';         /* ┼ */
+
+  /* Double line box */
+  --box-double-top-left: '\2554';     /* ╔ */
+  --box-double-top-right: '\2557';    /* ╗ */
+  --box-double-bottom-left: '\255A';  /* ╚ */
+  --box-double-bottom-right: '\255D'; /* ╝ */
+  --box-double-horizontal: '\2550';   /* ═ */
+  --box-double-vertical: '\2551';     /* ║ */
+
+  /* Progress bar characters */
+  --progress-filled: '\2588';   /* █ */
+  --progress-empty: '\2591';    /* ░ */
+  --progress-half: '\2593';     /* ▓ */
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DARK MODE (default and only mode for terminal aesthetic)
+   ══════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Force dark mode always */
+:root {
+  color-scheme: dark;
+}

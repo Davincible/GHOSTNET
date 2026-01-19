@@ -1,28 +1,22 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import '../app.css';
+	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
 
 	interface Props {
 		children: Snippet;
 	}
 
 	let { children }: Props = $props();
+
+	// Screen flash state (will be controlled by event bus in Phase 3)
+	let flashType: 'death' | 'jackpot' | 'warning' | 'success' | null = $state(null);
 </script>
 
-{@render children()}
-
-<style>
-	:global(body) {
-		margin: 0;
-		font-family:
-			-apple-system,
-			BlinkMacSystemFont,
-			'Segoe UI',
-			Roboto,
-			Oxygen,
-			Ubuntu,
-			Cantarell,
-			'Open Sans',
-			'Helvetica Neue',
-			sans-serif;
-	}
-</style>
+<Shell>
+	<Scanlines />
+	<Flicker>
+		{@render children()}
+	</Flicker>
+	<ScreenFlash type={flashType} onComplete={() => flashType = null} />
+</Shell>

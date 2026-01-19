@@ -1,0 +1,251 @@
+/**
+ * GHOSTNET CSS Reset
+ * ==================
+ * Minimal reset tailored for terminal aesthetic
+ */
+
+/* ══════════════════════════════════════════════════════════════════
+   BOX SIZING
+   ══════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ROOT & BODY
+   ══════════════════════════════════════════════════════════════════ */
+
+html {
+  /* Prevent font size inflation on mobile */
+  -moz-text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+
+  /* Smooth scrolling for anchor links */
+  scroll-behavior: smooth;
+
+  /* Set base font size */
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+
+  /* Terminal defaults */
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-green-bright);
+  background-color: var(--color-bg-primary);
+
+  /* Better text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ══════════════════════════════════════════════════════════════════ */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+p {
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LISTS
+   ══════════════════════════════════════════════════════════════════ */
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   LINKS
+   ══════════════════════════════════════════════════════════════════ */
+
+a {
+  color: var(--color-cyan);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 1px solid var(--color-cyan);
+  outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   BUTTONS
+   ══════════════════════════════════════════════════════════════════ */
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FORM ELEMENTS
+   ══════════════════════════════════════════════════════════════════ */
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: var(--border-width) solid var(--border-color);
+  padding: var(--space-2);
+  margin: 0;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-green-bright);
+  box-shadow: 0 0 5px var(--color-green-glow);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-green-dim);
+  opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   IMAGES & MEDIA
+   ══════════════════════════════════════════════════════════════════ */
+
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABLES
+   ══════════════════════════════════════════════════════════════════ */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CODE & PRE
+   ══════════════════════════════════════════════════════════════════ */
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: inherit;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MISC
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Remove default hr styling */
+hr {
+  border: none;
+  border-top: var(--border-width) solid var(--border-color);
+  margin: var(--space-4) 0;
+}
+
+/* Remove fieldset styling */
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* Remove legend styling */
+legend {
+  padding: 0;
+}
+
+/* Remove address styling */
+address {
+  font-style: normal;
+}
+
+/* Summary styling */
+summary {
+  cursor: pointer;
+}
+
+/* Dialog reset */
+dialog {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Remove default focus outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Selection styling */
+::selection {
+  background-color: var(--color-green-bright);
+  color: var(--color-bg-primary);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-green-dim);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-green-mid);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-green-dim) var(--color-bg-secondary);
+}
