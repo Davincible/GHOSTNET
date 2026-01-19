@@ -551,7 +551,7 @@ Once jacked in, you face two threats. Surviving them earns you yield.
 
 #### Threat A: THE TRACE SCAN (RNG Death)
 
-At the end of every frequency block (e.g., every 30 mins for BLACK ICE), the contract rolls a random number using Chainlink VRF.
+At the end of every frequency block (e.g., every 30 mins for BLACK ICE), the contract rolls a random number.
 
 **If you are selected:** You get **TRACED**. Your staked tokens are seized and redistributed via The Cascade.
 
