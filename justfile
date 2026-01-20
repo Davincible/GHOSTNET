@@ -310,12 +310,23 @@ generate-types:
 # Export contract ABIs to web app
 [group('integration')]
 export-abis:
-    @echo "Exporting ABIs to web app..."
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Exporting ABIs to web app..."
     mkdir -p apps/web/src/lib/contracts/abis
-    @for file in packages/contracts/out/*/*.json; do \
-        name=$$(basename $$file .json); \
-        if [ "$$name" != "*.abi" ]; then \
-            jq '.abi' "$$file" > "apps/web/src/lib/contracts/abis/$$name.json" 2>/dev/null || true; \
-        fi; \
+    contracts=("DataToken" "GhostCore" "TraceScan" "DeadPool" "RewardsDistributor" "FeeRouter" "TeamVesting")
+    for name in "${contracts[@]}"; do
+        src="packages/contracts/out/${name}.sol/${name}.json"
+        if [ -f "$src" ]; then
+            jq '.abi' "$src" > "apps/web/src/lib/contracts/abis/${name}.json"
+            echo "  Exported: ${name}.json"
+        else
+            echo "  Warning: $src not found"
+        fi
     done
-    @echo "ABIs exported to apps/web/src/lib/contracts/abis/"
+    echo "ABIs exported to apps/web/src/lib/contracts/abis/"
+
+# Full integration sync: build contracts, export ABIs, generate types
+[group('integration')]
+sync-contracts: contracts-build export-abis generate-types
+    @echo "Contract integration complete!"
