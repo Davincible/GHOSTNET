@@ -382,6 +382,7 @@ impl MetricsSettings {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 
@@ -464,7 +465,7 @@ mod tests {
                 max_connections: 10,
                 min_connections: 1,
                 connect_timeout_ms: 5000,
-                idle_timeout_ms: 600000,
+                idle_timeout_ms: 600_000,
             },
             iggy: IggySettings {
                 url: "tcp://localhost:8090".into(),
@@ -491,7 +492,7 @@ mod tests {
             },
             cache: CacheSettings {
                 positions_ttl_ms: 5000,
-                positions_max_capacity: 100000,
+                positions_max_capacity: 100_000,
                 leaderboard_ttl_ms: 60000,
                 leaderboard_max_capacity: 1000,
                 stats_ttl_ms: 10000,

@@ -399,7 +399,7 @@ pub enum InvalidStreak {
 /// Block number newtype for clarity in function signatures.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct BlockNumber(pub u64);
+pub struct BlockNumber(u64);
 
 impl BlockNumber {
     /// Create a new block number.
@@ -457,6 +457,7 @@ impl fmt::Display for BlockNumber {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
 
