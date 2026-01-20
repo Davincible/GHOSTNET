@@ -91,7 +91,17 @@ pkgs.mkShell {
     # === Rust/sccache Setup ===
     export SCCACHE_CACHE_SIZE="10G"
     export SCCACHE_DIR="$HOME/.cache/sccache"
+    
+    # CRITICAL: Override TMPDIR for sccache to use a stable temp directory
+    # Nix sets TMPDIR to /private/tmp/nix-shell-XXX which gets cleaned up
+    # This causes sccache failures with "Failed to create temp dir"
+    export TMPDIR="$HOME/.cache/sccache/tmp"
+    mkdir -p "$TMPDIR"
+    
     export RUSTC_WRAPPER="${pkgs.sccache}/bin/sccache"
+    
+    # Stop any existing sccache server (uses old TMPDIR)
+    ${pkgs.sccache}/bin/sccache --stop-server 2>/dev/null || true
 
     # === Welcome Message ===
     echo ""
@@ -112,7 +122,7 @@ pkgs.mkShell {
     else
       echo "  Rust: Install rustup from https://rustup.rs"
     fi
-    echo "  sccache: enabled (${SCCACHE_CACHE_SIZE} cache)"
+    echo "  sccache: enabled (''${SCCACHE_CACHE_SIZE} cache)"
     echo ""
     echo "Run 'just' to see available commands"
     echo "Run 'just install' to set up all projects"

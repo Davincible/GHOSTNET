@@ -77,6 +77,7 @@ unknown-git = "deny"
 [build]
 jobs = 8
 
+# Linux: Use mold linker (fastest available)
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
@@ -85,9 +86,17 @@ rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 
+# macOS: Use default linker (do NOT configure lld here)
+# The system linker works well, and lld requires careful setup
+
 [net]
 git-fetch-with-cli = true
 ```
+
+> **macOS Note**: Do not configure `-fuse-ld=lld` for macOS targets. The Nix shell 
+> provides lld, but it requires specific invocation (`ld64.lld`) that doesn't work 
+> with Cargo's default linker detection. The default macOS linker is performant 
+> enough for development.
 
 ### Cargo.toml (workspace lints)
 
@@ -154,3 +163,45 @@ Comprehensive guides are available in `.opencode/skill/`:
 | `rust-performance-optimization` | Benchmarks, profiling |
 | `rust-testing-quality` | Testing, mocking, security |
 | `rust-version-guide` | Rust versions, Edition 2024 |
+
+## Nix Shell Environment
+
+The monorepo uses a Nix shell (`shell.nix`) that provides:
+
+| Tool | Purpose |
+|------|---------|
+| `sccache` | Compilation caching (via `RUSTC_WRAPPER`) |
+| `mold` | Fast linker for Linux |
+| `lld` | LLVM linker (available but not auto-configured) |
+| `cargo-nextest` | Fast parallel test runner |
+| `cargo-deny` | Dependency policy enforcement |
+| `cargo-audit` | Security vulnerability scanning |
+
+### Important Environment Variables
+
+The Nix shell sets these automatically:
+
+```bash
+RUSTC_WRAPPER=/nix/store/.../sccache    # Compilation caching
+SCCACHE_DIR=$HOME/.cache/sccache        # Cache location
+SCCACHE_TMPDIR=$HOME/.cache/sccache/tmp # Temp files (stable, not ephemeral)
+```
+
+**Do NOT override `RUSTC_WRAPPER`** in service `.cargo/config.toml` files.
+
+### Running Commands
+
+Always run Rust commands inside the Nix shell:
+
+```bash
+# With direnv (automatic)
+cd /path/to/ghostnet
+cargo build
+
+# Without direnv (manual)
+nix-shell --run "cargo build"
+```
+
+### Lessons Learned
+
+See `docs/lessons/` for documented issues and fixes related to the development environment.

@@ -457,6 +457,27 @@ panic = "deny"
 just svc-check  # Runs: fmt-check, lint, test, deny
 ```
 
+### Nix Shell Environment Notes
+
+The Nix shell (`shell.nix`) provides the complete Rust development environment:
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| `sccache` | Compilation caching | Configured via `RUSTC_WRAPPER` |
+| `mold` | Fast linker (Linux) | Use with `-fuse-ld=mold` |
+| `lld` | LLVM linker (macOS fallback) | Includes `ld64.lld` for macOS |
+| `cargo-nextest` | Fast parallel test runner | Use instead of `cargo test` |
+| `cargo-deny` | Dependency auditing | Checks licenses and advisories |
+
+**Important**: The Nix shell sets `RUSTC_WRAPPER` to sccache automatically. Individual service `.cargo/config.toml` files should NOT override this.
+
+**Linker Configuration**:
+- **Linux**: Use mold via `.cargo/config.toml` (configured per-service)
+- **macOS**: Use default linker (lld configuration is commented out by default)
+- **Reason**: macOS lld requires specific invocation that varies by environment
+
+See `docs/lessons/` for documented issues and fixes related to the Nix environment.
+
 ### Rust Development Skills
 
 This project includes comprehensive Rust development guides as skills. **Use these during development** to ensure best practices and modern patterns.
@@ -575,6 +596,13 @@ See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for the com
 1. **Rebuild contracts** after changes before exporting ABIs
 2. **Regenerate types** after contract interface changes
 3. **Check network** - Ensure web app connects to correct chain (local vs testnet)
+
+### Nix Environment
+
+1. **Run builds inside Nix shell** - Either use direnv or `nix-shell --run "command"`
+2. **sccache temp directory** - Uses `$HOME/.cache/sccache/tmp` (not ephemeral Nix temp)
+3. **Linker configuration** - macOS uses default linker; Linux uses mold
+4. **Don't override RUSTC_WRAPPER** - Nix shell sets this to sccache automatically
 
 ---
 

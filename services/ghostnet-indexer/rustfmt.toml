@@ -1,0 +1,14 @@
+# Rustfmt Configuration
+# Edition 2024 formatting for GHOSTNET Indexer
+
+edition = "2024"
+max_width = 100
+tab_spaces = 4
+newline_style = "Auto"
+use_small_heuristics = "Default"
+
+# Unstable features (requires nightly rustfmt for full effect)
+# These are documented here even if not all apply to stable rustfmt
+# unstable_features = true
+# group_imports = "StdExternalCrate"
+# imports_granularity = "Crate"

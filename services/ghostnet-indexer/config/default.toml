@@ -1,0 +1,122 @@
+# GHOSTNET Indexer Configuration
+# Default values - override with environment-specific files or env vars
+#
+# Environment variable prefix: GHOSTNET__
+# Example: GHOSTNET__RPC__URL overrides [rpc].url
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RPC CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[rpc]
+# MegaETH RPC endpoint (HTTP for backfill, WS for real-time)
+url = "https://rpc.megaeth.io"
+ws_url = "wss://rpc.megaeth.io"
+
+# MegaETH chain ID
+chain_id = 6342
+
+# Block to start indexing from (0 = genesis)
+start_block = 0
+
+# Request timeout in seconds
+timeout_secs = 30
+
+# Maximum retries for failed requests
+max_retries = 3
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DATABASE CONFIGURATION (TimescaleDB)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[database]
+# Connection URL (override via GHOSTNET__DATABASE__URL or DATABASE_URL)
+url = "postgres://ghostnet:ghostnet@localhost:5432/ghostnet_indexer"
+
+# Connection pool settings
+max_connections = 20
+min_connections = 5
+acquire_timeout_secs = 30
+idle_timeout_secs = 600
+max_lifetime_secs = 1800
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# APACHE IGGY CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[iggy]
+# Iggy server address
+address = "127.0.0.1:8090"
+
+# Authentication (override via env vars in production)
+username = "iggy"
+password = "iggy"
+
+# Stream and topic configuration
+stream_name = "ghostnet"
+stream_id = 1
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# API SERVER CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[api]
+# Server binding
+host = "0.0.0.0"
+port = 8080
+
+# CORS configuration
+cors_origins = ["http://localhost:5173", "http://localhost:3000"]
+
+# Request limits
+max_body_size_bytes = 1048576  # 1MB
+request_timeout_secs = 30
+
+# Rate limiting (requests per minute)
+rate_limit_rpm = 100
+rate_limit_burst = 20
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INDEXER CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[indexer]
+# Polling interval in milliseconds (for HTTP mode)
+poll_interval_ms = 1000
+
+# Batch size for backfill operations
+batch_size = 100
+
+# Maximum reorg depth to handle
+reorg_depth = 64
+
+# Confirmation depth before finalizing blocks
+confirmation_depth = 12
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTRACT ADDRESSES
+# These must be set for each environment
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[indexer.contracts]
+# Placeholder addresses - MUST be overridden in environment config
+data_token = "0x0000000000000000000000000000000000000001"
+ghost_core = "0x0000000000000000000000000000000000000002"
+trace_scan = "0x0000000000000000000000000000000000000003"
+dead_pool = "0x0000000000000000000000000000000000000004"
+fee_router = "0x0000000000000000000000000000000000000005"
+rewards_distributor = "0x0000000000000000000000000000000000000006"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOGGING CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+
+# Log format: json or pretty
+format = "pretty"
+
+# Include span events in traces
+include_spans = true

@@ -1,0 +1,14 @@
+# Rust Toolchain Configuration
+# Note: In the GHOSTNET monorepo, Rust is typically provided by Nix shell.
+# This file documents the minimum required version and serves as a fallback
+# for users not using the Nix environment.
+
+[toolchain]
+channel = "1.88"  # Minimum for Alloy 1.4+, Edition 2024
+components = [
+    "rust-src",
+    "rust-analyzer",
+    "clippy",
+    "rustfmt",
+    "llvm-tools-preview",
+]

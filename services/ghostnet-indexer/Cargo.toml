@@ -1,0 +1,167 @@
+[package]
+name = "ghostnet-indexer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+authors = ["GHOSTNET Team"]
+description = "Event indexer for the GHOSTNET protocol on MegaETH"
+license = "MIT"
+repository = "https://github.com/ghostnet/indexer"
+readme = "README.md"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"
+# Allow some pedantic lints that are too noisy
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dependencies]
+# ───────────────────────────────────────────────────────────────────────────────
+# ETHEREUM (Alloy - modern, type-safe Ethereum library)
+# ───────────────────────────────────────────────────────────────────────────────
+alloy = { version = "1.4", features = ["full"] }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ASYNC RUNTIME
+# ───────────────────────────────────────────────────────────────────────────────
+tokio = { version = "1", features = ["full", "tracing"] }
+futures = "0.3"
+futures-util = "0.3"
+async-trait = "0.1"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# DATABASE (TimescaleDB via SQLx)
+# ───────────────────────────────────────────────────────────────────────────────
+sqlx = { version = "0.8", features = [
+    "runtime-tokio",
+    "postgres",
+    "chrono",
+    "uuid",
+    "bigdecimal",
+    "migrate",
+] }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# MESSAGE STREAMING (Apache Iggy)
+# ───────────────────────────────────────────────────────────────────────────────
+iggy = "0.6"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# IN-MEMORY CACHING
+# ───────────────────────────────────────────────────────────────────────────────
+moka = { version = "0.12", features = ["future"] }
+dashmap = "6"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# WEB FRAMEWORK (Axum)
+# ───────────────────────────────────────────────────────────────────────────────
+axum = { version = "0.7", features = ["ws", "macros"] }
+axum-extra = { version = "0.9", features = ["typed-header"] }
+tower = { version = "0.5", features = ["util", "timeout", "limit"] }
+tower-http = { version = "0.6", features = [
+    "cors",
+    "trace",
+    "compression-gzip",
+    "request-id",
+] }
+hyper = { version = "1", features = ["full"] }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SERIALIZATION
+# ───────────────────────────────────────────────────────────────────────────────
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_with = "3"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# CONFIGURATION & CLI
+# ───────────────────────────────────────────────────────────────────────────────
+clap = { version = "4", features = ["derive", "env"] }
+config = { version = "0.14", features = ["toml"] }
+dotenvy = "0.15"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY
+# ───────────────────────────────────────────────────────────────────────────────
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = [
+    "env-filter",
+    "json",
+    "fmt",
+] }
+tracing-appender = "0.2"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ERROR HANDLING
+# ───────────────────────────────────────────────────────────────────────────────
+thiserror = "2"
+eyre = "0.6"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# UTILITIES
+# ───────────────────────────────────────────────────────────────────────────────
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+bigdecimal = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+parking_lot = "0.12"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEV DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.6"
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+criterion = { version = "0.5", features = ["async_tokio"] }
+proptest = "1"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BUILD PROFILES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
+# Optimize dependencies in dev builds for faster runtime performance
+[profile.dev.package."*"]
+opt-level = 2
+
+# Profile for profiling (release + debug symbols)
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BINARY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[[bin]]
+name = "ghostnet-indexer"
+path = "src/main.rs"

@@ -1,0 +1,14 @@
+# Development Environment Configuration
+# Overrides default.toml for local development
+
+[logging]
+level = "debug"
+format = "pretty"
+
+[api]
+# Allow all origins in development
+cors_origins = ["*"]
+
+# Higher rate limits for testing
+rate_limit_rpm = 1000
+rate_limit_burst = 100
