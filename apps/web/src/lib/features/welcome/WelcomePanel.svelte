@@ -107,10 +107,10 @@
 
 	function handleLogoTypingComplete() {
 		logoTypingComplete = true;
-		// After a brief pause, slide the logo up
+		// Brief pause to let user absorb the logo, then begin the reveal
 		setTimeout(() => {
 			logoSlidUp = true;
-		}, 400);
+		}, 600);
 	}
 
 	function handleTaglineComplete() {
@@ -589,38 +589,40 @@
 	   SLIDE 0: THE HOOK
 	   ═══════════════════════════════════════════════════════════════ */
 
-	/* Slide hook - logo centered, then slides up */
+	/* Slide hook - cinematic reveal sequence */
 	.slide-hook {
 		justify-content: center;
 		min-height: 260px;
 		position: relative;
 	}
 
-	.slide-hook.content-visible {
-		justify-content: flex-start;
-	}
-
 	.logo-container {
-		transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-		transform: translateY(40px);
+		transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+		transform: translateY(30px); /* Start slightly lower to center visually */
 	}
 
 	.logo-container.slid-up {
-		transform: translateY(0);
+		transform: translateY(0); /* Gentle lift - only 30px movement */
 	}
 
 	.hook-content {
 		opacity: 0;
-		transform: translateY(20px);
-		transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+		max-height: 0;
+		overflow: hidden;
+		transform: translateY(-10px);
+		transition: 
+			opacity 0.6s ease-out 0.1s,
+			transform 0.6s ease-out 0.1s,
+			max-height 0.6s ease-out;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--space-2);
+		text-align: center;
 	}
 
 	.hook-content.visible {
 		opacity: 1;
+		max-height: 120px;
 		transform: translateY(0);
 	}
 
@@ -629,18 +631,18 @@
 		font-weight: var(--font-bold);
 		color: var(--color-text-primary);
 		letter-spacing: var(--tracking-wider);
-		margin: var(--space-3) 0 0 0;
+		margin: var(--space-4) 0 0 0;
 		min-height: 1.5em;
 	}
 
 	.subtitle {
 		font-size: var(--text-sm);
 		color: var(--color-text-secondary);
-		margin: 0;
+		margin: var(--space-2) 0 0 0;
 		line-height: var(--leading-relaxed);
 		opacity: 0;
-		transform: translateY(5px);
-		transition: all 0.5s ease-out;
+		transform: translateY(8px);
+		transition: opacity 0.5s ease-out, transform 0.5s ease-out;
 	}
 
 	.subtitle.visible {
