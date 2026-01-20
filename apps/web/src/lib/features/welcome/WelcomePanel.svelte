@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Box } from '$lib/ui/terminal';
+	import GlitchText from './GlitchText.svelte';
+	import MatrixRain from './MatrixRain.svelte';
 
 	// Props
 	interface Props {
@@ -14,9 +16,12 @@
 	let currentSlide = $state(0);
 	let isAutoPlaying = $state(true);
 	let slideProgress = $state(0);
+	let isTransitioning = $state(false);
+	let slideKey = $state(0); // Force re-render of slide content
 	
-	const SLIDE_DURATION = 6000; // 6 seconds per slide
-	const PROGRESS_INTERVAL = 50; // Update progress every 50ms
+	const SLIDE_DURATION = 7000; // 7 seconds per slide
+	const PROGRESS_INTERVAL = 50;
+	const TRANSITION_DURATION = 400;
 	
 	const totalSlides = 7;
 
@@ -29,7 +34,6 @@
 		
 		slideProgress = 0;
 		
-		// Progress bar animation
 		progressInterval = setInterval(() => {
 			slideProgress += (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
 			if (slideProgress >= 100) {
@@ -37,7 +41,6 @@
 			}
 		}, PROGRESS_INTERVAL);
 		
-		// Advance slide
 		slideTimeout = setTimeout(() => {
 			if (isAutoPlaying) {
 				nextSlide();
@@ -50,22 +53,33 @@
 		clearTimeout(slideTimeout);
 	}
 
+	function transitionTo(newSlide: number) {
+		isTransitioning = true;
+		
+		setTimeout(() => {
+			currentSlide = newSlide;
+			slideKey++; // Force re-mount of slide content
+			isTransitioning = false;
+		}, TRANSITION_DURATION / 2);
+	}
+
 	function nextSlide() {
 		stopAutoPlay();
-		currentSlide = (currentSlide + 1) % totalSlides;
-		startAutoPlay();
+		transitionTo((currentSlide + 1) % totalSlides);
+		setTimeout(startAutoPlay, TRANSITION_DURATION);
 	}
 
 	function prevSlide() {
 		stopAutoPlay();
-		currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-		startAutoPlay();
+		transitionTo((currentSlide - 1 + totalSlides) % totalSlides);
+		setTimeout(startAutoPlay, TRANSITION_DURATION);
 	}
 
 	function goToSlide(index: number) {
+		if (index === currentSlide) return;
 		stopAutoPlay();
-		currentSlide = index;
-		startAutoPlay();
+		transitionTo(index);
+		setTimeout(startAutoPlay, TRANSITION_DURATION);
 	}
 
 	function handleMouseEnter() {
@@ -85,20 +99,23 @@
 		};
 	});
 
-	// Typing animation state for slide 0
-	let logoVisible = $state(false);
-	let taglineVisible = $state(false);
-	let subtitleVisible = $state(false);
+	// Slide 0 animation states
+	let logoComplete = $state(false);
+	let taglineComplete = $state(false);
 
+	function handleLogoComplete() {
+		logoComplete = true;
+	}
+
+	function handleTaglineComplete() {
+		taglineComplete = true;
+	}
+
+	// Reset states when slide changes
 	$effect(() => {
 		if (currentSlide === 0) {
-			logoVisible = false;
-			taglineVisible = false;
-			subtitleVisible = false;
-			
-			setTimeout(() => logoVisible = true, 200);
-			setTimeout(() => taglineVisible = true, 800);
-			setTimeout(() => subtitleVisible = true, 1400);
+			logoComplete = false;
+			taglineComplete = false;
 		}
 	});
 </script>
@@ -110,212 +127,256 @@
 	role="region"
 	aria-label="Welcome to GHOSTNET"
 >
-	<Box title="WELCOME TO THE NETWORK" borderColor="cyan" glow>
-		<div class="slides-container">
-			<!-- Slide 0: The Hook -->
-			{#if currentSlide === 0}
-				<div class="slide slide-hook">
-					<div class="logo-container" class:visible={logoVisible}>
-						<pre class="ascii-logo">{`
- ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗
-██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝
-██║  ███╗███████║██║   ██║███████╗   ██║   
-██║   ██║██╔══██║██║   ██║╚════██║   ██║   
-╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   
- ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   `}</pre>
-					</div>
-					<h2 class="tagline" class:visible={taglineVisible}>
-						JACK IN. DON'T GET TRACED.
-					</h2>
-					<p class="subtitle" class:visible={subtitleVisible}>
-						A game where doing nothing can make you rich.<br/>
-						<span class="danger">Or lose you everything.</span>
-					</p>
-				</div>
-			{/if}
+	<Box title="/// NETWORK INITIALIZATION ///" borderColor="cyan" glow>
+		<div class="panel-container">
+			<!-- Matrix Rain Background -->
+			<MatrixRain density={25} speed={0.8} opacity={0.08} />
+			
+			<!-- Scanline Overlay -->
+			<div class="scanlines"></div>
+			
+			<!-- Glitch Transition Overlay -->
+			<div class="glitch-overlay" class:active={isTransitioning}></div>
 
-			<!-- Slide 1: The Mechanic -->
-			{#if currentSlide === 1}
-				<div class="slide slide-mechanic">
-					<h2 class="slide-title">HOW IT WORKS</h2>
-					<div class="flow-diagram">
-						<div class="flow-step" style="--delay: 0">
-							<span class="step-number">1</span>
-							<span class="step-name">JACK IN</span>
-							<span class="step-desc">Stake $DATA</span>
+			<div class="slides-container" class:transitioning={isTransitioning}>
+				{#key slideKey}
+					<!-- Slide 0: THE HOOK -->
+					{#if currentSlide === 0}
+						<div class="slide slide-hook">
+							<div class="logo-container">
+								<pre class="ascii-logo">{`
+ ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
+██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
+██║  ███╗███████║██║   ██║███████╗   ██║   ██╔██╗ ██║█████╗     ██║   
+██║   ██║██╔══██║██║   ██║╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
+╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   ██║ ╚████║███████╗   ██║   
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝`}</pre>
+							</div>
+							<h2 class="tagline">
+								<GlitchText 
+									text="JACK IN. DON'T GET TRACED." 
+									speed={40} 
+									glitchIntensity={0.4}
+									onComplete={handleLogoComplete}
+								/>
+							</h2>
+							<p class="subtitle" class:visible={logoComplete}>
+								A game where doing nothing can make you rich.<br/>
+								<span class="glow-danger">Or lose you everything.</span>
+							</p>
 						</div>
-						<div class="flow-arrow" style="--delay: 1">↓</div>
-						<div class="flow-step" style="--delay: 2">
-							<span class="step-number">2</span>
-							<span class="step-name">EARN</span>
-							<span class="step-desc">Yield accumulates</span>
-						</div>
-						<div class="flow-arrow" style="--delay: 3">↓</div>
-						<div class="flow-step" style="--delay: 4">
-							<span class="step-number">3</span>
-							<span class="step-name">SURVIVE</span>
-							<span class="step-desc">The trace scan</span>
-						</div>
-						<div class="flow-arrow" style="--delay: 5">↓</div>
-						<div class="flow-step" style="--delay: 6">
-							<span class="step-number">4</span>
-							<span class="step-name">EXTRACT</span>
-							<span class="step-desc">Take your gains</span>
-						</div>
-					</div>
-				</div>
-			{/if}
+					{/if}
 
-			<!-- Slide 2: The Twist -->
-			{#if currentSlide === 2}
-				<div class="slide slide-twist">
-					<h2 class="twist-headline">
-						WHEN OTHERS DIE,<br/>
-						<span class="profit">YOU PROFIT.</span>
-					</h2>
-					<div class="twist-details">
-						<p class="twist-line">Every death feeds survivors.</p>
-						<p class="twist-line burn">30% is burned forever.</p>
-					</div>
-					<div class="cascade-visual">
-						<span class="cascade-icon">💀</span>
-						<span class="cascade-arrow">→</span>
-						<span class="cascade-split">
-							<span class="split-item survivors">👻 Survivors</span>
-							<span class="split-item burned">🔥 Burned</span>
-						</span>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Slide 3: The Risk -->
-			{#if currentSlide === 3}
-				<div class="slide slide-risk">
-					<h2 class="slide-title">CHOOSE YOUR RISK</h2>
-					<div class="risk-ladder">
-						<div class="risk-level level-5" style="--delay: 0">
-							<span class="level-name">BLACK ICE</span>
-							<span class="level-death danger">90% death</span>
-							<span class="level-reward">∞ upside</span>
-						</div>
-						<div class="risk-level level-4" style="--delay: 1">
-							<span class="level-name">DARKNET</span>
-							<span class="level-death warning">40% death</span>
-							<span class="level-reward">20,000%</span>
-						</div>
-						<div class="risk-level level-3" style="--delay: 2">
-							<span class="level-name">SUBNET</span>
-							<span class="level-death caution">15% death</span>
-							<span class="level-reward">5,000%</span>
-						</div>
-						<div class="risk-level level-2" style="--delay: 3">
-							<span class="level-name">MAINFRAME</span>
-							<span class="level-death safe">2% death</span>
-							<span class="level-reward">1,000%</span>
-						</div>
-						<div class="risk-level level-1" style="--delay: 4">
-							<span class="level-name">THE VAULT</span>
-							<span class="level-death safest">0% death</span>
-							<span class="level-reward">100-500%</span>
-						</div>
-					</div>
-					<p class="risk-tagline">The deeper you go, the more you earn.</p>
-				</div>
-			{/if}
-
-			<!-- Slide 4: The Edge -->
-			{#if currentSlide === 4}
-				<div class="slide slide-edge">
-					<h2 class="edge-headline">
-						DON'T JUST WATCH.<br/>
-						<span class="accent">FIGHT BACK.</span>
-					</h2>
-					<div class="edge-options">
-						<div class="edge-item" style="--delay: 0">
-							<span class="edge-icon">⌨</span>
-							<div class="edge-info">
-								<span class="edge-name">TRACE EVASION</span>
-								<span class="edge-desc">Type fast. Reduce death rate up to <span class="highlight">-25%</span></span>
+					<!-- Slide 1: THE MECHANIC -->
+					{#if currentSlide === 1}
+						<div class="slide slide-mechanic">
+							<h2 class="slide-title">HOW IT WORKS</h2>
+							<div class="flow-diagram">
+								<div class="flow-step" style="--delay: 0">
+									<span class="step-icon">⚡</span>
+									<span class="step-name">JACK IN</span>
+									<span class="step-desc">Stake $DATA</span>
+								</div>
+								<div class="flow-arrow" style="--delay: 1">▼</div>
+								<div class="flow-step" style="--delay: 2">
+									<span class="step-icon">📈</span>
+									<span class="step-name">EARN</span>
+									<span class="step-desc">Yield accumulates</span>
+								</div>
+								<div class="flow-arrow" style="--delay: 3">▼</div>
+								<div class="flow-step" style="--delay: 4">
+									<span class="step-icon">👻</span>
+									<span class="step-name">SURVIVE</span>
+									<span class="step-desc">The trace scan</span>
+								</div>
+								<div class="flow-arrow" style="--delay: 5">▼</div>
+								<div class="flow-step" style="--delay: 6">
+									<span class="step-icon">💰</span>
+									<span class="step-name">EXTRACT</span>
+									<span class="step-desc">Take your gains</span>
+								</div>
 							</div>
 						</div>
-						<div class="edge-item" style="--delay: 1">
-							<span class="edge-icon">🎮</span>
-							<div class="edge-info">
-								<span class="edge-name">HACK RUNS</span>
-								<span class="edge-desc">Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span>
+					{/if}
+
+					<!-- Slide 2: THE TWIST -->
+					{#if currentSlide === 2}
+						<div class="slide slide-twist">
+							<h2 class="twist-headline">
+								WHEN OTHERS <span class="glow-danger">DIE</span>,<br/>
+								<span class="glow-profit">YOU PROFIT.</span>
+							</h2>
+							<div class="twist-visual">
+								<div class="death-icon pulse">💀</div>
+								<div class="flow-arrows">
+									<span class="arrow-down">↓</span>
+									<span class="arrow-down">↓</span>
+								</div>
+								<div class="split-result">
+									<div class="result-item survivors">
+										<span class="result-icon">👻</span>
+										<span class="result-label">70% to survivors</span>
+									</div>
+									<div class="result-item burned">
+										<span class="result-icon">🔥</span>
+										<span class="result-label">30% burned forever</span>
+									</div>
+								</div>
+							</div>
+							<p class="twist-footer">It's PvP economics. <span class="glow-accent">The traced feed the living.</span></p>
+						</div>
+					{/if}
+
+					<!-- Slide 3: THE RISK -->
+					{#if currentSlide === 3}
+						<div class="slide slide-risk">
+							<h2 class="slide-title">CHOOSE YOUR RISK</h2>
+							<div class="risk-ladder">
+								<div class="risk-level level-5" style="--delay: 0">
+									<span class="level-indicator"></span>
+									<span class="level-name">BLACK ICE</span>
+									<span class="level-death">90% death</span>
+									<span class="level-reward">∞ upside</span>
+								</div>
+								<div class="risk-level level-4" style="--delay: 1">
+									<span class="level-indicator"></span>
+									<span class="level-name">DARKNET</span>
+									<span class="level-death">40% death</span>
+									<span class="level-reward">20,000% APY</span>
+								</div>
+								<div class="risk-level level-3" style="--delay: 2">
+									<span class="level-indicator"></span>
+									<span class="level-name">SUBNET</span>
+									<span class="level-death">15% death</span>
+									<span class="level-reward">5,000% APY</span>
+								</div>
+								<div class="risk-level level-2" style="--delay: 3">
+									<span class="level-indicator"></span>
+									<span class="level-name">MAINFRAME</span>
+									<span class="level-death">2% death</span>
+									<span class="level-reward">1,000% APY</span>
+								</div>
+								<div class="risk-level level-1" style="--delay: 4">
+									<span class="level-indicator"></span>
+									<span class="level-name">THE VAULT</span>
+									<span class="level-death">0% death</span>
+									<span class="level-reward">100-500% APY</span>
+								</div>
+							</div>
+							<p class="risk-tagline"><span class="glow-accent">The deeper you go, the more you earn.</span></p>
+						</div>
+					{/if}
+
+					<!-- Slide 4: THE EDGE -->
+					{#if currentSlide === 4}
+						<div class="slide slide-edge">
+							<h2 class="edge-headline">
+								DON'T JUST WATCH.<br/>
+								<span class="glow-accent">FIGHT BACK.</span>
+							</h2>
+							<div class="edge-options">
+								<div class="edge-item" style="--delay: 0">
+									<span class="edge-icon">⌨️</span>
+									<div class="edge-info">
+										<span class="edge-name">TRACE EVASION</span>
+										<span class="edge-desc">Type fast. Reduce death rate up to <span class="highlight">-25%</span></span>
+									</div>
+								</div>
+								<div class="edge-item" style="--delay: 1">
+									<span class="edge-icon">🎮</span>
+									<div class="edge-info">
+										<span class="edge-name">HACK RUNS</span>
+										<span class="edge-desc">Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span>
+									</div>
+								</div>
+								<div class="edge-item" style="--delay: 2">
+									<span class="edge-icon">🎲</span>
+									<div class="edge-info">
+										<span class="edge-name">DEAD POOL</span>
+										<span class="edge-desc">Bet on outcomes. Win more <span class="highlight">$DATA</span></span>
+									</div>
+								</div>
+							</div>
+							<p class="edge-tagline">
+								<span class="dim">Passive is fine.</span> 
+								<span class="glow-profit">Active is better.</span>
+							</p>
+						</div>
+					{/if}
+
+					<!-- Slide 5: THE TRUST -->
+					{#if currentSlide === 5}
+						<div class="slide slide-trust">
+							<div class="trust-icon-container">
+								<div class="burn-animation">
+									<span class="fire-emoji">🔥</span>
+									<span class="fire-emoji delayed">🔥</span>
+									<span class="fire-emoji delayed-2">🔥</span>
+								</div>
+							</div>
+							<h2 class="trust-headline">
+								<span class="glow-amber">LIQUIDITY IS BURNED.</span>
+							</h2>
+							<h3 class="trust-subline">WE CAN'T RUG YOU.</h3>
+							<div class="trust-proof">
+								<code class="burn-address">LP_TOKENS → 0xdead...0000</code>
+							</div>
+							<div class="trust-warning">
+								<p>But you can still <span class="glow-danger">lose</span>.</p>
+								<p class="dim">Only risk what you can afford.</p>
 							</div>
 						</div>
-						<div class="edge-item" style="--delay: 2">
-							<span class="edge-icon">🎲</span>
-							<div class="edge-info">
-								<span class="edge-name">DEAD POOL</span>
-								<span class="edge-desc">Bet on outcomes. Win more <span class="highlight">$DATA</span></span>
+					{/if}
+
+					<!-- Slide 6: THE CTA -->
+					{#if currentSlide === 6}
+						<div class="slide slide-cta">
+							<h2 class="cta-headline">
+								THE NETWORK IS <span class="glow-profit blink">LIVE</span>.<br/>
+								THE FEED IS <span class="glow-amber">BURNING</span>.
+							</h2>
+							<p class="cta-question">How long can you survive?</p>
+							<div class="cta-buttons">
+								<button class="cta-btn primary" onclick={onJackIn}>
+									<span class="btn-icon">⚡</span>
+									<span class="btn-text">JACK IN</span>
+								</button>
+								<button class="cta-btn secondary" onclick={onWatchFeed}>
+									<span class="btn-icon">👁️</span>
+									<span class="btn-text">WATCH THE FEED</span>
+								</button>
 							</div>
+							<p class="cta-disclaimer">⚠️ High risk. Only play what you can lose.</p>
 						</div>
-					</div>
-					<p class="edge-tagline">
-						<span class="dim">Passive is fine.</span> 
-						<span class="bright">Active is better.</span>
-					</p>
-				</div>
-			{/if}
-
-			<!-- Slide 5: The Trust -->
-			{#if currentSlide === 5}
-				<div class="slide slide-trust">
-					<div class="trust-main">
-						<h2 class="trust-headline">LIQUIDITY IS BURNED.</h2>
-						<h3 class="trust-subline">WE CAN'T RUG YOU.</h3>
-					</div>
-					<div class="trust-icon">
-						<span class="fire-icon">🔥</span>
-						<span class="lock-text">LP TOKENS = 0xdead</span>
-					</div>
-					<div class="trust-warning">
-						<p>But you can still lose.</p>
-						<p class="dim">Only risk what you can afford.</p>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Slide 6: The CTA -->
-			{#if currentSlide === 6}
-				<div class="slide slide-cta">
-					<h2 class="cta-headline">
-						THE NETWORK IS LIVE.<br/>
-						THE FEED IS BURNING.
-					</h2>
-					<div class="cta-question">
-						How long can you survive?
-					</div>
-					<div class="cta-buttons">
-						<button class="cta-btn primary" onclick={onJackIn}>JACK IN</button>
-						<button class="cta-btn secondary" onclick={onWatchFeed}>WATCH THE FEED</button>
-					</div>
-				</div>
-			{/if}
-		</div>
-
-		<!-- Navigation -->
-		<div class="slide-nav">
-			<div class="nav-dots">
-				{#each Array(totalSlides) as _, i}
-					<button 
-						class="nav-dot" 
-						class:active={currentSlide === i}
-						onclick={() => goToSlide(i)}
-						aria-label="Go to slide {i + 1}"
-					>
-						{#if currentSlide === i}
-							<div class="dot-progress" style="width: {slideProgress}%"></div>
-						{/if}
-					</button>
-				{/each}
+					{/if}
+				{/key}
 			</div>
-			<div class="nav-arrows">
-				<button class="nav-arrow" onclick={prevSlide} aria-label="Previous slide">←</button>
-				<span class="nav-counter">{currentSlide + 1}/{totalSlides}</span>
-				<button class="nav-arrow" onclick={nextSlide} aria-label="Next slide">→</button>
+
+			<!-- Navigation -->
+			<div class="slide-nav">
+				<div class="nav-dots">
+					{#each Array(totalSlides) as _, i}
+						<button 
+							class="nav-dot" 
+							class:active={currentSlide === i}
+							onclick={() => goToSlide(i)}
+							aria-label="Go to slide {i + 1}"
+						>
+							{#if currentSlide === i && !isTransitioning}
+								<div class="dot-progress" style="width: {slideProgress}%"></div>
+							{/if}
+						</button>
+					{/each}
+				</div>
+				<div class="nav-arrows">
+					<button class="nav-arrow" onclick={prevSlide} aria-label="Previous slide">
+						<span class="arrow-char">◀</span>
+					</button>
+					<span class="nav-counter">{currentSlide + 1}/{totalSlides}</span>
+					<button class="nav-arrow" onclick={nextSlide} aria-label="Next slide">
+						<span class="arrow-char">▶</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	</Box>
@@ -326,14 +387,104 @@
 		width: 100%;
 	}
 
+	.panel-container {
+		position: relative;
+		overflow: hidden;
+		animation: terminal-flicker 8s ease-in-out infinite;
+	}
+
+	@keyframes terminal-flicker {
+		0%, 100% { opacity: 1; }
+		92% { opacity: 1; }
+		93% { opacity: 0.95; }
+		94% { opacity: 1; }
+		95% { opacity: 0.98; }
+		96% { opacity: 1; }
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   EFFECTS OVERLAYS
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.scanlines {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: repeating-linear-gradient(
+			0deg,
+			transparent,
+			transparent 2px,
+			rgba(0, 255, 255, 0.015) 2px,
+			rgba(0, 255, 255, 0.015) 4px
+		);
+		pointer-events: none;
+		z-index: 10;
+	}
+
+	.glitch-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: transparent;
+		pointer-events: none;
+		z-index: 20;
+		opacity: 0;
+		transition: opacity 0.1s;
+	}
+
+	.glitch-overlay.active {
+		opacity: 1;
+		animation: glitch-flash 0.4s steps(3) forwards;
+	}
+
+	@keyframes glitch-flash {
+		0% { 
+			background: transparent;
+			clip-path: inset(0 0 0 0);
+		}
+		20% { 
+			background: rgba(0, 255, 255, 0.1);
+			clip-path: inset(10% 0 80% 0);
+		}
+		40% { 
+			background: rgba(255, 0, 100, 0.1);
+			clip-path: inset(40% 0 40% 0);
+		}
+		60% { 
+			background: rgba(0, 255, 255, 0.15);
+			clip-path: inset(70% 0 10% 0);
+		}
+		80% { 
+			background: transparent;
+			clip-path: inset(0 0 0 0);
+		}
+		100% { 
+			background: transparent;
+		}
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   SLIDES CONTAINER
+	   ═══════════════════════════════════════════════════════════════ */
+
 	.slides-container {
-		min-height: 280px;
+		min-height: 300px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: var(--space-4) var(--space-2);
 		position: relative;
-		overflow: hidden;
+		z-index: 5;
+		transition: opacity 0.2s, transform 0.2s;
+	}
+
+	.slides-container.transitioning {
+		opacity: 0;
+		transform: scale(0.98);
 	}
 
 	.slide {
@@ -343,18 +494,60 @@
 		align-items: center;
 		text-align: center;
 		gap: var(--space-3);
-		animation: slideIn 0.4s ease-out;
+		animation: slideEnter 0.5s ease-out;
 	}
 
-	@keyframes slideIn {
+	@keyframes slideEnter {
 		from {
 			opacity: 0;
-			transform: translateX(20px);
+			transform: translateY(10px);
 		}
 		to {
 			opacity: 1;
-			transform: translateX(0);
+			transform: translateY(0);
 		}
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   GLOW EFFECTS
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.glow-accent {
+		color: var(--color-accent);
+		text-shadow: 0 0 10px var(--color-accent-glow), 0 0 20px var(--color-accent-glow);
+	}
+
+	.glow-profit {
+		color: var(--color-profit);
+		text-shadow: 0 0 10px var(--color-profit-glow), 0 0 20px var(--color-profit-glow);
+	}
+
+	.glow-danger {
+		color: var(--color-red);
+		text-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+	}
+
+	.glow-amber {
+		color: var(--color-amber);
+		text-shadow: 0 0 10px rgba(255, 170, 0, 0.5), 0 0 20px rgba(255, 170, 0, 0.3);
+	}
+
+	.blink {
+		animation: blink-glow 1.5s ease-in-out infinite;
+	}
+
+	@keyframes blink-glow {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.7; }
+	}
+
+	.pulse {
+		animation: pulse-scale 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse-scale {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.1); }
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -362,24 +555,50 @@
 	   ═══════════════════════════════════════════════════════════════ */
 
 	.logo-container {
-		opacity: 0;
-		transform: scale(0.9);
-		transition: all 0.5s ease-out;
+		animation: logo-glitch-in 0.8s ease-out;
 	}
 
-	.logo-container.visible {
-		opacity: 1;
-		transform: scale(1);
+	@keyframes logo-glitch-in {
+		0% {
+			opacity: 0;
+			transform: scale(0.9) translateY(-10px);
+			filter: blur(4px);
+		}
+		30% {
+			opacity: 0.5;
+			transform: scale(1.02) translateX(-3px);
+			filter: blur(1px);
+		}
+		60% {
+			opacity: 0.8;
+			transform: scale(0.98) translateX(2px);
+			filter: blur(0);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1) translateX(0);
+			filter: blur(0);
+		}
 	}
 
 	.ascii-logo {
 		font-family: var(--font-mono);
-		font-size: 0.45rem;
+		font-size: 0.38rem;
 		line-height: 1.1;
 		color: var(--color-accent);
-		text-shadow: 0 0 10px var(--color-accent-glow);
+		text-shadow: 0 0 10px var(--color-accent-glow), 0 0 30px var(--color-accent-glow);
 		white-space: pre;
 		margin: 0;
+		animation: logo-pulse 3s ease-in-out infinite;
+	}
+
+	@keyframes logo-pulse {
+		0%, 100% { 
+			text-shadow: 0 0 10px var(--color-accent-glow), 0 0 30px var(--color-accent-glow);
+		}
+		50% { 
+			text-shadow: 0 0 20px var(--color-accent-glow), 0 0 50px var(--color-accent-glow), 0 0 80px var(--color-accent-glow);
+		}
 	}
 
 	.tagline {
@@ -387,15 +606,7 @@
 		font-weight: var(--font-bold);
 		color: var(--color-text-primary);
 		letter-spacing: var(--tracking-wider);
-		margin: 0;
-		opacity: 0;
-		transform: translateY(10px);
-		transition: all 0.4s ease-out;
-	}
-
-	.tagline.visible {
-		opacity: 1;
-		transform: translateY(0);
+		margin: var(--space-3) 0 0 0;
 	}
 
 	.subtitle {
@@ -404,15 +615,13 @@
 		margin: 0;
 		line-height: var(--leading-relaxed);
 		opacity: 0;
-		transition: opacity 0.4s ease-out;
+		transform: translateY(5px);
+		transition: all 0.5s ease-out;
 	}
 
 	.subtitle.visible {
 		opacity: 1;
-	}
-
-	.subtitle .danger {
-		color: var(--color-red);
+		transform: translateY(0);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -425,6 +634,7 @@
 		color: var(--color-accent);
 		letter-spacing: var(--tracking-wider);
 		margin: 0 0 var(--space-3) 0;
+		text-shadow: 0 0 10px var(--color-accent-glow);
 	}
 
 	.flow-diagram {
@@ -439,20 +649,22 @@
 		align-items: center;
 		gap: var(--space-3);
 		padding: var(--space-2) var(--space-4);
-		background: var(--color-bg-tertiary);
-		border-left: 2px solid var(--color-accent-dim);
+		background: rgba(0, 255, 255, 0.05);
+		border: 1px solid var(--color-accent-dim);
+		border-left: 3px solid var(--color-accent);
 		opacity: 0;
-		transform: translateX(-10px);
-		animation: flowIn 0.3s ease-out forwards;
-		animation-delay: calc(var(--delay) * 0.15s);
+		transform: translateX(-20px);
+		animation: flowIn 0.4s ease-out forwards;
+		animation-delay: calc(var(--delay) * 0.12s);
 	}
 
 	.flow-arrow {
-		color: var(--color-accent-dim);
-		font-size: var(--text-lg);
+		color: var(--color-accent);
+		font-size: var(--text-base);
 		opacity: 0;
 		animation: flowIn 0.3s ease-out forwards;
-		animation-delay: calc(var(--delay) * 0.15s);
+		animation-delay: calc(var(--delay) * 0.12s);
+		text-shadow: 0 0 5px var(--color-accent-glow);
 	}
 
 	@keyframes flowIn {
@@ -462,16 +674,15 @@
 		}
 	}
 
-	.step-number {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		width: 1.5ch;
+	.step-icon {
+		font-size: var(--text-lg);
 	}
 
 	.step-name {
 		font-weight: var(--font-bold);
 		color: var(--color-text-primary);
-		min-width: 8ch;
+		min-width: 7ch;
+		text-align: left;
 	}
 
 	.step-desc {
@@ -496,57 +707,81 @@
 		line-height: var(--leading-tight);
 	}
 
-	.twist-headline .profit {
-		color: var(--color-profit);
-		text-shadow: 0 0 10px var(--color-profit-glow);
-	}
-
-	.twist-details {
+	.twist-visual {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.twist-line {
-		font-size: var(--text-sm);
-		color: var(--color-text-secondary);
-		margin: 0;
-	}
-
-	.twist-line.burn {
-		color: var(--color-amber);
-	}
-
-	.cascade-visual {
-		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding: var(--space-2);
-		background: var(--color-bg-tertiary);
-		margin-top: var(--space-2);
+		padding: var(--space-3);
+		background: rgba(0, 0, 0, 0.3);
+		border: 1px solid var(--color-border-default);
+		animation: cascade-glow 3s ease-in-out infinite;
 	}
 
-	.cascade-icon {
+	@keyframes cascade-glow {
+		0%, 100% { 
+			border-color: var(--color-border-default);
+			box-shadow: none;
+		}
+		50% { 
+			border-color: rgba(255, 0, 0, 0.3);
+			box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.1);
+		}
+	}
+
+	.death-icon {
+		font-size: var(--text-2xl);
+		filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.5));
+	}
+
+	.flow-arrows {
+		display: flex;
+		gap: var(--space-4);
+		color: var(--color-text-tertiary);
 		font-size: var(--text-lg);
 	}
 
-	.cascade-arrow {
-		color: var(--color-accent-dim);
+	.arrow-down {
+		animation: arrow-pulse 1s ease-in-out infinite;
 	}
 
-	.cascade-split {
+	.arrow-down:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+
+	@keyframes arrow-pulse {
+		0%, 100% { opacity: 0.3; transform: translateY(0); }
+		50% { opacity: 1; transform: translateY(3px); }
+	}
+
+	.split-result {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		font-size: var(--text-xs);
+		gap: var(--space-4);
 	}
 
-	.split-item.survivors {
+	.result-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-size: var(--text-sm);
+	}
+
+	.result-item.survivors {
 		color: var(--color-profit);
 	}
 
-	.split-item.burned {
+	.result-item.burned {
 		color: var(--color-amber);
+	}
+
+	.result-icon {
+		font-size: var(--text-base);
+	}
+
+	.twist-footer {
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		margin: 0;
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -560,22 +795,23 @@
 	.risk-ladder {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: 2px;
 		width: 100%;
-		max-width: 320px;
+		max-width: 340px;
 	}
 
 	.risk-level {
 		display: grid;
-		grid-template-columns: 1fr auto auto;
-		gap: var(--space-3);
+		grid-template-columns: 4px 1fr auto auto;
+		gap: var(--space-2);
 		padding: var(--space-1-5) var(--space-2);
-		background: var(--color-bg-tertiary);
+		background: rgba(0, 0, 0, 0.3);
 		font-size: var(--text-xs);
 		opacity: 0;
 		transform: translateY(-5px);
-		animation: riskIn 0.25s ease-out forwards;
-		animation-delay: calc(var(--delay) * 0.12s);
+		animation: riskIn 0.3s ease-out forwards;
+		animation-delay: calc(var(--delay) * 0.1s);
+		align-items: center;
 	}
 
 	@keyframes riskIn {
@@ -585,11 +821,23 @@
 		}
 	}
 
-	.level-5 { border-left: 2px solid var(--color-red); }
-	.level-4 { border-left: 2px solid var(--color-amber); }
-	.level-3 { border-left: 2px solid var(--color-amber); }
-	.level-2 { border-left: 2px solid var(--color-cyan); }
-	.level-1 { border-left: 2px solid var(--color-profit); }
+	.level-indicator {
+		width: 4px;
+		height: 100%;
+		border-radius: 2px;
+	}
+
+	.level-5 .level-indicator { background: var(--color-red); box-shadow: 0 0 8px var(--color-red); }
+	.level-4 .level-indicator { background: #ff6600; box-shadow: 0 0 8px #ff6600; }
+	.level-3 .level-indicator { background: var(--color-amber); box-shadow: 0 0 8px var(--color-amber); }
+	.level-2 .level-indicator { background: var(--color-cyan); box-shadow: 0 0 8px var(--color-cyan); }
+	.level-1 .level-indicator { background: var(--color-profit); box-shadow: 0 0 8px var(--color-profit); }
+
+	.level-5 .level-death { color: var(--color-red); }
+	.level-4 .level-death { color: #ff6600; }
+	.level-3 .level-death { color: var(--color-amber); }
+	.level-2 .level-death { color: var(--color-cyan); }
+	.level-1 .level-death { color: var(--color-profit); }
 
 	.level-name {
 		font-weight: var(--font-bold);
@@ -599,17 +847,13 @@
 
 	.level-death {
 		text-align: center;
+		min-width: 8ch;
 	}
-
-	.level-death.danger { color: var(--color-red); }
-	.level-death.warning { color: var(--color-amber); }
-	.level-death.caution { color: var(--color-amber); }
-	.level-death.safe { color: var(--color-cyan); }
-	.level-death.safest { color: var(--color-profit); }
 
 	.level-reward {
 		color: var(--color-text-secondary);
 		text-align: right;
+		min-width: 10ch;
 	}
 
 	.risk-tagline {
@@ -635,16 +879,12 @@
 		line-height: var(--leading-tight);
 	}
 
-	.edge-headline .accent {
-		color: var(--color-accent);
-	}
-
 	.edge-options {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
 		width: 100%;
-		max-width: 300px;
+		max-width: 320px;
 	}
 
 	.edge-item {
@@ -652,25 +892,26 @@
 		align-items: center;
 		gap: var(--space-3);
 		padding: var(--space-2);
-		background: var(--color-bg-tertiary);
-		border-left: 2px solid var(--color-accent-dim);
+		background: rgba(0, 255, 255, 0.03);
+		border: 1px solid var(--color-border-default);
+		border-left: 3px solid var(--color-accent);
 		text-align: left;
 		opacity: 0;
-		transform: translateX(-10px);
-		animation: flowIn 0.3s ease-out forwards;
-		animation-delay: calc(var(--delay) * 0.2s);
+		transform: translateX(-15px);
+		animation: flowIn 0.4s ease-out forwards;
+		animation-delay: calc(var(--delay) * 0.15s);
 	}
 
 	.edge-icon {
-		font-size: var(--text-lg);
-		width: 2ch;
+		font-size: var(--text-xl);
+		width: 2.5ch;
 		text-align: center;
 	}
 
 	.edge-info {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-0-5);
+		gap: 2px;
 	}
 
 	.edge-name {
@@ -694,13 +935,8 @@
 		margin: 0;
 	}
 
-	.edge-tagline .dim {
+	.dim {
 		color: var(--color-text-tertiary);
-	}
-
-	.edge-tagline .bright {
-		color: var(--color-accent);
-		font-weight: var(--font-medium);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -708,19 +944,40 @@
 	   ═══════════════════════════════════════════════════════════════ */
 
 	.slide-trust {
-		gap: var(--space-4);
+		gap: var(--space-3);
 	}
 
-	.trust-main {
+	.trust-icon-container {
+		position: relative;
+		height: 50px;
+	}
+
+	.burn-animation {
 		display: flex;
-		flex-direction: column;
 		gap: var(--space-1);
+		font-size: var(--text-2xl);
+	}
+
+	.fire-emoji {
+		animation: fire-dance 0.8s ease-in-out infinite;
+	}
+
+	.fire-emoji.delayed {
+		animation-delay: 0.2s;
+	}
+
+	.fire-emoji.delayed-2 {
+		animation-delay: 0.4s;
+	}
+
+	@keyframes fire-dance {
+		0%, 100% { transform: translateY(0) scale(1); }
+		50% { transform: translateY(-5px) scale(1.1); }
 	}
 
 	.trust-headline {
 		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
-		color: var(--color-amber);
 		letter-spacing: var(--tracking-wider);
 		margin: 0;
 	}
@@ -732,27 +989,16 @@
 		margin: 0;
 	}
 
-	.trust-icon {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-1);
+	.trust-proof {
+		padding: var(--space-2) var(--space-3);
+		background: rgba(0, 0, 0, 0.4);
+		border: 1px solid var(--color-border-default);
 	}
 
-	.fire-icon {
-		font-size: var(--text-2xl);
-		animation: burn 1s ease-in-out infinite;
-	}
-
-	@keyframes burn {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.1); }
-	}
-
-	.lock-text {
+	.burn-address {
+		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--color-text-tertiary);
-		font-family: var(--font-mono);
 	}
 
 	.trust-warning {
@@ -762,10 +1008,6 @@
 	.trust-warning p {
 		margin: 0;
 		color: var(--color-text-secondary);
-	}
-
-	.trust-warning .dim {
-		color: var(--color-text-tertiary);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -782,49 +1024,96 @@
 		color: var(--color-text-primary);
 		letter-spacing: var(--tracking-wide);
 		margin: 0;
-		line-height: var(--leading-tight);
+		line-height: var(--leading-snug);
 	}
 
 	.cta-question {
-		font-size: var(--text-sm);
+		font-size: var(--text-base);
 		color: var(--color-accent);
+		margin: 0;
+		text-shadow: 0 0 10px var(--color-accent-glow);
 	}
 
 	.cta-buttons {
 		display: flex;
 		gap: var(--space-3);
+		flex-wrap: wrap;
+		justify-content: center;
 	}
 
 	.cta-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		padding: var(--space-2) var(--space-4);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		font-weight: var(--font-bold);
 		letter-spacing: var(--tracking-wide);
 		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.cta-btn::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+		transition: left 0.5s ease;
+	}
+
+	.cta-btn:hover::before {
+		left: 100%;
 	}
 
 	.cta-btn.primary {
 		background: var(--color-accent);
 		color: var(--color-bg-void);
-		border: 1px solid var(--color-accent);
+		border: 2px solid var(--color-accent);
+		animation: cta-pulse 2s ease-in-out infinite;
+	}
+
+	@keyframes cta-pulse {
+		0%, 100% { 
+			box-shadow: 0 0 10px var(--color-accent-glow);
+		}
+		50% { 
+			box-shadow: 0 0 25px var(--color-accent-glow), 0 0 40px var(--color-accent-glow);
+		}
 	}
 
 	.cta-btn.primary:hover {
 		background: var(--color-accent-bright);
-		box-shadow: 0 0 20px var(--color-accent-glow);
+		box-shadow: 0 0 30px var(--color-accent-glow), 0 0 60px var(--color-accent-glow);
+		transform: translateY(-2px);
+		animation: none;
 	}
 
 	.cta-btn.secondary {
 		background: transparent;
 		color: var(--color-text-secondary);
-		border: 1px solid var(--color-border-default);
+		border: 2px solid var(--color-border-default);
 	}
 
 	.cta-btn.secondary:hover {
 		color: var(--color-accent);
-		border-color: var(--color-accent-dim);
+		border-color: var(--color-accent);
+		box-shadow: 0 0 15px var(--color-accent-glow);
+	}
+
+	.btn-icon {
+		font-size: var(--text-base);
+	}
+
+	.cta-disclaimer {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		margin: 0;
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -838,6 +1127,8 @@
 		padding: var(--space-3) var(--space-2) 0;
 		border-top: 1px solid var(--color-border-subtle);
 		margin-top: var(--space-2);
+		position: relative;
+		z-index: 15;
 	}
 
 	.nav-dots {
@@ -846,14 +1137,14 @@
 	}
 
 	.nav-dot {
-		width: 24px;
+		width: 28px;
 		height: 4px;
 		background: var(--color-border-default);
 		border: none;
 		cursor: pointer;
 		position: relative;
 		overflow: hidden;
-		transition: background var(--duration-fast);
+		transition: all 0.2s;
 	}
 
 	.nav-dot:hover {
@@ -861,7 +1152,7 @@
 	}
 
 	.nav-dot.active {
-		background: var(--color-bg-tertiary);
+		background: rgba(0, 255, 255, 0.2);
 	}
 
 	.dot-progress {
@@ -870,6 +1161,7 @@
 		left: 0;
 		height: 100%;
 		background: var(--color-accent);
+		box-shadow: 0 0 8px var(--color-accent-glow);
 		transition: width 0.05s linear;
 	}
 
@@ -886,12 +1178,20 @@
 		padding: var(--space-1) var(--space-2);
 		cursor: pointer;
 		font-family: var(--font-mono);
-		transition: all var(--duration-fast);
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.nav-arrow:hover {
 		color: var(--color-accent);
-		border-color: var(--color-accent-dim);
+		border-color: var(--color-accent);
+		box-shadow: 0 0 10px var(--color-accent-glow);
+	}
+
+	.arrow-char {
+		font-size: var(--text-xs);
 	}
 
 	.nav-counter {
@@ -899,6 +1199,7 @@
 		color: var(--color-text-tertiary);
 		min-width: 3ch;
 		text-align: center;
+		font-family: var(--font-mono);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -907,12 +1208,12 @@
 
 	@media (max-width: 640px) {
 		.slides-container {
-			min-height: 320px;
+			min-height: 340px;
 			padding: var(--space-3) var(--space-1);
 		}
 
 		.ascii-logo {
-			font-size: 0.35rem;
+			font-size: 0.28rem;
 		}
 
 		.cta-buttons {
@@ -922,6 +1223,15 @@
 
 		.cta-btn {
 			width: 100%;
+			justify-content: center;
+		}
+
+		.risk-ladder {
+			max-width: 100%;
+		}
+
+		.edge-options {
+			max-width: 100%;
 		}
 	}
 </style>
