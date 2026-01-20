@@ -24,13 +24,6 @@
 	// Mobile detection for responsive behavior
 	let isMobile = $state(false);
 
-	// Mobile feed expansion state (only used on mobile)
-	let feedExpanded = $state(false);
-
-	// Derived feed props: mobile uses collapsed/expanded, desktop always full
-	let feedMaxHeight = $derived(isMobile ? (feedExpanded ? '300px' : '150px') : '300px');
-	let feedMaxEvents = $derived(isMobile ? (feedExpanded ? 12 : 3) : 12);
-
 	// Set up media query listener (client-side only)
 	$effect(() => {
 		if (!browser) return;
@@ -173,27 +166,22 @@
 
 	<main class="main-content">
 		<div class="content-grid">
-			<!-- Left Column: Feed, Welcome & Visualization -->
+			<!-- Left Column: Welcome, Feed & Visualization -->
 			<div class="column column-left">
-				<!-- Feed: collapsible on mobile, full on desktop -->
-				<div class="feed-wrapper" class:feed-collapsed={isMobile && !feedExpanded}>
-					<FeedPanel maxHeight={feedMaxHeight} maxEvents={feedMaxEvents} />
-					{#if isMobile}
-						<button
-							class="feed-toggle"
-							onclick={() => (feedExpanded = !feedExpanded)}
-							aria-expanded={feedExpanded}
-							aria-controls="feed-panel"
-						>
-							{feedExpanded ? '▲ Show Less' : '▼ Show More'}
-						</button>
-					{/if}
-				</div>
-
-				<!-- Welcome & Visualization: hidden on mobile (too heavy) -->
+				<!-- Welcome panel (network initialization): hidden on mobile -->
 				<div class="hide-mobile">
 					<WelcomePanel onJackIn={handleJackIn} onWatchFeed={handleWatchFeed} />
 				</div>
+
+				<!-- Live Feed with built-in expand/collapse -->
+				<FeedPanel 
+					collapsedCount={isMobile ? 4 : 6}
+					expandedCount={isMobile ? 12 : 20}
+					collapsedHeight={isMobile ? '200px' : '280px'}
+					expandedHeight={isMobile ? '400px' : '500px'}
+				/>
+
+				<!-- Network Visualization: hidden on mobile (too heavy) -->
 				<div class="hide-mobile">
 					<NetworkVisualizationPanel operatorCount={provider.networkState.operatorsOnline} />
 				</div>
@@ -294,39 +282,6 @@
 		.content-grid {
 			grid-template-columns: 2fr 1fr;
 		}
-	}
-
-	/* ════════════════════════════════════════════════════════════════
-	   MOBILE FEED COLLAPSIBLE
-	   ════════════════════════════════════════════════════════════════ */
-
-	.feed-wrapper {
-		position: relative;
-	}
-
-	.feed-toggle {
-		width: 100%;
-		padding: var(--space-2) var(--space-3);
-		margin-top: var(--space-1);
-		background: var(--color-bg-tertiary);
-		border: 1px solid var(--color-border-default);
-		color: var(--color-text-secondary);
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		letter-spacing: var(--tracking-wide);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
-		min-height: var(--touch-target-min); /* Accessible touch target */
-	}
-
-	.feed-toggle:hover {
-		background: var(--color-bg-elevated);
-		color: var(--color-accent);
-		border-color: var(--color-accent-dim);
-	}
-
-	.feed-toggle:active {
-		background: var(--color-bg-secondary);
 	}
 
 	/* ════════════════════════════════════════════════════════════════

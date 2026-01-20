@@ -6,15 +6,27 @@
 	import FeedItem from './FeedItem.svelte';
 
 	interface Props {
-		/** Maximum height for the feed panel */
-		maxHeight?: string;
-		/** Maximum number of events to display */
-		maxEvents?: number;
+		/** Number of events to show when collapsed */
+		collapsedCount?: number;
+		/** Number of events to show when expanded */
+		expandedCount?: number;
+		/** Maximum height when collapsed */
+		collapsedHeight?: string;
+		/** Maximum height when expanded */
+		expandedHeight?: string;
 	}
 
-	let { maxHeight = '350px', maxEvents = 15 }: Props = $props();
+	let { 
+		collapsedCount = 6, 
+		expandedCount = 20,
+		collapsedHeight = '280px',
+		expandedHeight = '500px'
+	}: Props = $props();
 
 	const provider = getProvider();
+
+	// Expansion state
+	let expanded = $state(false);
 
 	// Track newly added events for animation
 	let lastEventId = $state<string | null>(null);
@@ -25,21 +37,33 @@
 		}
 	});
 
-	// Get visible events
+	// Get visible events based on expansion state
+	let maxEvents = $derived(expanded ? expandedCount : collapsedCount);
 	let visibleEvents = $derived(provider.feedEvents.slice(0, maxEvents));
+	let hasMore = $derived(provider.feedEvents.length > collapsedCount);
+	let currentHeight = $derived(expanded ? expandedHeight : collapsedHeight);
 </script>
 
-<Panel title="LIVE FEED" scrollable {maxHeight} minHeight={maxHeight}>
+<Panel title="LIVE FEED" scrollable maxHeight={currentHeight} minHeight={collapsedHeight}>
 	{#snippet footer()}
 		<Row justify="between" align="center">
 			<Row gap={2} align="center">
 				<span class="streaming-dot" aria-hidden="true"></span>
 				<span class="streaming-text">STREAMING</span>
+				{#if provider.connectionStatus === 'connected'}
+					<Badge variant="success" compact>LIVE</Badge>
+				{:else}
+					<Badge variant="warning" compact pulse>BUFFERING</Badge>
+				{/if}
 			</Row>
-			{#if provider.connectionStatus === 'connected'}
-				<Badge variant="success" compact>LIVE</Badge>
-			{:else}
-				<Badge variant="warning" compact pulse>BUFFERING</Badge>
+			{#if hasMore}
+				<button 
+					class="expand-btn"
+					onclick={() => expanded = !expanded}
+					aria-expanded={expanded}
+				>
+					{expanded ? '▲ LESS' : '▼ MORE'}
+				</button>
 			{/if}
 		</Row>
 	{/snippet}
@@ -100,5 +124,23 @@
 			opacity: 0.5;
 			box-shadow: 0 0 8px var(--color-accent-glow);
 		}
+	}
+
+	.expand-btn {
+		padding: var(--space-1) var(--space-2);
+		background: transparent;
+		border: 1px solid var(--color-border-subtle);
+		color: var(--color-text-tertiary);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+	}
+
+	.expand-btn:hover {
+		color: var(--color-accent);
+		border-color: var(--color-accent-dim);
+		background: var(--color-accent-glow);
 	}
 </style>
