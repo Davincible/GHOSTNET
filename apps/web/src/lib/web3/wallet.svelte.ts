@@ -188,9 +188,9 @@ export function createWalletStore() {
 
 	/**
 	 * Connect wallet using injected provider
-	 * @param target - Optional target wallet: 'metaMask', 'coinbaseWallet', or undefined for any
+	 * @param target - Optional target wallet: 'metaMask', 'coinbaseWallet', 'phantom', or undefined for any
 	 */
-	async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
+	async function connectWallet(target?: 'metaMask' | 'coinbaseWallet' | 'phantom') {
 		if (!browser) return;
 
 		const config = getConfig();

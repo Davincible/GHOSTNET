@@ -28,6 +28,13 @@
 			detect: () => typeof window !== 'undefined' && (window as any).ethereum?.isMetaMask
 		},
 		{
+			id: 'phantom',
+			name: 'Phantom',
+			icon: '👻',
+			description: 'Connect using Phantom wallet',
+			detect: () => typeof window !== 'undefined' && (window as any).phantom?.ethereum
+		},
+		{
 			id: 'coinbase',
 			name: 'Coinbase Wallet',
 			icon: '🔵',
@@ -54,8 +61,10 @@
 	let availableWallets = $derived.by(() => {
 		const detected = wallets.filter((w) => w.detect());
 		
-		// If MetaMask or Coinbase is detected, hide generic "Browser Wallet"
-		const hasSpecificWallet = detected.some((w) => w.id === 'metamask' || w.id === 'coinbase');
+		// If specific wallets are detected, hide generic "Browser Wallet"
+		const hasSpecificWallet = detected.some((w) => 
+			w.id === 'metamask' || w.id === 'phantom' || w.id === 'coinbase'
+		);
 		if (hasSpecificWallet) {
 			return detected.filter((w) => w.id !== 'injected');
 		}
@@ -75,7 +84,8 @@
 			} else {
 				// Map wallet ID to specific target
 				const target = walletId === 'metamask' ? 'metaMask' 
-					: walletId === 'coinbase' ? 'coinbaseWallet' 
+					: walletId === 'coinbase' ? 'coinbaseWallet'
+					: walletId === 'phantom' ? 'phantom'
 					: undefined;
 				
 				await wallet.connect(target);
