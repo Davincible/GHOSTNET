@@ -73,8 +73,12 @@
 				onclose();
 				await wallet.connectWalletConnect();
 			} else {
-				// For MetaMask, Coinbase, or generic injected - use injected connector
-				await wallet.connect();
+				// Map wallet ID to specific target
+				const target = walletId === 'metamask' ? 'metaMask' 
+					: walletId === 'coinbase' ? 'coinbaseWallet' 
+					: undefined;
+				
+				await wallet.connect(target);
 				
 				// Check if connected successfully
 				if (wallet.isConnected) {
