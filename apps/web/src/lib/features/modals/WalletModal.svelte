@@ -25,14 +25,14 @@
 			name: 'MetaMask',
 			icon: '🦊',
 			description: 'Connect using MetaMask browser extension',
-			detect: () => typeof window !== 'undefined' && (window as any).ethereum?.isMetaMask
+			detect: () => typeof window !== 'undefined' && window.ethereum?.isMetaMask === true
 		},
 		{
 			id: 'coinbase',
 			name: 'Coinbase Wallet',
 			icon: '🔵',
 			description: 'Connect using Coinbase Wallet',
-			detect: () => typeof window !== 'undefined' && (window as any).ethereum?.isCoinbaseWallet
+			detect: () => typeof window !== 'undefined' && window.ethereum?.isCoinbaseWallet === true
 		},
 		{
 			id: 'walletconnect',
@@ -46,7 +46,7 @@
 			name: 'Browser Wallet',
 			icon: '🌐',
 			description: 'Connect using detected browser wallet',
-			detect: () => typeof window !== 'undefined' && !!(window as any).ethereum
+			detect: () => typeof window !== 'undefined' && window.ethereum !== undefined
 		}
 	];
 

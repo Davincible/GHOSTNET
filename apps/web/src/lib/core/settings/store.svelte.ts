@@ -2,9 +2,12 @@
  * Settings Store
  * ===============
  * Manages user preferences with localStorage persistence.
+ * 
+ * Uses Svelte context for SSR safety - state is isolated per request.
  */
 
 import { browser } from '$app/environment';
+import { getContext, setContext } from 'svelte';
 
 // ════════════════════════════════════════════════════════════════
 // TYPES
@@ -23,6 +26,19 @@ export interface Settings {
 	flickerEnabled: boolean;
 }
 
+export interface SettingsStore {
+	audioEnabled: boolean;
+	audioVolume: number;
+	effectsEnabled: boolean;
+	scanlinesEnabled: boolean;
+	flickerEnabled: boolean;
+	reset(): void;
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════════════
+
 const DEFAULT_SETTINGS: Settings = {
 	audioEnabled: true,
 	audioVolume: 0.5,
@@ -32,9 +48,10 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const STORAGE_KEY = 'ghostnet_settings';
+const SETTINGS_CONTEXT_KEY = Symbol('settings-store');
 
 // ════════════════════════════════════════════════════════════════
-// STORE
+// PERSISTENCE HELPERS
 // ════════════════════════════════════════════════════════════════
 
 function loadSettings(): Settings {
@@ -61,13 +78,17 @@ function saveSettings(settings: Settings): void {
 	}
 }
 
-// Singleton state
-let settings = $state<Settings>(loadSettings());
+// ════════════════════════════════════════════════════════════════
+// STORE FACTORY
+// ════════════════════════════════════════════════════════════════
 
 /**
- * Get the settings store
+ * Create a new settings store instance.
+ * This should be called once per request/page lifecycle.
  */
-export function getSettings() {
+export function createSettingsStore(): SettingsStore {
+	let settings = $state<Settings>(loadSettings());
+
 	return {
 		get audioEnabled() {
 			return settings.audioEnabled;
@@ -115,4 +136,33 @@ export function getSettings() {
 			saveSettings(settings);
 		}
 	};
+}
+
+// ════════════════════════════════════════════════════════════════
+// CONTEXT HELPERS
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Initialize the settings store and set it in context.
+ * Call this once in your root +layout.svelte
+ */
+export function initializeSettings(): SettingsStore {
+	const store = createSettingsStore();
+	setContext(SETTINGS_CONTEXT_KEY, store);
+	return store;
+}
+
+/**
+ * Get the settings store from context.
+ * Must be called from a component that is a descendant of the layout
+ * where initializeSettings() was called.
+ */
+export function getSettings(): SettingsStore {
+	const store = getContext<SettingsStore>(SETTINGS_CONTEXT_KEY);
+	if (!store) {
+		throw new Error(
+			'Settings store not found in context. Make sure initializeSettings() was called in +layout.svelte'
+		);
+	}
+	return store;
 }

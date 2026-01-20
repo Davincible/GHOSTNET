@@ -1,1 +1,7 @@
-export { getSettings, type Settings } from './store.svelte';
+export { 
+	getSettings, 
+	initializeSettings,
+	createSettingsStore,
+	type Settings,
+	type SettingsStore
+} from './store.svelte';

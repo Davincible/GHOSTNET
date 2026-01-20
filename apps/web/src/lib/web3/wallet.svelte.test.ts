@@ -164,6 +164,7 @@ describe('error parsing', () => {
 			// The error message for chain mismatch should be user-friendly
 			const error = new ChainMismatchError({
 				chain: { id: 1, name: 'Ethereum' } as any,
+				currentChainId: 137, // User is on Polygon but needs Ethereum
 			});
 			expect(error).toBeInstanceOf(ChainMismatchError);
 		});

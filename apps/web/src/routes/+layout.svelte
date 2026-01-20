@@ -4,8 +4,9 @@
 	import '../app.css';
 	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
 	import { initializeProvider } from '$lib/core/stores/index.svelte';
-	import { getSettings } from '$lib/core/settings';
+	import { initializeSettings } from '$lib/core/settings';
 	import { getAudioManager, initAudio } from '$lib/core/audio';
+	import { initializeToasts } from '$lib/ui/toast';
 
 	interface Props {
 		children: Snippet;
@@ -13,11 +14,10 @@
 
 	let { children }: Props = $props();
 
-	// Initialize the data provider and set in context
+	// Initialize context-based stores
 	const provider = initializeProvider();
-
-	// Get settings for visual effects
-	const settings = getSettings();
+	const settings = initializeSettings();
+	initializeToasts();
 	
 	// Get audio manager
 	const audio = getAudioManager();
