@@ -1,31 +1,79 @@
-# Solidity + SvelteKit Monorepo Template
+# GHOSTNET
 
-A modern full-stack Web3 development template combining:
-- **SvelteKit 2.x** with Svelte 5 runes for the frontend/backend
-- **Foundry** for Solidity smart contract development
-- **Nix** for reproducible development environment
+```
+ ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
+██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
+██║  ███╗███████║██║   ██║███████╗   ██║   ██╔██╗ ██║█████╗     ██║   
+██║   ██║██╔══██║██║   ██║╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
+╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   ██║ ╚████║███████╗   ██║   
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝   
+```
 
-## Features
+**Jack In. Don't Get Traced.**
 
-### Web App (apps/web)
-- **Svelte 5** with runes (`$state`, `$derived`, `$effect`)
-- **SvelteKit 2** for full-stack TypeScript development
-- **Bun** as package manager
-- **Vitest** with Browser Mode for component testing
-- **Playwright** for E2E testing
-- **ESLint + Prettier** for code quality
+A real-time survival game on MegaETH where you stake $DATA tokens, earn yield, survive periodic trace scans, and extract gains. When others die, you profit.
 
-### Smart Contracts (packages/contracts)
-- **Foundry** - Fast compilation, testing, deployment
-- **Slither** - Static security analysis
-- **Solhint** - Linting and best practices
-- **OpenZeppelin 5.x** - Security primitives
-- **GitHub Actions** - CI with security gates
+---
+
+## The Game
+
+You're a hacker. You jack into a hostile network. You earn yield while you're inside. But every few hours, the system runs a **trace scan**—and if you get caught, you lose everything.
+
+**The deeper you go, the higher the risk, the bigger the rewards.**
+
+| Level | Risk | Death Rate | Potential APY |
+|-------|------|------------|---------------|
+| THE VAULT | Safe | 0% | 100-500% |
+| MAINFRAME | Low | 2% | 1,000% |
+| SUBNET | Medium | 15% | 5,000% |
+| DARKNET | High | 40% | 20,000% |
+| BLACK ICE | Extreme | 90% | ∞ (2x or 0) |
+
+---
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   1. JACK IN          Stake $DATA at your chosen risk level    │
+│         ↓                                                       │
+│   2. EARN             Accumulate yield every second             │
+│         ↓                                                       │
+│   3. SURVIVE          Don't get traced in the scan              │
+│         ↓                                                       │
+│   4. EXTRACT          Cash out your gains (or stay for more)   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Want an edge?** Play mini-games to reduce your death rate:
+- **Trace Evasion** — Type fast, reduce death rate up to 35%
+- **Hack Runs** — Complete runs for yield multipliers  
+- **Dead Pool** — Bet on who lives and dies
+
+---
+
+## Tech Stack
+
+### Web App (`apps/web/`)
+- **SvelteKit 2.x** with Svelte 5 runes
+- **TypeScript** + **Bun** package manager
+- **Vitest** (Browser Mode) + **Playwright** E2E
+- **Viem/Wagmi** for Web3 integration
+- Terminal/hacker aesthetic with CRT effects
+
+### Smart Contracts (`packages/contracts/`)
+- **Foundry** for development and testing
+- **Solidity 0.8.33** with OpenZeppelin 5.x
+- **Slither** static analysis + **Solhint** linting
 
 ### Developer Experience
-- **Nix shell** - Reproducible environment (no manual installs)
-- **direnv** - Automatic environment loading
-- **Just** - Task runner with organized commands
+- **Nix shell** for reproducible environment
+- **direnv** for automatic loading
+- **Just** task runner
+
+---
 
 ## Quick Start
 
@@ -41,6 +89,8 @@ just web-dev          # Start web dev server (terminal 1)
 just contracts-anvil  # Start local blockchain (terminal 2)
 ```
 
+---
+
 ## Project Structure
 
 ```
@@ -48,126 +98,83 @@ just contracts-anvil  # Start local blockchain (terminal 2)
 ├── apps/
 │   └── web/                    # SvelteKit application
 │       ├── src/
-│       │   ├── routes/         # SvelteKit routes
+│       │   ├── routes/         # Pages (/, /typing, etc.)
 │       │   └── lib/
-│       │       ├── components/ # Svelte components
-│       │       ├── stores/     # Rune-based stores (.svelte.ts)
-│       │       └── contracts/  # Generated contract types & ABIs
-│       ├── e2e/                # Playwright E2E tests
-│       └── docs/guides/        # Svelte 5 best practices + Web3 integration
+│       │       ├── core/       # Types, providers, stores
+│       │       ├── features/   # Feature modules (feed, typing, etc.)
+│       │       └── ui/         # Design system components
+│       └── docs/               # Development guides
 │
 ├── packages/
 │   └── contracts/              # Solidity smart contracts
 │       ├── src/                # Contract source files
-│       ├── test/               # Foundry tests (*.t.sol)
-│       ├── script/             # Deployment scripts (*.s.sol)
-│       ├── lib/                # Git submodule dependencies
-│       └── docs/guides/        # Solidity security guides
+│       ├── test/               # Foundry tests
+│       └── docs/               # Security guides
+│
+├── docs/
+│   ├── architecture/           # Implementation plan, specs
+│   └── product/                # Product docs, one-pager
 │
 ├── shell.nix                   # Nix development environment
-├── justfile                    # All commands
-└── .github/workflows/          # CI pipeline
+└── justfile                    # All commands
 ```
+
+---
 
 ## Commands
 
-All commands use prefixes for clarity:
-
 ```bash
 just                        # Show all commands
-
-# Top-level
-just install                # Install everything
-just check-all              # Run all checks (lint, test, security)
-just test-all               # Run all tests
-just clean-all              # Clean all artifacts
 
 # Web App
 just web-dev                # Start dev server
 just web-build              # Production build
 just web-test               # Unit tests
-just web-test-e2e           # E2E tests
 just web-lint               # Lint code
-just web-format             # Format code
 
 # Smart Contracts
 just contracts-build        # Compile contracts
 just contracts-test         # Run tests
-just contracts-fmt          # Format code
-just contracts-lint         # Solhint linting
-just contracts-slither      # Static analysis
+just contracts-check        # All pre-commit checks (fmt, lint, test, slither)
 just contracts-anvil        # Start local node
-just contracts-check        # All pre-commit checks
 
-# Integration
+# Full Stack
+just install                # Install everything
+just check-all              # Run all checks
 just export-abis            # Export ABIs to web app
-just generate-types         # Generate TypeScript types
 ```
 
-## Development Workflow
+---
 
-### 1. Smart Contract Development
+## Current Status
 
-```bash
-# Start local blockchain
-just contracts-anvil
+The frontend is **95% complete** with mock data:
 
-# Write contracts in packages/contracts/src/
-# Write tests in packages/contracts/test/
+| Feature | Status |
+|---------|--------|
+| Command Center (main dashboard) | ✅ Complete |
+| Live Feed (real-time events) | ✅ Complete |
+| Position & Network Vitals | ✅ Complete |
+| Typing Game (Trace Evasion) | ✅ Complete |
+| Audio System | ✅ Complete |
+| Visual Effects (scanlines, flicker) | ✅ Complete |
+| Settings (audio, visual toggles) | ✅ Complete |
+| Smart Contracts | 🔲 Not started |
 
-# Run tests
-just contracts-test
+See `docs/architecture/implementation-plan.md` for detailed progress.
 
-# Deploy locally
-just contracts-deploy-local
+---
 
-# Run security checks
-just contracts-check
-```
+## Documentation
 
-### 2. Web App Development
+- **Product**: `docs/product/one-pager.md` - Game overview
+- **Architecture**: `docs/architecture/` - Implementation plan, specs
+- **Web Guides**: `apps/web/docs/guides/` - Svelte 5 patterns, Web3 integration
+- **Contract Guides**: `packages/contracts/docs/guides/` - Security, patterns
 
-```bash
-# Start dev server
-just web-dev
+---
 
-# After contract changes, export ABIs
-just export-abis
-just generate-types  # If using wagmi
-
-# Run tests
-just web-test
-just web-test-e2e
-```
-
-### 3. Integration
-
-See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for connecting the web app to contracts using viem/wagmi.
-
-## Testing
-
-### Web App Tests
-
-| Test Type | File Pattern | Run Command |
-|-----------|--------------|-------------|
-| Component | `*.svelte.test.ts` | `just web-test` |
-| Server | `*.server.test.ts` | `just web-test` |
-| E2E | `e2e/*.test.ts` | `just web-test-e2e` |
-
-**Important**: Use `.svelte.test.ts` for files that use Svelte 5 runes.
-
-### Contract Tests
-
-```bash
-just contracts-test              # All tests
-just contracts-test-match "Deposit"  # Match pattern
-just contracts-fuzz              # Extended fuzz testing
-just contracts-coverage          # Coverage report
-```
-
-## Security
-
-### Pre-commit Checks
+## Contributing
 
 ```bash
 # Run ALL checks before committing
@@ -175,62 +182,19 @@ just check-all
 
 # Or run separately
 just web-lint
-just contracts-check  # fmt, lint, test, slither
+just contracts-check
 ```
 
-### Contract Security Checklist
+---
 
-- [ ] All tests pass (`just contracts-test`)
-- [ ] No high Slither findings (`just contracts-slither-high`)
-- [ ] Fuzz tests pass (`just contracts-fuzz`)
-- [ ] Access control reviewed
-- [ ] Reentrancy paths checked
+## Links
 
-See `packages/contracts/docs/guides/solidity/` for comprehensive security guides.
+- **Website**: [ghostnet.io] (coming soon)
+- **Twitter**: [@ghostnet_io]
+- **Discord**: [discord.gg/ghostnet]
 
-## Environment Setup
+---
 
-### Prerequisites
+**Play fast. Die young. Or don't die at all.**
 
-- [Nix](https://nixos.org/download.html) (recommended: Determinate installer)
-- [direnv](https://direnv.net/)
-
-### How It Works
-
-The `shell.nix` provides:
-- Node.js 22 LTS
-- Bun package manager
-- Foundry toolchain (forge, cast, anvil)
-- Slither analyzer
-- Playwright browsers
-- Solidity LSP and solhint
-
-When you `cd` into the directory with direnv enabled, everything is ready.
-
-### Manual Setup (without direnv)
-
-```bash
-nix-shell
-just install
-```
-
-## Documentation
-
-### Web App
-- `apps/web/docs/guides/SvelteBestPractices/` - Svelte 5 patterns
-- [Svelte 5 Docs](https://svelte.dev/docs)
-- [SvelteKit Docs](https://svelte.dev/docs/kit)
-
-### Smart Contracts
-- `packages/contracts/docs/guides/solidity/` - Security & patterns
-- [Foundry Book](https://book.getfoundry.sh/)
-- [OpenZeppelin 5.x](https://docs.openzeppelin.com/contracts/5.x)
-
-### Integration
-- `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` - Connecting web to contracts
-- [Viem Docs](https://viem.sh)
-- [Wagmi Docs](https://wagmi.sh)
-
-## License
-
-MIT
+*Built on MegaETH. Sub-millisecond. Feels like a video game.*

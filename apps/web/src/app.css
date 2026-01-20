@@ -16,6 +16,9 @@
 /* Animations & Keyframes */
 @import '$lib/ui/styles/animations.css';
 
+/* Responsive System */
+@import '$lib/ui/styles/responsive.css';
+
 /* ══════════════════════════════════════════════════════════════════
    FONTS
    ══════════════════════════════════════════════════════════════════ */

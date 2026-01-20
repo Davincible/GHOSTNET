@@ -7,6 +7,7 @@
 		label: string;
 		href?: string;
 		disabled?: boolean;
+		comingSoon?: boolean;
 	}
 
 	interface Props {
@@ -18,20 +19,35 @@
 
 	let { active = 'network', onNavigate }: Props = $props();
 
+	let showComingSoon = $state(false);
+	let comingSoonFeature = $state('');
+
 	const navItems: NavItem[] = [
 		{ id: 'network', label: 'NETWORK' },
 		{ id: 'position', label: 'POSITION' },
 		{ id: 'games', label: 'GAMES' },
-		{ id: 'crew', label: 'CREW' },
-		{ id: 'market', label: 'MARKET' },
-		{ id: 'leaderboard', label: 'RANKS' },
+		{ id: 'crew', label: 'CREW', comingSoon: true },
+		{ id: 'market', label: 'MARKET', comingSoon: true },
+		{ id: 'leaderboard', label: 'RANKS', comingSoon: true },
 		{ id: 'help', label: '?' }
 	];
 
-	function handleClick(id: string) {
-		onNavigate?.(id);
+	function handleClick(item: NavItem) {
+		if (item.comingSoon) {
+			comingSoonFeature = item.label;
+			showComingSoon = true;
+			setTimeout(() => (showComingSoon = false), 2000);
+			return;
+		}
+		onNavigate?.(item.id);
 	}
 </script>
+
+{#if showComingSoon}
+	<div class="coming-soon-toast">
+		{comingSoonFeature} coming soon...
+	</div>
+{/if}
 
 <nav class="nav-bar" aria-label="Main navigation">
 	<Row gap={1} justify="center" wrap>
@@ -40,8 +56,9 @@
 				type="button"
 				class="nav-item"
 				class:nav-item-active={active === item.id}
+				class:nav-item-coming-soon={item.comingSoon}
 				disabled={item.disabled}
-				onclick={() => handleClick(item.id)}
+				onclick={() => handleClick(item)}
 				aria-current={active === item.id ? 'page' : undefined}
 			>
 				{item.label}
@@ -51,6 +68,32 @@
 </nav>
 
 <style>
+	.coming-soon-toast {
+		position: fixed;
+		bottom: calc(var(--space-3) + var(--space-12));
+		left: 50%;
+		transform: translateX(-50%);
+		padding: var(--space-2) var(--space-4);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-default);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		z-index: var(--z-tooltip);
+		animation: fade-in-up 0.2s ease-out;
+	}
+
+	@keyframes fade-in-up {
+		from {
+			opacity: 0;
+			transform: translateX(-50%) translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+	}
+
 	.nav-bar {
 		padding: var(--space-3) var(--space-4);
 		background: var(--color-bg-secondary);
@@ -94,6 +137,10 @@
 	.nav-item-active:hover {
 		color: var(--color-accent-bright);
 		border-color: var(--color-accent);
+	}
+
+	.nav-item-coming-soon {
+		opacity: 0.5;
 	}
 
 	/* Responsive */

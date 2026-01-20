@@ -4,6 +4,60 @@ This document provides guidance for AI assistants working with this monorepo pro
 
 ## Project Overview
 
+**GHOSTNET** is a real-time survival game on MegaETH. Players "jack in" by staking $DATA tokens, earn yield, survive periodic "trace scans" that can wipe positions, and extract gains. When others die, survivors profit.
+
+**Full game name:** GHOSTNET: The Rabbitz Hole (MegaETH mascot is a rabbit)
+
+### The Game Mechanics
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
+│   1. JACK IN          Stake $DATA at your chosen risk level    │
+│         ↓                                                       │
+│   2. EARN             Accumulate yield every second             │
+│         ↓                                                       │
+│   3. SURVIVE          Don't get traced in the scan              │
+│         ↓                                                       │
+│   4. EXTRACT          Cash out your gains (or stay for more)   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Risk Levels
+
+| Level | Death Rate | Scan Frequency |
+|-------|------------|----------------|
+| THE VAULT | 0% (safe) | Never |
+| MAINFRAME | 2% | 24 hours |
+| SUBNET | 15% | 8 hours |
+| DARKNET | 40% | 2 hours |
+| BLACK ICE | 90% | 30 minutes |
+
+### Mini-Games (reduce death rate)
+
+- **Trace Evasion** — Typing game, up to -35% death rate
+- **Hack Runs** — Yield multipliers
+- **Dead Pool** — Bet on who lives/dies
+
+---
+
+## Design Aesthetic
+
+GHOSTNET uses a **terminal/hacker aesthetic** with Matrix-like vibes:
+
+- **Colors**: Green phosphor (`#00E5CC`), dark backgrounds, red for danger
+- **Typography**: IBM Plex Mono, monospace everything
+- **Effects**: CRT scanlines, subtle flicker, screen flashes on events
+- **UI**: ASCII borders, terminal-style boxes, typing animations
+- **Tone**: Cyberpunk, tense, high-stakes gambling meets hacking
+
+When building UI, maintain this aesthetic. No rounded corners, no gradients, no soft shadows.
+
+---
+
+## Monorepo Structure
+
 This is a **monorepo** containing:
 - **Web App** (`apps/web/`): SvelteKit 2.x with Svelte 5 runes, TypeScript, Bun
 - **Smart Contracts** (`packages/contracts/`): Foundry-based Solidity with security tooling
@@ -13,6 +67,11 @@ This is a **monorepo** containing:
 ├── apps/
 │   └── web/                    # SvelteKit frontend/backend
 │       ├── src/
+│       │   ├── routes/         # Pages (/, /typing, etc.)
+│       │   └── lib/
+│       │       ├── core/       # Types, providers, stores, audio, settings
+│       │       ├── features/   # Feature modules (feed, typing, welcome, etc.)
+│       │       └── ui/         # Design system (primitives, terminal, layout)
 │       ├── e2e/
 │       └── docs/guides/SvelteBestPractices/  # Includes 28-Web3Integration.md
 ├── packages/
@@ -21,10 +80,15 @@ This is a **monorepo** containing:
 │       ├── test/
 │       ├── script/
 │       └── docs/guides/solidity/
+├── docs/
+│   ├── architecture/           # Implementation plan, specs
+│   └── product/                # One-pager, product docs
 ├── shell.nix                   # Combined Nix environment
 ├── justfile                    # All commands (web-*, contracts-*)
 └── .github/workflows/          # CI pipeline
 ```
+
+---
 
 ## Environment Setup
 
@@ -93,6 +157,33 @@ just export-abis          # Export ABIs to web app
 - **Language**: TypeScript
 - **Package Manager**: Bun
 - **Testing**: Vitest (Browser Mode) + Playwright E2E
+
+### Key Directories
+
+```
+apps/web/src/lib/
+├── core/
+│   ├── types/           # TypeScript interfaces (Position, FeedEvent, etc.)
+│   ├── providers/       # Data providers (mock for now, Web3 later)
+│   ├── stores/          # Provider initialization and context
+│   ├── settings/        # User preferences (audio, visual effects)
+│   └── audio/           # ZzFX sound system
+├── features/
+│   ├── feed/            # Live event feed
+│   ├── position/        # Player position display
+│   ├── network/         # Network vitals panel
+│   ├── typing/          # Trace Evasion mini-game
+│   ├── welcome/         # Onboarding carousel
+│   ├── header/          # Header with wallet button
+│   ├── nav/             # Navigation bar
+│   ├── actions/         # Quick action buttons
+│   └── modals/          # JackIn, Extract, Settings modals
+└── ui/
+    ├── primitives/      # Button, Badge, ProgressBar, etc.
+    ├── terminal/        # Shell, Box, Scanlines, Flicker
+    ├── data-display/    # AddressDisplay, AmountDisplay, LevelBadge
+    └── layout/          # Stack, Row
+```
 
 ### Svelte 5 Runes
 
@@ -373,13 +464,15 @@ See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for the com
 
 ## Notes for AI Assistants
 
-1. **This is a monorepo** - Always check which part (web/contracts) is being discussed
-2. **Use prefixed commands** - `just web-*` for web, `just contracts-*` for contracts
-3. **Environment is automatic** - Don't tell users to install tools manually
-4. **Security is paramount** - Always suggest security patterns for contracts
-5. **Review the docs/** - Comprehensive guides available in each subproject
-6. **Run `just check-all` before commits** - Enforces quality across both projects
-7. **Never suggest committing secrets** - .env, private keys, etc.
+1. **This is GHOSTNET** - A survival/staking game with terminal aesthetics
+2. **This is a monorepo** - Always check which part (web/contracts) is being discussed
+3. **Use prefixed commands** - `just web-*` for web, `just contracts-*` for contracts
+4. **Environment is automatic** - Don't tell users to install tools manually
+5. **Maintain the aesthetic** - Terminal look, green phosphor, no soft UI
+6. **Security is paramount** - Always suggest security patterns for contracts
+7. **Review the docs/** - Comprehensive guides available in each subproject
+8. **Run `just check-all` before commits** - Enforces quality across both projects
+9. **Never suggest committing secrets** - .env, private keys, etc.
 
 ## Resources
 

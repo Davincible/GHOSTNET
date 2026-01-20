@@ -8,9 +8,12 @@ const config = {
 
 	kit: {
 		// Vercel adapter for deployment
-		// Bun runtime is configured project-wide via vercel.json (bunVersion: "1.x")
-		// See https://vercel.com/docs/functions/runtimes/bun
-		adapter: adapter(),
+		// Runtime: Bun is configured via vercel.json (bunVersion: "1.x")
+		// We specify nodejs22.x here as fallback for adapter validation during local builds
+		// The actual deployment uses Bun per vercel.json config
+		adapter: adapter({
+			runtime: 'nodejs22.x'
+		}),
 
 		// Alias configuration for cleaner imports
 		alias: {

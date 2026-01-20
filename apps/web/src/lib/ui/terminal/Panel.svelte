@@ -18,6 +18,8 @@
 		scrollable?: boolean;
 		/** Max height when scrollable (CSS value) */
 		maxHeight?: string;
+		/** Min height when scrollable (CSS value) - use same as maxHeight for stable layout */
+		minHeight?: string;
 		/** Show scroll indicator */
 		showScrollHint?: boolean;
 		/** Padding inside the box */
@@ -34,6 +36,7 @@
 		glow = false,
 		scrollable = false,
 		maxHeight = '400px',
+		minHeight,
 		showScrollHint = true,
 		padding = 3,
 		children,
@@ -68,6 +71,7 @@
 			<div
 				class="panel-scroll-container"
 				style:max-height={maxHeight}
+				style:min-height={minHeight}
 				bind:this={scrollContainer}
 				onscroll={updateScrollState}
 			>

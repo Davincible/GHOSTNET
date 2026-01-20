@@ -71,7 +71,7 @@
 		gap: var(--space-2);
 		padding: var(--space-3);
 		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-green-dim);
+		border: 1px solid var(--color-border-default);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		animation: toast-in 0.2s ease-out;
@@ -126,7 +126,7 @@
 
 	.toast-message {
 		flex: 1;
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 	}
 
 	.toast-close {
@@ -135,7 +135,7 @@
 		height: 20px;
 		background: none;
 		border: none;
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 		cursor: pointer;
 		padding: 0;
 		display: flex;
@@ -144,7 +144,7 @@
 	}
 
 	.toast-close:hover {
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 	}
 
 	.toast-close svg {

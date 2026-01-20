@@ -4,6 +4,7 @@
 	import { Shell } from '$lib/ui/terminal';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { createTypingGameStore, TOTAL_ROUNDS } from '$lib/features/typing/store.svelte';
+	import { getAudioManager } from '$lib/core/audio';
 	import IdleView from '$lib/features/typing/IdleView.svelte';
 	import CountdownView from '$lib/features/typing/CountdownView.svelte';
 	import ActiveView from '$lib/features/typing/ActiveView.svelte';
@@ -12,9 +13,14 @@
 
 	const provider = getProvider();
 	const gameStore = createTypingGameStore();
+	const audio = getAudioManager();
 
 	// Track if we've submitted the current result to avoid infinite loops
 	let hasSubmittedResult = $state(false);
+	
+	// Track previous state for audio triggers
+	let prevStatus = $state<string>('idle');
+	let prevCountdown = $state<number>(0);
 
 	// Handle starting the game
 	function handleStart(): void {
@@ -65,8 +71,22 @@
 			event.preventDefault();
 		}
 
+		// Get current position before handling key
+		const { progress, challenge } = gameStore.state;
+		const targetChar = challenge.command[progress.typed.length];
+		const isCorrect = event.key === targetChar;
+
 		// Handle the keystroke
 		gameStore.handleKey(event.key);
+
+		// Play keystroke sound (only for printable characters)
+		if (event.key.length === 1) {
+			if (isCorrect) {
+				audio.keystroke();
+			} else {
+				audio.keystrokeError();
+			}
+		}
 	}
 
 	// Setup/teardown keyboard listener
@@ -90,6 +110,37 @@
 		} else if (gameStore.state.status === 'idle') {
 			// Reset flag when game resets
 			hasSubmittedResult = false;
+		}
+	});
+
+	// Audio effects for state transitions
+	$effect(() => {
+		const status = gameStore.state.status;
+		
+		// Countdown ticks
+		if (status === 'countdown') {
+			const seconds = gameStore.state.secondsLeft;
+			if (seconds !== prevCountdown) {
+				prevCountdown = seconds;
+				if (seconds > 0) {
+					audio.countdown();
+				}
+			}
+		}
+		
+		// State transition sounds
+		if (status !== prevStatus) {
+			if (status === 'active' && prevStatus === 'countdown') {
+				// Countdown finished, game starting
+				audio.countdownGo();
+			} else if (status === 'roundComplete') {
+				// Round completed
+				audio.roundComplete();
+			} else if (status === 'complete') {
+				// Game completed
+				audio.gameComplete();
+			}
+			prevStatus = status;
 		}
 	});
 </script>

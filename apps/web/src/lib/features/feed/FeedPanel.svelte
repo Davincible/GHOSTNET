@@ -29,7 +29,7 @@
 	let visibleEvents = $derived(provider.feedEvents.slice(0, maxEvents));
 </script>
 
-<Panel title="LIVE FEED" scrollable {maxHeight}>
+<Panel title="LIVE FEED" scrollable {maxHeight} minHeight={maxHeight}>
 	{#snippet footer()}
 		<Row justify="between" align="center">
 			<Row gap={2} align="center">
@@ -62,6 +62,7 @@
 	.feed-list {
 		display: flex;
 		flex-direction: column;
+		min-height: 100%;
 	}
 
 	.feed-empty {
@@ -69,6 +70,10 @@
 		font-size: var(--text-sm);
 		text-align: center;
 		padding: var(--space-4);
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.streaming-dot {
