@@ -14,10 +14,14 @@
 	let isConnecting = $state<string | null>(null);
 	let error = $state<string | null>(null);
 
+	// Check if WalletConnect is configured
+	const hasWalletConnect = typeof import.meta.env.VITE_WALLETCONNECT_PROJECT_ID === 'string' 
+		&& import.meta.env.VITE_WALLETCONNECT_PROJECT_ID.length > 0;
+
 	// Wallet options with icons (ASCII art style)
 	const wallets = [
 		{
-			id: 'injected',
+			id: 'metamask',
 			name: 'MetaMask',
 			icon: '🦊',
 			description: 'Connect using MetaMask browser extension',
@@ -35,14 +39,29 @@
 			name: 'WalletConnect',
 			icon: '🔗',
 			description: 'Scan QR code with mobile wallet',
-			detect: () => true // Always available
+			detect: () => hasWalletConnect
+		},
+		{
+			id: 'injected',
+			name: 'Browser Wallet',
+			icon: '🌐',
+			description: 'Connect using detected browser wallet',
+			detect: () => typeof window !== 'undefined' && !!(window as any).ethereum
 		}
 	];
 
-	// Filter to detected wallets, but always show WalletConnect
-	let availableWallets = $derived(
-		wallets.filter((w) => w.id === 'walletconnect' || w.detect())
-	);
+	// Filter to detected wallets, avoiding duplicates
+	let availableWallets = $derived.by(() => {
+		const detected = wallets.filter((w) => w.detect());
+		
+		// If MetaMask or Coinbase is detected, hide generic "Browser Wallet"
+		const hasSpecificWallet = detected.some((w) => w.id === 'metamask' || w.id === 'coinbase');
+		if (hasSpecificWallet) {
+			return detected.filter((w) => w.id !== 'injected');
+		}
+		
+		return detected;
+	});
 
 	async function connectWallet(walletId: string) {
 		isConnecting = walletId;
@@ -52,6 +71,7 @@
 			if (walletId === 'walletconnect') {
 				await wallet.connectWalletConnect();
 			} else {
+				// For MetaMask, Coinbase, or generic injected - use injected connector
 				await wallet.connect();
 			}
 
