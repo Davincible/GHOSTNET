@@ -118,6 +118,9 @@
 			taglineComplete = false;
 		}
 	});
+
+	// Matrix effect toggle
+	let showMatrixRain = $state(true);
 </script>
 
 <div 
@@ -130,7 +133,9 @@
 	<Box title="/// NETWORK INITIALIZATION ///" borderColor="cyan" glow>
 		<div class="panel-container">
 			<!-- Matrix Rain Background -->
-			<MatrixRain density={25} speed={0.8} opacity={0.08} />
+			{#if showMatrixRain}
+				<MatrixRain density={25} speed={0.8} opacity={0.08} />
+			{/if}
 			
 			<!-- Scanline Overlay -->
 			<div class="scanlines"></div>
@@ -368,6 +373,20 @@
 						</button>
 					{/each}
 				</div>
+
+				<!-- Matrix Effect Toggle -->
+				<label class="matrix-toggle">
+					<input 
+						type="checkbox" 
+						bind:checked={showMatrixRain}
+						class="toggle-input"
+					/>
+					<span class="toggle-track">
+						<span class="toggle-thumb"></span>
+					</span>
+					<span class="toggle-label">MATRIX</span>
+				</label>
+
 				<div class="nav-arrows">
 					<button class="nav-arrow" onclick={prevSlide} aria-label="Previous slide">
 						<span class="arrow-char">◀</span>
@@ -1203,6 +1222,77 @@
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
+	   MATRIX TOGGLE
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.matrix-toggle {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.toggle-input {
+		position: absolute;
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.toggle-track {
+		position: relative;
+		width: 32px;
+		height: 16px;
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-default);
+		border-radius: 8px;
+		transition: all 0.2s ease;
+	}
+
+	.toggle-thumb {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 10px;
+		height: 10px;
+		background: var(--color-text-tertiary);
+		border-radius: 50%;
+		transition: all 0.2s ease;
+	}
+
+	.toggle-input:checked + .toggle-track {
+		background: rgba(0, 255, 255, 0.2);
+		border-color: var(--color-accent);
+	}
+
+	.toggle-input:checked + .toggle-track .toggle-thumb {
+		left: 18px;
+		background: var(--color-accent);
+		box-shadow: 0 0 6px var(--color-accent-glow);
+	}
+
+	.toggle-label {
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		font-family: var(--font-mono);
+		letter-spacing: var(--tracking-wide);
+		transition: color 0.2s;
+	}
+
+	.toggle-input:checked ~ .toggle-label {
+		color: var(--color-accent);
+	}
+
+	.matrix-toggle:hover .toggle-label {
+		color: var(--color-text-secondary);
+	}
+
+	.matrix-toggle:hover .toggle-input:checked ~ .toggle-label {
+		color: var(--color-accent);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
 	   RESPONSIVE
 	   ═══════════════════════════════════════════════════════════════ */
 
@@ -1232,6 +1322,14 @@
 
 		.edge-options {
 			max-width: 100%;
+		}
+
+		.toggle-label {
+			display: none;
+		}
+
+		.slide-nav {
+			gap: var(--space-2);
 		}
 	}
 </style>
