@@ -7,6 +7,7 @@
     height?: number;
     voxelSize?: number;
     color?: string;
+    bgColor?: string;
     glitchIntensity?: number;
   }
 
@@ -15,6 +16,7 @@
     height = 400, 
     voxelSize = 0.08,
     color = '#00e5cc',
+    bgColor = '#1a0a2e',
     glitchIntensity = 0.3
   }: Props = $props();
 
@@ -26,12 +28,13 @@
   let wireframeMat = $state<THREE.ShaderMaterial | null>(null);
   let glowMat = $state<THREE.ShaderMaterial | null>(null);
   
-  // Reactive color update
+  // Reactive color update - primary for rabbit, secondary for background glow
   $effect(() => {
-    const newColor = new THREE.Color(color);
-    if (voxelMat) voxelMat.uniforms.uColor.value = newColor;
-    if (wireframeMat) wireframeMat.uniforms.uColor.value = newColor;
-    if (glowMat) glowMat.uniforms.uColor.value = newColor;
+    const primaryClr = new THREE.Color(color);
+    const secondaryClr = new THREE.Color(bgColor);
+    if (voxelMat) voxelMat.uniforms.uColor.value = primaryClr;
+    if (wireframeMat) wireframeMat.uniforms.uColor.value = primaryClr;
+    if (glowMat) glowMat.uniforms.uColor.value = secondaryClr;
   });
 
   // Define rabbit as 3D voxel grid (1 = filled, 0 = empty)
@@ -289,7 +292,7 @@
     const glowMaterial = glowMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec3 vNormal;

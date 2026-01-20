@@ -5,6 +5,7 @@
     width?: number;
     height?: number;
     color?: string;
+    bgColor?: string;
     rainSpeed?: number;
     showRain?: boolean;
   }
@@ -13,6 +14,7 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
+    bgColor = '#1a0a2e',
     rainSpeed = 1,
     showRain = true
   }: Props = $props();
@@ -30,12 +32,14 @@
     } : { r: 0, g: 229, b: 204 };
   }
   
-  // Reactive RGB object that animation loop can reference
+  // Reactive RGB objects that animation loop can reference
   let rgb = $state(hexToRgb(color));
+  let bgRgb = $state(hexToRgb(bgColor));
   
-  // Update RGB when color prop changes
+  // Update RGB when color props change
   $effect(() => {
     rgb = hexToRgb(color);
+    bgRgb = hexToRgb(bgColor);
   });
 
   // ASCII art frames for the rabbit (multiple frames for animation)

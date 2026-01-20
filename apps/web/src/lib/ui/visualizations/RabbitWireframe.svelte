@@ -6,6 +6,7 @@
     width?: number;
     height?: number;
     color?: string;
+    bgColor?: string;
     pulseSpeed?: number;
   }
 
@@ -13,6 +14,7 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
+    bgColor = '#1a0a2e',
     pulseSpeed = 1
   }: Props = $props();
 
@@ -24,12 +26,13 @@
   let glowMat = $state<THREE.ShaderMaterial | null>(null);
   let ringMat = $state<THREE.ShaderMaterial | null>(null);
   
-  // Reactive color update
+  // Reactive color update - primary for rabbit lines, secondary for background elements
   $effect(() => {
-    const newColor = new THREE.Color(color);
-    if (lineMat) lineMat.uniforms.uColor.value = newColor;
-    if (glowMat) glowMat.uniforms.uColor.value = newColor;
-    if (ringMat) ringMat.uniforms.uColor.value = newColor;
+    const primaryClr = new THREE.Color(color);
+    const secondaryClr = new THREE.Color(bgColor);
+    if (lineMat) lineMat.uniforms.uColor.value = primaryClr;
+    if (glowMat) glowMat.uniforms.uColor.value = secondaryClr;
+    if (ringMat) ringMat.uniforms.uColor.value = secondaryClr;
   });
 
   // Create smooth curve from control points using Catmull-Rom interpolation
@@ -707,7 +710,7 @@
     const glowMaterial = glowMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -741,7 +744,7 @@
     scene.add(glowMesh);
 
     // Floor grid
-    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(color).multiplyScalar(0.25), new THREE.Color(color).multiplyScalar(0.1));
+    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(bgColor).multiplyScalar(0.5), new THREE.Color(bgColor).multiplyScalar(0.25));
     gridHelper.position.y = -0.65;
     scene.add(gridHelper);
 
@@ -750,7 +753,7 @@
     const ringMaterial = ringMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec2 vUv;

@@ -7,6 +7,7 @@
     height?: number;
     particleCount?: number;
     color?: string;
+    bgColor?: string;
     autoDissolve?: boolean;
   }
 
@@ -15,6 +16,7 @@
     height = 400, 
     particleCount = 3000,
     color = '#00e5cc',
+    bgColor = '#1a0a2e',
     autoDissolve = true
   }: Props = $props();
 
@@ -25,14 +27,13 @@
   let particleMaterial = $state<THREE.ShaderMaterial | null>(null);
   let glowMaterial = $state<THREE.ShaderMaterial | null>(null);
   
-  // Reactive color update
+  // Reactive color update - primary color for rabbit, secondary for background
   $effect(() => {
-    const newColor = new THREE.Color(color);
     if (particleMaterial) {
-      particleMaterial.uniforms.uColor.value = newColor;
+      particleMaterial.uniforms.uColor.value = new THREE.Color(color);
     }
     if (glowMaterial) {
-      glowMaterial.uniforms.uColor.value = newColor;
+      glowMaterial.uniforms.uColor.value = new THREE.Color(bgColor);
     }
   });
 
@@ -256,7 +257,7 @@
     const glowMat = glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec2 vUv;
