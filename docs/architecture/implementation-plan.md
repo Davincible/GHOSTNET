@@ -153,6 +153,7 @@ export type FeedEventType =
   | 'JACK_IN'
   | 'EXTRACT'
   | 'TRACED'
+  | 'CULLED'
   | 'SURVIVED'
   | 'TRACE_SCAN_WARNING'
   | 'TRACE_SCAN_START'
@@ -161,6 +162,7 @@ export type FeedEventType =
   | 'WHALE_ALERT'
   | 'SYSTEM_RESET_WARNING'
   | 'SYSTEM_RESET'
+  | 'CULLING_TRIGGERED'
   | 'CREW_EVENT'
   | 'MINIGAME_RESULT'
   | 'JACKPOT';
@@ -176,6 +178,7 @@ export type FeedEventData =
   | { type: 'JACK_IN'; address: `0x${string}`; level: Level; amount: bigint }
   | { type: 'EXTRACT'; address: `0x${string}`; amount: bigint; gain: bigint }
   | { type: 'TRACED'; address: `0x${string}`; level: Level; amountLost: bigint }
+  | { type: 'CULLED'; address: `0x${string}`; level: Level; amountLost: bigint; severance: bigint; triggeredBy: `0x${string}` }
   | { type: 'SURVIVED'; address: `0x${string}`; level: Level; streak: number }
   | { type: 'TRACE_SCAN_WARNING'; level: Level; secondsUntil: number }
   | { type: 'TRACE_SCAN_START'; level: Level }
@@ -184,6 +187,7 @@ export type FeedEventData =
   | { type: 'WHALE_ALERT'; address: `0x${string}`; level: Level; amount: bigint }
   | { type: 'SYSTEM_RESET_WARNING'; secondsUntil: number }
   | { type: 'SYSTEM_RESET'; penaltyPercent: number; jackpotWinner: `0x${string}` }
+  | { type: 'CULLING_TRIGGERED'; level: Level; currentCount: number; maxCount: number; triggeredBy: `0x${string}` }
   | { type: 'CREW_EVENT'; crewName: string; eventType: string; message: string }
   | { type: 'MINIGAME_RESULT'; address: `0x${string}`; game: string; result: string }
   | { type: 'JACKPOT'; address: `0x${string}`; level: Level; amount: bigint };

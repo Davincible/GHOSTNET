@@ -545,9 +545,9 @@ Each clearance has a unique **Scan Frequency** and **Trace Probability** (RNG de
 ╚════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-### The Two Threats
+### The Three Threats
 
-Once jacked in, you face two threats. Surviving them earns you yield.
+Once jacked in, you face three threats. Surviving them earns you yield.
 
 #### Threat A: THE TRACE SCAN (RNG Death)
 
@@ -621,6 +621,53 @@ COLLAPSE SCENARIO:
 - Incentivizes deposits (reset the timer, save everyone)
 - Whale incentive (big deposits = full reset)
 - Jackpot creates "last-second hero" content moments
+
+#### Threat C: THE CULLING (Capacity Enforcement)
+
+Each security clearance level has a maximum capacity. When a level is full, new entrants don't get blocked—instead, they trigger **The Culling**.
+
+**The Selection:** When you jack in to a full level, someone in the bottom 50% of stakes gets randomly eliminated to make room for you. Lower stakes = higher chance of being culled.
+
+**The Penalty:** The culled position loses 80% of their stake (same redistribution as a trace). They receive 20% back as a "severance."
+
+**The Risk Display:** Your dashboard shows your "Culling Risk %" based on your stake size relative to others in your level.
+
+```
+THE CULLING SEQUENCE
+────────────────────
+
+1. Level reaches capacity (e.g., 2,000 positions in DARKNET)
+
+2. New operator attempts to jack in
+   > 0x7a3f attempting jack in [DARKNET] 500Đ
+   > ⚠ LEVEL AT CAPACITY - CULLING TRIGGERED ⚠
+
+3. Weighted random selection from bottom 50%
+   > ░░░░░ SELECTING CULL TARGET ░░░░░
+   > Eligible positions: 1,000 (bottom 50% by stake)
+   > Selection weight: Lower stake = higher probability
+
+4. Target selected and eliminated
+   > 0x9c2d ████ CULLED ████ 💀
+   > Penalty: 80Đ redistributed via Cascade
+   > Severance: 20Đ returned to 0x9c2d
+
+5. New position created
+   > 0x7a3f jacked in [DARKNET] 500Đ ✓
+```
+
+**Why This Works:**
+- Prevents gas limit issues from unbounded position arrays
+- Creates urgency to maintain competitive stake sizes
+- Small positions face elimination pressure, not just death
+- "Culling Risk" display creates constant stake size awareness
+- Severance payment softens the blow (not total loss like trace)
+
+**Avoiding The Culling:**
+- Maintain stake above the 50th percentile for your level
+- Use the "Culling Risk" indicator to know when you're vulnerable
+- Consider higher levels where you're above the threshold
+- Watch for level capacity warnings in the feed
 
 ### Death Rate Modifiers
 

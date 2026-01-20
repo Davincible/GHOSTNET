@@ -305,6 +305,45 @@ If MegaETH forks, cached DOMAIN_SEPARATOR becomes invalid. Verify handling:
 - [ ] Dead Pool rake prevents profitable manipulation
 - [ ] Flash loan + extract in same block not profitable
 
+### 4.11 Culling Mechanism (Level Capacity Enforcement)
+
+**Priority: HIGH**
+
+When a level reaches maximum capacity (`maxPositions`), new entrants trigger "The Culling"—a weighted random elimination from the bottom X% of positions by stake size.
+
+| Aspect | Concern | Contract |
+|--------|---------|----------|
+| Eligibility calculation | Bottom X% accuracy | GhostCore |
+| Weighted selection | Fairness of random choice | GhostCore |
+| Penalty distribution | Cascade correctness | GhostCore, CascadeLib |
+| Gas bounds | Culling within block limits | GhostCore |
+| Gaming resistance | Cannot manipulate eligibility | GhostCore |
+
+**Specific Checks:**
+- [ ] `_getEligibleForCulling()` correctly identifies bottom X% by stake size
+- [ ] Weighted random selection gives lower stakes proportionally higher chance
+- [ ] Victim cannot be the new entrant (new entrant triggers but is immune)
+- [ ] `prevrandao` used correctly for randomness (same pattern as TraceScan)
+- [ ] Culling penalty (default 80%) cascades correctly like death penalty
+- [ ] Victim receives remaining portion (default 20%) correctly
+- [ ] `getCullingRisk()` view function returns accurate probability
+- [ ] Admin `setCullingParams()` properly restricted and validated
+- [ ] Gas cost bounded: culling single victim is O(1) after eligibility computed
+- [ ] Cannot game stake size to avoid bottom X% (no last-second additions)
+- [ ] Lock period applies: cannot add stake during lock to escape culling
+- [ ] `PositionCulled` event emits correct data for indexing
+
+**Edge Cases:**
+- [ ] Level at capacity but no eligible positions (all equal stake) → handled gracefully
+- [ ] Culling with only 1 eligible position → deterministic selection
+- [ ] Multiple cullings in quick succession → no reentrancy issues
+- [ ] Culling when victim has pending rewards → rewards handled correctly
+
+**Economic Invariants:**
+- [ ] Total capital before culling == total capital after (distributed correctly)
+- [ ] Culling penalty + victim refund + burn + protocol == original victim stake
+- [ ] No dust accumulation in culling calculations
+
 ---
 
 ## 5. Known Issues & Design Decisions
