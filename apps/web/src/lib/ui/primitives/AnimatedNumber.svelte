@@ -35,14 +35,15 @@
 	}: Props = $props();
 
 	// Tweened store for smooth animation
-	const displayValue = tweened(value, {
-		duration,
+	// Initialize with 0 to avoid capturing prop value at creation time
+	const displayValue = tweened(0, {
+		duration: 300,
 		easing: cubicOut
 	});
 
-	// Update when value changes
+	// Initialize and update when value or duration changes
 	$effect(() => {
-		displayValue.set(value);
+		displayValue.set(value, { duration });
 	});
 
 	// Format the display value

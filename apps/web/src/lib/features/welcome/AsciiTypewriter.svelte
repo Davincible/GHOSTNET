@@ -25,8 +25,8 @@
 	let isComplete = $state(false);
 	let isGlitching = $state(false);
 
-	// Split into lines for line-by-line processing
-	const lines = text.split('\n');
+	// Split into lines for line-by-line processing (derived to react to text changes)
+	const lines = $derived(text.split('\n'));
 	
 	function getRandomGlitchChar(): string {
 		return glitchChars[Math.floor(Math.random() * glitchChars.length)];

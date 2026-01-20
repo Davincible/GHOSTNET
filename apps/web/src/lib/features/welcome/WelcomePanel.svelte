@@ -1347,10 +1347,6 @@
 			padding: var(--space-3) var(--space-1);
 		}
 
-		.ascii-logo {
-			font-size: 0.28rem;
-		}
-
 		.cta-buttons {
 			flex-direction: column;
 			width: 100%;

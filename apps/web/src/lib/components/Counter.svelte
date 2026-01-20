@@ -5,8 +5,21 @@
 
 	let { initialCount = 0 }: Props = $props();
 
-	let count = $state(initialCount);
+	// Track the initial value for reset functionality
+	let initialValue = $derived(initialCount);
+	
+	// Current count state, initialized via effect to properly track prop changes
+	let count = $state(0);
 	let doubled = $derived(count * 2);
+	let hasInitialized = false;
+
+	// Initialize count from prop (runs once, and if initialCount prop changes before user interaction)
+	$effect(() => {
+		if (!hasInitialized) {
+			count = initialCount;
+			hasInitialized = true;
+		}
+	});
 
 	function increment() {
 		count++;
@@ -17,7 +30,7 @@
 	}
 
 	function reset() {
-		count = initialCount;
+		count = initialValue;
 	}
 </script>
 

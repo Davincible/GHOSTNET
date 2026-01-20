@@ -47,53 +47,58 @@
 
 	const MAX_POINTS = 100;
 
-	// Default waveforms if none provided
-	let waveforms: WaveformData[] = $state(initialWaveforms || [
-		{
-			id: 'tvl',
-			label: 'TVL',
-			color: COLORS.accent,
-			values: [],
-			type: 'smooth',
-			min: 0,
-			max: 100,
-			currentValue: 75,
-			unit: 'M'
-		},
-		{
-			id: 'operators',
-			label: 'OPERATORS',
-			color: COLORS.profit,
-			values: [],
-			type: 'step',
-			min: 0,
-			max: 100,
-			currentValue: 60,
-			unit: ''
-		},
-		{
-			id: 'trace',
-			label: 'TRACE RATE',
-			color: COLORS.red,
-			values: [],
-			type: 'spike',
-			min: 0,
-			max: 100,
-			currentValue: 5,
-			unit: '%'
-		},
-		{
-			id: 'yield',
-			label: 'YIELD FLOW',
-			color: COLORS.amber,
-			values: [],
-			type: 'flow',
-			min: 0,
-			max: 100,
-			currentValue: 45,
-			unit: ''
-		}
-	]);
+	// Default waveform configurations (factory function to get fresh arrays)
+	function getDefaultWaveforms(): WaveformData[] {
+		return [
+			{
+				id: 'tvl',
+				label: 'TVL',
+				color: COLORS.accent,
+				values: [],
+				type: 'smooth',
+				min: 0,
+				max: 100,
+				currentValue: 75,
+				unit: 'M'
+			},
+			{
+				id: 'operators',
+				label: 'OPERATORS',
+				color: COLORS.profit,
+				values: [],
+				type: 'step',
+				min: 0,
+				max: 100,
+				currentValue: 60,
+				unit: ''
+			},
+			{
+				id: 'trace',
+				label: 'TRACE RATE',
+				color: COLORS.red,
+				values: [],
+				type: 'spike',
+				min: 0,
+				max: 100,
+				currentValue: 5,
+				unit: '%'
+			},
+			{
+				id: 'yield',
+				label: 'YIELD FLOW',
+				color: COLORS.amber,
+				values: [],
+				type: 'flow',
+				min: 0,
+				max: 100,
+				currentValue: 45,
+				unit: ''
+			}
+		];
+	}
+
+	// Initialize with defaults, props will be applied in onMount
+	let waveforms: WaveformData[] = $state(getDefaultWaveforms());
 
 	let sweepPosition = $state(0);
 	let time = 0;
@@ -101,6 +106,11 @@
 	onMount(() => {
 		ctx = canvas.getContext('2d')!;
 		setupCanvas();
+
+		// Use provided waveforms if available
+		if (initialWaveforms) {
+			waveforms = initialWaveforms.map(wf => ({ ...wf, values: [...wf.values] }));
+		}
 
 		// Initialize waveform data
 		waveforms.forEach((wf) => {
