@@ -14,7 +14,7 @@
   let { 
     width = 400, 
     height = 400, 
-    particleCount = 3000,
+    particleCount = 2000,
     color = '#00e5cc',
     bgColor = '#00e5cc',
     autoDissolve = true
@@ -46,8 +46,8 @@
     const positions = new Float32Array(count * 3);
     let i = 0;
 
-    // Helper to add point with some noise
-    const addPoint = (x: number, y: number, z: number, spread: number = 0.05) => {
+    // Helper to add point with some noise (tighter spread for better definition)
+    const addPoint = (x: number, y: number, z: number, spread: number = 0.025) => {
       if (i >= count * 3) return;
       positions[i++] = x + (Math.random() - 0.5) * spread;
       positions[i++] = y + (Math.random() - 0.5) * spread;
@@ -68,7 +68,7 @@
       const x = r * 0.6 * Math.sin(phi) * Math.cos(theta);
       const y = r * 0.45 * Math.sin(phi) * Math.sin(theta) - 0.2;
       const z = r * 0.5 * Math.cos(phi);
-      addPoint(x, y, z, 0.03);
+      addPoint(x, y, z, 0.018);
     }
 
     // Head - sphere
@@ -80,7 +80,7 @@
       const x = r * Math.sin(phi) * Math.cos(theta);
       const y = r * Math.sin(phi) * Math.sin(theta) + 0.45;
       const z = r * Math.cos(phi) + 0.15;
-      addPoint(x, y, z, 0.02);
+      addPoint(x, y, z, 0.012);
     }
 
     // Left ear
@@ -93,7 +93,7 @@
       const x = -0.15 + Math.cos(angle) * earWidth * 0.5;
       const y = 0.7 + t * earLength;
       const z = 0.15 + Math.sin(angle) * earWidth + t * 0.1;
-      addPoint(x, y, z, 0.02);
+      addPoint(x, y, z, 0.012);
     }
 
     // Right ear
@@ -105,7 +105,7 @@
       const x = 0.15 + Math.cos(angle) * earWidth * 0.5;
       const y = 0.7 + t * earLength;
       const z = 0.15 + Math.sin(angle) * earWidth + t * 0.1;
-      addPoint(x, y, z, 0.02);
+      addPoint(x, y, z, 0.012);
     }
 
     // Tail - small fluffy ball
@@ -117,7 +117,7 @@
       const x = r * Math.sin(phi) * Math.cos(theta);
       const y = r * Math.sin(phi) * Math.sin(theta) - 0.55;
       const z = r * Math.cos(phi) - 0.35;
-      addPoint(x, y, z, 0.04);
+      addPoint(x, y, z, 0.025);
     }
 
     // Front legs (subtle)
@@ -127,14 +127,14 @@
       const x = -0.2 + (Math.random() - 0.5) * 0.08;
       const y = -0.3 - t * 0.3;
       const z = 0.25 + (Math.random() - 0.5) * 0.08;
-      addPoint(x, y, z, 0.02);
+      addPoint(x, y, z, 0.012);
     }
     for (let j = 0; j < legPoints; j++) {
       const t = Math.random();
       const x = 0.2 + (Math.random() - 0.5) * 0.08;
       const y = -0.3 - t * 0.3;
       const z = 0.25 + (Math.random() - 0.5) * 0.08;
-      addPoint(x, y, z, 0.02);
+      addPoint(x, y, z, 0.012);
     }
 
     return positions;
@@ -193,8 +193,8 @@
         void main() {
           vec3 pos = position;
           
-          // Breathing/floating effect
-          float breath = sin(uTime * 2.0 + phase) * 0.02;
+          // Breathing/floating effect (subtle for better definition)
+          float breath = sin(uTime * 2.0 + phase) * 0.008;
           pos += normalize(pos) * breath;
           
           // Dissolve effect - particles drift away
@@ -210,8 +210,8 @@
           vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
           gl_Position = projectionMatrix * mvPosition;
           
-          // Size attenuation
-          float size = 3.0 * uPixelRatio;
+          // Size attenuation (larger particles for better definition)
+          float size = 4.5 * uPixelRatio;
           gl_PointSize = size * (1.0 / -mvPosition.z);
           
           // Alpha based on dissolve and distance
@@ -232,15 +232,19 @@
           float dist = length(center);
           if (dist > 0.5) discard;
           
-          // Glow effect
+          // Glow effect (sharper edge for better definition)
           float glow = 1.0 - dist * 2.0;
-          glow = pow(glow, 1.5);
+          glow = pow(glow, 1.2);
           
-          // Flicker
-          float flicker = 0.8 + 0.2 * sin(uTime * 10.0 + vDistance * 20.0);
+          // Flicker (reduced for more solid appearance)
+          float flicker = 0.9 + 0.1 * sin(uTime * 10.0 + vDistance * 20.0);
+          
+          // Edge fade - particles fade out as they drift further from center
+          // Start fading at distance 1.0, fully transparent by 2.5
+          float edgeFade = 1.0 - smoothstep(1.0, 2.5, vDistance);
           
           vec3 finalColor = uColor * glow * flicker;
-          float alpha = glow * vAlpha * flicker;
+          float alpha = glow * vAlpha * flicker * edgeFade;
           
           gl_FragColor = vec4(finalColor, alpha);
         }
@@ -326,19 +330,23 @@
         const cycleTime = (elapsed * 1000) % dissolveCycleDuration;
         const cycleProgress = cycleTime / dissolveCycleDuration;
         
-        // Ease in-out for smooth dissolve/reform
-        if (cycleProgress < 0.4) {
-          // Solid phase
-          dissolveValue = 0;
-        } else if (cycleProgress < 0.5) {
-          // Dissolving
-          dissolveValue = (cycleProgress - 0.4) / 0.1;
-        } else if (cycleProgress < 0.9) {
-          // Dissolved phase
+        // Animation flow: dissolved → slow reform → brief peak → dissolve out
+        if (cycleProgress < 0.20) {
+          // Dissolved/floating phase
           dissolveValue = 1;
+        } else if (cycleProgress < 0.55) {
+          // Slowly reforming (35% of cycle = 2.8s)
+          const reformProgress = (cycleProgress - 0.20) / 0.35;
+          // Ease-out for satisfying coalesce
+          dissolveValue = 1 - Math.pow(reformProgress, 0.7);
+        } else if (cycleProgress < 0.70) {
+          // Brief solid/peak phase (15% of cycle = 1.2s)
+          dissolveValue = 0;
         } else {
-          // Reforming
-          dissolveValue = 1 - (cycleProgress - 0.9) / 0.1;
+          // Dissolving back out (30% of cycle = 2.4s)
+          const dissolveProgress = (cycleProgress - 0.70) / 0.30;
+          // Ease-in for gentle start
+          dissolveValue = Math.pow(dissolveProgress, 1.5);
         }
         
         material.uniforms.uDissolve.value = dissolveValue;

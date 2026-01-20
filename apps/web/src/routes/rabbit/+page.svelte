@@ -115,7 +115,7 @@
       >
         <div class="rabbit-container large">
           {#if activeRabbit === 'particles'}
-            <RabbitParticles width={600} height={500} {color} {bgColor} particleCount={5000} />
+            <RabbitParticles width={600} height={500} {color} {bgColor} particleCount={3400} />
           {:else if activeRabbit === 'voxel'}
             <RabbitVoxel width={600} height={500} {color} {bgColor} />
           {:else if activeRabbit === 'ascii'}
