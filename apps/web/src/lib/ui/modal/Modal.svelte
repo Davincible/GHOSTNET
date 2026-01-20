@@ -139,6 +139,11 @@
 
 	.modal-content {
 		padding: var(--space-4);
+	}
+
+	/* Only apply max-height and scroll for larger modals */
+	.modal-md .modal-container .modal-content,
+	.modal-lg .modal-container .modal-content {
 		max-height: 60vh;
 		overflow-y: auto;
 	}
