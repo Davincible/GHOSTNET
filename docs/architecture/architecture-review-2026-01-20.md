@@ -34,8 +34,8 @@ This review identifies **3 Critical**, **4 High**, **5 Medium**, and **4 Low/Inf
 |----------|-------|----------------------|--------|
 | Critical | 3 | Yes | ✅ All Resolved |
 | High | 4 | Yes | ✅ All Resolved |
-| Medium | 5 | Recommended | 3/5 Resolved |
-| Low/Informational | 4 | Optional | Pending |
+| Medium | 5 | Recommended | 4/5 Resolved |
+| Low/Informational | 4 | Optional | 2/4 Resolved |
 
 ---
 
@@ -563,59 +563,40 @@ function computeStorageSlot(string memory namespace) pure returns (bytes32) {
 
 ### M-03: TraceScan Processed Mapping Never Cleared
 
-**Location:** `contract-specifications.md` (lines 1226-1230)
+**Status: ✅ RESOLVED** - Addressed via epoch-based storage pattern (see `contract-specifications.md` Storage Cleanup Strategy section).
+
+**Location:** `contract-specifications.md` (TraceScan Storage Layout section)
 
 **Description:**  
-The specification acknowledges a storage cleanup issue but defers resolution:
+The original specification had a storage cleanup issue where `processedInScan[level][user]` entries grew unboundedly without being cleared.
+
+**Resolution Implemented:**
+
+The epoch-based mapping pattern was implemented:
 
 ```solidity
-function finalizeScan(uint8 level) external {
-    // ...
-    
-    // Clear processed mapping (gas-expensive, consider alternatives)
-    // For now, we rely on scan.active check
-    
-    emit ScanFinalized(level, scan.deathCount, scan.totalDeadCapital);
-}
+// Before (problematic - unbounded growth):
+mapping(uint8 => mapping(address => bool)) processedInScan;
+
+// After (epoch-based - implicit cleanup):
+mapping(uint8 => mapping(uint256 => mapping(address => bool))) processedInScan;
+// level => scanId => user => processed
 ```
 
-**Issue:**  
-The `processedInScan[level][user]` mapping grows unboundedly. While entries become irrelevant after finalization (guarded by `scan.active`), they consume storage permanently.
+**Key Changes:**
+1. Added `scanId` field to `Scan` struct (unique per scan, from `scanNonce`)
+2. Changed `processedInScan` to 3-level mapping keyed by `scanId`
+3. `submitDeaths()` uses `scan.scanId` for lookup
+4. `finalizeScan()` no longer needs O(n) cleanup - old entries become unreachable
 
-**Impact:**  
-1. Increased storage costs over time
-2. Potential for storage slot collisions in extreme cases
-3. Makes gas estimation unpredictable
+**Gas Analysis:**
+| Operation | Before (explicit clear) | After (epoch-based) |
+|-----------|------------------------|---------------------|
+| Clear 1,000 users | ~5,000,000 gas | 0 gas |
+| Clear 10,000 users | Exceeds block limit | 0 gas |
+| Lookup cost | ~2,100 gas (cold) | ~2,100 gas (cold) |
 
-**Recommendation:**  
-Document the design decision and mitigation:
-
-```markdown
-### Storage Cleanup Strategy
-
-**Problem:** `processedInScan[level][user]` entries become stale after scan finalization but are never deleted.
-
-**Design Decision:** Accept bounded storage growth because:
-1. Clearing mappings costs O(n) gas, potentially exceeding block limits
-2. Staleness is safely handled by `scan.active` guard
-3. MegaETH storage costs are low
-
-**Mitigation:** Use epoch-based mapping to enable implicit cleanup:
-
-```solidity
-// Instead of: mapping(uint8 => mapping(address => bool)) processedInScan;
-// Use: mapping(uint8 => mapping(uint256 => mapping(address => bool))) processedInScan;
-//      level => scanId => user => processed
-
-// Lookup:
-if ($.processedInScan[level][currentScanId][user]) continue;
-```
-
-This approach:
-- Old scan IDs naturally become irrelevant
-- No explicit cleanup needed
-- Constant gas cost per check
-```
+See `security-audit-scope.md` section 4.9.1 for audit verification checklist.
 
 ---
 
@@ -912,7 +893,7 @@ The architecture documentation demonstrates strong engineering practices:
 |----|---------|----------|--------|--------|
 | M-01 | Specify Solidity version pragma | Medium | Low | ✅ Done |
 | M-02 | Document ERC-7201 slot computations | Medium | Medium | Pending |
-| M-03 | Document storage cleanup strategy | Medium | Low | Pending |
+| M-03 | Document storage cleanup strategy | Medium | Low | ✅ Done (epoch-based pattern) |
 | M-04 | Add cross-chain replay verification to audit scope | Medium | Low | ✅ Done |
 | M-05 | Add response time requirements to emergency procedures | Medium | Low | ✅ Done |
 

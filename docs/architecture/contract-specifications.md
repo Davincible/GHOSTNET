@@ -1303,10 +1303,13 @@ struct TraceScanStorage {
     // Current active scan per level
     mapping(uint8 => Scan) currentScans;
     
-    // Track processed users per scan to prevent duplicates
-    mapping(uint8 => mapping(address => bool)) processedInScan;
+    // Track processed users per scan using EPOCH-BASED pattern
+    // mapping: level => scanId => user => processed
+    // This enables implicit cleanup: old scanId entries become irrelevant
+    // without requiring O(n) gas to delete them
+    mapping(uint8 => mapping(uint256 => mapping(address => bool))) processedInScan;
     
-    // Global nonce for seed generation
+    // Global nonce for seed generation (also used as scanId)
     uint256 scanNonce;
     
     // Configurable submission window
@@ -1314,6 +1317,7 @@ struct TraceScanStorage {
 }
 
 struct Scan {
+    uint256 scanId;            // Unique scan identifier (from scanNonce)
     uint256 seed;              // Deterministic seed
     uint64 executedAt;         // When scan started
     uint64 finalizedAt;        // When cascade distributed
@@ -1323,6 +1327,43 @@ struct Scan {
     bool finalized;            // Has cascade been distributed
 }
 ```
+
+### Storage Cleanup Strategy
+
+**Design Decision:** Epoch-based mapping pattern for `processedInScan`
+
+**Problem:** The `processedInScan` mapping tracks which users have been submitted during a scan. After finalization, these entries become stale but are never deleted. Explicit cleanup would require O(n) gas (potentially millions of gas for large scans), which could exceed block limits.
+
+**Solution:** Use a three-level mapping keyed by `scanId`:
+```solidity
+// Before (problematic):
+mapping(uint8 => mapping(address => bool)) processedInScan;
+// Lookup: processedInScan[level][user]
+
+// After (epoch-based):
+mapping(uint8 => mapping(uint256 => mapping(address => bool))) processedInScan;
+// Lookup: processedInScan[level][scan.scanId][user]
+```
+
+**Why This Works:**
+1. Each scan gets a unique `scanId` (from incrementing `scanNonce`)
+2. When checking if a user was processed, we include the `scanId` in the lookup
+3. Old `scanId` entries naturally become irrelevant without explicit deletion
+4. Storage is "logically" cleaned on each new scan (O(1) gas)
+5. The mapping keys (stale entries) remain but are never accessed again
+
+**Gas Analysis:**
+| Operation | Before (explicit clear) | After (epoch-based) |
+|-----------|------------------------|---------------------|
+| Clear 1,000 users | ~5,000,000 gas | 0 gas |
+| Clear 10,000 users | ~50,000,000 gas (exceeds block) | 0 gas |
+| Lookup cost | ~2,100 gas (cold) | ~2,100 gas (cold) |
+
+**Trade-off:** Stale storage slots are never reclaimed. This is acceptable because:
+1. MegaETH storage costs are low
+2. The alternative (explicit clearing) is unbounded and can DoS the protocol
+3. Slots are ~32 bytes each, growth is linear with unique (level, scanId, user) tuples
+4. State growth is bounded by protocol activity, not accumulated forever
 
 ### Constants
 
@@ -1350,17 +1391,21 @@ function executeScan(uint8 level) external {
     IGhostCore.LevelConfig memory config = $.ghostCore.getLevelConfig(level);
     require(block.timestamp >= config.nextScanTime, "Too early");
     
+    // Increment nonce and use as scanId (enables epoch-based storage cleanup)
+    uint256 scanId = ++$.scanNonce;
+    
     // Generate deterministic seed
     uint256 seed = uint256(keccak256(abi.encode(
         block.prevrandao,
         block.timestamp,
         block.number,
         level,
-        $.scanNonce++
+        scanId
     )));
     
-    // Initialize scan
+    // Initialize scan with unique scanId
     $.currentScans[level] = Scan({
+        scanId: scanId,
         seed: seed,
         executedAt: uint64(block.timestamp),
         finalizedAt: 0,
@@ -1370,7 +1415,7 @@ function executeScan(uint8 level) external {
         finalized: false
     });
     
-    emit ScanExecuted(level, seed, block.timestamp);
+    emit ScanExecuted(level, scanId, seed, block.timestamp);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1387,6 +1432,9 @@ function submitDeaths(uint8 level, address[] calldata deadUsers) external {
     require(scan.active && !scan.finalized, "No active scan");
     require(deadUsers.length <= MAX_BATCH_SIZE, "Batch too large");
     
+    // Cache scanId for epoch-based lookup
+    uint256 scanId = scan.scanId;
+    
     address[] memory verifiedDead = new address[](deadUsers.length);
     uint256 verifiedCount;
     uint256 totalCapital;
@@ -1394,8 +1442,8 @@ function submitDeaths(uint8 level, address[] calldata deadUsers) external {
     for (uint256 i = 0; i < deadUsers.length; i++) {
         address user = deadUsers[i];
         
-        // Skip if already processed
-        if ($.processedInScan[level][user]) continue;
+        // Skip if already processed in THIS scan (epoch-based lookup)
+        if ($.processedInScan[level][scanId][user]) continue;
         
         // Get position info
         IGhostCore.Position memory pos = $.ghostCore.getPosition(user);
@@ -1409,8 +1457,8 @@ function submitDeaths(uint8 level, address[] calldata deadUsers) external {
         // VERIFY death is valid
         require(_isDead(scan.seed, user, deathRate), "User should not die");
         
-        // Mark processed
-        $.processedInScan[level][user] = true;
+        // Mark processed for THIS scan (epoch-based storage)
+        $.processedInScan[level][scanId][user] = true;
         verifiedDead[verifiedCount] = user;
         verifiedCount++;
         totalCapital += pos.amount;
@@ -1461,10 +1509,12 @@ function finalizeScan(uint8 level) external {
     // Update next scan time
     $.ghostCore.updateNextScanTime(level);
     
-    // Clear processed mapping (gas-expensive, consider alternatives)
-    // For now, we rely on scan.active check
+    // NOTE: No explicit clearing of processedInScan needed!
+    // The epoch-based pattern (keyed by scanId) means old entries
+    // become irrelevant automatically when the next scan starts.
+    // This saves potentially millions of gas vs O(n) deletion.
     
-    emit ScanFinalized(level, scan.deathCount, scan.totalDeadCapital);
+    emit ScanFinalized(level, scan.scanId, scan.deathCount, scan.totalDeadCapital);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1511,9 +1561,9 @@ function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROL
 ### Events
 
 ```solidity
-event ScanExecuted(uint8 indexed level, uint256 seed, uint256 timestamp);
+event ScanExecuted(uint8 indexed level, uint256 indexed scanId, uint256 seed, uint256 timestamp);
 event DeathsSubmitted(uint8 indexed level, uint256 count, address indexed submitter);
-event ScanFinalized(uint8 indexed level, uint256 deathCount, uint256 totalCapital);
+event ScanFinalized(uint8 indexed level, uint256 indexed scanId, uint256 deathCount, uint256 totalCapital);
 event SubmissionWindowUpdated(uint64 oldWindow, uint64 newWindow);
 ```
 

@@ -288,6 +288,31 @@ If MegaETH forks, cached DOMAIN_SEPARATOR becomes invalid. Verify handling:
 - [ ] System reset events-only loop is gas-bounded
 - [ ] Anyone can execute scans (no single point of failure)
 
+### 4.9.1 Epoch-Based Storage Cleanup (TraceScan)
+
+**Priority: MEDIUM**
+
+The `processedInScan` mapping uses an epoch-based pattern to avoid O(n) gas costs for clearing stale entries.
+
+| Check | Status |
+|-------|--------|
+| `processedInScan` uses 3-level mapping: `level => scanId => user => bool` | [ ] |
+| Each `Scan` struct contains unique `scanId` from incrementing `scanNonce` | [ ] |
+| `submitDeaths()` uses current `scan.scanId` for lookup, not just level | [ ] |
+| No explicit deletion of old `processedInScan` entries in `finalizeScan()` | [ ] |
+| Old scan entries become unreachable (not accessed after finalization) | [ ] |
+
+**Invariants:**
+- [ ] A user can only be marked as processed once per scan (per scanId)
+- [ ] The same user can be processed in different scans (different scanIds)
+- [ ] `scanNonce` always increments (never resets)
+- [ ] Gas cost of `finalizeScan()` is O(1), not O(n)
+
+**Storage Growth Analysis:**
+- [ ] Document expected storage growth rate based on anticipated scan frequency
+- [ ] Verify growth is bounded by protocol activity, not accumulated over time
+- [ ] Confirm MegaETH storage costs are acceptable for projected growth
+
 ### 4.10 Economic Attacks
 
 **Priority: HIGH**

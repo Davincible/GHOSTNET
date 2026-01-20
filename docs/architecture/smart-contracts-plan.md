@@ -279,6 +279,51 @@ function getCullingRisk(address user) external view returns (
 
 This enables UI to show: "⚠️ Culling Risk: 15% - Add 200 DATA to reach safety"
 
+### 2.7 Epoch-Based Storage Cleanup
+
+**Decision: Use scanId-keyed mappings for TraceScan's processedInScan**
+
+**Status:** FINALIZED (January 2026)
+
+**Problem:** The `processedInScan` mapping tracks which users have been submitted during a scan. After finalization, these entries become stale. Explicit cleanup would require O(n) gas, potentially millions of gas for large scans, which could exceed block limits.
+
+**Solution:**
+
+```solidity
+// Before (problematic):
+mapping(uint8 => mapping(address => bool)) processedInScan;
+// Lookup: processedInScan[level][user]
+// Cleanup: O(n) - must delete each entry individually
+
+// After (epoch-based):
+mapping(uint8 => mapping(uint256 => mapping(address => bool))) processedInScan;
+// Lookup: processedInScan[level][scanId][user]
+// Cleanup: O(1) - old scanId entries become unreachable automatically
+```
+
+**How It Works:**
+
+1. Each scan gets a unique `scanId` (from incrementing `scanNonce`)
+2. When checking if a user was processed, include `scanId` in the lookup
+3. When a new scan starts, it gets a new `scanId`
+4. Old entries keyed by previous `scanId` values are never accessed again
+5. No explicit deletion required - "logical" cleanup is O(1)
+
+**Gas Comparison:**
+
+| Operation | Explicit Clear | Epoch-Based |
+|-----------|---------------|-------------|
+| Clear 1,000 users | ~5,000,000 gas | 0 gas |
+| Clear 10,000 users | ~50,000,000 gas (exceeds block) | 0 gas |
+| New scan startup | Variable (depends on prev scan) | Constant |
+| Per-user lookup | ~2,100 gas | ~2,100 gas |
+
+**Trade-offs Accepted:**
+- Stale storage slots are never reclaimed (~32 bytes per unique tuple)
+- This is acceptable because MegaETH storage is cheap and growth is bounded by activity
+
+**Pattern Source:** This is a standard pattern from the Solidity gas optimization guides - see `packages/contracts/docs/guides/solidity/gas-optimization.md`.
+
 ---
 
 ## 3. Contract Architecture
@@ -629,6 +674,7 @@ packages/contracts/src/
 │ STRUCTS:                                                             │
 │                                                                      │
 │ Scan {                                                               │
+│   uint256 scanId;           // Unique ID for epoch-based storage    │
 │   uint256 seed;             // Deterministic seed for this scan     │
 │   uint64  executedAt;       // When scan was executed               │
 │   uint64  finalizedAt;      // When cascade was distributed         │
@@ -641,9 +687,10 @@ packages/contracts/src/
 │ STATE:                                                               │
 │ ├── ghostCore:          IGhostCore                                  │
 │ ├── currentScans:       mapping(uint8 => Scan)  // Per level        │
-│ ├── scanNonce:          uint256 (prevents replay)                   │
+│ ├── scanNonce:          uint256 (seed + scanId generation)          │
 │ ├── submissionWindow:   uint256 (default: 120 seconds)              │
-│ └── processedInScan:    mapping(uint8 => mapping(address => bool))  │
+│ └── processedInScan:    mapping(level => scanId => user => bool)    │
+│     └── EPOCH-BASED: keyed by scanId to avoid O(n) cleanup          │
 │                                                                      │
 │ CONSTANTS:                                                           │
 │ └── MAX_BATCH_SIZE:     100 (deaths per submission tx)              │
@@ -669,12 +716,12 @@ packages/contracts/src/
 │ ├── Anyone can call (permissionless)                                │
 │ ├── require(scan.executedAt > 0 && !scan.finalized)                 │
 │ ├── For each user in batch (max 100):                               │
-│ │   ├── require(!processedInScan[level][user]) // Not duplicate     │
+│ │   ├── skip if processedInScan[level][scanId][user] // Epoch check │
 │ │   ├── require(ghostCore.isAlive(user, level)) // Has position     │
 │ │   ├── uint256 deathRate = ghostCore.getEffectiveDeathRate(user)   │
 │ │   ├── bool shouldDie = isDead(scan.seed, user, deathRate)         │
 │ │   ├── require(shouldDie, "User should not die") // VERIFY!        │
-│ │   ├── processedInScan[level][user] = true                         │
+│ │   ├── processedInScan[level][scanId][user] = true // Epoch write  │
 │ │   └── scan.totalDead += position.amount; scan.deathCount++        │
 │ ├── Call ghostCore.processDeaths(deadUsers) // Mark dead            │
 │ └── Emits DeathsSubmitted(level, deadUsers.length, submitter)       │
@@ -694,8 +741,8 @@ packages/contracts/src/
 │ ├── Call ghostCore.distributeCascade(level, scan.totalDead)         │
 │ ├── Call ghostCore.incrementGhostStreak(level) // Survivors         │
 │ ├── scan.finalized = true; scan.finalizedAt = now                   │
-│ ├── Clear processedInScan mapping for level                         │
-│ └── Emits ScanFinalized(level, deathCount, totalDead, distributed)  │
+│ ├── NO cleanup needed: epoch-based storage auto-invalidates         │
+│ └── Emits ScanFinalized(level, scanId, deathCount, totalDead)       │
 │                                                                      │
 │ ═══════════════════════════════════════════════════════════════════ │
 │ VIEW FUNCTIONS                                                       │
