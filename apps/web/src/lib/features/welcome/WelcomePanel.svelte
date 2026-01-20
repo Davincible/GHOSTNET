@@ -101,11 +101,16 @@
 	});
 
 	// Slide 0 animation states
-	let logoComplete = $state(false);
-	let taglineComplete = $state(false);
+	let logoTypingComplete = $state(false);  // When ASCII art finishes typing
+	let logoSlidUp = $state(false);          // When logo has moved up
+	let taglineComplete = $state(false);     // When tagline finishes typing
 
-	function handleLogoComplete() {
-		logoComplete = true;
+	function handleLogoTypingComplete() {
+		logoTypingComplete = true;
+		// After a brief pause, slide the logo up
+		setTimeout(() => {
+			logoSlidUp = true;
+		}, 400);
 	}
 
 	function handleTaglineComplete() {
@@ -115,7 +120,8 @@
 	// Reset states when slide changes
 	$effect(() => {
 		if (currentSlide === 0) {
-			logoComplete = false;
+			logoTypingComplete = false;
+			logoSlidUp = false;
 			taglineComplete = false;
 		}
 	});
@@ -148,8 +154,8 @@
 				{#key slideKey}
 					<!-- Slide 0: THE HOOK -->
 					{#if currentSlide === 0}
-						<div class="slide slide-hook">
-							<div class="logo-container">
+						<div class="slide slide-hook" class:content-visible={logoSlidUp}>
+							<div class="logo-container" class:slid-up={logoSlidUp}>
 								<AsciiTypewriter 
 									text={` ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
 ██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
@@ -160,20 +166,25 @@
 									charDelay={3}
 									lineDelay={30}
 									glitchChance={0.02}
+									onComplete={handleLogoTypingComplete}
 								/>
 							</div>
-							<h2 class="tagline">
-								<GlitchText 
-									text="JACK IN. DON'T GET TRACED." 
-									speed={40} 
-									glitchIntensity={0.4}
-									onComplete={handleLogoComplete}
-								/>
-							</h2>
-							<p class="subtitle" class:visible={logoComplete}>
-								A game where doing nothing can make you rich.<br/>
-								<span class="glow-danger">Or lose you everything.</span>
-							</p>
+							<div class="hook-content" class:visible={logoSlidUp}>
+								<h2 class="tagline">
+									{#if logoSlidUp}
+										<GlitchText 
+											text="JACK IN. DON'T GET TRACED." 
+											speed={35} 
+											glitchIntensity={0.4}
+											onComplete={handleTaglineComplete}
+										/>
+									{/if}
+								</h2>
+								<p class="subtitle" class:visible={taglineComplete}>
+									A game where doing nothing can make you rich.<br/>
+									<span class="glow-danger">Or lose you everything.</span>
+								</p>
+							</div>
 						</div>
 					{/if}
 
@@ -578,51 +589,39 @@
 	   SLIDE 0: THE HOOK
 	   ═══════════════════════════════════════════════════════════════ */
 
+	/* Slide hook - logo centered, then slides up */
+	.slide-hook {
+		justify-content: center;
+		min-height: 260px;
+		position: relative;
+	}
+
+	.slide-hook.content-visible {
+		justify-content: flex-start;
+	}
+
 	.logo-container {
-		animation: logo-glitch-in 0.8s ease-out;
+		transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+		transform: translateY(40px);
 	}
 
-	@keyframes logo-glitch-in {
-		0% {
-			opacity: 0;
-			transform: scale(0.9) translateY(-10px);
-			filter: blur(4px);
-		}
-		30% {
-			opacity: 0.5;
-			transform: scale(1.02) translateX(-3px);
-			filter: blur(1px);
-		}
-		60% {
-			opacity: 0.8;
-			transform: scale(0.98) translateX(2px);
-			filter: blur(0);
-		}
-		100% {
-			opacity: 1;
-			transform: scale(1) translateX(0);
-			filter: blur(0);
-		}
+	.logo-container.slid-up {
+		transform: translateY(0);
 	}
 
-	.ascii-logo {
-		font-family: var(--font-mono);
-		font-size: 0.38rem;
-		line-height: 1.1;
-		color: var(--color-accent);
-		text-shadow: 0 0 10px var(--color-accent-glow), 0 0 30px var(--color-accent-glow);
-		white-space: pre;
-		margin: 0;
-		animation: logo-pulse 3s ease-in-out infinite;
+	.hook-content {
+		opacity: 0;
+		transform: translateY(20px);
+		transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
-	@keyframes logo-pulse {
-		0%, 100% { 
-			text-shadow: 0 0 10px var(--color-accent-glow), 0 0 30px var(--color-accent-glow);
-		}
-		50% { 
-			text-shadow: 0 0 20px var(--color-accent-glow), 0 0 50px var(--color-accent-glow), 0 0 80px var(--color-accent-glow);
-		}
+	.hook-content.visible {
+		opacity: 1;
+		transform: translateY(0);
 	}
 
 	.tagline {
@@ -631,6 +630,7 @@
 		color: var(--color-text-primary);
 		letter-spacing: var(--tracking-wider);
 		margin: var(--space-3) 0 0 0;
+		min-height: 1.5em;
 	}
 
 	.subtitle {
