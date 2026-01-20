@@ -21,17 +21,21 @@
   let container: HTMLDivElement;
   let animationId: number;
   
-  // Store material references for reactive color updates
-  let voxelMaterialRef: THREE.ShaderMaterial | undefined;
-  let wireframeMaterialRef: THREE.ShaderMaterial | undefined;
-  let glowMaterialRef: THREE.ShaderMaterial | undefined;
-
-  // Reactively update colors when prop changes
+  // Store references to rabbit materials for color updates
+  let rabbitVoxelMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let rabbitWireframeMaterial = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Update rabbit color when prop changes (only rabbit, not background glow)
   $effect(() => {
-    const newColor = new THREE.Color(color);
-    if (voxelMaterialRef) voxelMaterialRef.uniforms.uColor.value = newColor;
-    if (wireframeMaterialRef) wireframeMaterialRef.uniforms.uColor.value = newColor;
-    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
+    if (color) {
+      const newColor = new THREE.Color(color);
+      if (rabbitVoxelMaterial) {
+        rabbitVoxelMaterial.uniforms.uColor.value = newColor;
+      }
+      if (rabbitWireframeMaterial) {
+        rabbitWireframeMaterial.uniforms.uColor.value = newColor;
+      }
+    }
   });
 
   // Define rabbit as 3D voxel grid (1 = filled, 0 = empty)
@@ -224,7 +228,6 @@
       `,
       transparent: true
     });
-    voxelMaterialRef = voxelMaterial; // Store ref for reactive color updates
 
     const instancedMesh = new THREE.InstancedMesh(cubeGeometry, voxelMaterial, voxelData.length);
     
@@ -245,8 +248,11 @@
     
     instancedMesh.instanceMatrix.needsUpdate = true;
     scene.add(instancedMesh);
+    
+    // Store reference for reactive color updates
+    rabbitVoxelMaterial = voxelMaterial;
 
-    // Add wireframe outline for extra retro feel
+    // Add wireframe outline for extra retro feel (also part of rabbit)
     const wireframeMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -270,7 +276,6 @@
       transparent: true,
       wireframe: true
     });
-    wireframeMaterialRef = wireframeMaterial; // Store ref for reactive color updates
     
     const wireframeGeometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
     const wireframeMesh = new THREE.InstancedMesh(wireframeGeometry, wireframeMaterial, voxelData.length);
@@ -285,13 +290,17 @@
     });
     wireframeMesh.instanceMatrix.needsUpdate = true;
     scene.add(wireframeMesh);
+    
+    // Store reference for reactive color updates
+    rabbitWireframeMaterial = wireframeMaterial;
 
-    // Add ambient glow
+    // Add ambient glow (fixed color - doesn't change)
+    const fixedAccentColor = '#00e5cc';
     const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(fixedAccentColor) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -316,7 +325,6 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
-    glowMaterialRef = glowMaterial; // Store ref for reactive color updates
     
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     scene.add(glowMesh);

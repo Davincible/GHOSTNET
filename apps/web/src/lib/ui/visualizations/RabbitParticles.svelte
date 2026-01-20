@@ -21,15 +21,14 @@
   let container: HTMLDivElement;
   let animationId: number;
   
-  // Store material references for reactive color updates
-  let particleMaterialRef: THREE.ShaderMaterial | undefined;
-  let glowMaterialRef: THREE.ShaderMaterial | undefined;
-
-  // Reactively update colors when prop changes
+  // Store reference to rabbit material for color updates
+  let rabbitMaterial = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Update rabbit color when prop changes (only rabbit, not background)
   $effect(() => {
-    const newColor = new THREE.Color(color);
-    if (particleMaterialRef) particleMaterialRef.uniforms.uColor.value = newColor;
-    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
+    if (rabbitMaterial && color) {
+      rabbitMaterial.uniforms.uColor.value = new THREE.Color(color);
+    }
   });
 
   // Generate rabbit shape points procedurally
@@ -240,20 +239,23 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
-    particleMaterialRef = material; // Store ref for reactive color updates
 
     // Add phase attribute
     geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
+    
+    // Store reference for reactive color updates
+    rabbitMaterial = material;
 
-    // Add subtle glow plane behind rabbit
+    // Add subtle glow plane behind rabbit (fixed color - doesn't change)
+    const fixedAccentColor = '#00e5cc';
     const glowGeometry = new THREE.PlaneGeometry(2, 2);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(fixedAccentColor) }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -285,8 +287,6 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
-    glowMaterialRef = glowMaterial; // Store ref for reactive color updates
-    
     const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
     glowPlane.position.z = -0.5;
     scene.add(glowPlane);

@@ -19,17 +19,14 @@
   let container: HTMLDivElement;
   let animationId: number;
   
-  // Store material references for reactive color updates
-  let lineMaterialRef: THREE.ShaderMaterial | undefined;
-  let glowMaterialRef: THREE.ShaderMaterial | undefined;
-  let ringMaterialRef: THREE.ShaderMaterial | undefined;
-
-  // Reactively update colors when prop changes
+  // Store reference to rabbit material for color updates
+  let rabbitMaterial = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Update rabbit color when prop changes (only rabbit, not background)
   $effect(() => {
-    const newColor = new THREE.Color(color);
-    if (lineMaterialRef) lineMaterialRef.uniforms.uColor.value = newColor;
-    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
-    if (ringMaterialRef) ringMaterialRef.uniforms.uColor.value = newColor;
+    if (rabbitMaterial && color) {
+      rabbitMaterial.uniforms.uColor.value = new THREE.Color(color);
+    }
   });
 
   // Create smooth curve from control points using Catmull-Rom interpolation
@@ -620,7 +617,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Enhanced line material with better glow
+    // Enhanced line material with better glow (for rabbit only)
     const lineMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -701,13 +698,17 @@
     // Center the rabbit
     lineGroup.position.y = -0.1;
     scene.add(lineGroup);
+    
+    // Store reference for reactive color updates
+    rabbitMaterial = lineMaterial;
 
-    // Atmospheric glow behind rabbit
+    // Atmospheric glow behind rabbit (fixed color - doesn't change)
+    const fixedAccentColor = '#00e5cc';
     const glowGeometry = new THREE.SphereGeometry(1.0, 32, 32);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(fixedAccentColor) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -740,17 +741,17 @@
     glowMesh.position.set(0, 0.3, 0);
     scene.add(glowMesh);
 
-    // Floor grid
-    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(color).multiplyScalar(0.25), new THREE.Color(color).multiplyScalar(0.1));
+    // Floor grid (fixed color - doesn't change)
+    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(fixedAccentColor).multiplyScalar(0.25), new THREE.Color(fixedAccentColor).multiplyScalar(0.1));
     gridHelper.position.y = -0.65;
     scene.add(gridHelper);
 
-    // Scan ring on floor
+    // Scan ring on floor (fixed color - doesn't change)
     const ringGeometry = new THREE.RingGeometry(0.6, 0.62, 64);
     const ringMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(color) }
+        uColor: { value: new THREE.Color(fixedAccentColor) }
       },
       vertexShader: `
         varying vec2 vUv;
