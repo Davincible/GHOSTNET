@@ -6,8 +6,7 @@
   import RabbitWireframe from '$lib/ui/visualizations/RabbitWireframe.svelte';
 
   let activeRabbit = $state<'particles' | 'voxel' | 'ascii' | 'wireframe' | 'all'>('all');
-  let primaryColor = $state('#00e5cc');
-  let secondaryColor = $state('#1a0a2e');
+  let color = $state('#00e5cc');
   
   const rabbits = [
     { id: 'particles', name: 'PARTICLE CLOUD', desc: 'Matrix dissolve/reform' },
@@ -16,22 +15,13 @@
     { id: 'wireframe', name: 'WIREFRAME', desc: 'Tron vectors' },
   ] as const;
 
-  const primaryColors = [
+  const colors = [
     { value: '#00e5cc', name: 'Ghost Cyan' },
     { value: '#00ff00', name: 'Matrix Green' },
     { value: '#ff00ff', name: 'Neon Pink' },
     { value: '#ffff00', name: 'Warning Yellow' },
     { value: '#ff3366', name: 'Danger Red' },
     { value: '#ffffff', name: 'Pure White' },
-  ];
-  
-  const secondaryColors = [
-    { value: '#1a0a2e', name: 'Deep Void' },
-    { value: '#0a1628', name: 'Midnight Blue' },
-    { value: '#1a0a0a', name: 'Blood Dark' },
-    { value: '#0a1a0a', name: 'Matrix Dark' },
-    { value: '#2a1a3e', name: 'Purple Haze' },
-    { value: '#000000', name: 'Pure Black' },
   ];
 </script>
 
@@ -70,26 +60,13 @@
     </div>
     
     <div class="color-picker">
-      <span class="label">RABBIT:</span>
-      {#each primaryColors as c}
+      <span class="label">COLOR:</span>
+      {#each colors as c}
         <button 
           class="color-btn"
-          class:active={primaryColor === c.value}
+          class:active={color === c.value}
           style="--btn-color: {c.value}"
-          onclick={() => primaryColor = c.value}
-          title={c.name}
-        ></button>
-      {/each}
-    </div>
-    
-    <div class="color-picker">
-      <span class="label">BACKGROUND:</span>
-      {#each secondaryColors as c}
-        <button 
-          class="color-btn secondary"
-          class:active={secondaryColor === c.value}
-          style="--btn-color: {c.value}"
-          onclick={() => secondaryColor = c.value}
+          onclick={() => color = c.value}
           title={c.name}
         ></button>
       {/each}
@@ -102,13 +79,13 @@
         <Panel title={rabbit.name} borderColor="cyan" glow>
           <div class="rabbit-container">
             {#if rabbit.id === 'particles'}
-              <RabbitParticles width={350} height={350} color={primaryColor} bgColor={secondaryColor} />
+              <RabbitParticles width={350} height={350} {color} />
             {:else if rabbit.id === 'voxel'}
-              <RabbitVoxel width={350} height={350} color={primaryColor} bgColor={secondaryColor} />
+              <RabbitVoxel width={350} height={350} {color} />
             {:else if rabbit.id === 'ascii'}
-              <RabbitASCII width={350} height={350} color={primaryColor} bgColor={secondaryColor} />
+              <RabbitASCII width={350} height={350} {color} />
             {:else if rabbit.id === 'wireframe'}
-              <RabbitWireframe width={350} height={350} color={primaryColor} bgColor={secondaryColor} />
+              <RabbitWireframe width={350} height={350} {color} />
             {/if}
           </div>
           <p class="rabbit-desc">{rabbit.desc}</p>
@@ -124,13 +101,13 @@
       >
         <div class="rabbit-container large">
           {#if activeRabbit === 'particles'}
-            <RabbitParticles width={600} height={500} color={primaryColor} bgColor={secondaryColor} particleCount={5000} />
+            <RabbitParticles width={600} height={500} {color} particleCount={5000} />
           {:else if activeRabbit === 'voxel'}
-            <RabbitVoxel width={600} height={500} color={primaryColor} bgColor={secondaryColor} />
+            <RabbitVoxel width={600} height={500} {color} />
           {:else if activeRabbit === 'ascii'}
-            <RabbitASCII width={600} height={500} color={primaryColor} bgColor={secondaryColor} />
+            <RabbitASCII width={600} height={500} {color} />
           {:else if activeRabbit === 'wireframe'}
-            <RabbitWireframe width={600} height={500} color={primaryColor} bgColor={secondaryColor} />
+            <RabbitWireframe width={600} height={500} {color} />
           {/if}
         </div>
       </Panel>
@@ -258,11 +235,6 @@
     border-color: var(--color-text-primary);
     transform: scale(1.1);
     box-shadow: 0 0 20px var(--btn-color);
-  }
-
-  .color-btn.secondary {
-    border: 1px solid var(--color-border-default);
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
   }
 
   .grid {
