@@ -18,6 +18,19 @@
 
   let container: HTMLDivElement;
   let animationId: number;
+  
+  // Store material references for reactive color updates
+  let lineMat = $state<THREE.ShaderMaterial | null>(null);
+  let glowMat = $state<THREE.ShaderMaterial | null>(null);
+  let ringMat = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Reactive color update
+  $effect(() => {
+    const newColor = new THREE.Color(color);
+    if (lineMat) lineMat.uniforms.uColor.value = newColor;
+    if (glowMat) glowMat.uniforms.uColor.value = newColor;
+    if (ringMat) ringMat.uniforms.uColor.value = newColor;
+  });
 
   // Create smooth curve from control points using Catmull-Rom interpolation
   function createSmoothCurve(controlPoints: [number, number, number][], segments: number = 32, closed: boolean = false): THREE.Vector3[] {
@@ -608,7 +621,7 @@
     container.appendChild(renderer.domElement);
 
     // Enhanced line material with better glow
-    const lineMaterial = new THREE.ShaderMaterial({
+    const lineMaterial = lineMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -691,7 +704,7 @@
 
     // Atmospheric glow behind rabbit
     const glowGeometry = new THREE.SphereGeometry(1.0, 32, 32);
-    const glowMaterial = new THREE.ShaderMaterial({
+    const glowMaterial = glowMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }
@@ -734,7 +747,7 @@
 
     // Scan ring on floor
     const ringGeometry = new THREE.RingGeometry(0.6, 0.62, 64);
-    const ringMaterial = new THREE.ShaderMaterial({
+    const ringMaterial = ringMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }

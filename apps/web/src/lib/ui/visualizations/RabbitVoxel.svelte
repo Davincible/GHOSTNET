@@ -20,6 +20,19 @@
 
   let container: HTMLDivElement;
   let animationId: number;
+  
+  // Store material references for reactive color updates
+  let voxelMat = $state<THREE.ShaderMaterial | null>(null);
+  let wireframeMat = $state<THREE.ShaderMaterial | null>(null);
+  let glowMat = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Reactive color update
+  $effect(() => {
+    const newColor = new THREE.Color(color);
+    if (voxelMat) voxelMat.uniforms.uColor.value = newColor;
+    if (wireframeMat) wireframeMat.uniforms.uColor.value = newColor;
+    if (glowMat) glowMat.uniforms.uColor.value = newColor;
+  });
 
   // Define rabbit as 3D voxel grid (1 = filled, 0 = empty)
   // Grid is 16 wide (x) x 24 tall (y) x 12 deep (z)
@@ -137,7 +150,7 @@
     const cubeGeometry = new THREE.BoxGeometry(voxelSize * 0.9, voxelSize * 0.9, voxelSize * 0.9);
     
     // Custom shader material for glowing voxels
-    const voxelMaterial = new THREE.ShaderMaterial({
+    const voxelMaterial = voxelMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -233,7 +246,7 @@
     scene.add(instancedMesh);
 
     // Add wireframe outline for extra retro feel
-    const wireframeMaterial = new THREE.ShaderMaterial({
+    const wireframeMaterial = wireframeMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }
@@ -273,7 +286,7 @@
 
     // Add ambient glow
     const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
-    const glowMaterial = new THREE.ShaderMaterial({
+    const glowMaterial = glowMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }

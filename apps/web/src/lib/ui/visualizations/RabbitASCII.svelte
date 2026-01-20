@@ -19,6 +19,24 @@
 
   let canvas: HTMLCanvasElement;
   let animationId: number;
+  
+  // Parse hex color to RGB - reactive
+  function hexToRgb(hex: string) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 0, g: 229, b: 204 };
+  }
+  
+  // Reactive RGB object that animation loop can reference
+  let rgb = $state(hexToRgb(color));
+  
+  // Update RGB when color prop changes
+  $effect(() => {
+    rgb = hexToRgb(color);
+  });
 
   // ASCII art frames for the rabbit (multiple frames for animation)
   const rabbitFrames = [
@@ -147,17 +165,6 @@
     const columns = Math.floor(width / fontSize);
     const drops: number[] = new Array(columns).fill(0).map(() => Math.random() * -100);
     const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF';
-    
-    // Parse color
-    const hexToRgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : { r: 0, g: 229, b: 204 };
-    };
-    const rgb = hexToRgb(color);
 
     // Rabbit display state
     let rabbitAlpha = 0;

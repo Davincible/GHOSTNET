@@ -20,6 +20,21 @@
 
   let container: HTMLDivElement;
   let animationId: number;
+  
+  // Store material references for reactive color updates
+  let particleMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let glowMaterial = $state<THREE.ShaderMaterial | null>(null);
+  
+  // Reactive color update
+  $effect(() => {
+    const newColor = new THREE.Color(color);
+    if (particleMaterial) {
+      particleMaterial.uniforms.uColor.value = newColor;
+    }
+    if (glowMaterial) {
+      glowMaterial.uniforms.uColor.value = newColor;
+    }
+  });
 
   // Generate rabbit shape points procedurally
   function generateRabbitPoints(count: number): Float32Array {
@@ -153,7 +168,7 @@
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     // Custom shader material for glowing particles
-    const material = new THREE.ShaderMaterial({
+    const material = particleMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -238,7 +253,7 @@
 
     // Add subtle glow plane behind rabbit
     const glowGeometry = new THREE.PlaneGeometry(2, 2);
-    const glowMaterial = new THREE.ShaderMaterial({
+    const glowMat = glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }
@@ -293,7 +308,7 @@
       
       // Update uniforms
       material.uniforms.uTime.value = elapsed;
-      glowMaterial.uniforms.uTime.value = elapsed;
+      glowMat.uniforms.uTime.value = elapsed;
       
       // Auto dissolve cycle
       if (autoDissolve) {
@@ -333,7 +348,7 @@
       renderer.dispose();
       geometry.dispose();
       material.dispose();
-      glowMaterial.dispose();
+      glowMat.dispose();
       glowGeometry.dispose();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
