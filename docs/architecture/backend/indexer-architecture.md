@@ -1,10 +1,11 @@
 # GHOSTNET Event Indexer Architecture
 
-> **Version**: 2.2.0  
+> **Version**: 2.3.0  
 > **Last Updated**: 2026-01-20  
 > **Status**: Specification (Review Complete)  
 > **Supersedes**: `event-indexer-rust.md`, `backend-architecture-old.md`  
-> **Review**: See `docs/lessons/indexer-architecture-review.md` for review notes
+> **Review**: See `docs/lessons/indexer-architecture-review.md` for review notes  
+> **EVM Guide Alignment**: Cross-referenced with `evm-rust-guide.md` (January 2026)
 
 This document provides the complete architecture specification for the GHOSTNET Event Indexer - a high-performance Rust-based backend service that indexes blockchain events, persists them to TimescaleDB, streams them via Apache Iggy, and exposes REST/WebSocket APIs.
 
@@ -95,12 +96,12 @@ The GHOSTNET Event Indexer serves as the backbone for the entire GHOSTNET ecosys
 
 | Component | Technology | Version | Rationale |
 |-----------|------------|---------|-----------|
-| **Language** | Rust | 1.85+ (Edition 2024) | Memory safety, performance, ecosystem |
+| **Language** | Rust | 1.88+ (Edition 2024) | Memory safety, performance, ecosystem |
 | **Runtime** | Tokio | 1.x | Industry-standard async runtime |
 | **Database** | TimescaleDB | 2.22+ | Time-series optimization, compression |
 | **Streaming** | Apache Iggy | 0.6+ | Rust-native, high-throughput messaging |
 | **API Framework** | Axum | 0.7+ | Type-safe, tower ecosystem |
-| **Ethereum Client** | Alloy | 0.9+ | Modern, type-safe, tree-shakeable |
+| **Ethereum Client** | Alloy | 1.4+ | Modern, type-safe, stable (May 2025) |
 | **Caching** | moka + dashmap | Latest | In-memory LRU cache, concurrent maps |
 
 ### 2.2 Why These Choices?
@@ -597,7 +598,7 @@ enum RoundType {
 services/ghostnet-indexer/
 ├── Cargo.toml                     # Project manifest
 ├── Cargo.lock                     # Dependency lock file
-├── rust-toolchain.toml            # Rust 1.85 + components
+├── rust-toolchain.toml            # Rust 1.88 + components
 ├── rustfmt.toml                   # Formatter config
 ├── deny.toml                      # Dependency policy
 ├── .env.example                   # Environment template
@@ -726,7 +727,7 @@ services/ghostnet-indexer/
 name = "ghostnet-indexer"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"  # Required for Alloy 1.4+
 authors = ["GHOSTNET Team"]
 description = "Event indexer for the GHOSTNET protocol"
 license = "MIT"
@@ -758,22 +759,17 @@ must_use_candidate = "allow"
 
 [dependencies]
 # ───────────────────────────────────────────────────────────────────────────────
-# ETHEREUM
+# ETHEREUM (Alloy 1.4+ stable - May 2025)
+# Note: alloy-sol-types and alloy-primitives are re-exported from alloy
 # ───────────────────────────────────────────────────────────────────────────────
-alloy = { version = "0.9", features = [
-    "full",
-    "provider-http",
-    "provider-ws",
-    "rpc-types-eth",
-] }
-alloy-sol-types = "0.9"
-alloy-primitives = "0.9"
+alloy = { version = "1.4", features = ["full"] }
 
 # ───────────────────────────────────────────────────────────────────────────────
 # ASYNC RUNTIME
 # ───────────────────────────────────────────────────────────────────────────────
 tokio = { version = "1", features = ["full", "tracing"] }
 futures = "0.3"
+futures-util = "0.3"  # For StreamExt in block subscriptions
 async-trait = "0.1"
 
 # ───────────────────────────────────────────────────────────────────────────────
@@ -841,10 +837,14 @@ metrics = "0.24"
 metrics-exporter-prometheus = "0.16"
 
 # ───────────────────────────────────────────────────────────────────────────────
+# ERROR HANDLING
+# ───────────────────────────────────────────────────────────────────────────────
+thiserror = "2"        # Typed domain errors
+eyre = "0.6"           # Application-level errors (Alloy ecosystem standard)
+
+# ───────────────────────────────────────────────────────────────────────────────
 # UTILITIES
 # ───────────────────────────────────────────────────────────────────────────────
-thiserror = "2"
-anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "v7", "serde"] }
 bigdecimal = { version = "0.4", features = ["serde"] }
@@ -888,7 +888,7 @@ path = "src/main.rs"
 
 ```toml
 [toolchain]
-channel = "1.85"
+channel = "1.88"  # Required for Alloy 1.4+
 components = ["rust-src", "rust-analyzer", "clippy", "rustfmt", "llvm-tools-preview"]
 ```
 
@@ -1140,7 +1140,7 @@ pub enum ExitReason {
 ### 7.2 Event Structs (src/types/events.rs)
 
 ```rust
-use alloy_primitives::{Address, B256, U256};
+use alloy::primitives::{Address, B256, U256};  // Re-exported from alloy 1.4+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -1480,7 +1480,7 @@ Following hexagonal architecture, we define trait-based ports that the domain la
 //! Adapters (in the infrastructure layer) implement these traits.
 
 use async_trait::async_trait;
-use alloy_primitives::B256;
+use alloy::primitives::B256;  // Re-exported from alloy 1.4+
 use chrono::{DateTime, Utc};
 
 use crate::error::Result;
@@ -1683,6 +1683,9 @@ Following the layered error handling pattern, we define error types for each arc
 //! - InfraError: Infrastructure failures (DB, network, etc.)
 //! - AppError: Application-level errors combining domain and infra
 //! - ApiError: HTTP-specific errors with status codes
+//!
+//! Note: We use `eyre` for application-level error handling (Alloy ecosystem standard)
+//! and `thiserror` for typed domain errors.
 
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
@@ -1801,7 +1804,7 @@ pub enum ApiError {
     Unauthorized,
     
     #[error("internal error")]
-    Internal(#[source] anyhow::Error),
+    Internal(#[source] eyre::Report),
 }
 
 impl IntoResponse for ApiError {
@@ -1975,13 +1978,13 @@ impl From<[u8; 20]> for EthAddress {
     }
 }
 
-impl From<alloy_primitives::Address> for EthAddress {
-    fn from(addr: alloy_primitives::Address) -> Self {
+impl From<alloy::primitives::Address> for EthAddress {
+    fn from(addr: alloy::primitives::Address) -> Self {
         Self::new(addr.0 .0)
     }
 }
 
-impl From<EthAddress> for alloy_primitives::Address {
+impl From<EthAddress> for alloy::primitives::Address {
     fn from(addr: EthAddress) -> Self {
         Self::from(addr.0)
     }
@@ -2028,7 +2031,7 @@ impl TokenAmount {
     }
     
     /// Create from U256 (wei) with decimals.
-    pub fn from_wei(wei: alloy_primitives::U256, decimals: u8) -> Self {
+    pub fn from_wei(wei: alloy::primitives::U256, decimals: u8) -> Self {
         let wei_str = wei.to_string();
         let value = BigDecimal::from_str(&wei_str)
             .expect("U256 string is always valid")
@@ -2043,10 +2046,10 @@ impl TokenAmount {
     }
     
     /// Convert to wei (U256) given decimals.
-    pub fn to_wei(&self, decimals: u8) -> alloy_primitives::U256 {
+    pub fn to_wei(&self, decimals: u8) -> alloy::primitives::U256 {
         let scaled = &self.0 * BigDecimal::from(10_u64.pow(decimals as u32));
         let int = scaled.to_string().split('.').next().unwrap().to_string();
-        alloy_primitives::U256::from_str(&int).unwrap_or_default()
+        alloy::primitives::U256::from_str(&int).unwrap_or_default()
     }
     
     /// Check if zero.
@@ -2422,14 +2425,18 @@ pub struct LeaderboardEntry {
 
 ## 8. ABI Bindings
 
-Use `alloy-sol-types` macro to generate type-safe event bindings from Solidity signatures.
+Use `alloy::sol!` macro (Alloy 1.4+) to generate type-safe event bindings from Solidity signatures.
+
+> **Note**: In Alloy 1.x, the `sol!` macro is re-exported from the main `alloy` crate. The `#[sol(all_derives)]` 
+> attribute automatically derives common traits. For event-only decoding, we use the standard event syntax.
 
 ### 8.1 GhostCore ABI (src/abi/ghost_core.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// Position entry event
     #[derive(Debug, PartialEq, Eq)]
     event JackedIn(
         address indexed user,
@@ -2438,6 +2445,7 @@ sol! {
         uint256 newTotal
     );
 
+    /// Stake addition event
     #[derive(Debug, PartialEq, Eq)]
     event StakeAdded(
         address indexed user,
@@ -2445,6 +2453,7 @@ sol! {
         uint256 newTotal
     );
 
+    /// Position extraction event
     #[derive(Debug, PartialEq, Eq)]
     event Extracted(
         address indexed user,
@@ -2452,6 +2461,7 @@ sol! {
         uint256 rewards
     );
 
+    /// Death processing event
     #[derive(Debug, PartialEq, Eq)]
     event DeathsProcessed(
         uint8 indexed level,
@@ -2461,12 +2471,14 @@ sol! {
         uint256 distributed
     );
 
+    /// Survivor update event
     #[derive(Debug, PartialEq, Eq)]
     event SurvivorsUpdated(
         uint8 indexed level,
         uint256 count
     );
 
+    /// Cascade distribution event
     #[derive(Debug, PartialEq, Eq)]
     event CascadeDistributed(
         uint8 indexed sourceLevel,
@@ -2476,12 +2488,14 @@ sol! {
         uint256 protocolAmount
     );
 
+    /// Emissions addition event
     #[derive(Debug, PartialEq, Eq)]
     event EmissionsAdded(
         uint8 indexed level,
         uint256 amount
     );
 
+    /// Boost application event
     #[derive(Debug, PartialEq, Eq)]
     event BoostApplied(
         address indexed user,
@@ -2490,6 +2504,7 @@ sol! {
         uint64 expiry
     );
 
+    /// System reset event
     #[derive(Debug, PartialEq, Eq)]
     event SystemResetTriggered(
         uint256 totalPenalty,
@@ -2497,6 +2512,7 @@ sol! {
         uint256 jackpotAmount
     );
 
+    /// Position culling event
     #[derive(Debug, PartialEq, Eq)]
     event PositionCulled(
         address indexed victim,
@@ -2510,9 +2526,10 @@ sol! {
 ### 8.2 TraceScan ABI (src/abi/trace_scan.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// Scan execution event
     #[derive(Debug, PartialEq, Eq)]
     event ScanExecuted(
         uint8 indexed level,
@@ -2521,6 +2538,7 @@ sol! {
         uint64 executedAt
     );
 
+    /// Deaths submission event
     #[derive(Debug, PartialEq, Eq)]
     event DeathsSubmitted(
         uint8 indexed level,
@@ -2530,6 +2548,7 @@ sol! {
         address indexed submitter
     );
 
+    /// Scan finalization event
     #[derive(Debug, PartialEq, Eq)]
     event ScanFinalized(
         uint8 indexed level,
@@ -2544,9 +2563,10 @@ sol! {
 ### 8.3 DeadPool ABI (src/abi/dead_pool.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// Round creation event
     #[derive(Debug, PartialEq, Eq)]
     event RoundCreated(
         uint256 indexed roundId,
@@ -2556,6 +2576,7 @@ sol! {
         uint64 deadline
     );
 
+    /// Bet placement event
     #[derive(Debug, PartialEq, Eq)]
     event BetPlaced(
         uint256 indexed roundId,
@@ -2564,6 +2585,7 @@ sol! {
         uint256 amount
     );
 
+    /// Round resolution event
     #[derive(Debug, PartialEq, Eq)]
     event RoundResolved(
         uint256 indexed roundId,
@@ -2572,6 +2594,7 @@ sol! {
         uint256 burned
     );
 
+    /// Winnings claim event
     #[derive(Debug, PartialEq, Eq)]
     event WinningsClaimed(
         uint256 indexed roundId,
@@ -2584,9 +2607,10 @@ sol! {
 ### 8.4 DataToken ABI (src/abi/data_token.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// ERC20 transfer event
     #[derive(Debug, PartialEq, Eq)]
     event Transfer(
         address indexed from,
@@ -2594,18 +2618,21 @@ sol! {
         uint256 value
     );
 
+    /// Tax exclusion status change event
     #[derive(Debug, PartialEq, Eq)]
     event TaxExclusionSet(
         address indexed account,
         bool excluded
     );
 
+    /// Tax burn event
     #[derive(Debug, PartialEq, Eq)]
     event TaxBurned(
         address indexed from,
         uint256 amount
     );
 
+    /// Tax collection event
     #[derive(Debug, PartialEq, Eq)]
     event TaxCollected(
         address indexed from,
@@ -2617,9 +2644,10 @@ sol! {
 ### 8.5 FeeRouter ABI (src/abi/fee_router.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// Toll collection event
     #[derive(Debug, PartialEq, Eq)]
     event TollCollected(
         address indexed from,
@@ -2627,6 +2655,7 @@ sol! {
         bytes32 indexed reason
     );
 
+    /// Buyback execution event
     #[derive(Debug, PartialEq, Eq)]
     event BuybackExecuted(
         uint256 ethSpent,
@@ -2634,6 +2663,7 @@ sol! {
         uint256 dataBurned
     );
 
+    /// Operations withdrawal event
     #[derive(Debug, PartialEq, Eq)]
     event OperationsWithdrawn(
         address indexed to,
@@ -2645,15 +2675,17 @@ sol! {
 ### 8.6 RewardsDistributor ABI (src/abi/rewards_distributor.rs)
 
 ```rust
-use alloy_sol_types::sol;
+use alloy::sol;
 
 sol! {
+    /// Emissions distribution event
     #[derive(Debug, PartialEq, Eq)]
     event EmissionsDistributed(
         uint256 totalAmount,
         uint256 timestamp
     );
 
+    /// Weights update event
     #[derive(Debug, PartialEq, Eq)]
     event WeightsUpdated(
         uint16[5] newWeights
@@ -2733,7 +2765,7 @@ pub trait FeePort: Send + Sync {
 
 ```rust
 use alloy::rpc::types::Log;
-use alloy_sol_types::SolEvent;
+use alloy::sol_types::SolEvent;  // Re-exported from alloy 1.4+
 use tracing::{debug, instrument, warn};
 
 use crate::abi::{data_token, dead_pool, fee_router, ghost_core, trace_scan};
@@ -2918,6 +2950,327 @@ where
                 );
                 Ok(())
             }
+        }
+    }
+}
+```
+
+### 9.3 Block Processor (src/indexer/block_processor.rs)
+
+The block processor handles block-by-block event ingestion using Alloy 1.4+ WebSocket subscriptions for real-time streaming and HTTP polling for backfill operations.
+
+```rust
+use std::sync::Arc;
+use std::time::Duration;
+
+use alloy::primitives::Address;
+use alloy::providers::{Provider, ProviderBuilder, WsConnect};
+use alloy::rpc::types::{BlockNumberOrTag, Filter, Log};
+use futures::future::join_all;
+use futures_util::StreamExt;
+use tokio::sync::mpsc;
+use tracing::{debug, error, info, instrument, warn};
+
+use crate::config::ContractAddresses;
+use crate::error::Result;
+use crate::types::events::EventMetadata;
+
+/// Confirmation depth before finalizing blocks (MegaETH-specific)
+const CONFIRMATION_DEPTH: u64 = 12;
+
+/// Maximum blocks to fetch in a single batch during backfill
+const BACKFILL_BATCH_SIZE: u64 = 100;
+
+/// Block processor for real-time and historical event ingestion.
+pub struct BlockProcessor<P: Provider> {
+    provider: Arc<P>,
+    contracts: ContractAddresses,
+    log_sender: mpsc::Sender<(Log, EventMetadata)>,
+}
+
+impl<P: Provider + Clone + 'static> BlockProcessor<P> {
+    pub fn new(
+        provider: Arc<P>,
+        contracts: ContractAddresses,
+        log_sender: mpsc::Sender<(Log, EventMetadata)>,
+    ) -> Self {
+        Self {
+            provider,
+            contracts,
+            log_sender,
+        }
+    }
+
+    /// Subscribe to new blocks via WebSocket (real-time mode).
+    /// 
+    /// Uses Alloy 1.4+ WebSocket subscription pattern for minimal latency.
+    #[instrument(skip(self))]
+    pub async fn subscribe_blocks(&self) -> Result<()> {
+        info!("Starting real-time block subscription");
+        
+        let mut block_stream = self.provider
+            .subscribe_blocks()
+            .await?
+            .into_stream();
+
+        while let Some(block) = block_stream.next().await {
+            let block_number = block.header.number;
+            debug!(block_number, "New block received");
+            
+            // Fetch logs for all contracts concurrently
+            match self.fetch_logs_concurrent(block_number).await {
+                Ok(logs) => {
+                    self.dispatch_logs(logs, &block).await?;
+                }
+                Err(e) => {
+                    error!(block_number, error = ?e, "Failed to fetch logs");
+                    // Continue processing - don't crash on transient errors
+                }
+            }
+        }
+
+        warn!("Block subscription stream ended unexpectedly");
+        Ok(())
+    }
+
+    /// Backfill historical blocks from `from_block` to `to_block`.
+    /// 
+    /// Uses concurrent batch fetching for optimal throughput.
+    #[instrument(skip(self))]
+    pub async fn backfill(&self, from_block: u64, to_block: u64) -> Result<()> {
+        info!(from_block, to_block, "Starting historical backfill");
+        
+        let mut current = from_block;
+        while current <= to_block {
+            let batch_end = (current + BACKFILL_BATCH_SIZE - 1).min(to_block);
+            
+            // Fetch logs for the entire range
+            let filter = self.build_filter()
+                .from_block(current)
+                .to_block(batch_end);
+            
+            let logs = self.provider.get_logs(&filter).await?;
+            info!(
+                from = current,
+                to = batch_end,
+                log_count = logs.len(),
+                "Fetched backfill batch"
+            );
+            
+            // Process logs (need to fetch block data for metadata)
+            for log in logs {
+                if let Some(block_number) = log.block_number {
+                    let block = self.provider
+                        .get_block_by_number(BlockNumberOrTag::Number(block_number))
+                        .await?
+                        .ok_or_else(|| eyre::eyre!("Block not found: {}", block_number))?;
+                    
+                    let meta = self.build_metadata(&log, &block)?;
+                    self.log_sender.send((log, meta)).await?;
+                }
+            }
+            
+            current = batch_end + 1;
+        }
+        
+        info!("Backfill complete");
+        Ok(())
+    }
+
+    /// Fetch logs for all contracts concurrently.
+    /// 
+    /// This pattern from the EVM guide provides significant performance gains
+    /// by parallelizing RPC calls across contracts.
+    async fn fetch_logs_concurrent(&self, block_number: u64) -> Result<Vec<Log>> {
+        let contracts = self.contracts.all();
+        
+        let futures: Vec<_> = contracts
+            .iter()
+            .map(|contract| {
+                let filter = Filter::new()
+                    .address(*contract)
+                    .from_block(block_number)
+                    .to_block(block_number);
+                self.provider.get_logs(&filter)
+            })
+            .collect();
+        
+        let results = join_all(futures).await;
+        
+        let mut all_logs = Vec::new();
+        for result in results {
+            match result {
+                Ok(logs) => all_logs.extend(logs),
+                Err(e) => warn!(error = ?e, "Failed to fetch logs for contract"),
+            }
+        }
+        
+        // Sort by log index for deterministic ordering
+        all_logs.sort_by_key(|log| (log.block_number, log.log_index));
+        
+        Ok(all_logs)
+    }
+
+    /// Build a filter covering all indexed contracts.
+    fn build_filter(&self) -> Filter {
+        Filter::new().address(self.contracts.all())
+    }
+
+    /// Build event metadata from log and block.
+    fn build_metadata(
+        &self,
+        log: &Log,
+        block: &alloy::rpc::types::Block,
+    ) -> Result<EventMetadata> {
+        Ok(EventMetadata {
+            block_number: log.block_number.ok_or_else(|| eyre::eyre!("Missing block number"))?,
+            block_hash: log.block_hash.ok_or_else(|| eyre::eyre!("Missing block hash"))?,
+            tx_hash: log.transaction_hash.ok_or_else(|| eyre::eyre!("Missing tx hash"))?,
+            tx_index: log.transaction_index.ok_or_else(|| eyre::eyre!("Missing tx index"))?,
+            log_index: log.log_index.ok_or_else(|| eyre::eyre!("Missing log index"))?,
+            timestamp: chrono::DateTime::from_timestamp(block.header.timestamp as i64, 0)
+                .ok_or_else(|| eyre::eyre!("Invalid timestamp"))?,
+            contract: log.address(),
+        })
+    }
+
+    /// Dispatch logs to the processing channel.
+    async fn dispatch_logs(
+        &self,
+        logs: Vec<Log>,
+        block: &alloy::rpc::types::Block,
+    ) -> Result<()> {
+        for log in logs {
+            let meta = self.build_metadata(&log, block)?;
+            self.log_sender.send((log, meta)).await?;
+        }
+        Ok(())
+    }
+}
+
+/// Create a WebSocket provider for real-time subscriptions.
+/// 
+/// Example usage:
+/// ```rust
+/// let provider = create_ws_provider("wss://rpc.megaeth.io").await?;
+/// let processor = BlockProcessor::new(Arc::new(provider), contracts, sender);
+/// processor.subscribe_blocks().await?;
+/// ```
+pub async fn create_ws_provider(ws_url: &str) -> Result<impl Provider> {
+    let ws = WsConnect::new(ws_url);
+    let provider = ProviderBuilder::new()
+        .connect_ws(ws)
+        .await?;
+    Ok(provider)
+}
+
+/// Create an HTTP provider for backfill operations.
+pub async fn create_http_provider(http_url: &str) -> Result<impl Provider> {
+    let provider = ProviderBuilder::new()
+        .connect(http_url)
+        .await?;
+    Ok(provider)
+}
+```
+
+### 9.4 Reorg Handler Enhancement (src/indexer/reorg_handler.rs)
+
+The reorg handler detects chain reorganizations and rolls back affected data. Following EVM guide best practices, we wait for confirmations before considering data final.
+
+```rust
+use std::sync::Arc;
+
+use alloy::primitives::B256;
+use alloy::providers::Provider;
+use tokio::time::{sleep, Duration};
+use tracing::{info, warn};
+
+use crate::error::Result;
+use crate::ports::IndexerStateStore;
+use crate::types::primitives::BlockNumber;
+
+/// Confirmation depth for finality (MegaETH-specific)
+const CONFIRMATION_DEPTH: u64 = 12;
+
+/// Reorg detection and rollback handler.
+pub struct ReorgHandler<P: Provider, S: IndexerStateStore> {
+    provider: Arc<P>,
+    state_store: Arc<S>,
+}
+
+impl<P: Provider, S: IndexerStateStore> ReorgHandler<P, S> {
+    pub fn new(provider: Arc<P>, state_store: Arc<S>) -> Self {
+        Self { provider, state_store }
+    }
+
+    /// Check if a reorg occurred by comparing stored vs actual block hash.
+    pub async fn check_for_reorg(&self, block_number: BlockNumber) -> Result<Option<BlockNumber>> {
+        let stored_hash = self.state_store.get_block_hash(block_number).await?;
+        
+        let Some(stored) = stored_hash else {
+            return Ok(None);  // No stored hash, can't detect reorg
+        };
+        
+        let actual = self.provider
+            .get_block_by_number(block_number.get().into())
+            .await?
+            .map(|b| b.header.hash);
+        
+        match actual {
+            Some(actual_hash) if actual_hash != stored => {
+                warn!(
+                    block = block_number.get(),
+                    stored = ?stored,
+                    actual = ?actual_hash,
+                    "Reorg detected"
+                );
+                
+                // Find fork point by walking back
+                let fork_point = self.find_fork_point(block_number).await?;
+                Ok(Some(fork_point))
+            }
+            _ => Ok(None),
+        }
+    }
+
+    /// Find the block where the chain diverged.
+    async fn find_fork_point(&self, from: BlockNumber) -> Result<BlockNumber> {
+        let mut current = from.get();
+        
+        while current > 0 {
+            let stored = self.state_store.get_block_hash(BlockNumber::new(current)).await?;
+            let actual = self.provider
+                .get_block_by_number(current.into())
+                .await?
+                .map(|b| b.header.hash);
+            
+            if stored == actual {
+                return Ok(BlockNumber::new(current));
+            }
+            
+            current = current.saturating_sub(1);
+        }
+        
+        Ok(BlockNumber::new(0))
+    }
+
+    /// Execute rollback to fork point.
+    pub async fn rollback(&self, fork_point: BlockNumber) -> Result<()> {
+        info!(fork_point = fork_point.get(), "Executing reorg rollback");
+        self.state_store.execute_reorg_rollback(fork_point).await
+    }
+
+    /// Wait for sufficient confirmations before finalizing.
+    /// 
+    /// This pattern from the EVM guide ensures data isn't finalized
+    /// until it's unlikely to be reorged.
+    pub async fn await_confirmations(&self, block_number: u64) -> Result<()> {
+        loop {
+            let current = self.provider.get_block_number().await?;
+            if current.saturating_sub(block_number) >= CONFIRMATION_DEPTH {
+                return Ok(());
+            }
+            sleep(Duration::from_secs(1)).await;
         }
     }
 }
@@ -3847,8 +4200,9 @@ Reorg detected at block 101:
 
 ```rust
 // src/indexer/reorg_handler.rs
+// Note: See Section 9.4 for the enhanced implementation with confirmation depth
 
-use anyhow::Result;
+use eyre::Result;
 use tracing::{info, warn};
 
 pub struct ReorgHandler {
@@ -4035,7 +4389,7 @@ Apache Iggy provides the real-time event streaming layer:
 ### 15.2 Iggy Client Setup (src/streaming/iggy.rs)
 
 ```rust
-use anyhow::Result;
+use eyre::Result;
 use iggy::client::Client;
 use iggy::clients::client::IggyClient;
 use iggy::compression::compression_algorithm::CompressionAlgorithm;
@@ -4114,7 +4468,7 @@ impl GhostnetIggy {
 ### 15.3 Event Publisher (src/streaming/publisher.rs)
 
 ```rust
-use anyhow::Result;
+use eyre::Result;
 use iggy::client::MessageClient;
 use iggy::messages::send_messages::{IggyMessage, Partitioning};
 use serde::Serialize;
@@ -4479,14 +4833,19 @@ pub async fn iggy_to_broadcast(
 
 ### 16.1 Cache Design
 
-We use in-memory caching for hot data paths:
+We use in-memory caching for hot data paths, following EVM guide patterns for cache immutable data aggressively:
 
-| Cache | Library | Purpose | TTL |
-|-------|---------|---------|-----|
-| Position cache | moka | Active positions by address | 5 minutes |
-| Stats cache | moka | Level and global stats | 1 minute |
-| Leaderboard cache | moka | Top 100 leaderboards | 5 minutes |
-| Rate limiter | dashmap | Request counts per IP/user | Rolling window |
+| Cache | Library | Purpose | TTL | Rationale |
+|-------|---------|---------|-----|-----------|
+| Position cache | moka | Active positions by address | 5 min | Frequent API queries |
+| Stats cache | moka | Level and global stats | 1 min | Dashboard updates |
+| Leaderboard cache | moka | Top 100 leaderboards | 5 min | Expensive queries |
+| Block hash cache | moka | Recent block hashes | 5 min | Reorg detection |
+| Contract metadata | moka | ABI, addresses | 24 hr | Immutable data |
+| Rate limiter | dashmap | Request counts per IP/user | Rolling | Anti-abuse |
+
+> **EVM Guide Pattern**: Cache immutable data (contract metadata, block hashes) with long TTLs.
+> Active data (positions, stats) use short TTLs to balance freshness vs DB load.
 
 ### 16.2 Cache Implementation (src/store/cache.rs)
 
@@ -4498,9 +4857,16 @@ use dashmap::DashMap;
 use moka::future::Cache;
 use tracing::debug;
 
+use alloy::primitives::B256;
+
 use crate::types::entities::{GlobalStats, LeaderboardEntry, LevelStats, Position};
 
-/// In-memory cache for hot data
+/// In-memory cache for hot data.
+/// 
+/// Design follows EVM guide patterns:
+/// - Immutable data (block hashes, contract metadata) cached with long TTLs
+/// - Active data (positions, stats) cached with short TTLs
+/// - No external service dependency (unlike Redis) for minimal latency
 pub struct MemoryCache {
     /// Position cache by user address (hex string)
     positions: Cache<String, Option<Position>>,
@@ -4513,6 +4879,10 @@ pub struct MemoryCache {
     
     /// Leaderboard cache by type
     leaderboards: Cache<String, Vec<LeaderboardEntry>>,
+    
+    /// Block hash cache for reorg detection (EVM guide pattern)
+    /// Key: block number, Value: block hash
+    block_hashes: Cache<u64, B256>,
     
     /// Rate limiter: (identifier, window_start) -> count
     rate_limits: Arc<DashMap<String, (u64, u32)>>,
@@ -4538,6 +4908,13 @@ impl MemoryCache {
             
             leaderboards: Cache::builder()
                 .max_capacity(20)
+                .time_to_live(Duration::from_secs(300))  // 5 minutes
+                .build(),
+            
+            // Block hash cache for reorg detection (EVM guide pattern)
+            // Keeps recent blocks for fast parent hash verification
+            block_hashes: Cache::builder()
+                .max_capacity(128)  // ~15 minutes of blocks at 7s/block
                 .time_to_live(Duration::from_secs(300))  // 5 minutes
                 .build(),
             
@@ -4596,6 +4973,28 @@ impl MemoryCache {
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
+    // BLOCK HASH CACHE (EVM Guide Pattern - for reorg detection)
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /// Get cached block hash for reorg detection
+    pub async fn get_block_hash(&self, block_number: u64) -> Option<B256> {
+        self.block_hashes.get(&block_number).await
+    }
+    
+    /// Cache block hash for reorg detection
+    pub async fn set_block_hash(&self, block_number: u64, hash: B256) {
+        self.block_hashes.insert(block_number, hash).await;
+    }
+    
+    /// Check if cached hash matches (returns false if mismatch = reorg)
+    pub async fn verify_block_hash(&self, block_number: u64, expected: B256) -> bool {
+        match self.block_hashes.get(&block_number).await {
+            Some(cached) => cached == expected,
+            None => true,  // No cached value, can't verify
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
     // RATE LIMITING
     // ═══════════════════════════════════════════════════════════════════════════
     
@@ -4649,19 +5048,24 @@ impl Default for MemoryCache {
 
 ### 17.1 Main Processing Loop
 
+> **Note**: This section shows the high-level orchestration. See Section 9.3 for the
+> detailed `BlockProcessor` implementation with Alloy 1.4+ WebSocket subscriptions.
+
 ```rust
-// src/indexer/block_processor.rs
+// src/indexer/orchestrator.rs
+
+use std::sync::Arc;
+use std::time::Duration;
 
 use alloy::providers::Provider;
 use alloy::rpc::types::{BlockNumberOrTag, Filter};
-use std::time::Duration;
 use tokio::sync::watch;
 use tracing::{info, warn, error};
 
 use crate::config::Settings;
 use crate::error::{AppError, Result};
 use crate::handlers::traits::*;
-use crate::indexer::{EventRouter, ReorgHandler};
+use crate::indexer::{BlockProcessor, EventRouter, ReorgHandler};
 use crate::ports::{IndexerStateStore, EventPublisher};
 
 /// Main indexer that processes blocks.
@@ -4821,7 +5225,7 @@ where
         let block = self.provider
             .get_block_by_number(BlockNumberOrTag::Number(log.block_number.unwrap()), false)
             .await?
-            .ok_or_else(|| anyhow::anyhow!("Block not found"))?;
+            .ok_or_else(|| eyre::eyre!("Block not found"))?;
         
         Ok(EventMetadata {
             block_number: log.block_number.unwrap(),
@@ -4839,7 +5243,7 @@ where
         let block = self.provider
             .get_block_by_number(BlockNumberOrTag::Number(block_number), false)
             .await?
-            .ok_or_else(|| anyhow::anyhow!("Block not found"))?;
+            .ok_or_else(|| eyre::eyre!("Block not found"))?;
         
         self.store.insert_block_history(
             block_number,
@@ -5374,7 +5778,7 @@ volumes:
 # BUILD STAGE
 # ═══════════════════════════════════════════════════════════════════════════════
 
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 
 WORKDIR /app
 
@@ -6128,20 +6532,26 @@ impl Settings {
 
 ## 25. Implementation Checklist
 
+> **EVM Guide Alignment**: This checklist reflects patterns from the EVM Rust Guide (January 2026).
+> Key requirements: Alloy 1.4+, Rust 1.88+, WebSocket subscriptions, concurrent log fetching.
+
 ### Phase 1: Project Setup
 - [ ] Initialize Rust project with `cargo init`
-- [ ] Add `Cargo.toml` with dependencies
-- [ ] Add `rust-toolchain.toml`, `rustfmt.toml`, `deny.toml`
-- [ ] Add `.cargo/config.toml`
+- [ ] Add `Cargo.toml` with Alloy 1.4+ dependencies
+- [ ] Add `rust-toolchain.toml` with Rust 1.88
+- [ ] Add `rustfmt.toml`, `deny.toml`
+- [ ] Add `.cargo/config.toml` with fast linker
 - [ ] Create `config/` directory with TOML configs
 - [ ] Create `.env.example`
 
 ### Phase 2: Foundation
 - [ ] Implement `src/config/` - Settings and contract addresses
 - [ ] Implement `src/types/enums.rs` - Level, BoostType, RoundType
+- [ ] Implement `src/types/primitives.rs` - EthAddress, TokenAmount newtypes
 - [ ] Implement `src/types/events.rs` - All event structs
 - [ ] Implement `src/types/entities.rs` - Position, Scan, Death, etc.
-- [ ] Implement `src/abi/` - ABI bindings with `alloy-sol-types`
+- [ ] Implement `src/abi/` - ABI bindings with `alloy::sol!` macro
+- [ ] Implement `src/error.rs` - Layered errors with thiserror + eyre
 
 ### Phase 3: Database
 - [ ] Create `migrations/00001_enable_timescaledb.sql`
@@ -6155,11 +6565,12 @@ impl Settings {
 - [ ] Implement `src/store/postgres.rs` - SQLx store
 
 ### Phase 4: Indexer Core
-- [ ] Implement `src/indexer/block_processor.rs`
-- [ ] Implement `src/indexer/log_decoder.rs`
-- [ ] Implement `src/indexer/event_router.rs`
-- [ ] Implement `src/indexer/reorg_handler.rs`
-- [ ] Implement `src/indexer/checkpoint.rs`
+- [ ] Implement `src/indexer/block_processor.rs` - WebSocket subscriptions (Alloy 1.4+)
+- [ ] Implement `src/indexer/log_decoder.rs` - Event decoding
+- [ ] Implement `src/indexer/event_router.rs` - Event dispatch
+- [ ] Implement `src/indexer/reorg_handler.rs` - With confirmation depth pattern
+- [ ] Implement `src/indexer/checkpoint.rs` - Progress tracking
+- [ ] Implement concurrent log fetching with `futures::join_all`
 
 ### Phase 5: Event Handlers
 - [ ] Implement `src/handlers/position_handler.rs`
@@ -6224,14 +6635,29 @@ Transfer(address,address,uint256)               → 0xddf252ad1be2c89b69c2b068fc
 
 ## Appendix B: References
 
-- [TimescaleDB Documentation](https://docs.timescale.com)
-- [Apache Iggy Documentation](https://iggy.apache.org/docs)
-- [Alloy Documentation](https://alloy.rs)
-- [Axum Documentation](https://docs.rs/axum)
-- [SQLx Documentation](https://docs.rs/sqlx)
+### Internal Documentation
+- [EVM Rust Guide](./evm-rust-guide.md) - Alloy 1.4+, patterns, antipatterns (January 2026)
 - [GHOSTNET Smart Contracts](../../packages/contracts/)
 - [TimescaleDB Advanced Guide](./timescaledb-advanced.md)
+
+### External Documentation
+- [Alloy Documentation](https://alloy.rs) - Alloy 1.x stable
+- [Alloy Examples](https://github.com/alloy-rs/examples) - Reference implementations
+- [TimescaleDB Documentation](https://docs.timescale.com)
+- [Apache Iggy Documentation](https://iggy.apache.org/docs)
+- [Axum Documentation](https://docs.rs/axum)
+- [SQLx Documentation](https://docs.rs/sqlx)
+- [eyre Documentation](https://docs.rs/eyre) - Error handling
+
+### Version Requirements (January 2026)
+| Dependency | Version | MSRV |
+|------------|---------|------|
+| alloy | 1.4.x | Rust 1.88 |
+| tokio | 1.x | Rust 1.70 |
+| sqlx | 0.8.x | Rust 1.75 |
+| axum | 0.7.x | Rust 1.75 |
 
 ---
 
 *This document should be updated as implementation progresses and decisions are made.*
+*Last cross-referenced with evm-rust-guide.md: 2026-01-20*
