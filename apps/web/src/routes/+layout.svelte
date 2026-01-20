@@ -5,7 +5,7 @@
 	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
 	import { initializeProvider } from '$lib/core/stores/index.svelte';
 	import { initializeSettings } from '$lib/core/settings';
-	import { getAudioManager, initAudio } from '$lib/core/audio';
+	import { createAudioManager, initAudio } from '$lib/core/audio';
 	import { initializeToasts } from '$lib/ui/toast';
 
 	interface Props {
@@ -14,13 +14,13 @@
 
 	let { children }: Props = $props();
 
-	// Initialize context-based stores
+	// Initialize context-based stores (must be done during component init)
 	const provider = initializeProvider();
 	const settings = initializeSettings();
 	initializeToasts();
 	
-	// Get audio manager
-	const audio = getAudioManager();
+	// Create audio manager with settings reference (captured during init)
+	const audio = createAudioManager(settings);
 
 	// Screen flash state (controlled by feed events)
 	let flashType: 'death' | 'jackpot' | 'warning' | 'success' | null = $state(null);

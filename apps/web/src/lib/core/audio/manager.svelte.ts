@@ -3,10 +3,13 @@
  * =============
  * Centralized audio system for GHOSTNET using ZzFX.
  * Integrates with settings store for volume and enable/disable.
+ * 
+ * IMPORTANT: The audio manager must be initialized during component
+ * initialization (not in callbacks) to properly capture the settings context.
  */
 
 import { browser } from '$app/environment';
-import { getSettings } from '$lib/core/settings';
+import type { SettingsStore } from '$lib/core/settings';
 import { zzfx, resumeAudio, type ZzFXParams } from './zzfx';
 
 // ════════════════════════════════════════════════════════════════
@@ -49,31 +52,72 @@ const SOUNDS = {
 export type SoundName = keyof typeof SOUNDS;
 
 // ════════════════════════════════════════════════════════════════
-// AUDIO MANAGER
+// AUDIO MANAGER INTERFACE
 // ════════════════════════════════════════════════════════════════
 
-let initialized = false;
+export interface AudioManager {
+	init: () => void;
+	play: (name: SoundName) => void;
+	// Convenience methods
+	click: () => void;
+	hover: () => void;
+	open: () => void;
+	close: () => void;
+	error: () => void;
+	success: () => void;
+	// Typing game
+	keystroke: () => void;
+	keystrokeError: () => void;
+	countdown: () => void;
+	countdownGo: () => void;
+	roundComplete: () => void;
+	gameComplete: () => void;
+	// Feed events
+	jackIn: () => void;
+	extract: () => void;
+	traced: () => void;
+	survived: () => void;
+	jackpot: () => void;
+	scanWarning: () => void;
+	scanStart: () => void;
+	// Alerts
+	alert: () => void;
+	warning: () => void;
+	danger: () => void;
+}
+
+// ════════════════════════════════════════════════════════════════
+// MODULE STATE
+// ════════════════════════════════════════════════════════════════
+
+let audioInitialized = false;
+let settingsRef: SettingsStore | null = null;
+
+// ════════════════════════════════════════════════════════════════
+// CORE FUNCTIONS
+// ════════════════════════════════════════════════════════════════
 
 /**
  * Initialize audio system (call on first user interaction)
  */
 export function initAudio(): void {
-	if (!browser || initialized) return;
-	initialized = true;
+	if (!browser || audioInitialized) return;
+	audioInitialized = true;
 	resumeAudio();
 }
 
 /**
  * Play a sound effect
+ * Uses the settings reference captured during createAudioManager()
  */
-export function playSound(name: SoundName): void {
+function playSound(name: SoundName): void {
 	if (!browser) return;
 
-	const settings = getSettings();
-	if (!settings.audioEnabled) return;
+	// Check settings if available
+	if (settingsRef && !settingsRef.audioEnabled) return;
 
 	// Ensure audio context is resumed
-	if (!initialized) {
+	if (!audioInitialized) {
 		initAudio();
 	}
 
@@ -83,21 +127,81 @@ export function playSound(name: SoundName): void {
 		return;
 	}
 
-	// Apply volume
+	// Apply volume from settings
+	const volume = settingsRef?.audioVolume ?? 0.5;
 	const volumeAdjusted = [...params] as ZzFXParams;
-	volumeAdjusted[0] = (volumeAdjusted[0] ?? 1) * settings.audioVolume;
+	volumeAdjusted[0] = (volumeAdjusted[0] ?? 1) * volume;
 
 	try {
 		zzfx(...volumeAdjusted);
-	} catch (e) {
+	} catch {
 		// Audio might fail in certain contexts, ignore
 	}
 }
 
+// ════════════════════════════════════════════════════════════════
+// FACTORY FUNCTION
+// ════════════════════════════════════════════════════════════════
+
 /**
- * Get the audio manager with all methods
+ * Create an audio manager with settings integration.
+ * 
+ * MUST be called during component initialization to capture the settings context.
+ * The returned manager can then be used in callbacks.
+ * 
+ * @param settings - The settings store from getSettings()
  */
-export function getAudioManager() {
+export function createAudioManager(settings: SettingsStore): AudioManager {
+	// Store reference for use in playSound
+	settingsRef = settings;
+
+	return {
+		init: initAudio,
+		play: playSound,
+
+		// Convenience methods
+		click: () => playSound('click'),
+		hover: () => playSound('hover'),
+		open: () => playSound('open'),
+		close: () => playSound('close'),
+		error: () => playSound('error'),
+		success: () => playSound('success'),
+
+		// Typing game
+		keystroke: () => playSound('keystroke'),
+		keystrokeError: () => playSound('keystrokeError'),
+		countdown: () => playSound('countdown'),
+		countdownGo: () => playSound('countdownGo'),
+		roundComplete: () => playSound('roundComplete'),
+		gameComplete: () => playSound('gameComplete'),
+
+		// Feed events
+		jackIn: () => playSound('jackIn'),
+		extract: () => playSound('extract'),
+		traced: () => playSound('traced'),
+		survived: () => playSound('survived'),
+		jackpot: () => playSound('jackpot'),
+		scanWarning: () => playSound('scanWarning'),
+		scanStart: () => playSound('scanStart'),
+
+		// Alerts
+		alert: () => playSound('alert'),
+		warning: () => playSound('warning'),
+		danger: () => playSound('danger')
+	};
+}
+
+// ════════════════════════════════════════════════════════════════
+// LEGACY SUPPORT (for components that don't need settings)
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Get an audio manager without settings integration.
+ * Audio will play at default volume (0.5) and always be enabled.
+ * 
+ * @deprecated Use createAudioManager(settings) for proper settings integration
+ */
+export function getAudioManager(): AudioManager {
 	return {
 		init: initAudio,
 		play: playSound,
