@@ -13,11 +13,38 @@
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
 
+	import { browser } from '$app/environment';
+
 	const provider = getProvider();
 	const toast = getToasts();
 
 	// Navigation state
 	let activeNav = $state('network');
+
+	// Mobile detection for responsive behavior
+	let isMobile = $state(false);
+
+	// Mobile feed expansion state (only used on mobile)
+	let feedExpanded = $state(false);
+
+	// Derived feed props: mobile uses collapsed/expanded, desktop always full
+	let feedMaxHeight = $derived(isMobile ? (feedExpanded ? '300px' : '150px') : '300px');
+	let feedMaxEvents = $derived(isMobile ? (feedExpanded ? 12 : 3) : 12);
+
+	// Set up media query listener (client-side only)
+	$effect(() => {
+		if (!browser) return;
+
+		const mediaQuery = window.matchMedia('(max-width: 767px)');
+		isMobile = mediaQuery.matches;
+
+		function handleChange(e: MediaQueryListEvent) {
+			isMobile = e.matches;
+		}
+
+		mediaQuery.addEventListener('change', handleChange);
+		return () => mediaQuery.removeEventListener('change', handleChange);
+	});
 
 	// Modal state
 	let showJackInModal = $state(false);
@@ -64,10 +91,7 @@
 	// Keyboard shortcuts
 	function handleKeydown(event: KeyboardEvent) {
 		// Ignore if user is typing in an input
-		if (
-			event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
+		if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
 			return;
 		}
 
@@ -126,33 +150,53 @@
 
 <svelte:head>
 	<title>GHOSTNET v1.0.7 - Command Center</title>
-	<meta name="description" content="Jack In. Don't Get Traced. Real-time survival game on MegaETH." />
+	<meta
+		name="description"
+		content="Jack In. Don't Get Traced. Real-time survival game on MegaETH."
+	/>
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="command-center">
-	<Header onSettings={() => showSettingsModal = true} />
+	<Header onSettings={() => (showSettingsModal = true)} />
 
 	<main class="main-content">
 		<div class="content-grid">
 			<!-- Left Column: Feed, Welcome & Visualization -->
 			<div class="column column-left">
-				<FeedPanel maxHeight="300px" maxEvents={12} />
-				<WelcomePanel 
-					onJackIn={handleJackIn}
-					onWatchFeed={handleWatchFeed}
-				/>
-				<NetworkVisualizationPanel 
-					operatorCount={provider.networkState.operatorsOnline}
-				/>
+				<!-- Feed: collapsible on mobile, full on desktop -->
+				<div class="feed-wrapper" class:feed-collapsed={isMobile && !feedExpanded}>
+					<FeedPanel maxHeight={feedMaxHeight} maxEvents={feedMaxEvents} />
+					{#if isMobile}
+						<button
+							class="feed-toggle"
+							onclick={() => (feedExpanded = !feedExpanded)}
+							aria-expanded={feedExpanded}
+							aria-controls="feed-panel"
+						>
+							{feedExpanded ? '▲ Show Less' : '▼ Show More'}
+						</button>
+					{/if}
+				</div>
+
+				<!-- Welcome & Visualization: hidden on mobile (too heavy) -->
+				<div class="hide-mobile">
+					<WelcomePanel onJackIn={handleJackIn} onWatchFeed={handleWatchFeed} />
+				</div>
+				<div class="hide-mobile">
+					<NetworkVisualizationPanel operatorCount={provider.networkState.operatorsOnline} />
+				</div>
 			</div>
 
 			<!-- Right Column: Position, Network Stats, Actions -->
 			<div class="column column-right">
 				<PositionPanel />
 				<ModifiersPanel />
-				<NetworkVitalsPanel />
+				<!-- Network Vitals: hidden on mobile (accessible via nav) -->
+				<div class="hide-mobile">
+					<NetworkVitalsPanel />
+				</div>
 				<QuickActionsPanel
 					onJackIn={handleJackIn}
 					onExtract={handleExtract}
@@ -170,9 +214,9 @@
 </div>
 
 <!-- Modals -->
-<JackInModal open={showJackInModal} onclose={() => showJackInModal = false} />
-<ExtractModal open={showExtractModal} onclose={() => showExtractModal = false} />
-<SettingsModal open={showSettingsModal} onclose={() => showSettingsModal = false} />
+<JackInModal open={showJackInModal} onclose={() => (showJackInModal = false)} />
+<ExtractModal open={showExtractModal} onclose={() => (showExtractModal = false)} />
+<SettingsModal open={showSettingsModal} onclose={() => (showSettingsModal = false)} />
 
 <!-- Toast notifications -->
 <ToastContainer />
@@ -192,9 +236,16 @@
 		margin: 0 auto;
 	}
 
+	/* ════════════════════════════════════════════════════════════════
+	   RESPONSIVE GRID
+	   Mobile: single column, position panel first
+	   Tablet: 60/40 split
+	   Desktop: 2fr/1fr split
+	   ════════════════════════════════════════════════════════════════ */
+
 	.content-grid {
 		display: grid;
-		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+		grid-template-columns: 1fr; /* Mobile first: single column */
 		gap: var(--space-4);
 		height: 100%;
 	}
@@ -206,24 +257,73 @@
 		min-width: 0; /* Allow column to shrink below content size */
 	}
 
-
-
-	/* Responsive Layout */
-	@media (max-width: 1024px) {
-		.content-grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.column-left {
-			order: 2;
+	/* Mobile: position panel (right column) appears first */
+	@media (max-width: 767px) {
+		.command-center {
+			padding-bottom: var(--space-16); /* Room for fixed nav */
 		}
 
 		.column-right {
+			order: -1; /* Position panel first on mobile */
+		}
+
+		.column-left {
 			order: 1;
 		}
 	}
 
-	@media (max-width: 640px) {
+	/* Tablet: 60/40 split */
+	@media (min-width: 768px) {
+		.content-grid {
+			grid-template-columns: 3fr 2fr;
+		}
+	}
+
+	/* Desktop: 2fr/1fr split (original layout) */
+	@media (min-width: 1024px) {
+		.content-grid {
+			grid-template-columns: 2fr 1fr;
+		}
+	}
+
+	/* ════════════════════════════════════════════════════════════════
+	   MOBILE FEED COLLAPSIBLE
+	   ════════════════════════════════════════════════════════════════ */
+
+	.feed-wrapper {
+		position: relative;
+	}
+
+	.feed-toggle {
+		width: 100%;
+		padding: var(--space-2) var(--space-3);
+		margin-top: var(--space-1);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-default);
+		color: var(--color-text-secondary);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-wide);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+		min-height: var(--touch-target-min); /* Accessible touch target */
+	}
+
+	.feed-toggle:hover {
+		background: var(--color-bg-elevated);
+		color: var(--color-accent);
+		border-color: var(--color-accent-dim);
+	}
+
+	.feed-toggle:active {
+		background: var(--color-bg-secondary);
+	}
+
+	/* ════════════════════════════════════════════════════════════════
+	   MOBILE SPACING ADJUSTMENTS
+	   ════════════════════════════════════════════════════════════════ */
+
+	@media (max-width: 767px) {
 		.main-content {
 			padding: var(--space-2);
 		}

@@ -4,6 +4,9 @@
  * All TypeScript interfaces for the application
  */
 
+// Re-export error types
+export * from './errors';
+
 // ════════════════════════════════════════════════════════════════
 // ENUMS & CONSTANTS
 // ════════════════════════════════════════════════════════════════
@@ -256,21 +259,83 @@ export interface CrewBonus {
 // DEAD POOL (PREDICTION MARKET)
 // ════════════════════════════════════════════════════════════════
 
+/** Types of prediction markets available */
+export type DeadPoolRoundType = 'death_count' | 'whale_watch' | 'survival_streak' | 'system_reset';
+
+/** Round lifecycle states */
+export type DeadPoolStatus = 'betting' | 'locked' | 'resolving' | 'resolved';
+
+/** Betting side (over/under the line) */
+export type DeadPoolSide = 'under' | 'over';
+
 /** Dead Pool betting round */
 export interface DeadPoolRound {
 	id: string;
 	roundNumber: number;
-	type: 'death_count' | 'whale_watch' | 'survival_streak' | 'system_reset';
-	targetLevel: Level;
+	type: DeadPoolRoundType;
+	status: DeadPoolStatus;
+	/** Target level for the bet (null for system-wide bets like system_reset) */
+	targetLevel: Level | null;
 	question: string;
+	/** The line to bet over/under */
 	line: number;
+	/** Round start timestamp */
+	startsAt: number;
+	/** Round end timestamp (resolution time) */
 	endsAt: number;
+	/** Betting closes at this time (before resolution) */
+	locksAt: number;
 	pools: {
 		under: bigint;
 		over: bigint;
 	};
 	userBet: {
-		side: 'under' | 'over';
+		side: DeadPoolSide;
 		amount: bigint;
+		timestamp: number;
 	} | null;
+}
+
+/** Result of a resolved Dead Pool round */
+export interface DeadPoolResult {
+	roundId: string;
+	/** Winning side */
+	outcome: DeadPoolSide;
+	/** Actual value measured at resolution */
+	actualValue: number;
+	/** Total pool size (under + over) */
+	totalPool: bigint;
+	/** 5% rake burned */
+	burnAmount: bigint;
+	/** Pool distributed to winners */
+	winnerPool: bigint;
+	/** Whether current user won (null if didn't bet) */
+	userWon: boolean | null;
+	/** User's payout amount (null if didn't bet or lost) */
+	userPayout: bigint | null;
+}
+
+/** Combined round with result for history display */
+export interface DeadPoolHistory {
+	round: DeadPoolRound;
+	result: DeadPoolResult;
+}
+
+/** Real-time Dead Pool updates (discriminated union) */
+export type DeadPoolUpdate =
+	| { type: 'POOL_UPDATE'; roundId: string; pools: { under: bigint; over: bigint } }
+	| { type: 'ROUND_LOCKED'; roundId: string }
+	| { type: 'ROUND_RESOLVED'; result: DeadPoolResult }
+	| { type: 'NEW_ROUND'; round: DeadPoolRound };
+
+/** User's cumulative Dead Pool statistics */
+export interface DeadPoolUserStats {
+	totalBets: number;
+	totalWon: bigint;
+	totalLost: bigint;
+	/** Win rate from 0 to 1 */
+	winRate: number;
+	biggestWin: bigint;
+	/** Current streak: positive = consecutive wins, negative = consecutive losses */
+	currentStreak: number;
 }

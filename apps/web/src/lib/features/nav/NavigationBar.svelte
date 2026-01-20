@@ -29,7 +29,7 @@
 		{ id: 'crew', label: 'CREW', comingSoon: true },
 		{ id: 'market', label: 'MARKET', comingSoon: true },
 		{ id: 'leaderboard', label: 'RANKS', comingSoon: true },
-		{ id: 'help', label: '?' }
+		{ id: 'help', label: '?' },
 	];
 
 	function handleClick(item: NavItem) {
@@ -143,7 +143,25 @@
 		opacity: 0.5;
 	}
 
-	/* Responsive */
+	/* Responsive: Fixed at bottom on mobile */
+	@media (max-width: 767px) {
+		.nav-bar {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			z-index: var(--z-sticky);
+			padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+		}
+
+		.nav-item {
+			min-height: var(--touch-target-min);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+	}
+
 	@media (max-width: 640px) {
 		.nav-item {
 			padding: var(--space-1) var(--space-2);
