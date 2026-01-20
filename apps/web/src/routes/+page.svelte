@@ -88,14 +88,23 @@
 		activeNav = id;
 	}
 
-	// Keyboard shortcuts
+	// Keyboard shortcuts (SHIFT + key)
 	function handleKeydown(event: KeyboardEvent) {
+		// Require SHIFT modifier for all shortcuts
+		if (!event.shiftKey) return;
+
 		// Ignore if user is typing in an input
 		if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
 			return;
 		}
 
-		switch (event.key.toLowerCase()) {
+		// Prevent default browser behavior for our shortcuts
+		const key = event.key.toLowerCase();
+		if (['j', 'e', 't', 'h', 'c', 'p'].includes(key)) {
+			event.preventDefault();
+		}
+
+		switch (key) {
 			case 'j':
 				if (!provider.currentUser) {
 					toast.warning('Connect wallet to Jack In');

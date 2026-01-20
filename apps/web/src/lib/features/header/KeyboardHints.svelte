@@ -1,17 +1,18 @@
 <script lang="ts">
 	interface Shortcut {
 		key: string;
+		modifier?: 'SHIFT';
 		label: string;
 		category: 'action' | 'game' | 'social';
 	}
 
 	const shortcuts: Shortcut[] = [
-		{ key: 'J', label: 'Jack In', category: 'action' },
-		{ key: 'E', label: 'Extract', category: 'action' },
-		{ key: 'T', label: 'Typing', category: 'game' },
-		{ key: 'H', label: 'Hack Run', category: 'game' },
-		{ key: 'C', label: 'Crew', category: 'social' },
-		{ key: 'P', label: 'Pool', category: 'social' },
+		{ key: 'J', modifier: 'SHIFT', label: 'Jack In', category: 'action' },
+		{ key: 'E', modifier: 'SHIFT', label: 'Extract', category: 'action' },
+		{ key: 'T', modifier: 'SHIFT', label: 'Typing', category: 'game' },
+		{ key: 'H', modifier: 'SHIFT', label: 'Hack Run', category: 'game' },
+		{ key: 'C', modifier: 'SHIFT', label: 'Crew', category: 'social' },
+		{ key: 'P', modifier: 'SHIFT', label: 'Pool', category: 'social' },
 	];
 
 	// Group shortcuts by category for visual separation
@@ -26,7 +27,13 @@
 	<div class="hints-group">
 		{#each actionShortcuts as shortcut}
 			<span class="hint">
-				<kbd class="hint-key">{shortcut.key}</kbd>
+				<span class="hint-keys">
+					{#if shortcut.modifier}
+						<kbd class="hint-key hint-modifier">{shortcut.modifier}</kbd>
+						<span class="hint-plus">+</span>
+					{/if}
+					<kbd class="hint-key">{shortcut.key}</kbd>
+				</span>
 				<span class="hint-label">{shortcut.label}</span>
 			</span>
 		{/each}
@@ -37,7 +44,13 @@
 	<div class="hints-group">
 		{#each gameShortcuts as shortcut}
 			<span class="hint">
-				<kbd class="hint-key">{shortcut.key}</kbd>
+				<span class="hint-keys">
+					{#if shortcut.modifier}
+						<kbd class="hint-key hint-modifier">{shortcut.modifier}</kbd>
+						<span class="hint-plus">+</span>
+					{/if}
+					<kbd class="hint-key">{shortcut.key}</kbd>
+				</span>
 				<span class="hint-label">{shortcut.label}</span>
 			</span>
 		{/each}
@@ -48,7 +61,13 @@
 	<div class="hints-group">
 		{#each socialShortcuts as shortcut}
 			<span class="hint">
-				<kbd class="hint-key">{shortcut.key}</kbd>
+				<span class="hint-keys">
+					{#if shortcut.modifier}
+						<kbd class="hint-key hint-modifier">{shortcut.modifier}</kbd>
+						<span class="hint-plus">+</span>
+					{/if}
+					<kbd class="hint-key">{shortcut.key}</kbd>
+				</span>
 				<span class="hint-label">{shortcut.label}</span>
 			</span>
 		{/each}
@@ -93,6 +112,12 @@
 		gap: var(--space-1);
 	}
 
+	.hint-keys {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15em;
+	}
+
 	.hint-key {
 		display: inline-flex;
 		align-items: center;
@@ -106,6 +131,18 @@
 		font-size: var(--text-2xs);
 		font-weight: var(--font-medium);
 		line-height: 1;
+	}
+
+	.hint-modifier {
+		color: var(--color-text-tertiary);
+		font-size: 0.5rem;
+		padding: 0.1em 0.25em;
+		min-width: auto;
+	}
+
+	.hint-plus {
+		color: var(--color-text-muted);
+		font-size: 0.5rem;
 	}
 
 	.hint-label {
