@@ -308,6 +308,125 @@ contract DataTokenTest is Test {
         assertEq(token.balanceOf(token.DEAD_ADDRESS()) - deadBefore, expectedBurn);
     }
 
+    // ══════════════════════════════════════════════════════════════════════════════
+    // TAX EDGE CASES
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_Transfer_SmallAmount_RoundingBehavior() public {
+        // Transfer 10 wei - tax should be 1 wei (10%), burn 0 wei, treasury 1 wei
+        uint256 transferAmount = 10;
+
+        uint256 treasuryBefore = token.balanceOf(treasury);
+        uint256 deadBefore = token.balanceOf(token.DEAD_ADDRESS());
+
+        vm.prank(alice);
+        token.transfer(carol, transferAmount);
+
+        uint256 expectedTax = 1; // 10% of 10 = 1
+        uint256 expectedBurn = 0; // 90% of 1 = 0 (rounds down)
+        uint256 expectedTreasury = 1; // 1 - 0 = 1
+        uint256 expectedReceived = 9; // 10 - 1 = 9
+
+        assertEq(token.balanceOf(carol), expectedReceived, "Recipient gets 9 wei");
+        assertEq(token.balanceOf(treasury) - treasuryBefore, expectedTreasury, "Treasury gets 1 wei");
+        assertEq(token.balanceOf(token.DEAD_ADDRESS()) - deadBefore, expectedBurn, "Burn is 0 due to rounding");
+    }
+
+    function test_Transfer_VerySmallAmount_NoTax() public {
+        // Transfer 9 wei - tax should be 0 (rounds down)
+        uint256 transferAmount = 9;
+
+        vm.prank(alice);
+        token.transfer(carol, transferAmount);
+
+        // With 9 wei: tax = 9 * 1000 / 10000 = 0 (rounds down)
+        assertEq(token.balanceOf(carol), transferAmount, "Full amount received when tax rounds to 0");
+    }
+
+    function test_Transfer_EmitsTaxEvents() public {
+        uint256 transferAmount = 1000 * 1e18;
+        uint256 expectedTax = (transferAmount * 1000) / 10_000; // 100 tokens
+        uint256 expectedBurn = (expectedTax * 9000) / 10_000; // 90 tokens
+        uint256 expectedTreasury = expectedTax - expectedBurn; // 10 tokens
+
+        vm.expectEmit(true, false, false, true);
+        emit IDataToken.TaxBurned(alice, expectedBurn);
+
+        vm.expectEmit(true, false, false, true);
+        emit IDataToken.TaxCollected(alice, expectedTreasury);
+
+        vm.prank(alice);
+        token.transfer(carol, transferAmount);
+    }
+
+    function test_Transfer_SelfTransfer_AppliesTax() public {
+        // Self-transfer should still apply tax (alice is not excluded)
+        uint256 transferAmount = 1000 * 1e18;
+        uint256 expectedTax = (transferAmount * 1000) / 10_000;
+        uint256 aliceBalanceBefore = token.balanceOf(alice);
+
+        vm.prank(alice);
+        token.transfer(alice, transferAmount);
+
+        // Alice loses the tax amount
+        assertEq(token.balanceOf(alice), aliceBalanceBefore - expectedTax);
+    }
+
+    function test_Transfer_MultipleConsecutive_AccumulatesBurn() public {
+        uint256 transferAmount = 1000 * 1e18;
+        uint256 singleBurn = (transferAmount * 900) / 10_000; // 9%
+
+        uint256 burnedBefore = token.totalBurned();
+
+        // Three consecutive transfers
+        vm.prank(alice);
+        token.transfer(carol, transferAmount);
+
+        // Carol needs to transfer (received 90% of 1000)
+        vm.prank(carol);
+        token.transfer(bob, 500 * 1e18);
+
+        vm.prank(bob);
+        token.transfer(alice, 200 * 1e18);
+
+        // Verify burns accumulated
+        uint256 totalNewBurns = token.totalBurned() - burnedBefore;
+        assertGt(totalNewBurns, singleBurn, "Multiple transfers should accumulate burns");
+    }
+
+    function test_Transfer_EntireBalance() public {
+        uint256 aliceBalance = token.balanceOf(alice);
+        uint256 expectedTax = (aliceBalance * 1000) / 10_000;
+        uint256 expectedReceived = aliceBalance - expectedTax;
+
+        vm.prank(alice);
+        token.transfer(carol, aliceBalance);
+
+        assertEq(token.balanceOf(alice), 0, "Alice should have 0 after full transfer");
+        assertEq(token.balanceOf(carol), expectedReceived, "Carol receives amount minus tax");
+    }
+
+    function test_Transfer_ToTreasury_NoTax() public {
+        // Treasury is excluded, so transfer TO treasury should have no tax
+        uint256 transferAmount = 1000 * 1e18;
+        uint256 treasuryBefore = token.balanceOf(treasury);
+
+        vm.prank(alice);
+        token.transfer(treasury, transferAmount);
+
+        assertEq(token.balanceOf(treasury), treasuryBefore + transferAmount, "Treasury receives full amount");
+    }
+
+    function test_Transfer_FromTreasury_NoTax() public {
+        // Treasury is excluded, so transfer FROM treasury should have no tax
+        uint256 transferAmount = 1000 * 1e18;
+
+        vm.prank(treasury);
+        token.transfer(carol, transferAmount);
+
+        assertEq(token.balanceOf(carol), transferAmount, "Carol receives full amount from treasury");
+    }
+
     function testFuzz_Burn_UpdatesState(uint256 amount) public {
         amount = bound(amount, 1, INITIAL_ALICE);
 
