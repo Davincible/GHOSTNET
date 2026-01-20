@@ -17,7 +17,7 @@ export function generateMockNetworkState(): NetworkState {
 
 	// Generate trace scan timestamps for each level
 	const traceScanTimestamps: Record<Level, number> = {} as Record<Level, number>;
-
+	
 	for (const level of LEVELS) {
 		const config = LEVEL_CONFIG[level];
 		if (config.scanIntervalHours === Infinity) {
@@ -41,8 +41,8 @@ export function generateMockNetworkState(): NetworkState {
 		hourlyStats: {
 			jackedIn: 127400n * 10n ** 18n,
 			extracted: 89200n * 10n ** 18n,
-			traced: 34100n * 10n ** 18n,
-		},
+			traced: 34100n * 10n ** 18n
+		}
 	};
 }
 
@@ -56,11 +56,9 @@ export function updateNetworkState(current: NetworkState): NetworkState {
 		operatorsOnline: Math.max(100, current.operatorsOnline + operatorChange),
 		tvl: current.tvl + tvlChange,
 		hourlyStats: {
-			jackedIn:
-				current.hourlyStats.jackedIn + BigInt(Math.floor(Math.random() * 1000)) * 10n ** 18n,
-			extracted:
-				current.hourlyStats.extracted + BigInt(Math.floor(Math.random() * 500)) * 10n ** 18n,
-			traced: current.hourlyStats.traced + BigInt(Math.floor(Math.random() * 200)) * 10n ** 18n,
-		},
+			jackedIn: current.hourlyStats.jackedIn + BigInt(Math.floor(Math.random() * 1000)) * 10n ** 18n,
+			extracted: current.hourlyStats.extracted + BigInt(Math.floor(Math.random() * 500)) * 10n ** 18n,
+			traced: current.hourlyStats.traced + BigInt(Math.floor(Math.random() * 200)) * 10n ** 18n
+		}
 	};
 }

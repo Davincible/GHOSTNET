@@ -1,4 +1,4 @@
-# Solidity + SvelteKit Monorepo Commands
+# GHOSTNET Monorepo Commands
 # Run `just` to see all available commands
 
 # Default: show help
@@ -9,20 +9,20 @@ default:
 # TOP-LEVEL COMMANDS
 # ============================================================================
 
-# Install all dependencies (web + contracts)
-install: web-install contracts-init
+# Install all dependencies (web + contracts + services)
+install: web-install contracts-init svc-install
     @echo "All dependencies installed!"
 
 # Run all checks (lint, test, security)
-check-all: web-lint web-test contracts-check
+check-all: web-lint web-test contracts-check svc-check
     @echo "All checks passed!"
 
 # Run all tests
-test-all: web-test contracts-test
+test-all: web-test contracts-test svc-test-all
     @echo "All tests passed!"
 
 # Clean all build artifacts
-clean-all: web-clean contracts-clean
+clean-all: web-clean contracts-clean svc-clean
     @echo "All build artifacts cleaned!"
 
 # Start development (web dev server + anvil in background)
@@ -330,3 +330,190 @@ export-abis:
 [group('integration')]
 sync-contracts: contracts-build export-abis generate-types
     @echo "Contract integration complete!"
+
+# ============================================================================
+# SERVICES COMMANDS (services/)
+# ============================================================================
+
+# Install/check services dependencies
+[group('services')]
+svc-install:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo fetch; \
+    else \
+        echo "No services to install yet. Create a service in services/"; \
+    fi
+
+# Build all services (debug)
+[group('services')]
+svc-build:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo build; \
+    else \
+        echo "No services to build yet."; \
+    fi
+
+# Build all services (release)
+[group('services')]
+svc-release:
+    cd services && cargo build --release
+
+# Build release with locked dependencies (for CI/deployment)
+[group('services')]
+svc-release-locked:
+    cd services && cargo build --release --locked
+
+# Check code without building (faster feedback)
+[group('services')]
+svc-check-code:
+    cd services && cargo check
+
+# Run tests with nextest (fast, parallel)
+[group('services')]
+svc-test:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo nextest run; \
+    else \
+        echo "No services to test yet."; \
+    fi
+
+# Run doc tests (nextest doesn't support these)
+[group('services')]
+svc-test-doc:
+    cd services && cargo test --doc
+
+# Run all tests (nextest + doctests)
+[group('services')]
+svc-test-all: svc-test svc-test-doc
+
+# Run tests with retries for flaky tests
+[group('services')]
+svc-test-retry:
+    cd services && cargo nextest run --retries 2
+
+# Run tests with coverage
+[group('services')]
+svc-coverage:
+    cd services && cargo llvm-cov nextest --lcov --output-path lcov.info
+
+# Run tests with HTML coverage report
+[group('services')]
+svc-coverage-html:
+    cd services && cargo llvm-cov nextest --html
+
+# Run clippy
+[group('services')]
+svc-lint:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo clippy --all-features -- -D warnings; \
+    else \
+        echo "No services to lint yet."; \
+    fi
+
+# Run clippy and fix issues
+[group('services')]
+svc-lint-fix:
+    cd services && cargo clippy --all-features --fix --allow-dirty
+
+# Format code (requires nightly)
+[group('services')]
+svc-fmt:
+    cd services && cargo +nightly fmt
+
+# Check formatting without changing files
+[group('services')]
+svc-fmt-check:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo +nightly fmt --check; \
+    else \
+        echo "No services to check formatting yet."; \
+    fi
+
+# Run cargo-deny checks (licenses, advisories, sources)
+[group('services')]
+svc-deny:
+    @if [ -d "services" ] && [ -n "$(ls -A services 2>/dev/null)" ]; then \
+        cd services && cargo deny check; \
+    else \
+        echo "No services to audit yet."; \
+    fi
+
+# Run security audit
+[group('services')]
+svc-audit:
+    cd services && cargo audit
+
+# Check for outdated dependencies
+[group('services')]
+svc-outdated:
+    cd services && cargo outdated
+
+# Find unused dependencies
+[group('services')]
+svc-unused:
+    cd services && cargo machete
+
+# Update all dependencies
+[group('services')]
+svc-update:
+    cd services && cargo update
+
+# Pre-commit checks (run before committing)
+[group('services')]
+svc-check: svc-fmt-check svc-lint svc-test svc-deny
+
+# CI checks (full validation)
+[group('services')]
+svc-ci: svc-fmt-check svc-lint svc-test-all svc-deny svc-audit
+
+# Clean build artifacts
+[group('services')]
+svc-clean:
+    @if [ -d "services" ]; then \
+        cd services && cargo clean 2>/dev/null || true; \
+    fi
+
+# Watch for changes and run checks
+[group('services')]
+svc-watch:
+    cd services && cargo watch -x check -x test
+
+# Build documentation
+[group('services')]
+svc-doc:
+    cd services && cargo doc
+
+# Build and open documentation
+[group('services')]
+svc-doc-open:
+    cd services && cargo doc --open
+
+# Run benchmarks
+[group('services')]
+svc-bench:
+    cd services && cargo bench
+
+# Generate flamegraph
+[group('services')]
+svc-flamegraph BIN:
+    cd services && cargo flamegraph --bin {{BIN}}
+
+# Show sccache stats
+[group('services')]
+svc-sccache-stats:
+    sccache --show-stats
+
+# Add a dependency to a service
+[group('services')]
+svc-add SERVICE CRATE:
+    cd services/{{SERVICE}} && cargo add {{CRATE}}
+
+# Show dependency tree
+[group('services')]
+svc-tree:
+    cd services && cargo tree
+
+# Show duplicate dependencies
+[group('services')]
+svc-tree-dupes:
+    cd services && cargo tree --duplicates

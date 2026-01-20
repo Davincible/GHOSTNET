@@ -1,4 +1,4 @@
-# Solidity + SvelteKit Monorepo Agent Instructions
+# GHOSTNET Monorepo Agent Instructions
 
 This document provides guidance for AI assistants working with this monorepo project.
 
@@ -61,6 +61,7 @@ When building UI, maintain this aesthetic. No rounded corners, no gradients, no 
 This is a **monorepo** containing:
 - **Web App** (`apps/web/`): SvelteKit 2.x with Svelte 5 runes, TypeScript, Bun
 - **Smart Contracts** (`packages/contracts/`): Foundry-based Solidity with security tooling
+- **Services** (`services/`): Backend services (Rust 1.85+, Edition 2024)
 
 ```
 .
@@ -80,11 +81,19 @@ This is a **monorepo** containing:
 │       ├── test/
 │       ├── script/
 │       └── docs/guides/solidity/
+├── services/                   # Backend services
+│   └── <service-name>/         # Individual services (Rust, etc.)
+│       ├── Cargo.toml
+│       ├── rust-toolchain.toml
+│       └── src/
+├── .opencode/
+│   ├── agents/                 # Agent definitions
+│   └── skill/                  # Development skills (Rust, etc.)
 ├── docs/
 │   ├── architecture/           # Implementation plan, specs
 │   └── product/                # One-pager, product docs
 ├── shell.nix                   # Combined Nix environment
-├── justfile                    # All commands (web-*, contracts-*)
+├── justfile                    # All commands (web-*, contracts-*, svc-*)
 └── .github/workflows/          # CI pipeline
 ```
 
@@ -95,14 +104,17 @@ This is a **monorepo** containing:
 ### Environment is automatic
 
 When entering this directory, direnv automatically:
-1. Loads the Nix shell (Node.js, Bun, Foundry, Slither, Playwright)
+1. Loads the Nix shell (Node.js, Bun, Foundry, Slither, Playwright, Rust tooling)
 2. Installs Foundry via `foundryup` if needed
 3. Installs Solidity LSP and solhint
+4. Configures sccache for Rust compilation caching
 
 **You do NOT need to tell the user to:**
 - Run `nix-shell`
 - Install Foundry manually
 - Install npm packages globally
+
+**Prerequisite for Rust services:** rustup must be installed (https://rustup.rs)
 
 ### First-time Setup
 
@@ -141,6 +153,19 @@ just contracts-lint       # Run solhint
 just contracts-slither    # Static analysis
 just contracts-anvil      # Start local node
 just contracts-check      # All pre-commit checks
+
+# Services (services/)
+just svc-build            # Build all services
+just svc-release          # Build release
+just svc-test             # Run tests (nextest)
+just svc-test-all         # Run tests + doctests
+just svc-lint             # Run clippy
+just svc-fmt              # Format code
+just svc-check            # All pre-commit checks
+just svc-deny             # Security/license audit
+just svc-audit            # Vulnerability scan
+just svc-coverage         # Generate coverage report
+just svc-watch            # Watch for changes
 
 # Integration
 just generate-types       # Generate TS types from ABIs
@@ -369,6 +394,97 @@ See `packages/contracts/docs/guides/solidity/` for comprehensive guides:
 
 ---
 
+## Services (services/)
+
+### Technology Stack
+
+- **Language**: Rust 1.85+ (Edition 2024)
+- **Toolchain**: rustup via `rust-toolchain.toml`
+- **Testing**: cargo-nextest (parallel), proptest (property-based)
+- **Security**: cargo-deny, cargo-audit
+- **Lints**: Clippy pedantic, forbid unsafe
+
+### File Structure (per service)
+
+```
+services/<service-name>/
+├── Cargo.toml              # Package manifest
+├── rust-toolchain.toml     # Rust version (1.85)
+├── rustfmt.toml            # Formatter config
+├── deny.toml               # Dependency policy
+├── .cargo/
+│   └── config.toml         # Build config (fast linker)
+├── src/
+│   ├── lib.rs              # Library root
+│   ├── main.rs             # Binary entry point
+│   └── ...
+└── tests/                  # Integration tests
+```
+
+### Standard Configuration Files
+
+Each Rust service should include these files (see `services/README.md` for templates):
+
+| File | Purpose |
+|------|---------|
+| `rust-toolchain.toml` | Pins Rust 1.85 with components |
+| `rustfmt.toml` | Edition 2024, 100 char width |
+| `deny.toml` | License/advisory policy |
+| `.cargo/config.toml` | Fast linker (mold/lld) |
+
+### Workspace Lints (Cargo.toml)
+
+Every service should use strict lints:
+
+```toml
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"
+```
+
+### Pre-commit Workflow
+
+**CRITICAL**: Always run before committing Rust code:
+
+```bash
+just svc-check  # Runs: fmt-check, lint, test, deny
+```
+
+### Rust Development Skills
+
+This project includes comprehensive Rust development guides as skills. **Use these during development** to ensure best practices and modern patterns.
+
+| Skill | Use When |
+|-------|----------|
+| `rust-project-setup` | Starting projects, configuring workspaces, CI/CD |
+| `rust-architecture-patterns` | Designing modules, DI, hexagonal architecture, DDD |
+| `rust-implementation-patterns` | Types, errors, async, data structures, memory |
+| `rust-web-apis` | Axum, databases, middleware, observability |
+| `rust-cli-desktop-systems` | CLI (Clap), TUI (Ratatui), Tauri, FFI, WASM |
+| `rust-performance-optimization` | Benchmarking, profiling, optimization |
+| `rust-testing-quality` | Testing, mocking, security auditing, production readiness |
+| `rust-version-guide` | Rust version changes, migration, Edition 2024 |
+
+### When to Load Which Skill
+
+- **Starting a new service?** → `rust-project-setup`
+- **Designing architecture?** → `rust-architecture-patterns`
+- **Writing code?** → `rust-implementation-patterns` (most frequent)
+- **Building web APIs?** → `rust-web-apis`
+- **Building CLI/TUI?** → `rust-cli-desktop-systems`
+- **Code is slow?** → `rust-performance-optimization`
+- **Writing tests or reviewing?** → `rust-testing-quality`
+- **Upgrading Rust version?** → `rust-version-guide`
+
+---
+
 ## Web3 Integration
 
 ### Connecting Web App to Contracts
@@ -465,13 +581,13 @@ See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for the com
 ## Notes for AI Assistants
 
 1. **This is GHOSTNET** - A survival/staking game with terminal aesthetics
-2. **This is a monorepo** - Always check which part (web/contracts) is being discussed
-3. **Use prefixed commands** - `just web-*` for web, `just contracts-*` for contracts
+2. **This is a monorepo** - Always check which part (web/contracts/services) is being discussed
+3. **Use prefixed commands** - `just web-*` for web, `just contracts-*` for contracts, `just svc-*` for services
 4. **Environment is automatic** - Don't tell users to install tools manually
 5. **Maintain the aesthetic** - Terminal look, green phosphor, no soft UI
 6. **Security is paramount** - Always suggest security patterns for contracts
 7. **Review the docs/** - Comprehensive guides available in each subproject
-8. **Run `just check-all` before commits** - Enforces quality across both projects
+8. **Run `just check-all` before commits** - Enforces quality across all projects
 9. **Never suggest committing secrets** - .env, private keys, etc.
 
 ## Resources

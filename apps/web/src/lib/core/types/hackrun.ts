@@ -239,48 +239,48 @@ export const NODE_TYPE_CONFIG: Record<
 		baseRewardMultiplier: 1.0,
 		challengeDifficultyModifier: 0,
 		description: 'Standard security barrier',
-		icon: '[#]',
+		icon: '[#]'
 	},
 	patrol: {
 		risk: 'low',
 		baseRewardMultiplier: 0.5,
 		challengeDifficultyModifier: -1,
 		description: 'Automated patrol routine',
-		icon: '[~]',
+		icon: '[~]'
 	},
 	data_cache: {
 		risk: 'high',
 		baseRewardMultiplier: 2.0,
 		challengeDifficultyModifier: 1,
 		description: 'Valuable data store',
-		icon: '[$]',
+		icon: '[$]'
 	},
 	trap: {
 		risk: 'extreme',
 		baseRewardMultiplier: 0,
 		challengeDifficultyModifier: 2,
 		description: 'Danger! Possible trap detected',
-		icon: '[!]',
+		icon: '[!]'
 	},
 	ice_wall: {
 		risk: 'medium',
 		baseRewardMultiplier: 1.5,
 		challengeDifficultyModifier: 2,
 		description: 'Intrusion Countermeasures Electronics',
-		icon: '[*]',
+		icon: '[*]'
 	},
 	honeypot: {
 		risk: 'high',
 		baseRewardMultiplier: 1.8,
 		challengeDifficultyModifier: 1,
 		description: 'Too good to be true?',
-		icon: '[?]',
+		icon: '[?]'
 	},
 	backdoor: {
 		risk: 'medium',
 		baseRewardMultiplier: 0.3,
 		challengeDifficultyModifier: 0,
 		description: 'Shortcut through the system',
-		icon: '[>]',
-	},
+		icon: '[>]'
+	}
 };

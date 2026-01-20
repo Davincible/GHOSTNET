@@ -29,7 +29,7 @@ export function generateMockPosition(address: `0x${string}`): Position {
 		entryTimestamp: now - 2 * 60 * 60 * 1000, // 2 hours ago
 		earnedYield: 47n * 10n ** 18n,
 		ghostStreak: 7,
-		nextScanTimestamp,
+		nextScanTimestamp
 	};
 }
 
@@ -37,18 +37,22 @@ export function generateMockPosition(address: `0x${string}`): Position {
 export function updatePositionYield(position: Position): Position {
 	// Add small random yield
 	const yieldIncrease = BigInt(Math.floor(Math.random() * 100)) * 10n ** 15n;
-
+	
 	return {
 		...position,
-		earnedYield: position.earnedYield + yieldIncrease,
+		earnedYield: position.earnedYield + yieldIncrease
 	};
 }
 
 /** Create a new position when jacking in */
-export function createPosition(address: `0x${string}`, level: Level, amount: bigint): Position {
+export function createPosition(
+	address: `0x${string}`,
+	level: Level,
+	amount: bigint
+): Position {
 	const now = Date.now();
 	const config = LEVEL_CONFIG[level];
-
+	
 	// Calculate next scan time based on level
 	let nextScanTimestamp: number;
 	if (config.scanIntervalHours === Infinity) {
@@ -66,6 +70,6 @@ export function createPosition(address: `0x${string}`, level: Level, amount: big
 		entryTimestamp: now,
 		earnedYield: 0n,
 		ghostStreak: 0,
-		nextScanTimestamp,
+		nextScanTimestamp
 	};
 }

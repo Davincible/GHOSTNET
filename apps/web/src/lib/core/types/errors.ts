@@ -50,90 +50,90 @@ const ERROR_METADATA: Record<ErrorCode, ErrorDisplay> = {
 	WALLET_NOT_CONNECTED: {
 		title: 'Wallet Required',
 		message: 'Connect your wallet to jack in',
-		severity: 'info',
+		severity: 'info'
 	},
 	WALLET_REJECTED: {
 		title: 'Rejected',
 		message: 'You cancelled the transaction',
-		severity: 'warning',
+		severity: 'warning'
 	},
 	PROVIDER_ERROR: {
 		title: 'Wallet Error',
 		message: 'Your wallet encountered an error',
-		severity: 'error',
+		severity: 'error'
 	},
 
 	// Balance errors
 	INSUFFICIENT_BALANCE: {
 		title: 'Not Enough $DATA',
 		message: 'You need more $DATA for this action',
-		severity: 'error',
+		severity: 'error'
 	},
 	INSUFFICIENT_ALLOWANCE: {
 		title: 'Approval Needed',
 		message: 'Approve $DATA spending first',
-		severity: 'info',
+		severity: 'info'
 	},
 
 	// Transaction errors
 	TRANSACTION_FAILED: {
 		title: 'TX Failed',
 		message: "Transaction couldn't be completed",
-		severity: 'error',
+		severity: 'error'
 	},
 	TRANSACTION_REVERTED: {
 		title: 'TX Reverted',
 		message: 'The network rejected this transaction',
-		severity: 'error',
+		severity: 'error'
 	},
 	NETWORK_ERROR: {
 		title: 'Network Down',
 		message: "Can't connect to the network",
-		severity: 'critical',
+		severity: 'critical'
 	},
 
 	// Position errors
 	POSITION_NOT_FOUND: {
 		title: 'No Position',
 		message: "You're not jacked in yet",
-		severity: 'info',
+		severity: 'info'
 	},
 	ALREADY_JACKED_IN: {
 		title: 'Already In',
 		message: "You're already jacked into the network",
-		severity: 'info',
+		severity: 'info'
 	},
 
 	// Level errors
 	LEVEL_FULL: {
 		title: 'Level Full',
 		message: 'This security clearance is at capacity',
-		severity: 'warning',
+		severity: 'warning'
 	},
 	MIN_STAKE_NOT_MET: {
 		title: 'Below Minimum',
 		message: 'Amount is below minimum for this level',
-		severity: 'warning',
+		severity: 'warning'
 	},
 
 	// Timing errors
 	COOLDOWN_ACTIVE: {
 		title: 'Cooldown',
 		message: 'Wait before trying again',
-		severity: 'info',
+		severity: 'info'
 	},
 	SCAN_IN_PROGRESS: {
 		title: 'Scan Active',
 		message: 'A trace scan is in progress - try after',
-		severity: 'warning',
+		severity: 'warning'
 	},
 
 	// Fallback
 	UNKNOWN_ERROR: {
 		title: 'Error',
 		message: 'Something went wrong',
-		severity: 'error',
-	},
+		severity: 'error'
+	}
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -259,7 +259,7 @@ export function getErrorDisplay(error: GhostnetError): ErrorDisplay {
 		return {
 			title: metadata.title,
 			message: error.message,
-			severity: metadata.severity,
+			severity: metadata.severity
 		};
 	}
 
@@ -285,7 +285,7 @@ const USER_REJECTION_PATTERNS = [
 	'user cancelled',
 	'user canceled',
 	'action_rejected',
-	'user refused',
+	'user refused'
 ];
 
 /** Patterns for detecting insufficient funds errors */
@@ -294,7 +294,7 @@ const INSUFFICIENT_FUNDS_PATTERNS = [
 	'insufficient balance',
 	'not enough balance',
 	'balance too low',
-	'exceeds balance',
+	'exceeds balance'
 ];
 
 /** Patterns for detecting network errors */
@@ -306,7 +306,7 @@ const NETWORK_ERROR_PATTERNS = [
 	'timeout',
 	'econnrefused',
 	'enotfound',
-	'could not connect',
+	'could not connect'
 ];
 
 /** Contract revert reason to error code mapping */
@@ -324,7 +324,7 @@ const REVERT_REASON_MAP: Record<string, ErrorCode> = {
 	CooldownActive: 'COOLDOWN_ACTIVE',
 	OnCooldown: 'COOLDOWN_ACTIVE',
 	ScanInProgress: 'SCAN_IN_PROGRESS',
-	PositionLocked: 'SCAN_IN_PROGRESS',
+	PositionLocked: 'SCAN_IN_PROGRESS'
 };
 
 /**
@@ -346,7 +346,7 @@ function extractRevertReason(message: string): string | null {
 		/reason="([^"]+)"/i,
 		/Error: ([A-Z][a-zA-Z]+)\(/,
 		/custom error '([^']+)'/i,
-		/revert ([A-Z][a-zA-Z]+)/i,
+		/revert ([A-Z][a-zA-Z]+)/i
 	];
 
 	for (const pattern of patterns) {
@@ -390,7 +390,10 @@ export function parseError(err: unknown): GhostnetError {
 		const fullText = `${name} ${message}`;
 
 		// Check for user rejection (wallet cancelled)
-		if (name === 'UserRejectedRequestError' || matchesPattern(fullText, USER_REJECTION_PATTERNS)) {
+		if (
+			name === 'UserRejectedRequestError' ||
+			matchesPattern(fullText, USER_REJECTION_PATTERNS)
+		) {
 			return new GhostnetError('You cancelled the transaction', 'WALLET_REJECTED', true, err);
 		}
 

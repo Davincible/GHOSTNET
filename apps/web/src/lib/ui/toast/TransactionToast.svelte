@@ -24,14 +24,18 @@
 		awaiting_signature: 'Confirm in your wallet',
 		pending: 'Transaction pending...',
 		confirmed: 'Transaction confirmed!',
-		failed: 'Transaction failed',
+		failed: 'Transaction failed'
 	};
 
-	const explorerUrl = $derived(state.hash ? `https://megaexplorer.xyz/tx/${state.hash}` : null);
+	const explorerUrl = $derived(
+		state.hash ? `https://megaexplorer.xyz/tx/${state.hash}` : null
+	);
 
 	const statusMessage = $derived(statusMessages[state.status]);
 
-	const errorMessage = $derived(state.error?.message || 'An unexpected error occurred');
+	const errorMessage = $derived(
+		state.error?.message || 'An unexpected error occurred'
+	);
 
 	// Format tx hash for display: 0x1234...abcd
 	function formatHash(hash: `0x${string}`): string {
@@ -41,13 +45,17 @@
 	// Determine if we should show a loading indicator
 	const isLoading = $derived(
 		state.status === 'preparing' ||
-			state.status === 'awaiting_signature' ||
-			state.status === 'pending'
+		state.status === 'awaiting_signature' ||
+		state.status === 'pending'
 	);
 </script>
 
 {#if state.status !== 'idle'}
-	<div class="tx-toast tx-toast-{state.status}" role="alert" aria-live="polite">
+	<div
+		class="tx-toast tx-toast-{state.status}"
+		role="alert"
+		aria-live="polite"
+	>
 		<!-- Icon column -->
 		<span class="tx-icon">
 			{#if state.status === 'preparing' || state.status === 'pending'}
@@ -86,7 +94,12 @@
 			{/if}
 
 			{#if explorerUrl && (state.status === 'pending' || state.status === 'confirmed')}
-				<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-hash-link">
+				<a
+					href={explorerUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="tx-hash-link"
+				>
 					{formatHash(state.hash!)} ↗
 				</a>
 			{/if}
@@ -94,7 +107,11 @@
 
 		<!-- Dismiss button -->
 		{#if onDismiss}
-			<button class="tx-dismiss" onclick={onDismiss} aria-label="Dismiss notification">
+			<button
+				class="tx-dismiss"
+				onclick={onDismiss}
+				aria-label="Dismiss notification"
+			>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<line x1="18" y1="6" x2="6" y2="18"></line>
 					<line x1="6" y1="6" x2="18" y2="18"></line>
@@ -255,8 +272,7 @@
 	}
 
 	@keyframes pulse {
-		0%,
-		100% {
+		0%, 100% {
 			opacity: 1;
 		}
 		50% {

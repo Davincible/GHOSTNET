@@ -53,7 +53,7 @@ function generateJackInData(): FeedEventData {
 		type: 'JACK_IN',
 		address: generateRandomAddress(),
 		level: pickRandomLevel(),
-		amount: randomAmount(10, 1000),
+		amount: randomAmount(10, 1000)
 	};
 }
 
@@ -64,7 +64,7 @@ function generateExtractData(): FeedEventData {
 		type: 'EXTRACT',
 		address: generateRandomAddress(),
 		amount,
-		gain,
+		gain
 	};
 }
 
@@ -73,7 +73,7 @@ function generateTracedData(): FeedEventData {
 		type: 'TRACED',
 		address: generateRandomAddress(),
 		level: pickRandom(['SUBNET', 'DARKNET', 'BLACK_ICE'] as const),
-		amountLost: randomAmount(20, 500),
+		amountLost: randomAmount(20, 500)
 	};
 }
 
@@ -82,7 +82,7 @@ function generateSurvivedData(): FeedEventData {
 		type: 'SURVIVED',
 		address: generateRandomAddress(),
 		level: pickRandomLevel(),
-		streak: Math.floor(Math.random() * 20) + 1,
+		streak: Math.floor(Math.random() * 20) + 1
 	};
 }
 
@@ -90,7 +90,7 @@ function generateTraceScanWarningData(): FeedEventData {
 	return {
 		type: 'TRACE_SCAN_WARNING',
 		level: pickRandom(['SUBNET', 'DARKNET', 'BLACK_ICE'] as const),
-		secondsUntil: Math.floor(Math.random() * 60) + 10,
+		secondsUntil: Math.floor(Math.random() * 60) + 10
 	};
 }
 
@@ -101,7 +101,7 @@ function generateTraceScanCompleteData(): FeedEventData {
 		type: 'TRACE_SCAN_COMPLETE',
 		level: pickRandom(['SUBNET', 'DARKNET', 'BLACK_ICE'] as const),
 		survivors: total - traced,
-		traced,
+		traced
 	};
 }
 
@@ -110,7 +110,7 @@ function generateWhaleAlertData(): FeedEventData {
 		type: 'WHALE_ALERT',
 		address: generateRandomAddress(),
 		level: pickRandom(['VAULT', 'MAINFRAME'] as const),
-		amount: randomAmount(5000, 50000),
+		amount: randomAmount(5000, 50000)
 	};
 }
 
@@ -119,7 +119,7 @@ function generateJackpotData(): FeedEventData {
 		type: 'JACKPOT',
 		address: generateRandomAddress(),
 		level: 'BLACK_ICE',
-		amount: randomAmount(1000, 10000),
+		amount: randomAmount(1000, 10000)
 	};
 }
 
@@ -128,14 +128,14 @@ function generateCrewEventData(): FeedEventData {
 	const events = [
 		{ eventType: 'raid_complete', message: 'completed crew raid - all members +10% boost' },
 		{ eventType: 'milestone', message: 'reached 100K total extracted' },
-		{ eventType: 'member_join', message: 'new member joined' },
+		{ eventType: 'member_join', message: 'new member joined' }
 	];
 	const event = pickRandom(events);
 	return {
 		type: 'CREW_EVENT',
 		crewName: pickRandom(crewNames),
 		eventType: event.eventType,
-		message: event.message,
+		message: event.message
 	};
 }
 
@@ -146,7 +146,7 @@ function generateMinigameResultData(): FeedEventData {
 		type: 'MINIGAME_RESULT',
 		address: generateRandomAddress(),
 		game: pickRandom(games),
-		result: pickRandom(results),
+		result: pickRandom(results)
 	};
 }
 
@@ -165,19 +165,19 @@ const EVENT_WEIGHTS: { type: FeedEventType; weight: number }[] = [
 	{ type: 'WHALE_ALERT', weight: 3 },
 	{ type: 'JACKPOT', weight: 1 },
 	{ type: 'CREW_EVENT', weight: 5 },
-	{ type: 'MINIGAME_RESULT', weight: 8 },
+	{ type: 'MINIGAME_RESULT', weight: 8 }
 ];
 
 /** Pick a random event type based on weights */
 function pickRandomEventType(): FeedEventType {
 	const totalWeight = EVENT_WEIGHTS.reduce((sum, e) => sum + e.weight, 0);
 	let rand = Math.random() * totalWeight;
-
+	
 	for (const { type, weight } of EVENT_WEIGHTS) {
 		rand -= weight;
 		if (rand <= 0) return type;
 	}
-
+	
 	return 'JACK_IN';
 }
 
@@ -216,18 +216,18 @@ export function generateRandomFeedEvent(): FeedEvent {
 		id: crypto.randomUUID(),
 		type,
 		timestamp: Date.now() - Math.floor(Math.random() * 60000), // Last minute
-		data: generateEventData(type),
+		data: generateEventData(type)
 	};
 }
 
 /** Generate multiple feed events */
 export function generateMockFeedEvents(count: number): FeedEvent[] {
 	const events: FeedEvent[] = [];
-
+	
 	for (let i = 0; i < count; i++) {
 		events.push(generateRandomFeedEvent());
 	}
-
+	
 	// Sort by timestamp, newest first
 	return events.sort((a, b) => b.timestamp - a.timestamp);
 }

@@ -1,8 +1,9 @@
-# Solidity + SvelteKit Monorepo Development Shell
+# GHOSTNET Monorepo Development Shell
 #
 # This shell provides a complete development environment for:
 # - SvelteKit web application (Node.js, Bun, Playwright)
 # - Solidity smart contracts (Foundry, Slither, Solhint)
+# - Rust services (cargo tooling via Nix, toolchain via rustup)
 #
 # Usage:
 # - With direnv: just `cd` into the directory (after `direnv allow`)
@@ -11,7 +12,7 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-  name = "solidity-svelte-monorepo";
+  name = "ghostnet-monorepo";
 
   buildInputs = with pkgs; [
     # === Node.js Ecosystem ===
@@ -28,6 +29,26 @@ pkgs.mkShell {
 
     # === Testing ===
     playwright-driver.browsers  # E2E browser binaries
+
+    # === Rust Ecosystem ===
+    # Rust toolchain is managed by rustup via rust-toolchain.toml
+    # Ensure rustup is installed: https://rustup.rs
+
+    # Build optimization tools
+    sccache            # Compilation caching
+    mold               # Faster linker (Linux)
+    lld                # LLVM linker (macOS/fallback)
+
+    # Cargo extensions
+    cargo-nextest      # Faster test runner
+    cargo-deny         # Dependency policy enforcement
+    cargo-llvm-cov     # Code coverage
+    cargo-audit        # Security vulnerability scanning
+    cargo-outdated     # Check for outdated dependencies
+    cargo-machete      # Find unused dependencies
+    cargo-flamegraph   # Flamegraph generation
+    cargo-benchcmp     # Compare benchmark results
+    cargo-watch        # Watch for changes and run commands
 
     # === Development Utilities ===
     just               # Command runner
@@ -67,10 +88,15 @@ pkgs.mkShell {
       npm install -g solhint
     fi
 
+    # === Rust/sccache Setup ===
+    export SCCACHE_CACHE_SIZE="10G"
+    export SCCACHE_DIR="$HOME/.cache/sccache"
+    export RUSTC_WRAPPER="${pkgs.sccache}/bin/sccache"
+
     # === Welcome Message ===
     echo ""
-    echo "Solidity + SvelteKit Monorepo"
-    echo "=============================="
+    echo "GHOSTNET Monorepo"
+    echo "================="
     echo ""
     echo "Web App (apps/web):"
     echo "  Node.js: $(node --version)"
@@ -80,7 +106,15 @@ pkgs.mkShell {
     echo "  Forge: $(forge --version 2>/dev/null | head -1 || echo 'run foundryup')"
     echo "  Slither: $(slither --version 2>/dev/null || echo 'available')"
     echo ""
+    echo "Services (services/):"
+    if command -v rustup &> /dev/null; then
+      echo "  Rust: $(rustc --version 2>/dev/null || echo 'will install on first cargo command')"
+    else
+      echo "  Rust: Install rustup from https://rustup.rs"
+    fi
+    echo "  sccache: enabled (${SCCACHE_CACHE_SIZE} cache)"
+    echo ""
     echo "Run 'just' to see available commands"
-    echo "Run 'just install' to set up both projects"
+    echo "Run 'just install' to set up all projects"
   '';
 }

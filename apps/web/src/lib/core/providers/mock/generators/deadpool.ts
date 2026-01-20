@@ -12,7 +12,7 @@ import type {
 	DeadPoolSide,
 	DeadPoolUserStats,
 	DeadPoolHistory,
-	Level,
+	Level
 } from '../../../types';
 
 // ════════════════════════════════════════════════════════════════
@@ -37,7 +37,7 @@ const ROUND_TEMPLATES: Array<{
 		levels: ['SUBNET', 'DARKNET', 'BLACK_ICE'],
 		lineRange: [20, 100],
 		durationMs: 30 * 60 * 1000, // 30 minutes
-		lockBeforeEndMs: 5 * 60 * 1000, // 5 minutes
+		lockBeforeEndMs: 5 * 60 * 1000 // 5 minutes
 	},
 	{
 		type: 'whale_watch',
@@ -45,7 +45,7 @@ const ROUND_TEMPLATES: Array<{
 		levels: ['DARKNET', 'BLACK_ICE'],
 		lineRange: [2000, 10000],
 		durationMs: 60 * 60 * 1000, // 60 minutes
-		lockBeforeEndMs: 10 * 60 * 1000, // 10 minutes
+		lockBeforeEndMs: 10 * 60 * 1000 // 10 minutes
 	},
 	{
 		type: 'survival_streak',
@@ -53,7 +53,7 @@ const ROUND_TEMPLATES: Array<{
 		levels: ['SUBNET', 'DARKNET', 'BLACK_ICE'],
 		lineRange: [10, 30],
 		durationMs: 45 * 60 * 1000, // 45 minutes
-		lockBeforeEndMs: 5 * 60 * 1000, // 5 minutes
+		lockBeforeEndMs: 5 * 60 * 1000 // 5 minutes
 	},
 	{
 		type: 'system_reset',
@@ -61,8 +61,8 @@ const ROUND_TEMPLATES: Array<{
 		levels: [], // System-wide, no specific level
 		lineRange: [15, 45],
 		durationMs: 15 * 60 * 1000, // 15 minutes (urgent)
-		lockBeforeEndMs: 2 * 60 * 1000, // 2 minutes
-	},
+		lockBeforeEndMs: 2 * 60 * 1000 // 2 minutes
+	}
 ];
 
 /** Persistent round counter for realistic round numbers */
@@ -108,10 +108,7 @@ const BURN_RATE = 0.05;
  * Calculate parimutuel odds for each side
  * Returns multiplier for a winning bet (e.g., 1.8 means $1 bet wins $1.80)
  */
-export function calculateOdds(pools: { under: bigint; over: bigint }): {
-	under: number;
-	over: number;
-} {
+export function calculateOdds(pools: { under: bigint; over: bigint }): { under: number; over: number } {
 	const underNum = Number(pools.under);
 	const overNum = Number(pools.over);
 	const total = underNum + overNum;
@@ -124,7 +121,7 @@ export function calculateOdds(pools: { under: bigint; over: bigint }): {
 
 	return {
 		under: underNum > 0 ? netPool / underNum : 0,
-		over: overNum > 0 ? netPool / overNum : 0,
+		over: overNum > 0 ? netPool / overNum : 0
 	};
 }
 
@@ -158,7 +155,7 @@ export function generateMockPools(): { under: bigint; over: bigint } {
 
 	return {
 		under: baseUnder,
-		over: (baseOver * BigInt(Math.floor(imbalanceFactor * 100))) / 100n,
+		over: (baseOver * BigInt(Math.floor(imbalanceFactor * 100))) / 100n
 	};
 }
 
@@ -170,7 +167,7 @@ export function updatePoolsWithBet(
 ): { under: bigint; over: bigint } {
 	return {
 		under: side === 'under' ? pools.under + amount : pools.under,
-		over: side === 'over' ? pools.over + amount : pools.over,
+		over: side === 'over' ? pools.over + amount : pools.over
 	};
 }
 
@@ -247,7 +244,7 @@ export function generateMockRound(status?: DeadPoolStatus): DeadPoolRound {
 		endsAt,
 		locksAt,
 		pools,
-		userBet: null, // No bet by default
+		userBet: null // No bet by default
 	};
 }
 
@@ -266,7 +263,7 @@ export function generateActiveRounds(): DeadPoolRound[] {
 			type: template.type,
 			targetLevel,
 			line,
-			question: formatQuestion(template.questionTemplate, line, targetLevel),
+			question: formatQuestion(template.questionTemplate, line, targetLevel)
 		};
 	});
 }
@@ -326,7 +323,7 @@ export function resolveRound(
 		burnAmount,
 		winnerPool,
 		userWon,
-		userPayout,
+		userPayout
 	};
 }
 
@@ -349,7 +346,7 @@ export function generateMockHistory(): DeadPoolHistory {
 		round.userBet = {
 			side: userBetSide,
 			amount: userBetAmount,
-			timestamp: round.startsAt + randomInt(1, 10) * 60 * 1000,
+			timestamp: round.startsAt + randomInt(1, 10) * 60 * 1000
 		};
 	}
 
@@ -385,10 +382,7 @@ export function generateUserStats(): DeadPoolUserStats {
 	const avgBetSize = randomInt(20, 100);
 	const avgWinMultiplier = 1.7 + Math.random() * 0.5; // 1.7x to 2.2x
 
-	const totalWon = randomAmount(
-		wins * avgBetSize * avgWinMultiplier,
-		wins * avgBetSize * avgWinMultiplier * 1.5
-	);
+	const totalWon = randomAmount(wins * avgBetSize * avgWinMultiplier, wins * avgBetSize * avgWinMultiplier * 1.5);
 	const totalLost = randomAmount(losses * avgBetSize * 0.8, losses * avgBetSize * 1.2);
 	const biggestWin = randomAmount(avgBetSize * 3, avgBetSize * 10);
 
@@ -401,7 +395,7 @@ export function generateUserStats(): DeadPoolUserStats {
 		totalLost,
 		winRate,
 		biggestWin,
-		currentStreak,
+		currentStreak
 	};
 }
 
@@ -420,7 +414,7 @@ export function simulatePoolActivity(pools: { under: bigint; over: bigint }): {
 
 	return {
 		under: pools.under + underChange,
-		over: pools.over + overChange,
+		over: pools.over + overChange
 	};
 }
 
