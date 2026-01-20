@@ -69,17 +69,19 @@
 
 		try {
 			if (walletId === 'walletconnect') {
+				// Close our modal first so WalletConnect QR modal is visible
+				onclose();
 				await wallet.connectWalletConnect();
 			} else {
 				// For MetaMask, Coinbase, or generic injected - use injected connector
 				await wallet.connect();
-			}
-
-			// Check if connected successfully
-			if (wallet.isConnected) {
-				onclose();
-			} else if (wallet.error) {
-				error = wallet.error;
+				
+				// Check if connected successfully
+				if (wallet.isConnected) {
+					onclose();
+				} else if (wallet.error) {
+					error = wallet.error;
+				}
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to connect';
