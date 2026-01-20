@@ -94,24 +94,25 @@
     
     // Main head outline (top-down view shows wedge/pear shape)
     // Widest at cheeks/eyes, narrows toward nose and behind ears
+    // Head width reduced for realistic proportions
     const headMain = createSmoothCurve(s([
-      [-0.14, 0.32, 0.22],    // Left side of muzzle (narrow)
-      [-0.17, 0.38, 0.18],    // Left muzzle-cheek transition
-      [-0.21, 0.45, 0.14],    // Left cheek (widest point)
-      [-0.22, 0.52, 0.10],    // Left temple
-      [-0.18, 0.58, 0.06],    // Left forehead (narrowing)
-      [-0.12, 0.62, 0.04],    // Top left skull
+      [-0.10, 0.32, 0.22],    // Left side of muzzle (narrow)
+      [-0.12, 0.38, 0.18],    // Left muzzle-cheek transition
+      [-0.15, 0.45, 0.14],    // Left cheek (widest point)
+      [-0.16, 0.52, 0.10],    // Left temple
+      [-0.13, 0.58, 0.06],    // Left forehead (narrowing)
+      [-0.09, 0.62, 0.04],    // Top left skull
       [0, 0.64, 0.02],        // Crown (flat on top)
-      [0.12, 0.62, 0.04],     // Top right skull
-      [0.18, 0.58, 0.06],     // Right forehead
-      [0.22, 0.52, 0.10],     // Right temple
-      [0.21, 0.45, 0.14],     // Right cheek (widest)
-      [0.17, 0.38, 0.18],     // Right muzzle-cheek
-      [0.14, 0.32, 0.22],     // Right side of muzzle
-      [0.08, 0.28, 0.26],     // Right lower muzzle
+      [0.09, 0.62, 0.04],     // Top right skull
+      [0.13, 0.58, 0.06],     // Right forehead
+      [0.16, 0.52, 0.10],     // Right temple
+      [0.15, 0.45, 0.14],     // Right cheek (widest)
+      [0.12, 0.38, 0.18],     // Right muzzle-cheek
+      [0.10, 0.32, 0.22],     // Right side of muzzle
+      [0.06, 0.28, 0.26],     // Right lower muzzle
       [0, 0.26, 0.28],        // Nose tip area (protruding)
-      [-0.08, 0.28, 0.26],    // Left lower muzzle
-      [-0.14, 0.32, 0.22],    // Back to start
+      [-0.06, 0.28, 0.26],    // Left lower muzzle
+      [-0.10, 0.32, 0.22],    // Back to start
     ]), 48, true);
     paths.push(headMain);
 
@@ -119,24 +120,24 @@
     // Shows elongated skull shape, forehead slopes back
     const headProfileLeft = createSmoothCurve(s([
       [0, 0.26, 0.28],        // Nose tip
-      [-0.04, 0.30, 0.24],    // Upper nose bridge
-      [-0.08, 0.36, 0.18],    // Mid nose bridge (roman curve)
-      [-0.12, 0.42, 0.12],    // Lower forehead
-      [-0.16, 0.50, 0.06],    // Mid forehead
-      [-0.18, 0.58, 0.02],    // Upper forehead (slopes back)
-      [-0.14, 0.62, 0.00],    // Skull top
+      [-0.03, 0.30, 0.24],    // Upper nose bridge
+      [-0.06, 0.36, 0.18],    // Mid nose bridge (roman curve)
+      [-0.09, 0.42, 0.12],    // Lower forehead
+      [-0.12, 0.50, 0.06],    // Mid forehead
+      [-0.13, 0.58, 0.02],    // Upper forehead (slopes back)
+      [-0.10, 0.62, 0.00],    // Skull top
     ]), 32);
     paths.push(headProfileLeft);
 
     // Head profile - right side (mirror)
     const headProfileRight = createSmoothCurve(s([
       [0, 0.26, 0.28],        // Nose tip
-      [0.04, 0.30, 0.24],     // Upper nose bridge
-      [0.08, 0.36, 0.18],     // Mid nose bridge
-      [0.12, 0.42, 0.12],     // Lower forehead  
-      [0.16, 0.50, 0.06],     // Mid forehead
-      [0.18, 0.58, 0.02],     // Upper forehead
-      [0.14, 0.62, 0.00],     // Skull top
+      [0.03, 0.30, 0.24],     // Upper nose bridge
+      [0.06, 0.36, 0.18],     // Mid nose bridge
+      [0.09, 0.42, 0.12],     // Lower forehead  
+      [0.12, 0.50, 0.06],     // Mid forehead
+      [0.13, 0.58, 0.02],     // Upper forehead
+      [0.10, 0.62, 0.00],     // Skull top
     ]), 32);
     paths.push(headProfileRight);
 
@@ -153,143 +154,144 @@
 
     // Jaw line - left (angular line from chin to throat)
     const jawLeft = createSmoothCurve(s([
-      [-0.08, 0.28, 0.26],    // Chin area
-      [-0.14, 0.30, 0.20],    // Lower jaw
-      [-0.18, 0.34, 0.14],    // Jaw angle
-      [-0.20, 0.40, 0.08],    // Jaw to cheek
-      [-0.22, 0.48, 0.06],    // Cheek bone
+      [-0.06, 0.28, 0.26],    // Chin area
+      [-0.10, 0.30, 0.20],    // Lower jaw
+      [-0.13, 0.34, 0.14],    // Jaw angle
+      [-0.14, 0.40, 0.08],    // Jaw to cheek
+      [-0.16, 0.48, 0.06],    // Cheek bone
     ]), 20);
     paths.push(jawLeft);
 
     // Jaw line - right
     const jawRight = createSmoothCurve(s([
-      [0.08, 0.28, 0.26],     // Chin area
-      [0.14, 0.30, 0.20],     // Lower jaw
-      [0.18, 0.34, 0.14],     // Jaw angle
-      [0.20, 0.40, 0.08],     // Jaw to cheek
-      [0.22, 0.48, 0.06],     // Cheek bone
+      [0.06, 0.28, 0.26],     // Chin area
+      [0.10, 0.30, 0.20],     // Lower jaw
+      [0.13, 0.34, 0.14],     // Jaw angle
+      [0.14, 0.40, 0.08],     // Jaw to cheek
+      [0.16, 0.48, 0.06],     // Cheek bone
     ]), 20);
     paths.push(jawRight);
 
     // Cheekbone contours - subtle definition
     const cheekContourLeft = createSmoothCurve(s([
-      [-0.20, 0.42, 0.12],    // Under eye
-      [-0.22, 0.48, 0.10],    // Cheekbone peak
-      [-0.20, 0.54, 0.06],    // To temple
+      [-0.14, 0.42, 0.12],    // Under eye
+      [-0.16, 0.48, 0.10],    // Cheekbone peak
+      [-0.14, 0.54, 0.06],    // To temple
     ]), 16);
     paths.push(cheekContourLeft);
 
     const cheekContourRight = createSmoothCurve(s([
-      [0.20, 0.42, 0.12],     // Under eye
-      [0.22, 0.48, 0.10],     // Cheekbone peak
-      [0.20, 0.54, 0.06],     // To temple
+      [0.14, 0.42, 0.12],     // Under eye
+      [0.16, 0.48, 0.10],     // Cheekbone peak
+      [0.14, 0.54, 0.06],     // To temple
     ]), 16);
     paths.push(cheekContourRight);
 
     // Snout/muzzle - elongated, tapered, protruding forward
     // Forms Y-shape pointing down when viewed from front
     const snoutTop = createSmoothCurve(s([
-      [-0.10, 0.34, 0.22],    // Left upper muzzle
-      [-0.06, 0.32, 0.26],    // Left of nose
+      [-0.07, 0.34, 0.22],    // Left upper muzzle
+      [-0.04, 0.32, 0.26],    // Left of nose
       [0, 0.30, 0.28],        // Nose top
-      [0.06, 0.32, 0.26],     // Right of nose
-      [0.10, 0.34, 0.22],     // Right upper muzzle
+      [0.04, 0.32, 0.26],     // Right of nose
+      [0.07, 0.34, 0.22],     // Right upper muzzle
     ]), 20);
     paths.push(snoutTop);
 
     const snoutBottom = createSmoothCurve(s([
-      [-0.08, 0.28, 0.24],    // Left lower muzzle
-      [-0.04, 0.26, 0.27],    // Left of chin
+      [-0.06, 0.28, 0.24],    // Left lower muzzle
+      [-0.03, 0.26, 0.27],    // Left of chin
       [0, 0.25, 0.28],        // Chin point
-      [0.04, 0.26, 0.27],     // Right of chin
-      [0.08, 0.28, 0.24],     // Right lower muzzle
+      [0.03, 0.26, 0.27],     // Right of chin
+      [0.06, 0.28, 0.24],     // Right lower muzzle
     ]), 20);
     paths.push(snoutBottom);
 
     // Muzzle side contours
     const muzzleSideLeft = createSmoothCurve(s([
-      [-0.12, 0.36, 0.20],    // Upper
-      [-0.10, 0.32, 0.24],    // Mid
-      [-0.08, 0.28, 0.26],    // Lower
+      [-0.09, 0.36, 0.20],    // Upper
+      [-0.07, 0.32, 0.24],    // Mid
+      [-0.06, 0.28, 0.26],    // Lower
     ]), 12);
     paths.push(muzzleSideLeft);
 
     const muzzleSideRight = createSmoothCurve(s([
-      [0.12, 0.36, 0.20],     // Upper
-      [0.10, 0.32, 0.24],     // Mid
-      [0.08, 0.28, 0.26],     // Lower
+      [0.09, 0.36, 0.20],     // Upper
+      [0.07, 0.32, 0.24],     // Mid
+      [0.06, 0.28, 0.26],     // Lower
     ]), 12);
     paths.push(muzzleSideRight);
 
     // ============================================
     // EARS - Long, elegant rabbit ears
+    // Adjusted base positions for narrower head
     // ============================================
     
     // Left ear - outer edge
     const leftEarOuter = createSmoothCurve(s([
-      [-0.14, 0.60, 0.06],    // Base
-      [-0.20, 0.72, 0.04],    // Lower outer
-      [-0.24, 0.88, 0.02],    // Mid outer
-      [-0.25, 1.05, 0.00],    // Upper outer
-      [-0.22, 1.20, -0.02],   // Near tip outer
-      [-0.16, 1.32, -0.03],   // Tip
-      [-0.12, 1.28, -0.02],   // Tip inner
-      [-0.10, 1.15, 0.00],    // Upper inner
-      [-0.10, 0.98, 0.02],    // Mid inner
-      [-0.10, 0.80, 0.04],    // Lower inner
-      [-0.08, 0.62, 0.06],    // Base inner
+      [-0.10, 0.60, 0.04],    // Base (narrower)
+      [-0.16, 0.72, 0.02],    // Lower outer
+      [-0.20, 0.88, 0.00],    // Mid outer
+      [-0.21, 1.05, -0.02],   // Upper outer
+      [-0.18, 1.20, -0.04],   // Near tip outer
+      [-0.12, 1.32, -0.05],   // Tip
+      [-0.08, 1.28, -0.04],   // Tip inner
+      [-0.06, 1.15, -0.02],   // Upper inner
+      [-0.06, 0.98, 0.00],    // Mid inner
+      [-0.06, 0.80, 0.02],    // Lower inner
+      [-0.05, 0.62, 0.04],    // Base inner
     ]), 40);
     paths.push(leftEarOuter);
 
     // Left ear - inner detail lines
     const leftEarInner1 = createSmoothCurve(s([
-      [-0.13, 0.68, 0.05],
-      [-0.17, 0.85, 0.03],
-      [-0.18, 1.02, 0.01],
-      [-0.16, 1.18, -0.01],
-      [-0.14, 1.26, -0.02],
+      [-0.09, 0.68, 0.03],
+      [-0.13, 0.85, 0.01],
+      [-0.14, 1.02, -0.01],
+      [-0.12, 1.18, -0.03],
+      [-0.10, 1.26, -0.04],
     ]), 24);
     paths.push(leftEarInner1);
 
     const leftEarInner2 = createSmoothCurve(s([
-      [-0.11, 0.70, 0.05],
-      [-0.13, 0.88, 0.03],
-      [-0.13, 1.05, 0.01],
-      [-0.12, 1.18, -0.01],
+      [-0.07, 0.70, 0.03],
+      [-0.09, 0.88, 0.01],
+      [-0.09, 1.05, -0.01],
+      [-0.08, 1.18, -0.03],
     ]), 20);
     paths.push(leftEarInner2);
 
     // Right ear - outer edge (mirrored)
     const rightEarOuter = createSmoothCurve(s([
-      [0.14, 0.60, 0.06],
-      [0.20, 0.72, 0.04],
-      [0.24, 0.88, 0.02],
-      [0.25, 1.05, 0.00],
-      [0.22, 1.20, -0.02],
-      [0.16, 1.32, -0.03],
-      [0.12, 1.28, -0.02],
-      [0.10, 1.15, 0.00],
-      [0.10, 0.98, 0.02],
-      [0.10, 0.80, 0.04],
-      [0.08, 0.62, 0.06],
+      [0.10, 0.60, 0.04],
+      [0.16, 0.72, 0.02],
+      [0.20, 0.88, 0.00],
+      [0.21, 1.05, -0.02],
+      [0.18, 1.20, -0.04],
+      [0.12, 1.32, -0.05],
+      [0.08, 1.28, -0.04],
+      [0.06, 1.15, -0.02],
+      [0.06, 0.98, 0.00],
+      [0.06, 0.80, 0.02],
+      [0.05, 0.62, 0.04],
     ]), 40);
     paths.push(rightEarOuter);
 
     // Right ear inner details
     const rightEarInner1 = createSmoothCurve(s([
-      [0.13, 0.68, 0.05],
-      [0.17, 0.85, 0.03],
-      [0.18, 1.02, 0.01],
-      [0.16, 1.18, -0.01],
-      [0.14, 1.26, -0.02],
+      [0.09, 0.68, 0.03],
+      [0.13, 0.85, 0.01],
+      [0.14, 1.02, -0.01],
+      [0.12, 1.18, -0.03],
+      [0.10, 1.26, -0.04],
     ]), 24);
     paths.push(rightEarInner1);
 
     const rightEarInner2 = createSmoothCurve(s([
-      [0.11, 0.70, 0.05],
-      [0.13, 0.88, 0.03],
-      [0.13, 1.05, 0.01],
-      [0.12, 1.18, -0.01],
+      [0.07, 0.70, 0.03],
+      [0.09, 0.88, 0.01],
+      [0.09, 1.05, -0.01],
+      [0.08, 1.18, -0.03],
     ]), 20);
     paths.push(rightEarInner2);
 
@@ -300,17 +302,17 @@
     // ============================================
     
     // Left eye - positioned on left side, facing outward
-    // Note: higher X magnitude = more to the side, lower Z = facing sideways
+    // Adjusted to fit narrower head proportions
     const leftEye = createSmoothCurve(s([
-      [-0.22, 0.48, 0.08],    // Outer corner (most lateral)
-      [-0.23, 0.52, 0.10],    // Upper outer
-      [-0.21, 0.55, 0.12],    // Top
-      [-0.18, 0.56, 0.14],    // Upper inner
-      [-0.15, 0.54, 0.15],    // Inner corner
-      [-0.14, 0.50, 0.14],    // Lower inner
-      [-0.16, 0.46, 0.12],    // Bottom
-      [-0.19, 0.45, 0.10],    // Lower outer
-      [-0.22, 0.48, 0.08],    // Back to start
+      [-0.16, 0.48, 0.10],    // Outer corner (most lateral)
+      [-0.17, 0.52, 0.11],    // Upper outer
+      [-0.15, 0.55, 0.13],    // Top
+      [-0.12, 0.56, 0.14],    // Upper inner
+      [-0.10, 0.54, 0.15],    // Inner corner
+      [-0.09, 0.50, 0.14],    // Lower inner
+      [-0.11, 0.46, 0.12],    // Bottom
+      [-0.14, 0.45, 0.11],    // Lower outer
+      [-0.16, 0.48, 0.10],    // Back to start
     ]), 24, true);
     paths.push(leftEye);
 
@@ -319,24 +321,24 @@
     for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
       // Pupil is slightly offset toward outer edge of eye
       leftPupil.push(new THREE.Vector3(
-        (-0.185 + Math.cos(a) * 0.022) * scale,
-        (0.51 + Math.sin(a) * 0.028) * scale,
-        (0.11 + Math.cos(a) * 0.01) * scale
+        (-0.13 + Math.cos(a) * 0.02) * scale,
+        (0.51 + Math.sin(a) * 0.025) * scale,
+        (0.12 + Math.cos(a) * 0.01) * scale
       ));
     }
     paths.push(leftPupil);
 
     // Right eye - mirrored, positioned on right side
     const rightEye = createSmoothCurve(s([
-      [0.22, 0.48, 0.08],     // Outer corner
-      [0.23, 0.52, 0.10],     // Upper outer
-      [0.21, 0.55, 0.12],     // Top
-      [0.18, 0.56, 0.14],     // Upper inner
-      [0.15, 0.54, 0.15],     // Inner corner
-      [0.14, 0.50, 0.14],     // Lower inner
-      [0.16, 0.46, 0.12],     // Bottom
-      [0.19, 0.45, 0.10],     // Lower outer
-      [0.22, 0.48, 0.08],     // Back to start
+      [0.16, 0.48, 0.10],     // Outer corner
+      [0.17, 0.52, 0.11],     // Upper outer
+      [0.15, 0.55, 0.13],     // Top
+      [0.12, 0.56, 0.14],     // Upper inner
+      [0.10, 0.54, 0.15],     // Inner corner
+      [0.09, 0.50, 0.14],     // Lower inner
+      [0.11, 0.46, 0.12],     // Bottom
+      [0.14, 0.45, 0.11],     // Lower outer
+      [0.16, 0.48, 0.10],     // Back to start
     ]), 24, true);
     paths.push(rightEye);
 
@@ -344,25 +346,25 @@
     const rightPupil: THREE.Vector3[] = [];
     for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
       rightPupil.push(new THREE.Vector3(
-        (0.185 + Math.cos(a) * 0.022) * scale,
-        (0.51 + Math.sin(a) * 0.028) * scale,
-        (0.11 + Math.cos(a) * 0.01) * scale
+        (0.13 + Math.cos(a) * 0.02) * scale,
+        (0.51 + Math.sin(a) * 0.025) * scale,
+        (0.12 + Math.cos(a) * 0.01) * scale
       ));
     }
     paths.push(rightPupil);
 
     // Eye socket contours (brow ridge)
     const leftBrow = createSmoothCurve(s([
-      [-0.14, 0.56, 0.14],    // Inner brow
-      [-0.18, 0.58, 0.12],    // Mid brow
-      [-0.22, 0.56, 0.08],    // Outer brow
+      [-0.09, 0.56, 0.14],    // Inner brow
+      [-0.13, 0.58, 0.12],    // Mid brow
+      [-0.16, 0.56, 0.10],    // Outer brow
     ]), 12);
     paths.push(leftBrow);
 
     const rightBrow = createSmoothCurve(s([
-      [0.14, 0.56, 0.14],     // Inner brow
-      [0.18, 0.58, 0.12],     // Mid brow
-      [0.22, 0.56, 0.08],     // Outer brow
+      [0.09, 0.56, 0.14],     // Inner brow
+      [0.13, 0.58, 0.12],     // Mid brow
+      [0.16, 0.56, 0.10],     // Outer brow
     ]), 12);
     paths.push(rightBrow);
 
@@ -530,18 +532,18 @@
     ]), 48);
     paths.push(spine);
 
-    // Neck to head connection lines (adjusted for elongated head)
+    // Neck to head connection lines (adjusted for narrower head)
     const neckLine1 = createSmoothCurve(s([
-      [-0.18, 0.28, 0.06],
-      [-0.16, 0.34, 0.10],
-      [-0.18, 0.42, 0.12],   // Connects to cheek area
+      [-0.14, 0.28, 0.06],
+      [-0.12, 0.34, 0.10],
+      [-0.13, 0.42, 0.12],   // Connects to cheek area
     ]), 14);
     paths.push(neckLine1);
 
     const neckLine2 = createSmoothCurve(s([
       [0.05, 0.24, 0.08],
-      [0.10, 0.30, 0.14],
-      [0.14, 0.38, 0.18],    // Connects to muzzle side
+      [0.08, 0.30, 0.14],
+      [0.10, 0.38, 0.18],    // Connects to muzzle side
     ]), 14);
     paths.push(neckLine2);
 
