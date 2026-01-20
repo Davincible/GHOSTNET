@@ -7,6 +7,7 @@
     height?: number;
     voxelSize?: number;
     color?: string;
+    bgColor?: string;
     glitchIntensity?: number;
   }
 
@@ -15,6 +16,7 @@
     height = 400, 
     voxelSize = 0.08,
     color = '#00e5cc',
+    bgColor = '#00e5cc',
     glitchIntensity = 0.3
   }: Props = $props();
 
@@ -24,6 +26,7 @@
   // Store references to rabbit materials for color updates
   let rabbitVoxelMaterial = $state<THREE.ShaderMaterial | null>(null);
   let rabbitWireframeMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let bgGlowMaterial = $state<THREE.ShaderMaterial | null>(null);
   
   // Update rabbit color when prop changes (only rabbit, not background glow)
   $effect(() => {
@@ -35,6 +38,13 @@
       if (rabbitWireframeMaterial) {
         rabbitWireframeMaterial.uniforms.uColor.value = newColor;
       }
+    }
+  });
+  
+  // Update background color when prop changes
+  $effect(() => {
+    if (bgGlowMaterial && bgColor) {
+      bgGlowMaterial.uniforms.uColor.value = new THREE.Color(bgColor);
     }
   });
 
@@ -294,13 +304,12 @@
     // Store reference for reactive color updates
     rabbitWireframeMaterial = wireframeMaterial;
 
-    // Add ambient glow (fixed color - doesn't change)
-    const fixedAccentColor = '#00e5cc';
+    // Add ambient glow (background color - reactive)
     const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(fixedAccentColor) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -328,6 +337,9 @@
     
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     scene.add(glowMesh);
+    
+    // Store reference for reactive background color updates
+    bgGlowMaterial = glowMaterial;
 
     // Group for rotation
     const group = new THREE.Group();

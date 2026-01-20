@@ -6,6 +6,7 @@
     width?: number;
     height?: number;
     color?: string;
+    bgColor?: string;
     pulseSpeed?: number;
   }
 
@@ -13,19 +14,50 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
+    bgColor = '#00e5cc',
     pulseSpeed = 1
   }: Props = $props();
 
   let container: HTMLDivElement;
   let animationId: number;
   
-  // Store reference to rabbit material for color updates
+  // Store references to materials for color updates
   let rabbitMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let bgGlowMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let bgRingMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let bgGridHelper = $state<THREE.GridHelper | null>(null);
   
-  // Update rabbit color when prop changes (only rabbit, not background)
+  // Update rabbit color when prop changes
   $effect(() => {
     if (rabbitMaterial && color) {
       rabbitMaterial.uniforms.uColor.value = new THREE.Color(color);
+    }
+  });
+  
+  // Update background color when prop changes
+  $effect(() => {
+    if (bgColor) {
+      const newBgColor = new THREE.Color(bgColor);
+      if (bgGlowMaterial) {
+        bgGlowMaterial.uniforms.uColor.value = newBgColor;
+      }
+      if (bgRingMaterial) {
+        bgRingMaterial.uniforms.uColor.value = newBgColor;
+      }
+      if (bgGridHelper) {
+        // Recreate grid colors
+        const colors = bgGridHelper.geometry.attributes.color;
+        if (colors) {
+          const primaryColor = newBgColor.clone().multiplyScalar(0.25);
+          const secondaryColor = newBgColor.clone().multiplyScalar(0.1);
+          // Grid colors are interleaved
+          for (let i = 0; i < colors.count; i++) {
+            const c = i % 2 === 0 ? primaryColor : secondaryColor;
+            colors.setXYZ(i, c.r, c.g, c.b);
+          }
+          colors.needsUpdate = true;
+        }
+      }
     }
   });
 
@@ -702,13 +734,12 @@
     // Store reference for reactive color updates
     rabbitMaterial = lineMaterial;
 
-    // Atmospheric glow behind rabbit (fixed color - doesn't change)
-    const fixedAccentColor = '#00e5cc';
+    // Atmospheric glow behind rabbit (background - reactive)
     const glowGeometry = new THREE.SphereGeometry(1.0, 32, 32);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(fixedAccentColor) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -740,18 +771,20 @@
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     glowMesh.position.set(0, 0.3, 0);
     scene.add(glowMesh);
+    bgGlowMaterial = glowMaterial;
 
-    // Floor grid (fixed color - doesn't change)
-    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(fixedAccentColor).multiplyScalar(0.25), new THREE.Color(fixedAccentColor).multiplyScalar(0.1));
+    // Floor grid (background - reactive)
+    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(bgColor).multiplyScalar(0.25), new THREE.Color(bgColor).multiplyScalar(0.1));
     gridHelper.position.y = -0.65;
     scene.add(gridHelper);
+    bgGridHelper = gridHelper;
 
-    // Scan ring on floor (fixed color - doesn't change)
+    // Scan ring on floor (background - reactive)
     const ringGeometry = new THREE.RingGeometry(0.6, 0.62, 64);
     const ringMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(fixedAccentColor) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -782,6 +815,7 @@
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = -0.64;
     scene.add(ring);
+    bgRingMaterial = ringMaterial;
 
     // Animation
     const clock = new THREE.Clock();

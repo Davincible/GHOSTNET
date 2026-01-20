@@ -7,6 +7,7 @@
 
   let activeRabbit = $state<'particles' | 'voxel' | 'ascii' | 'wireframe' | 'all'>('all');
   let color = $state('#00e5cc');
+  let bgColor = $state('#00e5cc');
   
   const rabbits = [
     { id: 'particles', name: 'PARTICLE CLOUD', desc: 'Matrix dissolve/reform' },
@@ -60,13 +61,26 @@
     </div>
     
     <div class="color-picker">
-      <span class="label">COLOR:</span>
+      <span class="label">RABBIT:</span>
       {#each colors as c}
         <button 
           class="color-btn"
           class:active={color === c.value}
           style="--btn-color: {c.value}"
           onclick={() => color = c.value}
+          title={c.name}
+        ></button>
+      {/each}
+    </div>
+    
+    <div class="color-picker">
+      <span class="label">BACKGROUND:</span>
+      {#each colors as c}
+        <button 
+          class="color-btn"
+          class:active={bgColor === c.value}
+          style="--btn-color: {c.value}"
+          onclick={() => bgColor = c.value}
           title={c.name}
         ></button>
       {/each}
@@ -79,13 +93,13 @@
         <Panel title={rabbit.name} borderColor="cyan" glow>
           <div class="rabbit-container">
             {#if rabbit.id === 'particles'}
-              <RabbitParticles width={350} height={350} {color} />
+              <RabbitParticles width={350} height={350} {color} {bgColor} />
             {:else if rabbit.id === 'voxel'}
-              <RabbitVoxel width={350} height={350} {color} />
+              <RabbitVoxel width={350} height={350} {color} {bgColor} />
             {:else if rabbit.id === 'ascii'}
-              <RabbitASCII width={350} height={350} {color} />
+              <RabbitASCII width={350} height={350} {color} {bgColor} />
             {:else if rabbit.id === 'wireframe'}
-              <RabbitWireframe width={350} height={350} {color} />
+              <RabbitWireframe width={350} height={350} {color} {bgColor} />
             {/if}
           </div>
           <p class="rabbit-desc">{rabbit.desc}</p>
@@ -101,13 +115,13 @@
       >
         <div class="rabbit-container large">
           {#if activeRabbit === 'particles'}
-            <RabbitParticles width={600} height={500} {color} particleCount={5000} />
+            <RabbitParticles width={600} height={500} {color} {bgColor} particleCount={5000} />
           {:else if activeRabbit === 'voxel'}
-            <RabbitVoxel width={600} height={500} {color} />
+            <RabbitVoxel width={600} height={500} {color} {bgColor} />
           {:else if activeRabbit === 'ascii'}
-            <RabbitASCII width={600} height={500} {color} />
+            <RabbitASCII width={600} height={500} {color} {bgColor} />
           {:else if activeRabbit === 'wireframe'}
-            <RabbitWireframe width={600} height={500} {color} />
+            <RabbitWireframe width={600} height={500} {color} {bgColor} />
           {/if}
         </div>
       </Panel>

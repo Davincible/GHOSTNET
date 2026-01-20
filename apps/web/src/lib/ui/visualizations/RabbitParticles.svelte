@@ -7,6 +7,7 @@
     height?: number;
     particleCount?: number;
     color?: string;
+    bgColor?: string;
     autoDissolve?: boolean;
   }
 
@@ -15,19 +16,28 @@
     height = 400, 
     particleCount = 3000,
     color = '#00e5cc',
+    bgColor = '#00e5cc',
     autoDissolve = true
   }: Props = $props();
 
   let container: HTMLDivElement;
   let animationId: number;
   
-  // Store reference to rabbit material for color updates
+  // Store references to materials for color updates
   let rabbitMaterial = $state<THREE.ShaderMaterial | null>(null);
+  let bgGlowMaterial = $state<THREE.ShaderMaterial | null>(null);
   
-  // Update rabbit color when prop changes (only rabbit, not background)
+  // Update rabbit color when prop changes
   $effect(() => {
     if (rabbitMaterial && color) {
       rabbitMaterial.uniforms.uColor.value = new THREE.Color(color);
+    }
+  });
+  
+  // Update background color when prop changes
+  $effect(() => {
+    if (bgGlowMaterial && bgColor) {
+      bgGlowMaterial.uniforms.uColor.value = new THREE.Color(bgColor);
     }
   });
 
@@ -249,13 +259,12 @@
     // Store reference for reactive color updates
     rabbitMaterial = material;
 
-    // Add subtle glow plane behind rabbit (fixed color - doesn't change)
-    const fixedAccentColor = '#00e5cc';
+    // Add subtle glow plane behind rabbit (background color - reactive)
     const glowGeometry = new THREE.PlaneGeometry(2, 2);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(fixedAccentColor) }
+        uColor: { value: new THREE.Color(bgColor) }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -290,6 +299,9 @@
     const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
     glowPlane.position.z = -0.5;
     scene.add(glowPlane);
+    
+    // Store reference for reactive background color updates
+    bgGlowMaterial = glowMaterial;
 
     // Animation state
     let dissolveDirection = 1;

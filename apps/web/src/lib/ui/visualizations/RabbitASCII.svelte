@@ -5,6 +5,7 @@
     width?: number;
     height?: number;
     color?: string;
+    bgColor?: string;
     rainSpeed?: number;
     showRain?: boolean;
   }
@@ -13,6 +14,7 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
+    bgColor = '#00e5cc',
     rainSpeed = 1,
     showRain = true
   }: Props = $props();
@@ -20,8 +22,9 @@
   let canvas: HTMLCanvasElement;
   let animationId: number;
   
-  // Store reactive rabbit color RGB values
+  // Store reactive RGB values for colors
   let rabbitRgb = $state({ r: 0, g: 229, b: 204 });
+  let rainRgb = $state({ r: 0, g: 229, b: 204 });
   
   // Parse hex color to RGB
   const hexToRgb = (hex: string) => {
@@ -37,6 +40,13 @@
   $effect(() => {
     if (color) {
       rabbitRgb = hexToRgb(color);
+    }
+  });
+  
+  // Update rain (background) color when prop changes
+  $effect(() => {
+    if (bgColor) {
+      rainRgb = hexToRgb(bgColor);
     }
   });
 
@@ -168,8 +178,7 @@
     const drops: number[] = new Array(columns).fill(0).map(() => Math.random() * -100);
     const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF';
     
-    // Fixed color for Matrix rain (doesn't change)
-    const rainRgb = { r: 0, g: 229, b: 204 };
+    // Rain color is reactive via rainRgb state (updated by $effect)
 
     // Rabbit display state
     let rabbitAlpha = 0;
