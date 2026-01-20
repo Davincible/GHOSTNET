@@ -15,7 +15,7 @@
 	let config = $derived(LEADERBOARD_CATEGORIES[data.category]);
 
 	// Determine value column header based on category
-	let valueHeader = $derived(() => {
+	let valueHeader = $derived.by(() => {
 		switch (data.category) {
 			case 'ghost_streak':
 				return 'STREAK';
@@ -43,7 +43,7 @@
 					<th class="col-rank">RANK</th>
 					<th class="col-operator">OPERATOR</th>
 					<th class="col-level">LEVEL</th>
-					<th class="col-value">{valueHeader()}</th>
+					<th class="col-value">{valueHeader}</th>
 					{#if showStreakColumn}
 						<th class="col-streak">STREAK</th>
 					{:else}

@@ -26,7 +26,7 @@
 	let config = $derived(LEADERBOARD_CATEGORIES[category]);
 
 	// Format display value with prefix/suffix
-	let displayValue = $derived(() => {
+	let displayValue = $derived.by(() => {
 		let val = entry.formattedValue;
 		if (config.valuePrefix) val = config.valuePrefix + val;
 		if (config.valueSuffix) val = val + config.valueSuffix;
@@ -66,7 +66,7 @@
 	</td>
 
 	<td class="col-value">
-		{displayValue()}
+		{displayValue}
 	</td>
 
 	<td class="col-streak">

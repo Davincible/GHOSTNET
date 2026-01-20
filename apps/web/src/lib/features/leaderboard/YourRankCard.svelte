@@ -17,21 +17,20 @@
 	let config = $derived(LEADERBOARD_CATEGORIES[data.category]);
 
 	// Calculate percentile if we have user rank and total entries
-	let percentile = $derived(() => {
+	let percentile = $derived.by(() => {
 		if (!data.userRank || !data.totalEntries) return null;
 		return ((data.totalEntries - data.userRank) / data.totalEntries) * 100;
 	});
 
 	// Rank movement
-	let movement = $derived(() => {
+	let movement = $derived.by(() => {
 		if (!data.userEntry) return 'same';
 		return getRankMovement(data.userEntry.rank, data.userEntry.previousRank);
 	});
 
-	let movementIcon = $derived(() => {
-		const m = movement();
-		return m === 'up' ? '▲' : m === 'down' ? '▼' : '●';
-	});
+	let movementIcon = $derived(
+		movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●'
+	);
 </script>
 
 {#if data.userEntry || data.userRank}
@@ -42,11 +41,11 @@
 				<span class="rank-value">#{data.userRank?.toLocaleString() ?? '-'}</span>
 			</div>
 
-			{#if percentile() !== null}
-				<div class="rank-percentile">
-					{formatPercentile(percentile()!)} of all operators
-				</div>
-			{/if}
+		{#if percentile !== null}
+			<div class="rank-percentile">
+				{formatPercentile(percentile)} of all operators
+			</div>
+		{/if}
 
 			{#if data.userEntry}
 				<div class="rank-metric">

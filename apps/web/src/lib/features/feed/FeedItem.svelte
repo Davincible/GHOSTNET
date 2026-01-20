@@ -19,7 +19,7 @@
 	}
 
 	// Check if this event involves the current user
-	let isCurrentUser = $derived(() => {
+	let isCurrentUser = $derived.by(() => {
 		if (!currentUserAddress) return false;
 		const data = event.data;
 		if ('address' in data) {
@@ -192,7 +192,7 @@
 <div
 	class="feed-item {display.color}"
 	class:feed-item-new={isNew}
-	class:feed-item-current-user={isCurrentUser()}
+	class:feed-item-current-user={isCurrentUser}
 	class:feed-item-traced={'traced' in display && display.traced}
 	class:feed-item-jackpot={'jackpot' in display && display.jackpot}
 	class:feed-item-warning={'warning' in display && display.warning}
