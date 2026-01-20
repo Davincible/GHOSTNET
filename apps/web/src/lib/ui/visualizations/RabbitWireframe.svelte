@@ -19,137 +19,417 @@
   let container: HTMLDivElement;
   let animationId: number;
 
-  // Generate rabbit outline points for line drawing
+  // Create smooth curve from control points using Catmull-Rom interpolation
+  function createSmoothCurve(controlPoints: [number, number, number][], segments: number = 32, closed: boolean = false): THREE.Vector3[] {
+    const points = controlPoints.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+    const curve = new THREE.CatmullRomCurve3(points, closed, 'catmullrom', 0.5);
+    return curve.getPoints(segments);
+  }
+
+  // Generate high-quality realistic rabbit wireframe
   function generateRabbitOutline(): THREE.Vector3[][] {
     const paths: THREE.Vector3[][] = [];
+    const scale = 1.2; // Overall scale
     
-    // Helper to create smooth curve
-    const createCurve = (points: [number, number, number][]): THREE.Vector3[] => {
-      return points.map(p => new THREE.Vector3(p[0], p[1], p[2]));
-    };
+    // Helper to scale points
+    const s = (points: [number, number, number][]): [number, number, number][] => 
+      points.map(([x, y, z]) => [x * scale, y * scale, z * scale]);
 
-    // Body outline (side view, will be extruded)
-    const bodyOutline = createCurve([
-      [-0.3, -0.3, 0], [-0.4, -0.1, 0], [-0.45, 0.1, 0], [-0.4, 0.25, 0],
-      [-0.3, 0.35, 0], [-0.15, 0.4, 0], [0, 0.42, 0], [0.15, 0.4, 0],
-      [0.3, 0.35, 0], [0.4, 0.25, 0], [0.45, 0.1, 0], [0.4, -0.1, 0],
-      [0.3, -0.3, 0], [0, -0.35, 0], [-0.3, -0.3, 0]
-    ]);
-    paths.push(bodyOutline);
+    // ============================================
+    // BODY - Multiple contour lines for 3D effect
+    // ============================================
+    
+    // Main body silhouette (side view) - elegant curved shape
+    const bodyMain = createSmoothCurve(s([
+      [-0.35, -0.15, 0],      // Lower back
+      [-0.42, -0.05, 0],      // Back curve
+      [-0.45, 0.08, 0],       // Upper back
+      [-0.40, 0.18, 0],       // Shoulder
+      [-0.28, 0.25, 0],       // Neck base
+      [-0.15, 0.28, 0],       // Lower neck
+      [0.05, 0.22, 0],        // Chest top
+      [0.18, 0.12, 0],        // Chest
+      [0.25, -0.02, 0],       // Lower chest
+      [0.22, -0.15, 0],       // Belly
+      [0.12, -0.22, 0],       // Under belly
+      [-0.05, -0.24, 0],      // Belly bottom
+      [-0.22, -0.20, 0],      // Back belly
+      [-0.35, -0.15, 0],      // Connect back
+    ]), 64, true);
+    paths.push(bodyMain);
 
-    // Head outline
-    const headOutline = createCurve([
-      [-0.2, 0.35, 0.1], [-0.25, 0.45, 0.15], [-0.25, 0.55, 0.2],
-      [-0.2, 0.65, 0.2], [-0.1, 0.7, 0.2], [0, 0.72, 0.2],
-      [0.1, 0.7, 0.2], [0.2, 0.65, 0.2], [0.25, 0.55, 0.2],
-      [0.25, 0.45, 0.15], [0.2, 0.35, 0.1], [0, 0.32, 0.08],
-      [-0.2, 0.35, 0.1]
-    ]);
-    paths.push(headOutline);
+    // Body contour lines at different Z depths
+    for (let zOffset of [-0.12, -0.06, 0.06, 0.12]) {
+      const depthScale = 1 - Math.abs(zOffset) * 1.5;
+      const bodyContour = createSmoothCurve(s([
+        [-0.35 * depthScale, -0.15, zOffset],
+        [-0.42 * depthScale, -0.05, zOffset],
+        [-0.45 * depthScale, 0.08, zOffset],
+        [-0.40 * depthScale, 0.18, zOffset],
+        [-0.28 * depthScale, 0.25, zOffset * 0.8],
+      ]), 24);
+      paths.push(bodyContour);
+    }
 
-    // Left ear
-    const leftEar = createCurve([
-      [-0.15, 0.65, 0.2], [-0.18, 0.75, 0.22], [-0.2, 0.9, 0.25],
-      [-0.18, 1.05, 0.25], [-0.12, 1.15, 0.22], [-0.08, 1.1, 0.2],
-      [-0.1, 0.95, 0.18], [-0.12, 0.8, 0.18], [-0.1, 0.68, 0.2]
-    ]);
-    paths.push(leftEar);
+    // Horizontal body rings
+    for (let y = -0.15; y <= 0.15; y += 0.1) {
+      const ringWidth = 0.35 * Math.sqrt(1 - Math.pow(y / 0.25, 2));
+      const ringDepth = 0.15 * Math.sqrt(1 - Math.pow(y / 0.25, 2));
+      const ring: THREE.Vector3[] = [];
+      for (let a = 0; a <= Math.PI * 2; a += Math.PI / 16) {
+        ring.push(new THREE.Vector3(
+          Math.cos(a) * ringWidth * scale - 0.1 * scale,
+          y * scale,
+          Math.sin(a) * ringDepth * scale
+        ));
+      }
+      paths.push(ring);
+    }
 
-    // Right ear  
-    const rightEar = createCurve([
-      [0.15, 0.65, 0.2], [0.18, 0.75, 0.22], [0.2, 0.9, 0.25],
-      [0.18, 1.05, 0.25], [0.12, 1.15, 0.22], [0.08, 1.1, 0.2],
-      [0.1, 0.95, 0.18], [0.12, 0.8, 0.18], [0.1, 0.68, 0.2]
-    ]);
-    paths.push(rightEar);
+    // ============================================
+    // HEAD - Detailed round head with cheeks
+    // ============================================
+    
+    // Main head outline (front-facing, slightly turned)
+    const headMain = createSmoothCurve(s([
+      [-0.18, 0.30, 0.12],    // Left jaw
+      [-0.22, 0.38, 0.14],    // Left cheek
+      [-0.23, 0.48, 0.13],    // Left temple
+      [-0.20, 0.58, 0.10],    // Left forehead
+      [-0.12, 0.64, 0.08],    // Top left
+      [0, 0.66, 0.06],        // Crown
+      [0.12, 0.64, 0.08],     // Top right
+      [0.20, 0.58, 0.10],     // Right forehead
+      [0.23, 0.48, 0.13],     // Right temple
+      [0.22, 0.38, 0.14],     // Right cheek
+      [0.18, 0.30, 0.12],     // Right jaw
+      [0.08, 0.26, 0.15],     // Right chin
+      [0, 0.24, 0.16],        // Chin
+      [-0.08, 0.26, 0.15],    // Left chin
+      [-0.18, 0.30, 0.12],    // Back to start
+    ]), 48, true);
+    paths.push(headMain);
 
-    // Tail (fluffy puff)
-    const tail = createCurve([
-      [-0.35, -0.15, -0.15], [-0.4, -0.1, -0.2], [-0.45, -0.05, -0.18],
-      [-0.42, 0, -0.12], [-0.38, -0.05, -0.08], [-0.35, -0.12, -0.1],
-      [-0.35, -0.15, -0.15]
-    ]);
-    paths.push(tail);
+    // Head profile line (side silhouette)
+    const headProfile = createSmoothCurve(s([
+      [-0.10, 0.28, 0.08],
+      [-0.20, 0.32, 0.02],
+      [-0.24, 0.42, -0.02],
+      [-0.22, 0.54, -0.04],
+      [-0.16, 0.62, -0.02],
+      [-0.08, 0.65, 0.02],
+    ]), 24);
+    paths.push(headProfile);
 
-    // Eye outlines (simple circles)
-    const leftEye: THREE.Vector3[] = [];
-    const rightEye: THREE.Vector3[] = [];
-    for (let i = 0; i <= 16; i++) {
-      const angle = (i / 16) * Math.PI * 2;
-      const r = 0.04;
-      leftEye.push(new THREE.Vector3(
-        -0.08 + Math.cos(angle) * r,
-        0.55 + Math.sin(angle) * r,
-        0.25
-      ));
-      rightEye.push(new THREE.Vector3(
-        0.08 + Math.cos(angle) * r,
-        0.55 + Math.sin(angle) * r,
-        0.25
+    // Snout/muzzle detail
+    const snout = createSmoothCurve(s([
+      [-0.08, 0.32, 0.18],
+      [-0.10, 0.36, 0.22],
+      [-0.06, 0.40, 0.24],
+      [0, 0.42, 0.25],
+      [0.06, 0.40, 0.24],
+      [0.10, 0.36, 0.22],
+      [0.08, 0.32, 0.18],
+    ]), 24);
+    paths.push(snout);
+
+    // ============================================
+    // EARS - Long, elegant rabbit ears
+    // ============================================
+    
+    // Left ear - outer edge
+    const leftEarOuter = createSmoothCurve(s([
+      [-0.14, 0.60, 0.06],    // Base
+      [-0.20, 0.72, 0.04],    // Lower outer
+      [-0.24, 0.88, 0.02],    // Mid outer
+      [-0.25, 1.05, 0.00],    // Upper outer
+      [-0.22, 1.20, -0.02],   // Near tip outer
+      [-0.16, 1.32, -0.03],   // Tip
+      [-0.12, 1.28, -0.02],   // Tip inner
+      [-0.10, 1.15, 0.00],    // Upper inner
+      [-0.10, 0.98, 0.02],    // Mid inner
+      [-0.10, 0.80, 0.04],    // Lower inner
+      [-0.08, 0.62, 0.06],    // Base inner
+    ]), 40);
+    paths.push(leftEarOuter);
+
+    // Left ear - inner detail lines
+    const leftEarInner1 = createSmoothCurve(s([
+      [-0.13, 0.68, 0.05],
+      [-0.17, 0.85, 0.03],
+      [-0.18, 1.02, 0.01],
+      [-0.16, 1.18, -0.01],
+      [-0.14, 1.26, -0.02],
+    ]), 24);
+    paths.push(leftEarInner1);
+
+    const leftEarInner2 = createSmoothCurve(s([
+      [-0.11, 0.70, 0.05],
+      [-0.13, 0.88, 0.03],
+      [-0.13, 1.05, 0.01],
+      [-0.12, 1.18, -0.01],
+    ]), 20);
+    paths.push(leftEarInner2);
+
+    // Right ear - outer edge (mirrored)
+    const rightEarOuter = createSmoothCurve(s([
+      [0.14, 0.60, 0.06],
+      [0.20, 0.72, 0.04],
+      [0.24, 0.88, 0.02],
+      [0.25, 1.05, 0.00],
+      [0.22, 1.20, -0.02],
+      [0.16, 1.32, -0.03],
+      [0.12, 1.28, -0.02],
+      [0.10, 1.15, 0.00],
+      [0.10, 0.98, 0.02],
+      [0.10, 0.80, 0.04],
+      [0.08, 0.62, 0.06],
+    ]), 40);
+    paths.push(rightEarOuter);
+
+    // Right ear inner details
+    const rightEarInner1 = createSmoothCurve(s([
+      [0.13, 0.68, 0.05],
+      [0.17, 0.85, 0.03],
+      [0.18, 1.02, 0.01],
+      [0.16, 1.18, -0.01],
+      [0.14, 1.26, -0.02],
+    ]), 24);
+    paths.push(rightEarInner1);
+
+    const rightEarInner2 = createSmoothCurve(s([
+      [0.11, 0.70, 0.05],
+      [0.13, 0.88, 0.03],
+      [0.13, 1.05, 0.01],
+      [0.12, 1.18, -0.01],
+    ]), 20);
+    paths.push(rightEarInner2);
+
+    // ============================================
+    // EYES - Almond shaped with detail
+    // ============================================
+    
+    // Left eye
+    const leftEye = createSmoothCurve(s([
+      [-0.16, 0.48, 0.14],
+      [-0.14, 0.52, 0.15],
+      [-0.10, 0.54, 0.16],
+      [-0.06, 0.52, 0.16],
+      [-0.05, 0.48, 0.15],
+      [-0.07, 0.45, 0.15],
+      [-0.11, 0.44, 0.14],
+      [-0.15, 0.46, 0.14],
+      [-0.16, 0.48, 0.14],
+    ]), 24, true);
+    paths.push(leftEye);
+
+    // Left eye inner (pupil area)
+    const leftPupil: THREE.Vector3[] = [];
+    for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
+      leftPupil.push(new THREE.Vector3(
+        (-0.105 + Math.cos(a) * 0.025) * scale,
+        (0.49 + Math.sin(a) * 0.03) * scale,
+        0.155 * scale
       ));
     }
-    paths.push(leftEye);
+    paths.push(leftPupil);
+
+    // Right eye
+    const rightEye = createSmoothCurve(s([
+      [0.16, 0.48, 0.14],
+      [0.14, 0.52, 0.15],
+      [0.10, 0.54, 0.16],
+      [0.06, 0.52, 0.16],
+      [0.05, 0.48, 0.15],
+      [0.07, 0.45, 0.15],
+      [0.11, 0.44, 0.14],
+      [0.15, 0.46, 0.14],
+      [0.16, 0.48, 0.14],
+    ]), 24, true);
     paths.push(rightEye);
 
-    // Nose (triangle)
-    const nose = createCurve([
-      [0, 0.48, 0.28], [-0.03, 0.44, 0.26], [0.03, 0.44, 0.26], [0, 0.48, 0.28]
-    ]);
+    // Right pupil
+    const rightPupil: THREE.Vector3[] = [];
+    for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
+      rightPupil.push(new THREE.Vector3(
+        (0.105 + Math.cos(a) * 0.025) * scale,
+        (0.49 + Math.sin(a) * 0.03) * scale,
+        0.155 * scale
+      ));
+    }
+    paths.push(rightPupil);
+
+    // ============================================
+    // NOSE - Small triangular nose
+    // ============================================
+    
+    const nose = createSmoothCurve(s([
+      [0, 0.38, 0.26],
+      [-0.025, 0.36, 0.25],
+      [-0.02, 0.34, 0.24],
+      [0, 0.33, 0.24],
+      [0.02, 0.34, 0.24],
+      [0.025, 0.36, 0.25],
+      [0, 0.38, 0.26],
+    ]), 20, true);
     paths.push(nose);
 
-    // Whiskers
-    const whiskerL1 = createCurve([[-0.05, 0.46, 0.26], [-0.25, 0.5, 0.2]]);
-    const whiskerL2 = createCurve([[-0.05, 0.44, 0.26], [-0.28, 0.44, 0.2]]);
-    const whiskerL3 = createCurve([[-0.05, 0.42, 0.26], [-0.25, 0.38, 0.2]]);
-    const whiskerR1 = createCurve([[0.05, 0.46, 0.26], [0.25, 0.5, 0.2]]);
-    const whiskerR2 = createCurve([[0.05, 0.44, 0.26], [0.28, 0.44, 0.2]]);
-    const whiskerR3 = createCurve([[0.05, 0.42, 0.26], [0.25, 0.38, 0.2]]);
-    paths.push(whiskerL1, whiskerL2, whiskerL3, whiskerR1, whiskerR2, whiskerR3);
+    // Nose to mouth line
+    const noseLine = createSmoothCurve(s([
+      [0, 0.33, 0.24],
+      [0, 0.30, 0.22],
+      [0, 0.27, 0.20],
+    ]), 12);
+    paths.push(noseLine);
 
-    // Front legs
-    const leftFrontLeg = createCurve([
-      [-0.2, -0.25, 0.08], [-0.22, -0.4, 0.1], [-0.2, -0.5, 0.12],
-      [-0.15, -0.52, 0.12], [-0.12, -0.48, 0.1]
-    ]);
-    const rightFrontLeg = createCurve([
-      [0.2, -0.25, 0.08], [0.22, -0.4, 0.1], [0.2, -0.5, 0.12],
-      [0.15, -0.52, 0.12], [0.12, -0.48, 0.1]
-    ]);
-    paths.push(leftFrontLeg, rightFrontLeg);
+    // ============================================
+    // WHISKERS - Elegant curves
+    // ============================================
+    
+    // Left whiskers
+    paths.push(createSmoothCurve(s([[-0.04, 0.35, 0.24], [-0.15, 0.38, 0.18], [-0.28, 0.42, 0.10]]), 16));
+    paths.push(createSmoothCurve(s([[-0.04, 0.34, 0.24], [-0.16, 0.34, 0.18], [-0.30, 0.34, 0.08]]), 16));
+    paths.push(createSmoothCurve(s([[-0.04, 0.33, 0.24], [-0.15, 0.30, 0.18], [-0.28, 0.26, 0.10]]), 16));
+    
+    // Right whiskers
+    paths.push(createSmoothCurve(s([[0.04, 0.35, 0.24], [0.15, 0.38, 0.18], [0.28, 0.42, 0.10]]), 16));
+    paths.push(createSmoothCurve(s([[0.04, 0.34, 0.24], [0.16, 0.34, 0.18], [0.30, 0.34, 0.08]]), 16));
+    paths.push(createSmoothCurve(s([[0.04, 0.33, 0.24], [0.15, 0.30, 0.18], [0.28, 0.26, 0.10]]), 16));
 
-    // Back legs (bigger)
-    const leftBackLeg = createCurve([
-      [-0.25, -0.28, -0.08], [-0.35, -0.38, -0.1], [-0.38, -0.5, -0.08],
-      [-0.32, -0.55, -0.05], [-0.25, -0.52, -0.02]
-    ]);
-    const rightBackLeg = createCurve([
-      [0.25, -0.28, -0.08], [0.35, -0.38, -0.1], [0.38, -0.5, -0.08],
-      [0.32, -0.55, -0.05], [0.25, -0.52, -0.02]
-    ]);
-    paths.push(leftBackLeg, rightBackLeg);
+    // ============================================
+    // FRONT LEGS - Delicate, tucked position
+    // ============================================
+    
+    // Left front leg
+    const leftFrontLeg = createSmoothCurve(s([
+      [0.08, 0.05, 0.10],      // Shoulder
+      [0.06, -0.05, 0.14],     // Upper leg
+      [0.04, -0.18, 0.16],     // Knee
+      [0.05, -0.30, 0.15],     // Lower leg
+      [0.04, -0.38, 0.14],     // Ankle
+      [0.02, -0.42, 0.16],     // Paw back
+      [0.08, -0.44, 0.18],     // Paw front
+    ]), 28);
+    paths.push(leftFrontLeg);
 
-    // Grid lines on body for extra Tron feel
-    for (let i = -0.2; i <= 0.2; i += 0.1) {
-      const verticalLine = createCurve([
-        [i, -0.3, 0], [i, 0.3, 0]
-      ]);
-      paths.push(verticalLine);
+    // Right front leg
+    const rightFrontLeg = createSmoothCurve(s([
+      [0.12, 0.05, 0.06],
+      [0.14, -0.05, 0.10],
+      [0.15, -0.18, 0.12],
+      [0.14, -0.30, 0.12],
+      [0.13, -0.38, 0.11],
+      [0.12, -0.42, 0.13],
+      [0.18, -0.44, 0.14],
+    ]), 28);
+    paths.push(rightFrontLeg);
+
+    // ============================================
+    // BACK LEGS - Powerful haunches
+    // ============================================
+    
+    // Left back leg (haunch)
+    const leftBackHaunch = createSmoothCurve(s([
+      [-0.25, 0.00, 0.08],     // Hip
+      [-0.30, -0.08, 0.10],    // Upper haunch
+      [-0.34, -0.18, 0.08],    // Haunch curve
+      [-0.32, -0.28, 0.06],    // Knee
+      [-0.28, -0.36, 0.08],    // Lower leg
+      [-0.26, -0.42, 0.10],    // Ankle
+    ]), 28);
+    paths.push(leftBackHaunch);
+
+    // Left back foot (large rabbit foot)
+    const leftBackFoot = createSmoothCurve(s([
+      [-0.26, -0.42, 0.10],
+      [-0.32, -0.44, 0.08],
+      [-0.40, -0.44, 0.06],
+      [-0.45, -0.43, 0.04],
+      [-0.42, -0.42, 0.06],
+      [-0.34, -0.41, 0.08],
+    ]), 20);
+    paths.push(leftBackFoot);
+
+    // Right back leg
+    const rightBackHaunch = createSmoothCurve(s([
+      [-0.25, 0.00, -0.08],
+      [-0.30, -0.08, -0.10],
+      [-0.34, -0.18, -0.08],
+      [-0.32, -0.28, -0.06],
+      [-0.28, -0.36, -0.08],
+      [-0.26, -0.42, -0.10],
+    ]), 28);
+    paths.push(rightBackHaunch);
+
+    // Right back foot
+    const rightBackFoot = createSmoothCurve(s([
+      [-0.26, -0.42, -0.10],
+      [-0.32, -0.44, -0.08],
+      [-0.40, -0.44, -0.06],
+      [-0.45, -0.43, -0.04],
+      [-0.42, -0.42, -0.06],
+      [-0.34, -0.41, -0.08],
+    ]), 20);
+    paths.push(rightBackFoot);
+
+    // ============================================
+    // TAIL - Fluffy cotton ball
+    // ============================================
+    
+    // Tail made of multiple overlapping curves
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const tailCurve = createSmoothCurve(s([
+        [-0.38, -0.08, -0.02],
+        [-0.44 + Math.cos(angle) * 0.03, -0.06 + Math.sin(angle) * 0.04, -0.08 + Math.cos(angle + 1) * 0.03],
+        [-0.48 + Math.cos(angle) * 0.02, -0.04 + Math.sin(angle) * 0.03, -0.10 + Math.sin(angle) * 0.02],
+        [-0.46 + Math.cos(angle) * 0.02, -0.02 + Math.sin(angle) * 0.02, -0.08 + Math.cos(angle) * 0.02],
+        [-0.40, 0.00, -0.04],
+      ]), 16);
+      paths.push(tailCurve);
     }
-    for (let i = -0.2; i <= 0.3; i += 0.1) {
-      const horizontalLine = createCurve([
-        [-0.35, i, 0], [0.35, i, 0]
-      ]);
-      paths.push(horizontalLine);
-    }
+
+    // ============================================
+    // STRUCTURAL LINES - Tron grid effect
+    // ============================================
+    
+    // Spine line
+    const spine = createSmoothCurve(s([
+      [-0.44, 0.08, 0],
+      [-0.40, 0.16, 0],
+      [-0.30, 0.24, 0],
+      [-0.18, 0.28, 0],
+      [-0.05, 0.26, 0.04],
+      [0, 0.32, 0.08],
+      [0, 0.45, 0.12],
+      [0, 0.58, 0.08],
+      [0, 0.65, 0.06],
+    ]), 40);
+    paths.push(spine);
+
+    // Neck to head connection lines
+    const neckLine1 = createSmoothCurve(s([
+      [-0.18, 0.28, 0.06],
+      [-0.15, 0.32, 0.10],
+      [-0.12, 0.38, 0.12],
+    ]), 12);
+    paths.push(neckLine1);
+
+    const neckLine2 = createSmoothCurve(s([
+      [0.05, 0.24, 0.08],
+      [0.08, 0.28, 0.12],
+      [0.10, 0.34, 0.14],
+    ]), 12);
+    paths.push(neckLine2);
 
     return paths;
   }
 
   onMount(() => {
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-    camera.position.set(0, 0.3, 2);
-    camera.lookAt(0, 0.2, 0);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.set(1.5, 0.8, 2.5);
+    camera.lookAt(0, 0.35, 0);
 
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
@@ -159,7 +439,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Create line material with glow effect
+    // Enhanced line material with better glow
     const lineMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -186,23 +466,24 @@
         varying vec3 vPosition;
         
         void main() {
-          // Traveling pulse effect
-          float pulse = sin(vLineDistance * 10.0 - uTime * uPulseSpeed * 5.0) * 0.5 + 0.5;
-          pulse = pow(pulse, 3.0);
+          // Multiple traveling pulses for more life
+          float pulse1 = sin(vLineDistance * 8.0 - uTime * uPulseSpeed * 4.0) * 0.5 + 0.5;
+          float pulse2 = sin(vLineDistance * 12.0 + uTime * uPulseSpeed * 3.0) * 0.5 + 0.5;
+          float pulse = max(pow(pulse1, 4.0), pow(pulse2, 6.0) * 0.5);
+          
+          // Height-based intensity (ears glow more)
+          float heightGlow = smoothstep(0.3, 1.2, vPosition.y) * 0.3;
           
           // Base glow
-          float glow = 0.6 + pulse * 0.4;
+          float glow = 0.5 + pulse * 0.5 + heightGlow;
           
-          // Distance-based intensity variation
-          float distFactor = 0.8 + 0.2 * sin(vPosition.y * 5.0 + uTime * 2.0);
+          vec3 finalColor = uColor * glow;
           
-          vec3 finalColor = uColor * glow * distFactor;
-          
-          // Add white hot spots
-          float hotspot = step(0.95, pulse) * 0.5;
+          // Hot white highlights
+          float hotspot = step(0.92, pulse1) * 0.6;
           finalColor += vec3(hotspot);
           
-          gl_FragColor = vec4(finalColor, 0.9);
+          gl_FragColor = vec4(finalColor, 0.95);
         }
       `,
       transparent: true,
@@ -215,7 +496,6 @@
     const lineGroup = new THREE.Group();
     
     paths.forEach(pathPoints => {
-      // Create geometry with line distances for animated pulse
       const geometry = new THREE.BufferGeometry();
       const positions: number[] = [];
       const lineDistances: number[] = [];
@@ -237,10 +517,12 @@
       lineGroup.add(line);
     });
 
+    // Center the rabbit
+    lineGroup.position.y = -0.1;
     scene.add(lineGroup);
 
-    // Add glow sphere behind rabbit
-    const glowGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+    // Atmospheric glow behind rabbit
+    const glowGeometry = new THREE.SphereGeometry(1.0, 32, 32);
     const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -262,16 +544,9 @@
         varying vec3 vPosition;
         
         void main() {
-          // Fresnel-like glow
-          float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-          intensity *= 0.15 + 0.05 * sin(uTime * 2.0);
-          
-          // Grid pattern
-          float gridX = step(0.95, fract(vPosition.x * 10.0 + uTime * 0.5));
-          float gridY = step(0.95, fract(vPosition.y * 10.0 + uTime * 0.5));
-          float grid = max(gridX, gridY) * 0.3;
-          
-          gl_FragColor = vec4(uColor, intensity + grid * intensity);
+          float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+          intensity *= 0.12 + 0.04 * sin(uTime * 1.5);
+          gl_FragColor = vec4(uColor, intensity);
         }
       `,
       transparent: true,
@@ -281,16 +556,16 @@
     });
     
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    glowMesh.position.y = 0.2;
+    glowMesh.position.set(0, 0.3, 0);
     scene.add(glowMesh);
 
-    // Add floor grid for Tron aesthetic
-    const gridHelper = new THREE.GridHelper(3, 20, new THREE.Color(color).multiplyScalar(0.3), new THREE.Color(color).multiplyScalar(0.15));
-    gridHelper.position.y = -0.6;
+    // Floor grid
+    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(color).multiplyScalar(0.25), new THREE.Color(color).multiplyScalar(0.1));
+    gridHelper.position.y = -0.65;
     scene.add(gridHelper);
 
-    // Add scan ring
-    const ringGeometry = new THREE.RingGeometry(0.5, 0.52, 64);
+    // Scan ring on floor
+    const ringGeometry = new THREE.RingGeometry(0.6, 0.62, 64);
     const ringMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -310,9 +585,9 @@
         
         void main() {
           float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-          float sweep = mod(angle + uTime * 2.0, 6.28318) / 6.28318;
-          float intensity = pow(1.0 - sweep, 3.0);
-          gl_FragColor = vec4(uColor * intensity, intensity * 0.5);
+          float sweep = mod(angle + uTime * 1.5, 6.28318) / 6.28318;
+          float intensity = pow(1.0 - sweep, 4.0);
+          gl_FragColor = vec4(uColor * intensity, intensity * 0.6);
         }
       `,
       transparent: true,
@@ -323,7 +598,7 @@
     
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = -Math.PI / 2;
-    ring.position.y = -0.59;
+    ring.position.y = -0.64;
     scene.add(ring);
 
     // Animation
@@ -339,17 +614,14 @@
       glowMaterial.uniforms.uTime.value = elapsed;
       ringMaterial.uniforms.uTime.value = elapsed;
       
-      // Gentle rotation
-      lineGroup.rotation.y = Math.sin(elapsed * 0.4) * 0.4;
+      // Smooth rotation
+      lineGroup.rotation.y = Math.sin(elapsed * 0.3) * 0.5;
       glowMesh.rotation.y = lineGroup.rotation.y;
       
-      // Hover effect
-      lineGroup.position.y = Math.sin(elapsed * 1.2) * 0.03;
-      glowMesh.position.y = 0.2 + lineGroup.position.y;
-      
-      // Scale pulse
-      const scale = 1 + Math.sin(elapsed * 2) * 0.02;
-      lineGroup.scale.setScalar(scale);
+      // Gentle floating
+      const floatY = Math.sin(elapsed * 0.8) * 0.02;
+      lineGroup.position.y = -0.1 + floatY;
+      glowMesh.position.y = 0.3 + floatY;
       
       renderer.render(scene, camera);
     }
@@ -364,6 +636,11 @@
       glowGeometry.dispose();
       ringGeometry.dispose();
       ringMaterial.dispose();
+      lineGroup.traverse((obj) => {
+        if (obj instanceof THREE.Line) {
+          obj.geometry.dispose();
+        }
+      });
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }
