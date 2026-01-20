@@ -16,11 +16,11 @@
 		expandedHeight?: string;
 	}
 
-	let { 
-		collapsedCount = 6, 
+	let {
+		collapsedCount = 6,
 		expandedCount = 20,
-		collapsedHeight = '280px',
-		expandedHeight = '500px'
+		collapsedHeight = '145px',
+		expandedHeight = '500px',
 	}: Props = $props();
 
 	const provider = getProvider();
@@ -57,11 +57,7 @@
 				{/if}
 			</Row>
 			{#if hasMore}
-				<button 
-					class="expand-btn"
-					onclick={() => expanded = !expanded}
-					aria-expanded={expanded}
-				>
+				<button class="expand-btn" onclick={() => (expanded = !expanded)} aria-expanded={expanded}>
 					{expanded ? '▲ LESS' : '▼ MORE'}
 				</button>
 			{/if}
