@@ -65,35 +65,35 @@
 	}
 
 	.feed-empty {
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 		font-size: var(--text-sm);
 		text-align: center;
 		padding: var(--space-4);
 	}
 
 	.streaming-dot {
-		width: 6px;
-		height: 6px;
+		width: 5px;
+		height: 5px;
 		border-radius: 50%;
-		background-color: var(--color-green-bright);
+		background-color: var(--color-accent);
 		animation: pulse-glow 2s ease-in-out infinite;
 	}
 
 	.streaming-text {
 		font-size: var(--text-xs);
-		color: var(--color-green-dim);
-		letter-spacing: var(--tracking-wide);
+		color: var(--color-text-tertiary);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	@keyframes pulse-glow {
 		0%,
 		100% {
 			opacity: 1;
-			box-shadow: 0 0 4px var(--color-green-glow);
+			box-shadow: 0 0 4px var(--color-accent-glow);
 		}
 		50% {
-			opacity: 0.6;
-			box-shadow: 0 0 8px var(--color-green-glow);
+			opacity: 0.5;
+			box-shadow: 0 0 8px var(--color-accent-glow);
 		}
 	}
 </style>

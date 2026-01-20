@@ -87,36 +87,37 @@
 		font-size: var(--text-sm);
 		line-height: 1;
 		width: 100%;
+		background: var(--color-bg-secondary);
 	}
 
-	/* Border colors */
+	/* Border colors - more subtle, barely-there */
 	.box-border-default {
-		color: var(--color-green-dim);
+		color: var(--color-border-default);
 	}
 
 	.box-border-bright {
-		color: var(--color-green-bright);
+		color: var(--color-accent-dim);
 	}
 
 	.box-border-dim {
-		color: var(--color-bg-tertiary);
+		color: var(--color-border-subtle);
 	}
 
 	.box-border-cyan {
-		color: var(--color-cyan);
+		color: var(--color-cyan-dim);
 	}
 
 	.box-border-amber {
-		color: var(--color-amber);
+		color: var(--color-amber-dim);
 	}
 
 	.box-border-red {
-		color: var(--color-red);
+		color: var(--color-red-dim);
 	}
 
-	/* Glow effect */
+	/* Glow effect - more subtle */
 	.box-glow {
-		text-shadow: 0 0 5px currentColor;
+		text-shadow: 0 0 4px currentColor;
 	}
 
 	/* Borders */
@@ -169,11 +170,12 @@
 
 	.box-title {
 		flex-shrink: 0;
-		padding: 0 0.5em;
-		color: var(--color-green-bright);
+		padding: 0 0.75em;
+		color: var(--color-text-secondary);
 		font-weight: var(--font-medium);
 		text-transform: uppercase;
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
+		font-size: var(--text-xs);
 	}
 
 	.box-v {
@@ -190,7 +192,7 @@
 		flex: 1;
 		min-width: 0;
 		padding: calc(var(--box-padding, 3) * var(--space-1));
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 		line-height: var(--leading-normal);
 		font-size: var(--text-base);
 	}

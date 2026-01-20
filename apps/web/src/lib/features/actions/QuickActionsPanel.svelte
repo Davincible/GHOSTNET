@@ -107,7 +107,7 @@
 <style>
 	.divider {
 		height: 1px;
-		background: var(--color-bg-tertiary);
+		background: var(--color-border-subtle);
 		margin: var(--space-1) 0;
 	}
 </style>

@@ -32,9 +32,9 @@
 		background: repeating-linear-gradient(
 			0deg,
 			transparent,
-			transparent 1px,
-			rgba(0, 255, 0, var(--scanline-opacity, 0.03)) 2px,
-			rgba(0, 255, 0, var(--scanline-opacity, 0.03)) 3px
+			transparent 2px,
+			rgba(0, 229, 204, var(--scanline-opacity, 0.015)) 3px,
+			rgba(0, 229, 204, var(--scanline-opacity, 0.015)) 4px
 		);
 	}
 </style>

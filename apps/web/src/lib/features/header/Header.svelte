@@ -62,7 +62,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: var(--space-3) var(--space-4);
-		border-bottom: var(--border-width) solid var(--color-green-dim);
+		border-bottom: var(--border-width) solid var(--color-border-subtle);
 		background: var(--color-bg-secondary);
 		position: relative;
 	}
@@ -87,30 +87,37 @@
 	}
 
 	.logo-text {
-		font-size: var(--text-xl);
+		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wider);
+		letter-spacing: var(--tracking-widest);
+		color: var(--color-text-primary);
+	}
+
+	/* Override the glow-green class */
+	:global(.logo-text.glow-green) {
+		color: var(--color-text-primary);
+		text-shadow: none;
 	}
 
 	.logo-version {
-		font-size: var(--text-sm);
-		color: var(--color-green-dim);
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
 		font-weight: var(--font-normal);
 	}
 
 	.glitch-line {
 		flex: 1;
-		height: 2px;
+		height: 1px;
 		background: linear-gradient(
 			90deg,
 			transparent 0%,
-			var(--color-green-dim) var(--offset),
-			var(--color-green-bright) calc(var(--offset) + 5%),
-			var(--color-green-dim) calc(var(--offset) + 10%),
+			var(--color-border-subtle) var(--offset),
+			var(--color-accent-dim) calc(var(--offset) + 3%),
+			var(--color-border-subtle) calc(var(--offset) + 6%),
 			transparent 100%
 		);
-		opacity: 0.6;
-		max-width: 300px;
+		opacity: 0.5;
+		max-width: 400px;
 	}
 
 	.network-status {
@@ -120,15 +127,16 @@
 	}
 
 	.network-label {
-		font-size: var(--text-sm);
-		color: var(--color-green-mid);
-		letter-spacing: var(--tracking-wide);
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		letter-spacing: var(--tracking-wider);
+		text-transform: uppercase;
 	}
 
 	.settings-btn {
-		background: none;
-		border: 1px solid var(--color-green-dim);
-		color: var(--color-green-mid);
+		background: transparent;
+		border: 1px solid var(--color-border-default);
+		color: var(--color-text-tertiary);
 		padding: var(--space-2);
 		cursor: pointer;
 		display: flex;
@@ -138,14 +146,14 @@
 	}
 
 	.settings-btn:hover {
-		color: var(--color-green-bright);
-		border-color: var(--color-green-bright);
+		color: var(--color-accent);
+		border-color: var(--color-accent-dim);
 		background: var(--color-bg-tertiary);
 	}
 
 	.settings-btn svg {
-		width: 18px;
-		height: 18px;
+		width: 16px;
+		height: 16px;
 	}
 
 	/* Responsive */

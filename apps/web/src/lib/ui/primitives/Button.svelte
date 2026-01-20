@@ -55,7 +55,7 @@
 		gap: var(--space-2);
 		font-family: var(--font-mono);
 		font-weight: var(--font-medium);
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
 		text-transform: uppercase;
 		border: var(--border-width) solid transparent;
 		cursor: pointer;
@@ -64,13 +64,13 @@
 	}
 
 	.btn:focus-visible {
-		outline: 2px solid var(--color-cyan);
+		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}
 
 	.btn:disabled {
 		cursor: not-allowed;
-		opacity: 0.5;
+		opacity: 0.4;
 	}
 
 	/* Sizes */
@@ -89,37 +89,39 @@
 		font-size: var(--text-base);
 	}
 
-	/* Primary variant */
+	/* Primary variant - Teal accent */
 	.btn-primary {
-		background-color: var(--color-green-bright);
-		color: var(--color-bg-primary);
-		border-color: var(--color-green-bright);
+		background-color: var(--color-accent);
+		color: var(--color-bg-void);
+		border-color: var(--color-accent);
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background-color: var(--color-bg-primary);
-		color: var(--color-green-bright);
-		box-shadow: var(--shadow-glow-green);
+		background-color: transparent;
+		color: var(--color-accent-bright);
+		box-shadow: var(--shadow-glow-accent);
 	}
 
 	.btn-primary:active:not(:disabled) {
 		transform: translateY(1px);
+		background-color: var(--color-accent-dim);
 	}
 
 	/* Secondary variant */
 	.btn-secondary {
 		background-color: transparent;
-		color: var(--color-green-bright);
-		border-color: var(--color-green-dim);
+		color: var(--color-text-primary);
+		border-color: var(--color-border-strong);
 	}
 
 	.btn-secondary:hover:not(:disabled) {
-		border-color: var(--color-green-bright);
-		box-shadow: 0 0 10px var(--color-green-glow);
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		box-shadow: var(--shadow-glow-accent);
 	}
 
 	.btn-secondary:active:not(:disabled) {
-		background-color: var(--color-green-glow);
+		background-color: var(--color-accent-glow);
 	}
 
 	/* Danger variant */
@@ -131,7 +133,7 @@
 
 	.btn-danger:hover:not(:disabled) {
 		background-color: var(--color-red);
-		color: var(--color-bg-primary);
+		color: var(--color-bg-void);
 		border-color: var(--color-red);
 		box-shadow: var(--shadow-glow-red);
 	}
@@ -143,12 +145,12 @@
 	/* Ghost variant */
 	.btn-ghost {
 		background-color: transparent;
-		color: var(--color-green-mid);
+		color: var(--color-text-secondary);
 		border-color: transparent;
 	}
 
 	.btn-ghost:hover:not(:disabled) {
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 		background-color: var(--color-bg-tertiary);
 	}
 
@@ -171,8 +173,9 @@
 	/* Hotkey badge */
 	.hotkey {
 		font-size: var(--text-xs);
-		opacity: 0.7;
+		opacity: 0.5;
 		font-weight: var(--font-normal);
+		color: inherit;
 	}
 
 	/* Loading spinner */

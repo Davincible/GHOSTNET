@@ -133,16 +133,15 @@
 		gap: var(--space-1);
 	}
 
-
-
 	.vital-label {
-		color: var(--color-green-dim);
-		font-size: var(--text-sm);
-		letter-spacing: var(--tracking-wide);
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+		text-transform: uppercase;
 	}
 
 	.vital-value {
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 		font-weight: var(--font-medium);
 	}
 
@@ -152,7 +151,7 @@
 
 	.vital-subtitle {
 		font-size: var(--text-xs);
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 	}
 
 	.vital-critical {
@@ -177,7 +176,7 @@
 	.warning-text {
 		color: var(--color-red);
 		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
 		animation: blink 0.5s ease-in-out infinite;
 	}
 
@@ -194,19 +193,19 @@
 	}
 
 	.tree-item-total {
-		border-top: 1px solid var(--color-bg-tertiary);
+		border-top: 1px solid var(--color-border-subtle);
 		margin-top: var(--space-1);
 		padding-top: var(--space-2);
 	}
 
 	.tree-branch {
-		color: var(--color-green-dim);
+		color: var(--color-text-muted);
 		font-family: var(--font-mono);
 		user-select: none;
 	}
 
 	.tree-label {
-		color: var(--color-green-mid);
+		color: var(--color-text-secondary);
 	}
 
 	.tree-value {
@@ -224,7 +223,7 @@
 	/* Burn Section */
 	.burn-section {
 		padding-top: var(--space-2);
-		border-top: 1px solid var(--color-bg-tertiary);
+		border-top: 1px solid var(--color-border-subtle);
 	}
 
 	.burn-value {

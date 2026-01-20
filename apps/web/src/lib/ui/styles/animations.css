@@ -94,10 +94,10 @@
 
 @keyframes glow-pulse {
   0%, 100% {
-    text-shadow: 0 0 5px var(--color-green-glow);
+    text-shadow: 0 0 4px var(--color-accent-glow);
   }
   50% {
-    text-shadow: 0 0 15px var(--color-green-glow), 0 0 25px var(--color-green-glow);
+    text-shadow: 0 0 8px var(--color-accent-glow), 0 0 16px var(--color-accent-glow);
   }
 }
 
@@ -275,7 +275,7 @@
 
 @keyframes typing-cursor {
   0%, 100% { 
-    border-right-color: var(--color-green-bright);
+    border-right-color: var(--color-accent);
   }
   50% { 
     border-right-color: transparent;
@@ -284,7 +284,7 @@
 
 @keyframes correct-flash {
   0% { background-color: transparent; }
-  50% { background-color: rgba(0, 255, 0, 0.2); }
+  50% { background-color: rgba(0, 229, 204, 0.15); }
   100% { background-color: transparent; }
 }
 
@@ -313,7 +313,7 @@
 
 @keyframes feed-highlight {
   0% { background-color: transparent; }
-  25% { background-color: rgba(0, 255, 0, 0.1); }
+  25% { background-color: rgba(0, 229, 204, 0.1); }
   100% { background-color: transparent; }
 }
 

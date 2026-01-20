@@ -112,7 +112,7 @@
 	}
 
 	.amount-symbol {
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 		font-size: 0.9em;
 	}
 

@@ -98,23 +98,23 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		scrollbar-width: thin;
-		scrollbar-color: var(--color-green-dim) var(--color-bg-secondary);
+		scrollbar-color: var(--color-border-strong) var(--color-bg-tertiary);
 	}
 
 	.panel-scroll-container::-webkit-scrollbar {
-		width: 6px;
+		width: 4px;
 	}
 
 	.panel-scroll-container::-webkit-scrollbar-track {
-		background: var(--color-bg-secondary);
+		background: var(--color-bg-tertiary);
 	}
 
 	.panel-scroll-container::-webkit-scrollbar-thumb {
-		background: var(--color-green-dim);
+		background: var(--color-border-strong);
 	}
 
 	.panel-scroll-container::-webkit-scrollbar-thumb:hover {
-		background: var(--color-green-mid);
+		background: var(--color-accent-dim);
 	}
 
 	.scroll-hint {
@@ -123,14 +123,18 @@
 		animation: pulse 2s ease-in-out infinite;
 	}
 
+	:global(.scroll-hint .text-green-dim) {
+		color: var(--color-text-tertiary);
+	}
+
 	@keyframes pulse {
-		0%, 100% { opacity: 0.6; }
-		50% { opacity: 1; }
+		0%, 100% { opacity: 0.4; }
+		50% { opacity: 0.8; }
 	}
 
 	.panel-footer {
 		margin-top: var(--space-3);
 		padding-top: var(--space-2);
-		border-top: 1px solid var(--color-bg-tertiary);
+		border-top: 1px solid var(--color-border-subtle);
 	}
 </style>

@@ -275,7 +275,7 @@
 		padding: var(--space-1) 0;
 		font-size: var(--text-sm);
 		font-family: var(--font-mono);
-		border-bottom: 1px solid var(--color-bg-tertiary);
+		border-bottom: 1px solid var(--color-border-subtle);
 		transition: background-color var(--duration-fast) var(--ease-default);
 	}
 
@@ -288,7 +288,7 @@
 	}
 
 	.feed-item-current-user {
-		background-color: var(--color-green-glow);
+		background-color: var(--color-accent-glow);
 	}
 
 	.feed-item-traced {
@@ -308,7 +308,7 @@
 	}
 
 	.feed-prefix {
-		color: var(--color-green-dim);
+		color: var(--color-text-muted);
 		user-select: none;
 	}
 
@@ -316,13 +316,46 @@
 		color: inherit;
 	}
 
+	/* Color classes */
+	:global(.text-green) {
+		color: var(--color-accent);
+	}
+
+	:global(.text-green-mid) {
+		color: var(--color-accent-mid);
+	}
+
+	:global(.text-green-dim) {
+		color: var(--color-text-tertiary);
+	}
+
+	:global(.text-profit) {
+		color: var(--color-profit);
+	}
+
+	:global(.text-red) {
+		color: var(--color-red);
+	}
+
+	:global(.text-amber) {
+		color: var(--color-amber);
+	}
+
+	:global(.text-cyan) {
+		color: var(--color-cyan);
+	}
+
+	:global(.text-gold) {
+		color: var(--color-gold);
+	}
+
 	.feed-traced-badge {
 		padding: 0 var(--space-1);
 		background: var(--color-red);
-		color: var(--color-bg-primary);
+		color: var(--color-bg-void);
 		font-weight: var(--font-bold);
 		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	.feed-warning-icon,
@@ -351,6 +384,7 @@
 		color: var(--color-red);
 		font-size: var(--text-xs);
 		text-transform: uppercase;
+		letter-spacing: var(--tracking-wider);
 	}
 
 	.feed-gain {
@@ -366,7 +400,7 @@
 	}
 
 	.feed-stats {
-		color: var(--color-green-mid);
+		color: var(--color-text-secondary);
 		font-size: var(--text-xs);
 	}
 
@@ -410,7 +444,7 @@
 			opacity: 1;
 		}
 		50% {
-			opacity: 0.7;
+			opacity: 0.6;
 		}
 	}
 
@@ -421,7 +455,7 @@
 			background-color: transparent;
 		}
 		50% {
-			opacity: 0.8;
+			opacity: 0.7;
 			background-color: var(--color-red-glow);
 		}
 	}

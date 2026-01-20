@@ -77,13 +77,13 @@
 <style>
 	.modifier-item {
 		padding: var(--space-2);
-		border: 1px solid var(--color-bg-tertiary);
-		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border-subtle);
+		background: var(--color-bg-tertiary);
 		transition: all var(--duration-fast) var(--ease-default);
 	}
 
 	.modifier-item:hover {
-		border-color: var(--color-green-dim);
+		border-color: var(--color-border-default);
 	}
 
 	.modifier-good {
@@ -106,7 +106,7 @@
 
 	.modifier-label {
 		font-size: var(--text-sm);
-		color: var(--color-green-mid);
+		color: var(--color-text-secondary);
 	}
 
 	.modifier-meta {
@@ -114,7 +114,7 @@
 	}
 
 	.modifier-permanent {
-		color: var(--color-green-dim);
-		letter-spacing: var(--tracking-wide);
+		color: var(--color-text-tertiary);
+		letter-spacing: var(--tracking-wider);
 	}
 </style>

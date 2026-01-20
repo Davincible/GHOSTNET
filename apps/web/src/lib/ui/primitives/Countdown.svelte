@@ -112,11 +112,11 @@
 	}
 
 	.countdown-label {
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 	}
 
 	.countdown-time {
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 	}
 
 	/* Urgent state - pulsing red/amber */
@@ -127,11 +127,11 @@
 	@keyframes urgent-pulse {
 		0%, 100% {
 			color: var(--color-red);
-			text-shadow: 0 0 5px var(--color-red-glow);
+			text-shadow: 0 0 4px var(--color-red-glow);
 		}
 		50% {
 			color: var(--color-amber);
-			text-shadow: 0 0 15px var(--color-red-glow);
+			text-shadow: 0 0 8px var(--color-red-glow);
 		}
 	}
 

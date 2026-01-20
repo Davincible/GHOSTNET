@@ -68,29 +68,33 @@
 	}
 
 	.progress-label {
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 		white-space: nowrap;
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-wide);
+		font-size: var(--text-xs);
 	}
 
 	.progress-bar {
 		white-space: pre;
-		letter-spacing: 0;
+		letter-spacing: -0.05em;
 	}
 
 	.progress-percent {
-		color: var(--color-green-mid);
-		min-width: 3ch;
+		color: var(--color-text-secondary);
+		min-width: 3.5ch;
 		text-align: right;
+		font-size: var(--text-xs);
 	}
 
-	/* Variants */
+	/* Variants - Using new accent color */
 	.progress-default .progress-filled {
-		color: var(--color-green-bright);
+		color: var(--color-accent);
 	}
 
 	.progress-default .progress-empty {
-		color: var(--color-green-dim);
-		opacity: 0.3;
+		color: var(--color-border-strong);
+		opacity: 0.5;
 	}
 
 	.progress-danger .progress-filled {
@@ -116,7 +120,7 @@
 	}
 
 	.progress-success .progress-empty {
-		color: var(--color-green-dim);
+		color: var(--color-profit-dim);
 		opacity: 0.3;
 	}
 
@@ -129,7 +133,7 @@
 		opacity: 0.3;
 	}
 
-	/* Animation */
+	/* Animation - subtle glow */
 	.progress-animated .progress-filled {
 		animation: glow-pulse 2s ease-in-out infinite;
 	}
@@ -139,7 +143,7 @@
 			text-shadow: none;
 		}
 		50% {
-			text-shadow: 0 0 8px currentColor;
+			text-shadow: 0 0 4px currentColor;
 		}
 	}
 </style>

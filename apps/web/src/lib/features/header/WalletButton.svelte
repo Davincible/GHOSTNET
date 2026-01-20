@@ -42,8 +42,8 @@
 		gap: var(--space-2);
 		padding: var(--space-1) var(--space-3);
 		background: transparent;
-		border: var(--border-width) solid var(--color-green-dim);
-		color: var(--color-green-bright);
+		border: var(--border-width) solid var(--color-border-default);
+		color: var(--color-text-primary);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
 		cursor: pointer;
@@ -61,16 +61,16 @@
 	}
 
 	.wallet-connected:focus-visible {
-		outline: 2px solid var(--color-cyan);
+		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}
 
 	.wallet-indicator {
-		width: 8px;
-		height: 8px;
+		width: 6px;
+		height: 6px;
 		border-radius: 50%;
-		background-color: var(--color-green-bright);
-		box-shadow: 0 0 6px var(--color-green-glow);
+		background-color: var(--color-accent);
+		box-shadow: 0 0 4px var(--color-accent-glow);
 		transition: all var(--duration-fast) var(--ease-default);
 	}
 </style>

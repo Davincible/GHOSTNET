@@ -220,9 +220,16 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* Text Colors */
-.text-green { color: var(--color-green-bright); }
-.text-green-mid { color: var(--color-green-mid); }
-.text-green-dim { color: var(--color-green-dim); }
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-muted { color: var(--color-text-muted); }
+
+.text-accent { color: var(--color-accent); }
+.text-accent-bright { color: var(--color-accent-bright); }
+.text-green { color: var(--color-accent); }
+.text-green-mid { color: var(--color-accent-mid); }
+.text-green-dim { color: var(--color-text-tertiary); }
 .text-cyan { color: var(--color-cyan); }
 .text-amber { color: var(--color-amber); }
 .text-red { color: var(--color-red); }
@@ -265,11 +272,13 @@
    ══════════════════════════════════════════════════════════════════ */
 
 /* Glow */
-.glow-green { text-shadow: var(--shadow-glow-green); }
+.glow-accent { text-shadow: var(--shadow-glow-accent); }
+.glow-green { text-shadow: var(--shadow-glow-accent); }
 .glow-cyan { text-shadow: var(--shadow-glow-cyan); }
 .glow-red { text-shadow: var(--shadow-glow-red); }
 .glow-gold { text-shadow: var(--shadow-glow-gold); }
 .glow-amber { text-shadow: var(--shadow-glow-amber); }
+.glow-profit { text-shadow: var(--shadow-glow-profit); }
 
 /* Opacity */
 .opacity-0 { opacity: 0; }

@@ -32,8 +32,8 @@
 		display: inline-block;
 		font-family: var(--font-mono);
 		font-size: inherit;
-		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wide);
+		font-weight: var(--font-medium);
+		letter-spacing: var(--tracking-wider);
 		white-space: nowrap;
 	}
 
@@ -58,34 +58,34 @@
 		color: var(--color-level-black-ice);
 	}
 
-	/* Glow effect */
+	/* Glow effect - more subtle */
 	.level-glow.level-vault {
-		text-shadow: 0 0 8px var(--color-level-vault);
+		text-shadow: 0 0 4px rgba(0, 229, 204, 0.4);
 	}
 
 	.level-glow.level-mainframe {
-		text-shadow: 0 0 8px var(--color-level-mainframe);
+		text-shadow: 0 0 4px rgba(0, 229, 255, 0.4);
 	}
 
 	.level-glow.level-subnet {
-		text-shadow: 0 0 8px var(--color-level-subnet);
+		text-shadow: 0 0 4px rgba(255, 176, 0, 0.4);
 	}
 
 	.level-glow.level-darknet {
-		text-shadow: 0 0 8px var(--color-level-darknet);
+		text-shadow: 0 0 4px rgba(255, 102, 51, 0.4);
 	}
 
 	.level-glow.level-black-ice {
-		text-shadow: 0 0 8px var(--color-level-black-ice);
-		animation: danger-pulse 1.5s ease-in-out infinite;
+		text-shadow: 0 0 4px rgba(255, 51, 102, 0.5);
+		animation: danger-pulse 2s ease-in-out infinite;
 	}
 
 	@keyframes danger-pulse {
 		0%, 100% {
-			text-shadow: 0 0 8px var(--color-level-black-ice);
+			text-shadow: 0 0 4px rgba(255, 51, 102, 0.5);
 		}
 		50% {
-			text-shadow: 0 0 15px var(--color-level-black-ice), 0 0 25px var(--color-level-black-ice);
+			text-shadow: 0 0 8px rgba(255, 51, 102, 0.6), 0 0 16px rgba(255, 51, 102, 0.3);
 		}
 	}
 </style>

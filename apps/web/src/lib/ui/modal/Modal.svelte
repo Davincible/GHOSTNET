@@ -115,8 +115,8 @@
 	}
 
 	.modal::backdrop {
-		background: rgba(0, 0, 0, 0.85);
-		backdrop-filter: blur(4px);
+		background: rgba(3, 3, 5, 0.92);
+		backdrop-filter: blur(8px);
 	}
 
 	.modal-sm {
@@ -132,8 +132,9 @@
 	}
 
 	.modal-container {
-		background: var(--color-bg-primary);
+		background: var(--color-bg-secondary);
 		animation: modal-enter 0.2s ease-out;
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.modal-content {
@@ -144,7 +145,7 @@
 
 	.modal-footer {
 		padding: var(--space-3) var(--space-4);
-		border-top: 1px solid var(--color-bg-tertiary);
+		border-top: 1px solid var(--color-border-subtle);
 		display: flex;
 		justify-content: flex-end;
 		gap: var(--space-2);
@@ -153,7 +154,7 @@
 	@keyframes modal-enter {
 		from {
 			opacity: 0;
-			transform: scale(0.95) translateY(-10px);
+			transform: scale(0.98) translateY(-8px);
 		}
 		to {
 			opacity: 1;

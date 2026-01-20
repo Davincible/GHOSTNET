@@ -158,9 +158,10 @@
 
 <style>
 	.label {
-		color: var(--color-green-dim);
-		font-size: var(--text-sm);
-		letter-spacing: var(--tracking-wide);
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+		text-transform: uppercase;
 	}
 
 	.value-profit {
@@ -184,11 +185,11 @@
 
 	.total-section {
 		padding-top: var(--space-2);
-		border-top: 1px solid var(--color-bg-tertiary);
+		border-top: 1px solid var(--color-border-subtle);
 	}
 
 	.total-value {
-		color: var(--color-green-bright);
+		color: var(--color-text-primary);
 		font-weight: var(--font-bold);
 	}
 
@@ -197,7 +198,7 @@
 	}
 
 	.empty-text {
-		color: var(--color-green-dim);
+		color: var(--color-text-tertiary);
 		font-size: var(--text-sm);
 		text-align: center;
 	}
