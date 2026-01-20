@@ -186,10 +186,11 @@
 	.box-content-wrapper {
 		display: flex;
 		min-height: 0;
+		height: auto;
 	}
 
 	.box-content {
-		flex: 1;
+		flex: 1 1 auto;
 		min-width: 0;
 		padding: calc(var(--box-padding, 3) * var(--space-1));
 		color: var(--color-text-primary);

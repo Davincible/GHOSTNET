@@ -135,6 +135,7 @@
 		background: var(--color-bg-secondary);
 		animation: modal-enter 0.2s ease-out;
 		box-shadow: var(--shadow-elevated);
+		height: auto;
 	}
 
 	.modal-content {
