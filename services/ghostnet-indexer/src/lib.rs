@@ -53,12 +53,12 @@
 #![doc(html_root_url = "https://docs.ghostnet.io/indexer")]
 
 // Module declarations - added as each phase completes
+pub mod abi;
 pub mod config;
 pub mod error;
 pub mod types;
 
 // Future modules (uncomment as implemented):
-// pub mod abi;
 // pub mod api;
 // pub mod handlers;
 // pub mod indexer;
