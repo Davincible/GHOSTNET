@@ -118,8 +118,7 @@
 	}
 
 	@keyframes pulse-glow {
-		0%,
-		100% {
+		0%, 100% {
 			opacity: 0.7;
 		}
 		50% {

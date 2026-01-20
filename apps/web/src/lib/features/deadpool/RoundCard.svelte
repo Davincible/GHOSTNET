@@ -1,227 +1,272 @@
 <script lang="ts">
-	import { Badge, Countdown, Button } from '$lib/ui/primitives';
-	import { LevelBadge, AmountDisplay } from '$lib/ui/data-display';
-	import { Row, Stack } from '$lib/ui/layout';
+	import type { DeadPoolRound } from '$lib/core/types';
+	import { Box } from '$lib/ui/terminal';
+	import { Button } from '$lib/ui/primitives';
+	import { LevelBadge } from '$lib/ui/data-display';
+	import type { Level } from '$lib/core/types';
+	import { Row } from '$lib/ui/layout';
 	import OddsDisplay from './OddsDisplay.svelte';
 	import PoolBars from './PoolBars.svelte';
-	import { calculateOdds, canBet } from '$lib/core/providers/mock/generators/deadpool';
-	import type { DeadPoolRound, DeadPoolSide, DeadPoolRoundType } from '$lib/core/types';
 
 	interface Props {
-		/** The betting round data */
+		/** Round data */
 		round: DeadPoolRound;
-		/** Handler for placing a bet */
-		onBet: (round: DeadPoolRound, side: DeadPoolSide) => void;
+		/** Callback when user wants to place a bet */
+		onBet?: () => void;
 	}
 
 	let { round, onBet }: Props = $props();
 
-	// Calculate live odds
-	let odds = $derived(calculateOdds(round.pools));
-	let bettingOpen = $derived(canBet(round));
-
-	// Round type display mapping
-	const typeLabels: Record<DeadPoolRoundType, string> = {
-		death_count: 'DEATH COUNT',
-		whale_watch: 'WHALE WATCH',
-		survival_streak: 'SURVIVAL STREAK',
-		system_reset: 'SYSTEM RESET',
-	};
-
-	// Round type badge variant
-	const typeVariants: Record<DeadPoolRoundType, 'default' | 'danger' | 'warning' | 'info'> = {
-		death_count: 'danger',
-		whale_watch: 'warning',
-		survival_streak: 'info',
-		system_reset: 'danger',
-	};
-
-	// Determine button labels based on round type
-	let buttonLabels = $derived.by(() => {
-		if (round.type === 'whale_watch') {
-			return { under: 'NO', over: 'YES' };
-		}
-		return { under: 'UNDER', over: 'OVER' };
+	// Calculate odds multipliers
+	let totalPool = $derived(round.pools.under + round.pools.over);
+	let odds = $derived({
+		under: totalPool > 0n ? Number(totalPool) / Number(round.pools.under || 1n) : 2,
+		over: totalPool > 0n ? Number(totalPool) / Number(round.pools.over || 1n) : 2
 	});
 
-	function handleBetUnder() {
-		onBet(round, 'under');
+	// Time until lock/end
+	let now = $state(Date.now());
+	$effect(() => {
+		const interval = setInterval(() => {
+			now = Date.now();
+		}, 1000);
+		return () => clearInterval(interval);
+	});
+
+	let timeUntilLock = $derived(Math.max(0, round.locksAt - now));
+	let timeUntilEnd = $derived(Math.max(0, round.endsAt - now));
+
+	// Format time display
+	function formatTime(ms: number): string {
+		if (ms <= 0) return '00:00';
+		const totalSeconds = Math.floor(ms / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		if (minutes >= 60) {
+			const hours = Math.floor(minutes / 60);
+			const mins = minutes % 60;
+			return `${hours}h ${mins.toString().padStart(2, '0')}m`;
+		}
+		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 	}
 
-	function handleBetOver() {
-		onBet(round, 'over');
-	}
+	// Status display
+	let statusLabel = $derived(() => {
+		switch (round.status) {
+			case 'betting':
+				return 'BETTING OPEN';
+			case 'locked':
+				return 'BETS LOCKED';
+			case 'resolving':
+				return 'RESOLVING...';
+			case 'resolved':
+				return 'RESOLVED';
+			default:
+				return 'UNKNOWN';
+		}
+	});
+
+	let statusClass = $derived(() => {
+		switch (round.status) {
+			case 'betting':
+				return 'status-betting';
+			case 'locked':
+				return 'status-locked';
+			case 'resolving':
+				return 'status-resolving';
+			case 'resolved':
+				return 'status-resolved';
+			default:
+				return '';
+		}
+	});
+
+	// Can user bet?
+	let canBet = $derived(round.status === 'betting' && timeUntilLock > 0);
 </script>
 
-<div
-	class="round-card"
-	class:card-locked={!bettingOpen}
-	class:card-has-bet={round.userBet !== null}
->
-	<!-- Header: Round number and type -->
-	<div class="card-header">
-		<span class="round-number">#{round.roundNumber}</span>
-		<Badge variant={typeVariants[round.type]}>{typeLabels[round.type]}</Badge>
+<Box variant="single" borderColor={round.userBet ? 'cyan' : 'default'} padding={3}>
+	<div class="round-card">
+		<!-- Header: Round number, type, level -->
+		<Row justify="between" align="center" class="round-header">
+			<div class="round-meta">
+				<span class="round-number">ROUND #{round.roundNumber}</span>
+				{#if round.targetLevel}
+					<LevelBadge level={round.targetLevel} compact />
+				{/if}
+			</div>
+			<span class="round-status {statusClass()}">{statusLabel()}</span>
+		</Row>
+
+		<!-- Question -->
+		<p class="round-question">{round.question}</p>
+
+		<!-- Line display -->
+		<div class="line-display">
+			<span class="line-label">LINE:</span>
+			<span class="line-value">{round.line}</span>
+		</div>
+
+		<!-- Odds display -->
+		<OddsDisplay pools={round.pools} {odds} userBetSide={round.userBet?.side} compact />
+
+		<!-- Pool bars -->
+		<PoolBars pools={round.pools} width={24} />
+
+		<!-- Timer and action -->
+		<Row justify="between" align="center" class="round-footer">
+			<div class="timer">
+				{#if round.status === 'betting'}
+					<span class="timer-label">LOCKS IN:</span>
+					<span class="timer-value">{formatTime(timeUntilLock)}</span>
+				{:else if round.status === 'locked' || round.status === 'resolving'}
+					<span class="timer-label">RESOLVES IN:</span>
+					<span class="timer-value">{formatTime(timeUntilEnd)}</span>
+				{:else}
+					<span class="timer-label">COMPLETE</span>
+				{/if}
+			</div>
+
+			{#if canBet && !round.userBet}
+				<Button variant="primary" size="sm" onclick={onBet}>
+					PLACE BET
+				</Button>
+			{:else if round.userBet}
+				<div class="user-bet-indicator">
+					<span class="bet-side">{round.userBet.side.toUpperCase()}</span>
+				</div>
+			{/if}
+		</Row>
 	</div>
-
-	<!-- Target level (if applicable) -->
-	{#if round.targetLevel}
-		<div class="target-level">
-			<LevelBadge level={round.targetLevel} glow />
-		</div>
-	{/if}
-
-	<!-- Question -->
-	<p class="question">"{round.question}"</p>
-
-	<!-- Line and timer -->
-	<div class="meta-row">
-		<div class="meta-item">
-			<span class="meta-label">LINE</span>
-			<span class="meta-value">{round.line}</span>
-		</div>
-		<div class="meta-item">
-			<span class="meta-label">ENDS</span>
-			<Countdown targetTime={round.endsAt} urgentThreshold={300} />
-		</div>
-	</div>
-
-	<!-- Pool distribution bar -->
-	<PoolBars pools={round.pools} width={24} />
-
-	<!-- Odds display -->
-	<OddsDisplay pools={round.pools} {odds} userBetSide={round.userBet?.side ?? null} compact />
-
-	<!-- Bet buttons -->
-	<div class="bet-actions">
-		<Button
-			variant="secondary"
-			size="sm"
-			onclick={handleBetUnder}
-			disabled={!bettingOpen || round.userBet !== null}
-		>
-			{buttonLabels.under}
-		</Button>
-		<Button
-			variant="secondary"
-			size="sm"
-			onclick={handleBetOver}
-			disabled={!bettingOpen || round.userBet !== null}
-		>
-			{buttonLabels.over}
-		</Button>
-	</div>
-
-	<!-- Locked overlay -->
-	{#if !bettingOpen}
-		<div class="locked-overlay">
-			<span class="locked-text">BETTING LOCKED</span>
-		</div>
-	{/if}
-</div>
+</Box>
 
 <style>
 	.round-card {
-		position: relative;
 		display: flex;
 		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	:global(.round-header) {
+		flex-wrap: wrap;
 		gap: var(--space-2);
-		padding: var(--space-3);
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border-subtle);
-		font-family: var(--font-mono);
-		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.round-card:hover:not(.card-locked) {
-		border-color: var(--color-border-default);
-		background: var(--color-bg-tertiary);
-	}
-
-	.round-card.card-has-bet {
-		border-color: var(--color-accent-dim);
-		box-shadow: 0 0 8px var(--color-accent-glow);
-	}
-
-	.round-card.card-locked {
-		opacity: 0.7;
-	}
-
-	.card-header {
+	.round-meta {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-2);
 	}
 
 	.round-number {
-		font-size: var(--text-sm);
 		color: var(--color-text-tertiary);
-		font-weight: var(--font-medium);
-	}
-
-	.target-level {
-		font-size: var(--text-sm);
-	}
-
-	.question {
-		font-size: var(--text-sm);
-		color: var(--color-text-secondary);
-		line-height: var(--leading-relaxed);
-		font-style: italic;
-	}
-
-	.meta-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: var(--space-1) 0;
-		border-top: 1px solid var(--color-border-subtle);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.meta-item {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.meta-label {
 		font-size: var(--text-xs);
-		color: var(--color-text-tertiary);
 		letter-spacing: var(--tracking-wider);
 	}
 
-	.meta-value {
+	.round-status {
+		font-size: var(--text-xs);
+		font-weight: var(--font-medium);
+		letter-spacing: var(--tracking-wider);
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid currentColor;
+	}
+
+	.status-betting {
+		color: var(--color-profit);
+		background: rgba(0, 255, 136, 0.1);
+	}
+
+	.status-locked {
+		color: var(--color-amber);
+		background: rgba(255, 193, 7, 0.1);
+	}
+
+	.status-resolving {
+		color: var(--color-cyan);
+		background: rgba(0, 229, 204, 0.1);
+		animation: pulse 1s ease-in-out infinite;
+	}
+
+	.status-resolved {
+		color: var(--color-text-tertiary);
+		background: var(--color-bg-tertiary);
+	}
+
+	@keyframes pulse {
+		0%,
+		100% {
+			opacity: 0.7;
+		}
+		50% {
+			opacity: 1;
+		}
+	}
+
+	.round-question {
+		color: var(--color-text-primary);
 		font-size: var(--text-sm);
-		color: var(--color-accent);
+		font-weight: var(--font-medium);
+		line-height: var(--leading-relaxed);
+		margin: 0;
+	}
+
+	.line-display {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-subtle);
+	}
+
+	.line-label {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.line-value {
+		color: var(--color-text-primary);
+		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
 	}
 
-	.bet-actions {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-2);
+	:global(.round-footer) {
 		margin-top: var(--space-1);
 	}
 
-	.locked-overlay {
-		position: absolute;
-		inset: 0;
+	.timer {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		background: rgba(3, 3, 5, 0.75);
-		pointer-events: none;
+		gap: var(--space-1);
 	}
 
-	.locked-text {
+	.timer-label {
+		color: var(--color-text-tertiary);
 		font-size: var(--text-xs);
-		color: var(--color-amber);
-		letter-spacing: var(--tracking-widest);
-		text-transform: uppercase;
+	}
+
+	.timer-value {
+		color: var(--color-text-primary);
+		font-size: var(--text-sm);
+		font-weight: var(--font-bold);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.user-bet-indicator {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		color: var(--color-cyan);
+		font-size: var(--text-xs);
+		font-weight: var(--font-medium);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.bet-side {
 		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--color-amber-dim);
-		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-cyan);
+		background: rgba(0, 229, 204, 0.1);
 	}
 </style>

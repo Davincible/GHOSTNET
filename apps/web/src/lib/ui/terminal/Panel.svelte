@@ -40,7 +40,7 @@
 		showScrollHint = true,
 		padding = 3,
 		children,
-		footer
+		footer,
 	}: Props = $props();
 
 	let scrollContainer = $state<HTMLDivElement | null>(null);
@@ -132,8 +132,13 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 0.4; }
-		50% { opacity: 0.8; }
+		0%,
+		100% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 0.8;
+		}
 	}
 
 	.panel-footer {

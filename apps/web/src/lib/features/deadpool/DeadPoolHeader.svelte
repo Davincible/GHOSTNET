@@ -1,154 +1,174 @@
 <script lang="ts">
-	import { Panel } from '$lib/ui/terminal';
+	import type { DeadPoolUserStats } from '$lib/core/types';
+	import { Box } from '$lib/ui/terminal';
 	import { AmountDisplay } from '$lib/ui/data-display';
 	import { Row } from '$lib/ui/layout';
-	import type { DeadPoolUserStats } from '$lib/core/types';
 
 	interface Props {
-		/** User's current $DATA balance */
-		balance: bigint;
-		/** User's Dead Pool statistics */
+		/** User statistics for Dead Pool */
 		stats: DeadPoolUserStats;
-		/** Show help/info modal */
-		onHelp?: () => void;
 	}
 
-	let { balance, stats, onHelp }: Props = $props();
+	let { stats }: Props = $props();
 
-	// Calculate net profit/loss
-	let netProfitLoss = $derived(stats.totalWon - stats.totalLost);
+	// Format win rate as percentage
 	let winRatePercent = $derived(Math.round(stats.winRate * 100));
+
+	// Streak display
+	let streakText = $derived(() => {
+		if (stats.currentStreak === 0) return '0';
+		if (stats.currentStreak > 0) return `+${stats.currentStreak}W`;
+		return `${stats.currentStreak}L`;
+	});
+
+	let streakClass = $derived(() => {
+		if (stats.currentStreak > 0) return 'streak-win';
+		if (stats.currentStreak < 0) return 'streak-loss';
+		return '';
+	});
+
+	// Net P/L calculation (bigint comparison)
+	let netProfit = $derived(stats.totalWon >= stats.totalLost);
+	let netAmount = $derived(netProfit ? stats.totalWon - stats.totalLost : stats.totalLost - stats.totalWon);
 </script>
 
-<Panel title="DEAD POOL" variant="double" borderColor="cyan" padding={3}>
-	<div class="header-content">
-		<p class="tagline">"Bet on the network. Feed the furnace."</p>
+<Box variant="double" borderColor="amber" padding={3}>
+	<div class="deadpool-header">
+		<!-- Title row -->
+		<Row justify="between" align="center">
+			<div class="title-section">
+				<span class="title-label">DEAD</span>
+				<span class="title-pool">POOL</span>
+			</div>
+			<div class="subtitle">PREDICTION MARKET</div>
+		</Row>
 
-		<div class="stats-row">
+		<!-- Divider -->
+		<div class="divider" aria-hidden="true"></div>
+
+		<!-- Stats row -->
+		<Row justify="between" align="center" class="stats-row">
 			<div class="stat">
-				<span class="stat-label">YOUR BALANCE</span>
-				<span class="stat-value">
-					<AmountDisplay amount={balance} format="full" />
+				<span class="stat-label">BETS:</span>
+				<span class="stat-value">{stats.totalBets}</span>
+			</div>
+			<div class="stat">
+				<span class="stat-label">WIN RATE:</span>
+				<span class="stat-value" class:positive={winRatePercent >= 50} class:negative={winRatePercent < 50}>
+					{winRatePercent}%
 				</span>
 			</div>
-
 			<div class="stat">
-				<span class="stat-label">TOTAL WON</span>
-				<span class="stat-value" class:profit={netProfitLoss > 0n} class:loss={netProfitLoss < 0n}>
-					<AmountDisplay amount={netProfitLoss} format="full" showSign colorize />
+				<span class="stat-label">NET P/L:</span>
+				<span class="stat-value" class:positive={netProfit} class:negative={!netProfit}>
+					{#if netProfit}
+						+<AmountDisplay amount={netAmount} format="compact" />
+					{:else}
+						-<AmountDisplay amount={netAmount} format="compact" />
+					{/if}
 				</span>
 			</div>
-
 			<div class="stat">
-				<span class="stat-label">WIN RATE</span>
-				<span class="stat-value">{winRatePercent}%</span>
+				<span class="stat-label">STREAK:</span>
+				<span class="stat-value {streakClass()}">{streakText()}</span>
 			</div>
-
-			{#if stats.currentStreak !== 0}
-				<div class="stat">
-					<span class="stat-label">STREAK</span>
-					<span
-						class="stat-value streak"
-						class:win-streak={stats.currentStreak > 0}
-						class:loss-streak={stats.currentStreak < 0}
-					>
-						{stats.currentStreak > 0 ? '+' : ''}{stats.currentStreak}
-					</span>
-				</div>
-			{/if}
-		</div>
-
-		{#if onHelp}
-			<button class="help-btn" onclick={onHelp} aria-label="How to play"> [?] </button>
-		{/if}
+		</Row>
 	</div>
-</Panel>
+</Box>
 
 <style>
-	.header-content {
-		position: relative;
-	}
-
-	.tagline {
-		color: var(--color-text-tertiary);
-		font-style: italic;
-		font-size: var(--text-sm);
-		margin-bottom: var(--space-3);
-	}
-
-	.stats-row {
+	.deadpool-header {
 		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.title-section {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.title-label {
+		color: var(--color-text-primary);
+		font-size: var(--text-xl);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.title-pool {
+		color: var(--color-amber);
+		font-size: var(--text-xl);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.subtitle {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-widest);
+	}
+
+	.divider {
+		height: 1px;
+		background: var(--color-border-subtle);
+		margin: var(--space-1) 0;
+	}
+
+	:global(.stats-row) {
 		flex-wrap: wrap;
-		gap: var(--space-4);
+		gap: var(--space-3);
 	}
 
 	.stat {
 		display: flex;
-		flex-direction: column;
+		align-items: center;
 		gap: var(--space-1);
 	}
 
 	.stat-label {
-		font-size: var(--text-xs);
 		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-wider);
 	}
 
 	.stat-value {
-		font-size: var(--text-base);
 		color: var(--color-text-primary);
+		font-size: var(--text-sm);
 		font-weight: var(--font-medium);
 	}
 
-	.stat-value.profit {
+	.stat-value.positive {
 		color: var(--color-profit);
 	}
 
-	.stat-value.loss {
+	.stat-value.negative {
 		color: var(--color-loss);
 	}
 
-	.streak {
-		font-weight: var(--font-bold);
-	}
-
-	.streak.win-streak {
+	.streak-win {
 		color: var(--color-profit);
 	}
 
-	.streak.loss-streak {
+	.streak-loss {
 		color: var(--color-loss);
 	}
 
-	.help-btn {
-		position: absolute;
-		top: 0;
-		right: 0;
-		background: none;
-		border: 1px solid var(--color-border-subtle);
-		color: var(--color-text-tertiary);
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
-		padding: var(--space-1) var(--space-2);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
-	}
-
-	.help-btn:hover {
-		color: var(--color-accent);
-		border-color: var(--color-accent-dim);
-	}
-
-	@media (max-width: 640px) {
-		.stats-row {
-			flex-direction: column;
-			gap: var(--space-2);
+	/* Mobile responsiveness */
+	@media (max-width: 480px) {
+		.title-label,
+		.title-pool {
+			font-size: var(--text-lg);
 		}
 
-		.stat {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
+		.subtitle {
+			font-size: var(--text-xs);
+		}
+
+		:global(.stats-row) {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--space-1);
 		}
 	}
 </style>

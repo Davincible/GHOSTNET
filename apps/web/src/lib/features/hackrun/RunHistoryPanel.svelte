@@ -1,27 +1,25 @@
 <script lang="ts">
-	import { Box } from '$lib/ui/terminal';
-	import { Badge } from '$lib/ui/primitives';
-	import { AmountDisplay } from '$lib/ui/data-display';
-	import { Stack, Row } from '$lib/ui/layout';
 	import type { HackRunHistoryEntry, HackRunDifficulty } from '$lib/core/types/hackrun';
+	import { Box } from '$lib/ui/terminal';
+	import { Stack, Row } from '$lib/ui/layout';
+	import { AmountDisplay } from '$lib/ui/data-display';
 
 	interface Props {
-		/** History entries to display */
+		/** Recent run history */
 		history: HackRunHistoryEntry[];
-		/** Maximum entries to show */
-		maxEntries?: number;
+		/** Maximum items to show */
+		limit?: number;
 	}
 
-	let { history, maxEntries = 5 }: Props = $props();
+	let { history, limit = 5 }: Props = $props();
 
-	// Limit displayed entries
-	let displayedHistory = $derived(history.slice(0, maxEntries));
+	let displayHistory = $derived(history.slice(0, limit));
 
-	// Difficulty badge variants
-	const difficultyVariants: Record<HackRunDifficulty, 'success' | 'warning' | 'danger'> = {
-		easy: 'success',
-		medium: 'warning',
-		hard: 'danger',
+	// Difficulty colors
+	const DIFF_COLORS: Record<HackRunDifficulty, string> = {
+		easy: 'var(--color-profit)',
+		medium: 'var(--color-amber)',
+		hard: 'var(--color-loss)'
 	};
 
 	// Format timestamp
@@ -31,135 +29,139 @@
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / 60000);
 		const diffHours = Math.floor(diffMins / 60);
-		const diffDays = Math.floor(diffHours / 24);
 
-		if (diffMins < 1) return 'Just now';
 		if (diffMins < 60) return `${diffMins}m ago`;
 		if (diffHours < 24) return `${diffHours}h ago`;
-		if (diffDays < 7) return `${diffDays}d ago`;
-
-		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+		return date.toLocaleDateString();
 	}
 </script>
 
-<div class="history-panel">
-	<Box title="RECENT RUNS" padding={2}>
-		{#if displayedHistory.length === 0}
+<Box variant="single" title="RUN HISTORY" padding={2}>
+	<Stack gap={2}>
+		{#if displayHistory.length === 0}
 			<div class="empty-state">
-				<span class="empty-icon">[?]</span>
-				<span class="empty-text">No hack runs yet</span>
+				<span class="empty-text">No runs completed yet</span>
 			</div>
 		{:else}
-			<Stack gap={2}>
-				{#each displayedHistory as entry (entry.id)}
-					<div
-						class="history-entry"
-						class:entry-success={entry.result.success}
-						class:entry-failed={!entry.result.success}
-					>
-						<Row justify="between" align="center">
-							<Row gap={2} align="center">
-								<span class="entry-status">{entry.result.success ? '[+]' : '[X]'}</span>
-								<Badge variant={difficultyVariants[entry.difficulty]} compact>
-									{entry.difficulty.toUpperCase()}
-								</Badge>
-							</Row>
-							<span class="entry-time">{formatTime(entry.timestamp)}</span>
-						</Row>
-
-						<Row justify="between" align="center">
-							<span class="entry-nodes">
-								{entry.result.nodesCompleted}/{entry.result.totalNodes} nodes
+			{#each displayHistory as entry (entry.id)}
+				<div
+					class="history-row"
+					class:success={entry.result.success}
+					class:failure={!entry.result.success}
+				>
+					<Row justify="between" align="center">
+						<div class="run-info">
+							<span class="run-difficulty" style:color={DIFF_COLORS[entry.difficulty]}>
+								{entry.difficulty.toUpperCase()}
 							</span>
-							<Row gap={3} align="center">
-								{#if entry.result.success}
-									<span class="entry-multiplier">{entry.result.finalMultiplier.toFixed(1)}x</span>
-								{/if}
-								<span class="entry-loot">
-									+<AmountDisplay amount={entry.result.lootGained} format="compact" />
-								</span>
-							</Row>
-						</Row>
-					</div>
-				{/each}
-			</Stack>
+							<span class="run-status">
+								{entry.result.success ? 'COMPLETE' : 'FAILED'}
+							</span>
+						</div>
+						<span class="run-time">{formatTime(entry.timestamp)}</span>
+					</Row>
+
+					<Row justify="between" align="center" class="run-stats">
+						<div class="stat">
+							<span class="stat-label">NODES:</span>
+							<span class="stat-value">{entry.result.nodesCompleted}/{entry.result.totalNodes}</span>
+						</div>
+						<div class="stat">
+							<span class="stat-label">MULT:</span>
+							<span class="stat-value multiplier">{entry.result.finalMultiplier.toFixed(1)}x</span>
+						</div>
+						<div class="stat">
+							<span class="stat-label">XP:</span>
+							<span class="stat-value xp">+{entry.result.xpGained}</span>
+						</div>
+					</Row>
+				</div>
+			{/each}
 		{/if}
-	</Box>
-</div>
+	</Stack>
+</Box>
 
 <style>
-	.history-panel {
-		width: 100%;
-	}
-
 	.empty-state {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-2);
 		padding: var(--space-4);
-	}
-
-	.empty-icon {
-		color: var(--color-text-tertiary);
-		font-weight: var(--font-bold);
+		text-align: center;
 	}
 
 	.empty-text {
-		color: var(--color-text-tertiary);
+		color: var(--color-text-muted);
 		font-size: var(--text-sm);
 	}
 
-	.history-entry {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
+	.history-row {
 		padding: var(--space-2);
-		background: var(--color-bg-primary);
 		border: 1px solid var(--color-border-subtle);
-		border-left: 3px solid;
-		transition: border-color var(--duration-fast) var(--ease-default);
+		background: var(--color-bg-secondary);
 	}
 
-	.entry-success {
-		border-left-color: var(--color-profit);
+	.history-row.success {
+		border-left: 3px solid var(--color-profit-dim);
 	}
 
-	.entry-failed {
-		border-left-color: var(--color-red);
+	.history-row.failure {
+		border-left: 3px solid var(--color-loss-dim);
 	}
 
-	.entry-status {
+	.run-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.run-difficulty {
+		font-size: var(--text-xs);
 		font-weight: var(--font-bold);
-		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-wider);
 	}
 
-	.entry-success .entry-status {
+	.run-status {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.history-row.success .run-status {
 		color: var(--color-profit);
 	}
 
-	.entry-failed .entry-status {
-		color: var(--color-red);
+	.history-row.failure .run-status {
+		color: var(--color-loss);
 	}
 
-	.entry-time {
-		color: var(--color-text-tertiary);
+	.run-time {
+		color: var(--color-text-muted);
 		font-size: var(--text-xs);
 	}
 
-	.entry-nodes {
-		color: var(--color-text-secondary);
+	:global(.run-stats) {
+		margin-top: var(--space-1);
+	}
+
+	.stat {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.stat-label {
+		color: var(--color-text-muted);
 		font-size: var(--text-xs);
 	}
 
-	.entry-multiplier {
-		color: var(--color-accent);
-		font-size: var(--text-sm);
+	.stat-value {
+		color: var(--color-text-primary);
+		font-size: var(--text-xs);
 		font-weight: var(--font-medium);
 	}
 
-	.entry-loot {
-		color: var(--color-profit);
-		font-size: var(--text-sm);
+	.stat-value.multiplier {
+		color: var(--color-cyan);
+	}
+
+	.stat-value.xp {
+		color: var(--color-amber);
 	}
 </style>

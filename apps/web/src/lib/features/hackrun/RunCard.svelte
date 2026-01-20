@@ -1,153 +1,127 @@
 <script lang="ts">
-	import { Box } from '$lib/ui/terminal';
-	import { Button, Badge } from '$lib/ui/primitives';
-	import { AmountDisplay } from '$lib/ui/data-display';
-	import { Stack, Row } from '$lib/ui/layout';
 	import type { HackRun, HackRunDifficulty } from '$lib/core/types/hackrun';
+	import { Box } from '$lib/ui/terminal';
+	import { AmountDisplay } from '$lib/ui/data-display';
+	import { Button } from '$lib/ui/primitives';
+	import { Stack, Row } from '$lib/ui/layout';
+	import { RUN_CONFIG } from './generators';
 
 	interface Props {
-		/** The run configuration */
+		/** Run configuration */
 		run: HackRun;
-		/** Callback when start is clicked */
-		onStart: (run: HackRun) => void;
-		/** Whether selection is disabled */
-		disabled?: boolean;
+		/** Callback when run is selected */
+		onSelect?: () => void;
 	}
 
-	let { run, onStart, disabled = false }: Props = $props();
+	let { run, onSelect }: Props = $props();
 
 	// Difficulty display config
-	const DIFFICULTY_CONFIG: Record<
-		HackRunDifficulty,
-		{ label: string; color: 'success' | 'warning' | 'danger' }
-	> = {
-		easy: { label: 'EASY', color: 'success' },
-		medium: { label: 'MEDIUM', color: 'warning' },
-		hard: { label: 'HARD', color: 'danger' },
+	const DIFFICULTY_CONFIG: Record<HackRunDifficulty, { label: string; color: string; borderColor: 'default' | 'cyan' | 'amber' | 'red' }> = {
+		easy: { label: 'ROUTINE', color: 'var(--color-profit)', borderColor: 'cyan' },
+		medium: { label: 'COMPLEX', color: 'var(--color-amber)', borderColor: 'amber' },
+		hard: { label: 'CRITICAL', color: 'var(--color-loss)', borderColor: 'red' }
 	};
 
 	let config = $derived(DIFFICULTY_CONFIG[run.difficulty]);
-	let timeLimitMinutes = $derived(Math.floor(run.timeLimit / 60000));
 
-	// ASCII node preview
-	let nodePreview = $derived(
-		run.nodes
-			.filter((n) => n.type !== 'backdoor')
-			.sort((a, b) => a.position - b.position)
-			.map(() => '[ ]')
-			.join('──')
-	);
+	// Format time limit
+	function formatTime(ms: number): string {
+		const minutes = Math.floor(ms / 60000);
+		return `${minutes}:00`;
+	}
 </script>
 
-<div class="run-card" class:run-card-disabled={disabled}>
-	<Box
-		borderColor={config.color === 'success' ? 'cyan' : config.color === 'warning' ? 'amber' : 'red'}
-	>
-		<Stack gap={3}>
-			<!-- Header -->
-			<Row justify="between" align="center">
-				<Badge variant={config.color} glow>{config.label}</Badge>
-				<span class="multiplier">{run.baseMultiplier}x YIELD</span>
+<Box variant="single" borderColor={config.borderColor} padding={3}>
+	<Stack gap={3}>
+		<!-- Difficulty header -->
+		<div class="difficulty-header" style:--diff-color={config.color}>
+			<span class="difficulty-label">{config.label}</span>
+			<span class="difficulty-tier">{run.difficulty.toUpperCase()}</span>
+		</div>
+
+		<!-- Stats -->
+		<div class="stats">
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">ENTRY FEE:</span>
+				<span class="stat-value">
+					<AmountDisplay amount={run.entryFee} format="compact" />
+				</span>
 			</Row>
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">BASE MULT:</span>
+				<span class="stat-value multiplier">{run.baseMultiplier.toFixed(1)}x</span>
+			</Row>
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">TIME LIMIT:</span>
+				<span class="stat-value">{formatTime(run.timeLimit)}</span>
+			</Row>
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">NODES:</span>
+				<span class="stat-value">{run.nodes.filter(n => n.type !== 'backdoor').length}</span>
+			</Row>
+			{#if run.shortcuts > 0}
+				<Row justify="between" class="stat-row">
+					<span class="stat-label">SHORTCUTS:</span>
+					<span class="stat-value shortcut">{run.shortcuts}</span>
+				</Row>
+			{/if}
+		</div>
 
-			<!-- Stats -->
-			<div class="stats-grid">
-				<div class="stat">
-					<span class="stat-label">ENTRY FEE</span>
-					<span class="stat-value">
-						<AmountDisplay amount={run.entryFee} />
-					</span>
-				</div>
-				<div class="stat">
-					<span class="stat-label">TIME LIMIT</span>
-					<span class="stat-value">{timeLimitMinutes} MIN</span>
-				</div>
-				<div class="stat">
-					<span class="stat-label">SHORTCUTS</span>
-					<span class="stat-value">{run.shortcuts > 0 ? run.shortcuts : 'NONE'}</span>
-				</div>
-				<div class="stat">
-					<span class="stat-label">NODES</span>
-					<span class="stat-value">{run.nodes.filter((n) => n.type !== 'backdoor').length}</span>
-				</div>
-			</div>
-
-			<!-- Node Preview -->
-			<div class="node-preview">
-				<span class="preview-label">PATH:</span>
-				<span class="preview-nodes">{nodePreview}</span>
-			</div>
-
-			<!-- Start Button -->
-			<Button variant="secondary" fullWidth onclick={() => onStart(run)} {disabled}>
-				INITIATE RUN
-			</Button>
-		</Stack>
-	</Box>
-</div>
+		<!-- Select button -->
+		<Button variant="primary" fullWidth onclick={onSelect}>
+			INITIATE
+		</Button>
+	</Stack>
+</Box>
 
 <style>
-	.run-card {
-		width: 100%;
-		max-width: 280px;
+	.difficulty-header {
+		text-align: center;
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--color-border-subtle);
 	}
 
-	.run-card-disabled {
-		opacity: 0.5;
-		pointer-events: none;
-	}
-
-	.multiplier {
-		color: var(--color-accent);
+	.difficulty-label {
+		display: block;
+		color: var(--diff-color);
 		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
 	}
 
-	.stats-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-2);
+	.difficulty-tier {
+		display: block;
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-widest);
+		margin-top: var(--space-1);
 	}
 
-	.stat {
+	.stats {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
 	}
 
+	:global(.stat-row) {
+		font-size: var(--text-sm);
+	}
+
 	.stat-label {
 		color: var(--color-text-tertiary);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	.stat-value {
 		color: var(--color-text-primary);
-		font-size: var(--text-sm);
 		font-weight: var(--font-medium);
 	}
 
-	.node-preview {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2);
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-subtle);
-		overflow-x: auto;
+	.stat-value.multiplier {
+		color: var(--color-cyan);
 	}
 
-	.preview-label {
-		color: var(--color-text-tertiary);
-		font-size: var(--text-xs);
-		flex-shrink: 0;
-	}
-
-	.preview-nodes {
-		color: var(--color-text-secondary);
-		font-size: var(--text-xs);
-		white-space: nowrap;
-		letter-spacing: -0.05em;
+	.stat-value.shortcut {
+		color: var(--color-amber);
 	}
 </style>

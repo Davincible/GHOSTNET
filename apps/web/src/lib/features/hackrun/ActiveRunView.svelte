@@ -1,224 +1,194 @@
 <script lang="ts">
-	import { Stack } from '$lib/ui/layout';
-	import RunProgress from './RunProgress.svelte';
+	import type { HackRun, NodeProgress, HackRunNode } from '$lib/core/types/hackrun';
+	import { Box } from '$lib/ui/terminal';
+	import { Stack, Row } from '$lib/ui/layout';
+	import { Button } from '$lib/ui/primitives';
+	import { ProgressBar } from '$lib/ui/primitives';
+	import { AmountDisplay } from '$lib/ui/data-display';
 	import NodeMap from './NodeMap.svelte';
 	import CurrentNodePanel from './CurrentNodePanel.svelte';
-	import type { HackRun, HackRunNode, NodeProgress, NodeResult } from '$lib/core/types/hackrun';
 
 	interface Props {
-		/** The active run */
+		/** Current run */
 		run: HackRun;
-		/** Current node (when in node_typing state) */
-		currentNode: HackRunNode | null;
-		/** Progress for all nodes */
+		/** Progress through nodes */
 		progress: NodeProgress[];
+		/** Current node index */
+		currentNodeIndex: number;
 		/** Time remaining in milliseconds */
 		timeRemaining: number;
 		/** Current accumulated multiplier */
 		currentMultiplier: number;
 		/** Total loot collected */
 		totalLoot: bigint;
-		/** User's typed input (for typing state) */
-		typed: string;
-		/** When typing started */
-		typingStartTime: number;
-		/** Whether user is in typing mode */
-		isTyping: boolean;
-		/** Callback when node typing is complete */
-		onNodeComplete: (result: NodeResult) => void;
-		/** Callback to start typing on current node */
-		onStartNode: () => void;
+		/** Callback to start typing challenge */
+		onStartNode?: () => void;
+		/** Callback to abort run */
+		onAbort?: () => void;
 	}
 
 	let {
 		run,
-		currentNode,
 		progress,
+		currentNodeIndex,
 		timeRemaining,
 		currentMultiplier,
 		totalLoot,
-		typed,
-		typingStartTime,
-		isTyping,
-		onNodeComplete,
 		onStartNode,
+		onAbort
 	}: Props = $props();
 
-	// Get current node from progress if not explicitly provided
-	let displayNode = $derived.by(() => {
-		if (currentNode) return currentNode;
-		const currentProgress = progress.find((p) => p.status === 'current');
-		if (!currentProgress) return null;
-		return run.nodes.find((n) => n.id === currentProgress.nodeId) ?? null;
+	// Get current node
+	let currentNode = $derived(() => {
+		const nodeId = progress[currentNodeIndex]?.nodeId;
+		return run.nodes.find((n) => n.id === nodeId);
 	});
+
+	// Format time
+	function formatTime(ms: number): string {
+		const totalSeconds = Math.floor(ms / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+	}
+
+	// Time percentage
+	let timePercent = $derived(Math.max(0, Math.min(100, (timeRemaining / run.timeLimit) * 100)));
+
+	// Time warning states
+	let timeWarning = $derived(timePercent < 30);
+	let timeCritical = $derived(timePercent < 15);
 </script>
 
-<div class="active-run-view">
-	<Stack gap={0}>
-		<!-- Progress Bar at Top -->
-		<RunProgress
-			difficulty={run.difficulty}
-			{timeRemaining}
-			timeLimit={run.timeLimit}
-			{currentMultiplier}
-			{totalLoot}
-		/>
+<div class="active-run">
+	<!-- Top bar: Timer and stats -->
+	<Box variant="single" padding={2}>
+		<Row justify="between" align="center" gap={4}>
+			<div class="timer" class:warning={timeWarning} class:critical={timeCritical}>
+				<span class="timer-label">TIME:</span>
+				<span class="timer-value">{formatTime(timeRemaining)}</span>
+			</div>
+			<div class="stat">
+				<span class="stat-label">MULT:</span>
+				<span class="stat-value multiplier">{currentMultiplier.toFixed(2)}x</span>
+			</div>
+			<div class="stat">
+				<span class="stat-label">LOOT:</span>
+				<span class="stat-value loot">
+					<AmountDisplay amount={totalLoot} format="compact" />
+				</span>
+			</div>
+			<Button variant="danger" size="sm" onclick={onAbort}>
+				ABORT
+			</Button>
+		</Row>
+		<div class="timer-bar">
+			<ProgressBar value={timePercent} variant={timeCritical ? 'danger' : timeWarning ? 'warning' : 'default'} />
+		</div>
+	</Box>
 
-		<!-- Node Map -->
-		<div class="map-section">
-			<NodeMap nodes={run.nodes} {progress} />
+	<!-- Main content: Node map and current node -->
+	<div class="run-content">
+		<div class="node-map-container">
+			<NodeMap {run} {progress} currentIndex={currentNodeIndex} />
 		</div>
 
-		<!-- Current Node / Action Area -->
-		<div class="node-section">
-			{#if isTyping && displayNode}
-				<CurrentNodePanel
-					node={displayNode}
-					{typed}
-					startTime={typingStartTime}
-					onComplete={onNodeComplete}
-				/>
-			{:else if displayNode && !isTyping}
-				<!-- Waiting to start node -->
-				<div class="node-preview-panel">
-					<div class="preview-header">
-						<span class="preview-title">NEXT TARGET: {displayNode.name}</span>
-					</div>
-					<p class="preview-description">{displayNode.description}</p>
-					<div class="preview-reward">
-						<span class="reward-label">Reward:</span>
-						<span class="reward-value">{displayNode.reward.label}</span>
-					</div>
-					<button class="start-node-btn" onclick={onStartNode}> BREACH NODE </button>
-				</div>
-			{:else}
-				<!-- No current node (shouldn't happen) -->
-				<div class="empty-state">
-					<span>Loading node data...</span>
-				</div>
+		<div class="current-node-container">
+			{#if currentNode()}
+				<CurrentNodePanel node={currentNode()!} onStart={onStartNode} />
 			{/if}
 		</div>
-
-		<!-- Footer -->
-		<div class="footer-hint">
-			<span class="hint-text">Press <kbd>Esc</kbd> to abort run</span>
-		</div>
-	</Stack>
+	</div>
 </div>
 
 <style>
-	.active-run-view {
-		max-width: 700px;
-		margin: 0 auto;
-		width: 100%;
+	.active-run {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+		height: 100%;
 	}
 
-	.map-section {
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border-subtle);
-		border-top: none;
+	.timer {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
 	}
 
-	.node-section {
-		margin-top: var(--space-3);
+	.timer-label {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
 	}
 
-	/* Node Preview Panel (before typing) */
-	.node-preview-panel {
-		background: var(--color-bg-secondary);
-		border: 1px solid var(--color-border-subtle);
-		padding: var(--space-4);
-		text-align: center;
-	}
-
-	.preview-header {
-		margin-bottom: var(--space-3);
-	}
-
-	.preview-title {
-		color: var(--color-accent);
+	.timer-value {
+		color: var(--color-text-primary);
 		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.timer.warning .timer-value {
+		color: var(--color-amber);
+	}
+
+	.timer.critical .timer-value {
+		color: var(--color-loss);
+		animation: pulse-danger 0.5s ease-in-out infinite;
+	}
+
+	@keyframes pulse-danger {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+
+	.stat {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.stat-label {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-wider);
 	}
 
-	.preview-description {
-		color: var(--color-text-secondary);
-		font-size: var(--text-sm);
-		margin: 0 0 var(--space-3) 0;
-		font-style: italic;
-	}
-
-	.preview-reward {
-		display: flex;
-		justify-content: center;
-		align-items: baseline;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
-		padding: var(--space-2);
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-subtle);
-	}
-
-	.reward-label {
-		color: var(--color-text-tertiary);
-		font-size: var(--text-sm);
-	}
-
-	.reward-value {
-		color: var(--color-profit);
-		font-size: var(--text-sm);
-		font-weight: var(--font-medium);
-	}
-
-	.start-node-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: var(--space-3) var(--space-6);
-		background: transparent;
-		border: 1px solid var(--color-accent);
-		color: var(--color-accent);
-		font-family: var(--font-mono);
+	.stat-value {
+		color: var(--color-text-primary);
 		font-size: var(--text-sm);
 		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wider);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.start-node-btn:hover {
-		background: var(--color-accent);
-		color: var(--color-bg-void);
-		box-shadow: var(--shadow-glow-accent);
+	.stat-value.multiplier {
+		color: var(--color-cyan);
 	}
 
-	.start-node-btn:active {
-		transform: translateY(1px);
+	.stat-value.loot {
+		color: var(--color-profit);
 	}
 
-	/* Empty State */
-	.empty-state {
-		padding: var(--space-8);
-		text-align: center;
-		color: var(--color-text-tertiary);
+	.timer-bar {
+		margin-top: var(--space-2);
 	}
 
-	/* Footer */
-	.footer-hint {
-		text-align: center;
-		padding: var(--space-4);
+	.run-content {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-4);
+		flex: 1;
+		min-height: 0;
 	}
 
-	.hint-text {
-		color: var(--color-text-tertiary);
-		font-size: var(--text-sm);
+	.node-map-container,
+	.current-node-container {
+		min-height: 300px;
 	}
 
-	.hint-text kbd {
-		background: var(--color-bg-tertiary);
-		padding: var(--space-1) var(--space-2);
-		border: 1px solid var(--color-border-default);
-		margin: 0 var(--space-1);
+	/* Mobile layout */
+	@media (max-width: 768px) {
+		.run-content {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

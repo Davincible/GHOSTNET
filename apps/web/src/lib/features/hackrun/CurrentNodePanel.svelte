@@ -1,220 +1,118 @@
 <script lang="ts">
-	import { Box } from '$lib/ui/terminal';
-	import { Badge, ProgressBar } from '$lib/ui/primitives';
-	import { Stack, Row } from '$lib/ui/layout';
-	import type { HackRunNode, NodeResult } from '$lib/core/types/hackrun';
+	import type { HackRunNode } from '$lib/core/types/hackrun';
 	import { NODE_TYPE_CONFIG } from '$lib/core/types/hackrun';
+	import { Box } from '$lib/ui/terminal';
+	import { Stack, Row } from '$lib/ui/layout';
+	import { Button } from '$lib/ui/primitives';
 
 	interface Props {
-		/** The current node */
+		/** Current node to display */
 		node: HackRunNode;
-		/** User's typed input */
-		typed: string;
-		/** Callback when typing is complete */
-		onComplete: (result: NodeResult) => void;
-		/** Track start time for WPM calculation */
-		startTime: number;
+		/** Callback to start the typing challenge */
+		onStart?: () => void;
 	}
 
-	let { node, typed, onComplete, startTime }: Props = $props();
+	let { node, onStart }: Props = $props();
 
-	// Get node type config
-	let nodeConfig = $derived(NODE_TYPE_CONFIG[node.type]);
+	let config = $derived(NODE_TYPE_CONFIG[node.type]);
 
-	// Risk badge variant mapping
-	const riskVariants: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-		low: 'success',
-		medium: 'warning',
-		high: 'danger',
-		extreme: 'danger',
+	// Risk color mapping
+	const RISK_COLORS: Record<string, string> = {
+		low: 'var(--color-profit)',
+		medium: 'var(--color-amber)',
+		high: 'var(--color-loss)',
+		extreme: 'var(--color-red-bright)'
 	};
 
-	// Target command
-	let command = $derived(node.challenge.command);
-
-	// Progress calculations
-	let progressPercent = $derived(command.length > 0 ? (typed.length / command.length) * 100 : 0);
-
-	// Accuracy calculation
-	let correctChars = $derived.by(() => {
-		let correct = 0;
-		for (let i = 0; i < typed.length; i++) {
-			if (typed[i] === command[i]) correct++;
-		}
-		return correct;
-	});
-
-	let accuracy = $derived(typed.length > 0 ? Math.round((correctChars / typed.length) * 100) : 100);
-
-	// Time elapsed (recalculated when typed changes for reactivity)
-	let elapsedSeconds = $derived.by(() => {
-		// Reference typed to trigger recalculation
-		void typed;
-		return (Date.now() - startTime) / 1000;
-	});
-
-	// WPM calculation
-	let wpm = $derived.by(() => {
-		if (elapsedSeconds < 1 || correctChars < 1) return 0;
-		// Standard WPM: (characters / 5) / minutes
-		const minutes = elapsedSeconds / 60;
-		return Math.round(correctChars / 5 / minutes);
-	});
-
-	// Time display
-	let timeDisplay = $derived(Math.round(elapsedSeconds));
-
-	// Split command into characters for display
-	let commandChars = $derived(command.split(''));
-
-	// Get character status for styling
-	function getCharStatus(index: number): 'pending' | 'correct' | 'incorrect' | 'cursor' {
-		if (index >= typed.length) {
-			return index === typed.length ? 'cursor' : 'pending';
-		}
-		return typed[index] === command[index] ? 'correct' : 'incorrect';
-	}
-
-	// Track if we've already completed
-	let hasCompleted = $state(false);
-
-	// Reset completion flag when node changes
-	$effect(() => {
-		void node.id;
-		hasCompleted = false;
-	});
-
-	// Check if complete
-	$effect(() => {
-		if (typed.length >= command.length && !hasCompleted) {
-			hasCompleted = true;
-
-			// Calculate final result
-			const finalAccuracy = correctChars / command.length;
-			const success = finalAccuracy >= 0.5; // 50% minimum accuracy to pass
-
-			const result: NodeResult = {
-				success,
-				accuracy: finalAccuracy,
-				wpm,
-				timeElapsed: elapsedSeconds * 1000,
-				lootGained:
-					success && node.reward.type === 'loot'
-						? BigInt(Math.floor(node.reward.value)) * 10n ** 18n
-						: 0n,
-				multiplierGained: success && node.reward.type === 'multiplier' ? node.reward.value : 0,
-			};
-
-			onComplete(result);
-		}
-	});
+	let riskColor = $derived(RISK_COLORS[node.risk] ?? 'var(--color-text-tertiary)');
 </script>
 
-<div class="node-panel">
-	<Box title={`NODE ${node.position}: ${node.name}`} borderColor="cyan">
-		<Stack gap={3}>
-			<!-- Node Info Header -->
-			<Row justify="between" align="center">
-				<span class="node-type">{nodeConfig.icon} {node.type.toUpperCase().replace('_', ' ')}</span>
-				<Badge variant={riskVariants[node.risk]}>RISK: {node.risk.toUpperCase()}</Badge>
+<Box variant="double" borderColor="cyan" title="CURRENT NODE" padding={3}>
+	<Stack gap={3}>
+		<!-- Node header -->
+		<div class="node-header">
+			<div class="node-icon">{config.icon}</div>
+			<div class="node-title">
+				<span class="node-name">{node.name}</span>
+				<span class="node-type">{node.type.replace('_', ' ').toUpperCase()}</span>
+			</div>
+		</div>
+
+		<!-- Description -->
+		<p class="node-description">{node.description}</p>
+
+		<!-- Stats -->
+		<div class="node-stats">
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">RISK LEVEL:</span>
+				<span class="stat-value" style:color={riskColor}>{node.risk.toUpperCase()}</span>
 			</Row>
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">REWARD:</span>
+				<span class="stat-value reward">{node.reward.label}</span>
+			</Row>
+			<Row justify="between" class="stat-row">
+				<span class="stat-label">TIME LIMIT:</span>
+				<span class="stat-value">{node.challenge.timeLimit}s</span>
+			</Row>
+		</div>
 
-			<!-- Reward Preview -->
-			<div class="reward-preview">
-				<span class="reward-label">Reward:</span>
-				<span class="reward-value">{node.reward.label}</span>
+		<!-- Challenge preview -->
+		<div class="challenge-preview">
+			<span class="challenge-label">COMMAND TO TYPE:</span>
+			<code class="challenge-command">{node.challenge.command}</code>
+		</div>
+
+		<!-- Start button -->
+		<Button variant="primary" fullWidth onclick={onStart}>
+			[SPACE] BEGIN INFILTRATION
+		</Button>
+
+		<!-- Warning for high-risk nodes -->
+		{#if node.risk === 'high' || node.risk === 'extreme'}
+			<div class="warning-box" style:--warning-color={riskColor}>
+				<span class="warning-icon">[!]</span>
+				<span class="warning-text">
+					{#if node.risk === 'extreme'}
+						EXTREME RISK: Failure may terminate run
+					{:else}
+						HIGH RISK: Proceed with caution
+					{/if}
+				</span>
 			</div>
-
-			<!-- Description -->
-			<p class="node-description">"{node.description}"</p>
-
-			<!-- Typing Area -->
-			<div class="typing-area">
-				<div class="command-display">
-					<span class="prompt">&gt;</span>
-					<span class="command-text">
-						{#each commandChars as char, i (i)}
-							{@const status = getCharStatus(i)}
-							<span class="char char-{status}" class:char-space={char === ' '}
-								>{char === ' ' ? '\u00A0' : char}</span
-							>
-						{/each}
-					</span>
-				</div>
-
-				<div class="input-display">
-					<span class="prompt">&nbsp;&nbsp;</span>
-					<span class="typed-text">
-						{typed}<span class="cursor">_</span>
-					</span>
-				</div>
-			</div>
-
-			<!-- Progress Bar -->
-			<div class="progress-section">
-				<ProgressBar
-					value={progressPercent}
-					variant={accuracy < 50 ? 'danger' : accuracy < 70 ? 'warning' : 'default'}
-					showPercent
-					width={30}
-				/>
-			</div>
-
-			<!-- Stats -->
-			<div class="stats-row">
-				<div class="stat">
-					<span class="stat-label">WPM</span>
-					<span class="stat-value">{wpm || '---'}</span>
-				</div>
-				<div class="stat">
-					<span class="stat-label">ACCURACY</span>
-					<span
-						class="stat-value"
-						class:stat-warning={accuracy < 70}
-						class:stat-danger={accuracy < 50}
-					>
-						{accuracy}%
-					</span>
-				</div>
-				<div class="stat">
-					<span class="stat-label">TIME</span>
-					<span class="stat-value">{timeDisplay}s</span>
-				</div>
-			</div>
-		</Stack>
-	</Box>
-</div>
+		{/if}
+	</Stack>
+</Box>
 
 <style>
-	.node-panel {
-		width: 100%;
+	.node-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.node-icon {
+		font-size: var(--text-2xl);
+		font-weight: var(--font-bold);
+		color: var(--color-cyan);
+	}
+
+	.node-title {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.node-name {
+		color: var(--color-text-primary);
+		font-size: var(--text-lg);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	.node-type {
-		color: var(--color-accent);
-		font-size: var(--text-sm);
-		font-weight: var(--font-medium);
-		letter-spacing: var(--tracking-wide);
-	}
-
-	.reward-preview {
-		display: flex;
-		align-items: baseline;
-		gap: var(--space-2);
-		padding: var(--space-2);
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-subtle);
-	}
-
-	.reward-label {
-		color: var(--color-text-tertiary);
-		font-size: var(--text-sm);
-	}
-
-	.reward-value {
-		color: var(--color-profit);
-		font-size: var(--text-sm);
-		font-weight: var(--font-medium);
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-widest);
 	}
 
 	.node-description {
@@ -222,129 +120,74 @@
 		font-size: var(--text-sm);
 		font-style: italic;
 		margin: 0;
+		padding-left: var(--space-2);
+		border-left: 2px solid var(--color-border-subtle);
 	}
 
-	/* Typing Area */
-	.typing-area {
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-accent-dim);
-		padding: var(--space-3);
-	}
-
-	.command-display,
-	.input-display {
-		font-family: var(--font-mono);
-		font-size: var(--text-base);
-		white-space: nowrap;
-		overflow-x: auto;
-	}
-
-	.prompt {
-		color: var(--color-accent);
-		margin-right: var(--space-2);
-	}
-
-	.command-text {
-		display: inline;
-	}
-
-	.char {
-		display: inline;
-		transition: color var(--duration-instant) var(--ease-default);
-	}
-
-	.char-pending {
-		color: var(--color-text-tertiary);
-	}
-
-	.char-correct {
-		color: var(--color-profit);
-	}
-
-	.char-incorrect {
-		color: var(--color-red);
-		background: var(--color-red-glow);
-		text-decoration: underline;
-	}
-
-	.char-cursor {
-		color: var(--color-text-primary);
-		position: relative;
-	}
-
-	.char-cursor::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 2px;
-		background: var(--color-accent);
-		animation: cursor-blink 0.8s step-end infinite;
-	}
-
-	.input-display {
-		margin-top: var(--space-2);
-		padding-top: var(--space-2);
-		border-top: 1px dashed var(--color-border-subtle);
-	}
-
-	.typed-text {
-		color: var(--color-text-primary);
-	}
-
-	.cursor {
-		color: var(--color-accent);
-		animation: cursor-blink 0.8s step-end infinite;
-	}
-
-	/* Progress Section */
-	.progress-section {
-		padding: var(--space-2) 0;
-		border-top: 1px solid var(--color-border-subtle);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	/* Stats */
-	.stats-row {
+	.node-stats {
 		display: flex;
-		justify-content: space-around;
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
-	.stat {
-		text-align: center;
+	:global(.stat-row) {
+		font-size: var(--text-sm);
 	}
 
 	.stat-label {
-		display: block;
 		color: var(--color-text-tertiary);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
-		margin-bottom: var(--space-1);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	.stat-value {
 		color: var(--color-text-primary);
+		font-weight: var(--font-medium);
+	}
+
+	.stat-value.reward {
+		color: var(--color-profit);
+	}
+
+	.challenge-preview {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		padding: var(--space-2);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-subtle);
+	}
+
+	.challenge-label {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.challenge-command {
+		color: var(--color-cyan);
+		font-size: var(--text-sm);
+		font-family: var(--font-mono);
+		word-break: break-all;
+	}
+
+	.warning-box {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: rgba(255, 68, 68, 0.1);
+		border: 1px solid var(--warning-color);
+	}
+
+	.warning-icon {
+		color: var(--warning-color);
 		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
-		font-variant-numeric: tabular-nums;
 	}
 
-	.stat-warning {
-		color: var(--color-amber);
-	}
-
-	.stat-danger {
-		color: var(--color-red);
-	}
-
-	@keyframes cursor-blink {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0;
-		}
+	.warning-text {
+		color: var(--warning-color);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
 	}
 </style>

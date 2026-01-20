@@ -1,214 +1,220 @@
 <script lang="ts">
-	import { Modal } from '$lib/ui/modal';
-	import { Box } from '$lib/ui/terminal';
-	import { Button, Badge } from '$lib/ui/primitives';
-	import { Stack, Row } from '$lib/ui/layout';
-	import { LevelBadge, AmountDisplay } from '$lib/ui/data-display';
-	import { calculateOdds } from '$lib/core/providers/mock/generators/deadpool';
 	import type { DeadPoolRound, DeadPoolSide } from '$lib/core/types';
+	import { Box } from '$lib/ui/terminal';
+	import { Button } from '$lib/ui/primitives';
+	import { AmountDisplay } from '$lib/ui/data-display';
+	import { Row, Stack } from '$lib/ui/layout';
+	import OddsDisplay from './OddsDisplay.svelte';
+	import PoolBars from './PoolBars.svelte';
 
 	interface Props {
-		/** Whether the modal is open */
-		open: boolean;
-		/** The round being bet on */
-		round: DeadPoolRound | null;
-		/** The side selected for betting */
-		side: DeadPoolSide | null;
+		/** Round to bet on */
+		round: DeadPoolRound;
 		/** User's available balance */
 		balance: bigint;
-		/** Callback when modal should close */
-		onclose: () => void;
-		/** Callback when bet is confirmed */
-		onConfirm: (amount: bigint) => void;
+		/** Callback when bet is placed */
+		onPlaceBet?: (side: DeadPoolSide, amount: bigint) => void;
+		/** Callback when modal is closed */
+		onClose?: () => void;
+		/** Loading state while placing bet */
+		loading?: boolean;
 	}
 
-	let { open, round, side, balance, onclose, onConfirm }: Props = $props();
+	let { round, balance, onPlaceBet, onClose, loading = false }: Props = $props();
 
-	// Local state
-	let amountInput = $state('');
-	let isSubmitting = $state(false);
+	// Selected side
+	let selectedSide = $state<DeadPoolSide | null>(null);
 
-	// Parse input amount
-	let parsedAmount = $derived.by(() => {
-		const num = parseFloat(amountInput);
-		if (isNaN(num) || num <= 0) return 0n;
-		return BigInt(Math.floor(num * 1e18));
+	// Bet amount (stored as string for input, converted to bigint)
+	let amountInput = $state('100');
+	let betAmount = $derived(() => {
+		try {
+			const num = parseFloat(amountInput);
+			if (isNaN(num) || num <= 0) return 0n;
+			return BigInt(Math.floor(num * 1e18));
+		} catch {
+			return 0n;
+		}
+	});
+
+	// Calculate odds multipliers
+	let totalPool = $derived(round.pools.under + round.pools.over);
+	let odds = $derived({
+		under: totalPool > 0n ? Number(totalPool) / Number(round.pools.under || 1n) : 2,
+		over: totalPool > 0n ? Number(totalPool) / Number(round.pools.over || 1n) : 2
+	});
+
+	// Potential payout calculation
+	let potentialPayout = $derived(() => {
+		if (!selectedSide || betAmount() === 0n) return 0n;
+		const multiplier = selectedSide === 'under' ? odds.under : odds.over;
+		// Account for 5% rake
+		const rakeMultiplier = 0.95;
+		return BigInt(Math.floor(Number(betAmount()) * multiplier * rakeMultiplier));
 	});
 
 	// Validation
-	let minBet = 1n * 10n ** 18n; // 1 $DATA minimum
-	let amountValid = $derived(parsedAmount >= minBet && parsedAmount <= balance);
+	let insufficientBalance = $derived(betAmount() > balance);
+	let canSubmit = $derived(selectedSide !== null && betAmount() > 0n && !insufficientBalance && !loading);
 
-	let amountError = $derived.by(() => {
-		if (!amountInput) return null;
-		if (parsedAmount < minBet) return 'Minimum bet is 1 Đ';
-		if (parsedAmount > balance) return 'Insufficient balance';
-		return null;
-	});
+	// Preset amounts
+	const presets = ['50', '100', '250', '500'];
 
-	// Calculate potential payout
-	let potentialOdds = $derived.by(() => {
-		if (!round || !side || parsedAmount === 0n) return null;
-
-		// Calculate odds with user's bet added
-		const newPools = {
-			under: side === 'under' ? round.pools.under + parsedAmount : round.pools.under,
-			over: side === 'over' ? round.pools.over + parsedAmount : round.pools.over,
-		};
-
-		return calculateOdds(newPools);
-	});
-
-	let potentialPayout = $derived.by(() => {
-		if (!potentialOdds || !side || parsedAmount === 0n) return 0n;
-		const multiplier = side === 'under' ? potentialOdds.under : potentialOdds.over;
-		return BigInt(Math.floor(Number(parsedAmount) * multiplier));
-	});
-
-	let potentialProfit = $derived(potentialPayout - parsedAmount);
-
-	// Side display
-	let sideLabel = $derived.by(() => {
-		if (!round || !side) return '';
-		if (round.type === 'whale_watch') {
-			return side === 'over' ? 'YES' : 'NO';
-		}
-		return `${side.toUpperCase()} ${round.line}`;
-	});
-
-	// Quick amount buttons
-	function setPercentage(percent: number) {
-		const amount = (balance * BigInt(percent)) / 100n;
-		const formatted = Number(amount / 10n ** 18n);
-		amountInput = formatted.toString();
-	}
-
-	function setMax() {
-		const formatted = Number(balance / 10n ** 18n);
-		amountInput = formatted.toString();
-	}
-
-	// Reset on open
-	$effect(() => {
-		if (open) {
-			amountInput = '';
-			isSubmitting = false;
-		}
-	});
-
-	// Submit handler
-	async function handleConfirm() {
-		if (!amountValid || isSubmitting) return;
-		isSubmitting = true;
-
-		try {
-			onConfirm(parsedAmount);
-		} finally {
-			isSubmitting = false;
+	function handleSubmit() {
+		if (canSubmit && selectedSide) {
+			onPlaceBet?.(selectedSide, betAmount());
 		}
 	}
 </script>
 
-<Modal {open} title="PLACE BET" maxWidth="sm" {onclose}>
-	{#if round && side}
-		<Stack gap={3}>
+<div class="modal-overlay" role="dialog" aria-modal="true">
+	<div class="bet-modal">
+		<Box variant="double" borderColor="amber" padding={4}>
+		<Stack gap={4}>
+			<!-- Header -->
+			<Row justify="between" align="center">
+				<h2 class="modal-title">PLACE BET</h2>
+				<button class="close-btn" onclick={onClose} aria-label="Close">
+					[X]
+				</button>
+			</Row>
+
 			<!-- Round info -->
 			<div class="round-info">
-				<span class="round-number">#{round.roundNumber}</span>
-				<p class="question">"{round.question}"</p>
-				{#if round.targetLevel}
-					<LevelBadge level={round.targetLevel} />
-				{/if}
+				<span class="round-number">ROUND #{round.roundNumber}</span>
+				<p class="round-question">{round.question}</p>
+				<div class="line-display">
+					<span class="line-label">LINE:</span>
+					<span class="line-value">{round.line}</span>
+				</div>
 			</div>
 
-			<!-- Selected side -->
-			<Box variant="single" borderColor={side === 'under' ? 'cyan' : 'amber'} padding={2}>
-				<Row justify="between" align="center">
-					<span class="side-label">YOUR PICK</span>
-					<Badge variant={side === 'under' ? 'info' : 'warning'} glow>
-						{sideLabel}
-					</Badge>
+			<!-- Current odds -->
+			<div class="section">
+				<span class="section-label">CURRENT ODDS</span>
+				<OddsDisplay pools={round.pools} {odds} userBetSide={selectedSide} />
+				<PoolBars pools={round.pools} width={28} />
+			</div>
+
+			<!-- Side selection -->
+			<div class="section">
+				<span class="section-label">SELECT SIDE</span>
+				<Row gap={2}>
+					<button
+						class="side-btn side-under"
+						class:selected={selectedSide === 'under'}
+						onclick={() => (selectedSide = 'under')}
+					>
+						<span class="side-label">UNDER</span>
+						<span class="side-odds">{odds.under.toFixed(2)}x</span>
+					</button>
+					<button
+						class="side-btn side-over"
+						class:selected={selectedSide === 'over'}
+						onclick={() => (selectedSide = 'over')}
+					>
+						<span class="side-label">OVER</span>
+						<span class="side-odds">{odds.over.toFixed(2)}x</span>
+					</button>
 				</Row>
-			</Box>
+			</div>
 
 			<!-- Amount input -->
-			<div class="amount-input-group">
-				<label class="amount-label" for="bet-amount"> Bet Amount </label>
-				<div class="input-wrapper">
+			<div class="section">
+				<span class="section-label">BET AMOUNT</span>
+				<div class="amount-input-wrapper">
 					<input
-						id="bet-amount"
 						type="number"
 						class="amount-input"
-						class:error={amountError}
 						bind:value={amountInput}
-						placeholder="0.00"
+						placeholder="0"
 						min="0"
-						step="any"
+						step="10"
 					/>
-					<span class="input-suffix">Đ</span>
+					<span class="amount-suffix">$DATA</span>
 				</div>
-				{#if amountError}
-					<span class="input-error">{amountError}</span>
+				<Row gap={1} class="presets">
+					{#each presets as preset}
+						<button class="preset-btn" onclick={() => (amountInput = preset)}>
+							{preset}
+						</button>
+					{/each}
+					<button class="preset-btn" onclick={() => (amountInput = (Number(balance) / 1e18).toFixed(0))}>
+						MAX
+					</button>
+				</Row>
+				{#if insufficientBalance}
+					<span class="error-text">INSUFFICIENT BALANCE</span>
 				{/if}
-
-				<!-- Quick buttons -->
-				<div class="quick-buttons">
-					<button class="quick-btn" onclick={() => setPercentage(10)}>10%</button>
-					<button class="quick-btn" onclick={() => setPercentage(25)}>25%</button>
-					<button class="quick-btn" onclick={() => setPercentage(50)}>50%</button>
-					<button class="quick-btn" onclick={setMax}>MAX</button>
-				</div>
-
-				<div class="balance-info">
-					<span>Balance: </span>
-					<AmountDisplay amount={balance} />
-				</div>
 			</div>
 
 			<!-- Potential payout -->
-			{#if parsedAmount > 0n}
-				<Box variant="single" borderColor="dim" padding={2}>
-					<Stack gap={1}>
-						<Row justify="between">
-							<span class="payout-label">Potential Payout</span>
-							<AmountDisplay amount={potentialPayout} format="full" />
-						</Row>
-						<Row justify="between">
-							<span class="payout-label">Potential Profit</span>
-							<AmountDisplay amount={potentialProfit} format="full" showSign colorize />
-						</Row>
-						<Row justify="between">
-							<span class="payout-label">Effective Odds</span>
-							<span class="odds-value">
-								{potentialOdds
-									? (side === 'under' ? potentialOdds.under : potentialOdds.over).toFixed(2)
-									: '-'}x
-							</span>
-						</Row>
-					</Stack>
-				</Box>
+			{#if selectedSide && betAmount() > 0n}
+				<div class="payout-preview">
+					<span class="payout-label">POTENTIAL PAYOUT:</span>
+					<span class="payout-value">
+						<AmountDisplay amount={potentialPayout()} format="full" />
+					</span>
+					<span class="rake-note">(5% rake to burn pool)</span>
+				</div>
 			{/if}
 
-			<!-- Rake notice -->
-			<p class="rake-notice">5% rake burned on all winnings</p>
-
 			<!-- Actions -->
-			<Row justify="end" gap={2}>
-				<Button variant="ghost" onclick={onclose}>Cancel</Button>
-				<Button
-					variant="primary"
-					onclick={handleConfirm}
-					disabled={!amountValid}
-					loading={isSubmitting}
-				>
-					CONFIRM BET
+			<Row gap={2} justify="end">
+				<Button variant="ghost" onclick={onClose}>
+					CANCEL
+				</Button>
+				<Button variant="primary" disabled={!canSubmit} {loading} onclick={handleSubmit}>
+					{loading ? 'PLACING...' : 'CONFIRM BET'}
 				</Button>
 			</Row>
 		</Stack>
-	{/if}
-</Modal>
+		</Box>
+	</div>
+</div>
 
 <style>
+	.modal-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.85);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: var(--z-modal);
+		padding: var(--space-4);
+	}
+
+	.bet-modal {
+		width: 100%;
+		max-width: 480px;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+
+	.modal-title {
+		color: var(--color-amber);
+		font-size: var(--text-lg);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-wider);
+		margin: 0;
+	}
+
+	.close-btn {
+		background: none;
+		border: none;
+		color: var(--color-text-tertiary);
+		font-family: var(--font-mono);
+		font-size: var(--text-base);
+		cursor: pointer;
+		padding: var(--space-1);
+		transition: color var(--duration-fast) var(--ease-default);
+	}
+
+	.close-btn:hover {
+		color: var(--color-text-primary);
+	}
+
 	.round-info {
 		display: flex;
 		flex-direction: column;
@@ -216,39 +222,102 @@
 	}
 
 	.round-number {
-		font-size: var(--text-sm);
 		color: var(--color-text-tertiary);
-	}
-
-	.question {
-		font-size: var(--text-sm);
-		color: var(--color-text-secondary);
-		font-style: italic;
-		line-height: var(--leading-relaxed);
-	}
-
-	.side-label {
 		font-size: var(--text-xs);
-		color: var(--color-text-tertiary);
 		letter-spacing: var(--tracking-wider);
 	}
 
-	.amount-input-group {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.amount-label {
-		color: var(--color-text-secondary);
+	.round-question {
+		color: var(--color-text-primary);
 		font-size: var(--text-sm);
+		margin: 0;
 	}
 
-	.input-wrapper {
+	.line-display {
 		display: flex;
 		align-items: center;
-		background: var(--color-bg-primary);
-		border: 1px solid var(--color-border-default);
+		gap: var(--space-2);
+		margin-top: var(--space-1);
+	}
+
+	.line-label {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+	}
+
+	.line-value {
+		color: var(--color-text-primary);
+		font-size: var(--text-base);
+		font-weight: var(--font-bold);
+	}
+
+	.section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.section-label {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.side-btn {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-1);
+		padding: var(--space-3);
+		background: var(--color-bg-tertiary);
+		border: 2px solid var(--color-border-subtle);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+		font-family: var(--font-mono);
+	}
+
+	.side-btn:hover {
+		background: var(--color-bg-elevated);
+	}
+
+	.side-under.selected {
+		border-color: var(--color-cyan);
+		background: rgba(0, 229, 204, 0.1);
+	}
+
+	.side-over.selected {
+		border-color: var(--color-amber);
+		background: rgba(255, 193, 7, 0.1);
+	}
+
+	.side-label {
+		font-size: var(--text-sm);
+		font-weight: var(--font-medium);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.side-under .side-label {
+		color: var(--color-cyan);
+	}
+
+	.side-over .side-label {
+		color: var(--color-amber);
+	}
+
+	.side-odds {
+		font-size: var(--text-lg);
+		font-weight: var(--font-bold);
+		color: var(--color-text-primary);
+	}
+
+	.amount-input-wrapper {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-subtle);
 	}
 
 	.amount-input {
@@ -258,16 +327,8 @@
 		color: var(--color-text-primary);
 		font-family: var(--font-mono);
 		font-size: var(--text-lg);
-		padding: var(--space-2);
+		font-weight: var(--font-bold);
 		outline: none;
-	}
-
-	.amount-input::placeholder {
-		color: var(--color-text-muted);
-	}
-
-	.amount-input.error {
-		color: var(--color-loss);
 	}
 
 	.amount-input::-webkit-outer-spin-button,
@@ -276,66 +337,60 @@
 		margin: 0;
 	}
 
-	.amount-input[type='number'] {
-		appearance: textfield;
-		-moz-appearance: textfield;
-	}
-
-	.input-suffix {
+	.amount-suffix {
 		color: var(--color-text-tertiary);
 		font-size: var(--text-sm);
-		padding: 0 var(--space-2);
 	}
 
-	.input-error {
-		color: var(--color-loss);
-		font-size: var(--text-xs);
+	:global(.presets) {
+		flex-wrap: wrap;
 	}
 
-	.quick-buttons {
-		display: flex;
-		gap: var(--space-1);
-		margin-top: var(--space-1);
-	}
-
-	.quick-btn {
-		flex: 1;
-		background: var(--color-bg-tertiary);
+	.preset-btn {
+		padding: var(--space-1) var(--space-2);
+		background: var(--color-bg-secondary);
 		border: 1px solid var(--color-border-subtle);
 		color: var(--color-text-secondary);
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
-		padding: var(--space-1);
 		cursor: pointer;
 		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.quick-btn:hover {
-		background: var(--color-bg-elevated);
+	.preset-btn:hover {
+		border-color: var(--color-accent);
 		color: var(--color-accent);
-		border-color: var(--color-accent-dim);
 	}
 
-	.balance-info {
-		color: var(--color-text-tertiary);
+	.error-text {
+		color: var(--color-loss);
 		font-size: var(--text-xs);
-		margin-top: var(--space-1);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.payout-preview {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: var(--color-bg-elevated);
+		border: 1px solid var(--color-profit-dim);
 	}
 
 	.payout-label {
 		color: var(--color-text-tertiary);
-		font-size: var(--text-sm);
+		font-size: var(--text-xs);
 	}
 
-	.odds-value {
-		color: var(--color-accent);
+	.payout-value {
+		color: var(--color-profit);
+		font-size: var(--text-base);
 		font-weight: var(--font-bold);
 	}
 
-	.rake-notice {
-		font-size: var(--text-xs);
+	.rake-note {
 		color: var(--color-text-muted);
-		text-align: center;
-		font-style: italic;
+		font-size: var(--text-xs);
+		margin-left: auto;
 	}
 </style>

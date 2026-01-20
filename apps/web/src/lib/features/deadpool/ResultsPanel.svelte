@@ -1,192 +1,185 @@
 <script lang="ts">
-	import { Panel } from '$lib/ui/terminal';
-	import { Badge } from '$lib/ui/primitives';
-	import { LevelBadge, AmountDisplay } from '$lib/ui/data-display';
-	import type { DeadPoolHistory, DeadPoolRoundType } from '$lib/core/types';
+	import type { DeadPoolHistory } from '$lib/core/types';
+	import { Box } from '$lib/ui/terminal';
+	import { AmountDisplay, LevelBadge } from '$lib/ui/data-display';
+	import { Row, Stack } from '$lib/ui/layout';
 
 	interface Props {
-		/** Recent round history */
+		/** Recent round results */
 		history: DeadPoolHistory[];
-		/** Maximum items to display */
-		maxItems?: number;
+		/** Maximum items to show */
+		limit?: number;
 	}
 
-	let { history, maxItems = 5 }: Props = $props();
+	let { history, limit = 5 }: Props = $props();
 
-	// Limit displayed history
-	let displayHistory = $derived(history.slice(0, maxItems));
+	let displayHistory = $derived(history.slice(0, limit));
 
-	// Round type display mapping
-	const typeLabels: Record<DeadPoolRoundType, string> = {
-		death_count: 'DEATH COUNT',
-		whale_watch: 'WHALE WATCH',
-		survival_streak: 'SURVIVAL STREAK',
-		system_reset: 'SYSTEM RESET',
-	};
+	// Format timestamp
+	function formatTime(timestamp: number): string {
+		const date = new Date(timestamp);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMins / 60);
 
-	// Format outcome display
-	function formatOutcome(h: DeadPoolHistory): string {
-		const { round, result } = h;
-		const outcomeLabel = result.outcome.toUpperCase();
-
-		if (round.type === 'whale_watch') {
-			return result.outcome === 'over' ? 'YES' : 'NO';
-		}
-
-		return `${outcomeLabel} ${round.line}`;
+		if (diffMins < 60) return `${diffMins}m ago`;
+		if (diffHours < 24) return `${diffHours}h ago`;
+		return date.toLocaleDateString();
 	}
 </script>
 
-<Panel title="RECENT RESULTS" variant="single" borderColor="dim" padding={2}>
-	{#if displayHistory.length === 0}
-		<p class="empty-text">No resolved rounds yet</p>
-	{:else}
-		<div class="results-list">
-			{#each displayHistory as item (item.round.id)}
-				{@const userWon = item.result.userWon}
-				{@const userBet = item.round.userBet}
-				<div
-					class="result-row"
-					class:result-won={userWon === true}
-					class:result-lost={userWon === false}
-				>
-					<span class="result-id">#{item.round.roundNumber}</span>
-
-					<span class="result-type">{typeLabels[item.round.type]}</span>
-
-					{#if item.round.targetLevel}
-						<LevelBadge level={item.round.targetLevel} compact />
-					{/if}
-
-					<span class="result-outcome" class:outcome-win={userWon === true}>
-						{formatOutcome(item)}
-						{#if userWon === true}
-							<span class="checkmark">✓</span>
-						{:else if userWon === false}
-							<span class="xmark">✗</span>
+<Box variant="single" title="RECENT RESULTS" padding={2}>
+	<Stack gap={2}>
+		{#if displayHistory.length === 0}
+			<div class="empty-state">
+				<span class="empty-text">No resolved rounds yet</span>
+			</div>
+		{:else}
+			{#each displayHistory as { round, result } (result.roundId)}
+				<div class="result-row" class:user-won={result.userWon === true} class:user-lost={result.userWon === false}>
+					<Row justify="between" align="center">
+					<div class="result-meta">
+						<span class="round-number">#{round.roundNumber}</span>
+						{#if round.targetLevel}
+							<LevelBadge level={round.targetLevel} compact />
 						{/if}
-					</span>
+					</div>
+						<span class="result-time">{formatTime(round.endsAt)}</span>
+					</Row>
 
-					<span class="result-payout">
-						{#if userBet === null}
-							<span class="no-bet">No bet</span>
-						{:else if userWon && item.result.userPayout}
-							<AmountDisplay
-								amount={item.result.userPayout - userBet.amount}
-								format="compact"
-								showSign
-								colorize
-							/>
-						{:else if userBet}
-							<AmountDisplay amount={-userBet.amount} format="compact" showSign colorize />
+					<p class="result-question">{round.question}</p>
+
+					<Row justify="between" align="center" class="result-details">
+						<div class="result-outcome">
+							<span class="outcome-label">RESULT:</span>
+							<span class="outcome-value">{result.actualValue}</span>
+							<span class="outcome-side {result.outcome}">{result.outcome.toUpperCase()} WINS</span>
+						</div>
+
+						{#if result.userWon !== null}
+							<div class="user-result">
+								{#if result.userWon}
+									<span class="payout-label">WON:</span>
+									<span class="payout-value positive">
+										+<AmountDisplay amount={result.userPayout ?? 0n} format="compact" />
+									</span>
+								{:else}
+									<span class="payout-label">LOST</span>
+								{/if}
+							</div>
 						{/if}
-					</span>
+					</Row>
 				</div>
 			{/each}
-		</div>
-	{/if}
-</Panel>
+		{/if}
+	</Stack>
+</Box>
 
 <style>
+	.empty-state {
+		padding: var(--space-4);
+		text-align: center;
+	}
+
 	.empty-text {
 		color: var(--color-text-muted);
 		font-size: var(--text-sm);
-		text-align: center;
-		padding: var(--space-4);
-	}
-
-	.results-list {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
 	}
 
 	.result-row {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
 		padding: var(--space-2);
-		font-size: var(--text-sm);
-		font-family: var(--font-mono);
-		background: var(--color-bg-tertiary);
-		border-left: 2px solid transparent;
+		border: 1px solid var(--color-border-subtle);
+		background: var(--color-bg-secondary);
+		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.result-row.result-won {
-		border-left-color: var(--color-profit);
-		background: rgba(0, 229, 204, 0.05);
+	.result-row.user-won {
+		border-color: var(--color-profit-dim);
+		background: rgba(0, 255, 136, 0.05);
 	}
 
-	.result-row.result-lost {
-		border-left-color: var(--color-loss);
-		background: rgba(255, 51, 102, 0.05);
+	.result-row.user-lost {
+		border-color: var(--color-loss-dim);
+		background: rgba(255, 68, 68, 0.05);
 	}
 
-	.result-id {
-		color: var(--color-text-tertiary);
-		min-width: 50px;
-	}
-
-	.result-type {
-		color: var(--color-text-secondary);
-		flex: 1;
-		min-width: 100px;
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wide);
-	}
-
-	.result-outcome {
-		color: var(--color-text-primary);
+	.result-meta {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
-		min-width: 80px;
+		gap: var(--space-2);
 	}
 
-	.outcome-win {
-		color: var(--color-profit);
+	.round-number {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
 	}
 
-	.checkmark {
-		color: var(--color-profit);
-	}
-
-	.xmark {
-		color: var(--color-loss);
-	}
-
-	.result-payout {
-		min-width: 80px;
-		text-align: right;
-	}
-
-	.no-bet {
+	.result-time {
 		color: var(--color-text-muted);
 		font-size: var(--text-xs);
 	}
 
-	@media (max-width: 640px) {
-		.result-row {
-			flex-wrap: wrap;
-			gap: var(--space-2);
-		}
+	.result-question {
+		color: var(--color-text-secondary);
+		font-size: var(--text-xs);
+		margin: var(--space-1) 0;
+		line-height: var(--leading-snug);
+	}
 
-		.result-type {
-			order: 1;
-			flex-basis: 100%;
-		}
+	:global(.result-details) {
+		margin-top: var(--space-1);
+	}
 
-		.result-id {
-			order: 0;
-		}
+	.result-outcome {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
 
-		.result-outcome {
-			order: 2;
-		}
+	.outcome-label {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
 
-		.result-payout {
-			order: 3;
-			margin-left: auto;
-		}
+	.outcome-value {
+		color: var(--color-text-primary);
+		font-size: var(--text-sm);
+		font-weight: var(--font-bold);
+	}
+
+	.outcome-side {
+		font-size: var(--text-xs);
+		font-weight: var(--font-medium);
+		padding: 0 var(--space-1);
+	}
+
+	.outcome-side.under {
+		color: var(--color-cyan);
+	}
+
+	.outcome-side.over {
+		color: var(--color-amber);
+	}
+
+	.user-result {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.payout-label {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	.payout-value {
+		font-size: var(--text-sm);
+		font-weight: var(--font-bold);
+	}
+
+	.payout-value.positive {
+		color: var(--color-profit);
 	}
 </style>

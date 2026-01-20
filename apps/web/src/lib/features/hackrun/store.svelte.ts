@@ -18,7 +18,7 @@ import type {
 	HackRunNode,
 	NodeResult,
 	NodeProgress,
-	HackRunResult,
+	HackRunResult
 } from '$lib/core/types/hackrun';
 import {
 	generateAvailableRuns,
@@ -26,7 +26,7 @@ import {
 	calculateXP,
 	calculateFinalMultiplier,
 	calculateTotalLoot,
-	MULTIPLIER_DURATION,
+	MULTIPLIER_DURATION
 } from './generators';
 
 // ════════════════════════════════════════════════════════════════
@@ -214,7 +214,7 @@ export function createHackRunStore(): HackRunStore {
 		clearTimers();
 		state = {
 			status: 'selecting',
-			availableRuns: generateAvailableRuns(),
+			availableRuns: generateAvailableRuns()
 		};
 	}
 
@@ -260,7 +260,7 @@ export function createHackRunStore(): HackRunStore {
 			run,
 			currentNode: 0,
 			progress,
-			timeRemaining: run.timeLimit,
+			timeRemaining: run.timeLimit
 		};
 
 		// Start timer countdown
@@ -324,7 +324,7 @@ export function createHackRunStore(): HackRunStore {
 			run,
 			node,
 			progress,
-			timeRemaining,
+			timeRemaining
 		};
 	}
 
@@ -338,9 +338,7 @@ export function createHackRunStore(): HackRunStore {
 
 		// Update progress for completed node
 		const updatedProgress = progress.map((p) =>
-			p.nodeId === node.id
-				? ({ ...p, status: result.success ? 'completed' : 'failed', result } as NodeProgress)
-				: p
+			p.nodeId === node.id ? { ...p, status: result.success ? 'completed' : 'failed', result } as NodeProgress : p
 		);
 
 		// If node failed, fail the run
@@ -349,7 +347,7 @@ export function createHackRunStore(): HackRunStore {
 				status: 'failed',
 				run,
 				reason: 'NODE_FAILED',
-				progress: updatedProgress,
+				progress: updatedProgress
 			};
 			clearTimers();
 			return;
@@ -362,7 +360,7 @@ export function createHackRunStore(): HackRunStore {
 			node,
 			result,
 			progress: updatedProgress,
-			timeRemaining,
+			timeRemaining
 		};
 
 		// After delay, advance to next node or complete
@@ -375,9 +373,7 @@ export function createHackRunStore(): HackRunStore {
 	 * Advance to next node or complete run
 	 */
 	function advanceToNextNode(run: HackRun, progress: NodeProgress[]): void {
-		const currentIndex = progress.findIndex(
-			(p) => p.status === 'completed' || p.status === 'failed'
-		);
+		const currentIndex = progress.findIndex((p) => p.status === 'completed' || p.status === 'failed');
 		const lastCompletedIndex = progress.reduce(
 			(last, p, i) => (p.status === 'completed' ? i : last),
 			-1
@@ -404,7 +400,7 @@ export function createHackRunStore(): HackRunStore {
 			run,
 			currentNode: nextIndex,
 			progress: updatedProgress,
-			timeRemaining,
+			timeRemaining
 		};
 	}
 
@@ -441,7 +437,7 @@ export function createHackRunStore(): HackRunStore {
 			run,
 			currentNode: newCurrentIndex,
 			progress: updatedProgress,
-			timeRemaining,
+			timeRemaining
 		};
 	}
 
@@ -465,7 +461,7 @@ export function createHackRunStore(): HackRunStore {
 			lootGained,
 			timeElapsed: elapsed,
 			xpGained,
-			entryRefunded: true,
+			entryRefunded: true
 		};
 
 		state = { status: 'complete', run, result };
@@ -489,7 +485,7 @@ export function createHackRunStore(): HackRunStore {
 			status: 'failed',
 			run,
 			reason,
-			progress,
+			progress
 		};
 	}
 
@@ -545,7 +541,7 @@ export function createHackRunStore(): HackRunStore {
 		failRun,
 		abort,
 		reset,
-		cleanup,
+		cleanup
 	};
 }
 
