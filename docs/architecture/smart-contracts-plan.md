@@ -146,7 +146,7 @@ pending = position.amount * accRewardsPerShare / 1e18 - position.rewardDebt;
 
 ### 2.5 Mini-Game Integration
 
-**Decision: Off-chain games with server-signed boost claims**
+**Decision: Off-chain games with EIP-712 typed signatures**
 
 **Rationale:**
 - Typing games, hack runs happen in browser - can't be on-chain
@@ -154,17 +154,39 @@ pending = position.amount * accRewardsPerShare / 1e18 - position.rewardDebt;
 - Contract verifies signature, applies boost
 - Simple, gas-efficient, appropriate trust model for entertainment
 
+**Security: EIP-712 prevents cross-chain replay attacks**
+
+The signature includes `chainId` and `verifyingContract` in the domain separator, ensuring signatures from testnet cannot be replayed on mainnet (or vice versa).
+
 **Pattern:**
 ```solidity
+// Domain separator (set once in constructor/initializer)
+bytes32 public DOMAIN_SEPARATOR = keccak256(abi.encode(
+    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+    keccak256("GHOSTNET"),
+    keccak256("1"),
+    block.chainid,
+    address(this)
+));
+
+bytes32 public constant BOOST_TYPEHASH = keccak256(
+    "Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)"
+);
+
 function applyBoost(
-    uint256 positionId,
     uint8 boostType,
-    uint16 boostBps,    // e.g., 1500 = -15% death rate
-    uint256 expiry,
+    uint16 valueBps,
+    uint64 expiry,
+    bytes32 nonce,
     bytes calldata signature
 ) external {
-    bytes32 hash = keccak256(abi.encode(msg.sender, positionId, boostType, boostBps, expiry));
-    require(ECDSA.recover(hash, signature) == boostSigner, "Invalid signature");
+    // EIP-712 typed data hash
+    bytes32 structHash = keccak256(abi.encode(
+        BOOST_TYPEHASH, msg.sender, boostType, valueBps, expiry, nonce
+    ));
+    bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+    
+    require(ECDSA.recover(digest, signature) == boostSigner, "Invalid signature");
     // Apply boost...
 }
 ```
@@ -972,6 +994,15 @@ function revealScan(uint8 level) external { ... }
 │  ├── systemReset.lastDepositor: address eligible for jackpot        │
 │  ├── triggerSystemReset(): callable by anyone when deadline passed  │
 │  └── Applied proportionally to all positions (not instant death)    │
+│                                                                      │
+│  GAS OPTIMIZATION (Hybrid Lazy Settlement):                         │
+│  ───────────────────────────────────────────                        │
+│  • Emit PositionPenalized events immediately (O(n) events, cheap)   │
+│  • Defer storage writes until user's next interaction (lazy)        │
+│  • Store currentReset.epoch and penaltyBps globally                 │
+│  • On extract/jackIn/claim: check if lastResetEpoch < currentEpoch  │
+│  • View function getEffectivePosition() for accurate UI display     │
+│  • Gas: ~10M (events) vs ~60M (full storage) for 10k positions      │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```

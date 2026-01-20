@@ -413,6 +413,7 @@ struct Position {
     uint256 rewardDebt;       // For share-based accounting
     bool alive;               // false = traced
     uint16 ghostStreak;       // Consecutive survivals
+    uint64 lastResetEpoch;    // Last reset epoch settled (for lazy penalty)
 }
 
 struct LevelConfig {
@@ -513,6 +514,10 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
     require(level >= 1 && level <= 5, "Invalid level");
     
     GhostCoreStorage storage $ = _getGhostCoreStorage();
+    
+    // Settle any pending reset penalty first (lazy settlement)
+    _settleResetPenalty(msg.sender);
+    
     Position storage pos = $.positions[msg.sender];
     
     if (pos.amount == 0) {
@@ -523,6 +528,7 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
         pos.entryTimestamp = uint64(block.timestamp);
         pos.alive = true;
         pos.ghostStreak = 0;
+        pos.lastResetEpoch = currentReset.epoch; // Start with current epoch
         
         $.positionHolders.add(msg.sender);
         $.levels[level].aliveCount++;
@@ -553,6 +559,10 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
 /// @notice Extract from the network (withdraw position)
 function extract() external nonReentrant whenNotPaused {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
+    
+    // Settle any pending reset penalty first (lazy settlement)
+    _settleResetPenalty(msg.sender);
+    
     Position storage pos = $.positions[msg.sender];
     
     require(pos.amount > 0, "No position");
@@ -567,6 +577,9 @@ function extract() external nonReentrant whenNotPaused {
     $.levels[pos.level].totalStaked -= pos.amount;
     $.levels[pos.level].aliveCount--;
     
+    // Store values before deletion for event
+    uint256 principal = pos.amount;
+    
     // Clear position
     delete $.positions[msg.sender];
     $.positionHolders.remove(msg.sender);
@@ -574,12 +587,16 @@ function extract() external nonReentrant whenNotPaused {
     // Transfer tokens
     $.dataToken.transfer(msg.sender, totalAmount);
     
-    emit Extracted(msg.sender, pos.amount, pending);
+    emit Extracted(msg.sender, principal, pending);
 }
 
 /// @notice Claim accumulated rewards without extracting
 function claimRewards() external nonReentrant whenNotPaused {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
+    
+    // Settle any pending reset penalty first (lazy settlement)
+    _settleResetPenalty(msg.sender);
+    
     Position storage pos = $.positions[msg.sender];
     
     require(pos.amount > 0 && pos.alive, "No active position");
@@ -668,56 +685,167 @@ function addEmissionRewards(uint8 level, uint256 amount) external onlyRole(DISTR
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// SYSTEM RESET
+// SYSTEM RESET (Hybrid: Events Now, Storage Lazy)
 // ═══════════════════════════════════════════════════════════════════
+//
+// DESIGN DECISION: We use a hybrid approach for gas efficiency:
+// - Emit events immediately (O(n) but cheap ~500 gas/event)
+// - Defer storage writes until user's next interaction (lazy settlement)
+// - This provides immediate feed visibility while avoiding expensive storage loops
+//
+// At 10,000 positions: ~10M gas (events only) vs ~60M gas (full storage writes)
+
+/// @notice Current reset epoch and penalty info
+struct ResetEpoch {
+    uint64 epoch;           // Incremented on each reset
+    uint64 timestamp;       // When reset occurred
+    uint16 penaltyBps;      // Penalty in basis points (e.g., 2500 = 25%)
+}
+
+ResetEpoch public currentReset;
 
 /// @notice Trigger system reset if deadline passed
+/// @dev Emits events for all positions but defers storage updates (lazy settlement)
 function triggerSystemReset() external nonReentrant {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
     
     require(block.timestamp >= $.systemReset.deadline, "Deadline not reached");
     
-    // Calculate total staked across all levels
+    uint16 penaltyBps = 2500; // 25% penalty
+    
+    // Calculate total staked and penalty amounts
     uint256 totalStaked;
     for (uint8 i = 1; i <= 5; i++) {
         totalStaked += $.levels[i].totalStaked;
     }
     
-    // Calculate penalty (25%)
-    uint256 penaltyPool = (totalStaked * 2500) / 10000;
+    uint256 penaltyPool = (totalStaked * penaltyBps) / 10000;
     
-    // Distribute penalty
+    // Increment reset epoch (O(1) storage)
+    currentReset = ResetEpoch({
+        epoch: currentReset.epoch + 1,
+        timestamp: uint64(block.timestamp),
+        penaltyBps: penaltyBps
+    });
+    
+    // Emit events for each position WITHOUT writing to storage
+    // This enables immediate feed updates while keeping gas low
+    uint256 len = $.positionHolders.length();
+    for (uint256 i = 0; i < len; i++) {
+        address user = $.positionHolders.at(i);
+        Position storage pos = $.positions[user];
+        
+        if (pos.alive && pos.amount > 0) {
+            uint256 penalty = pos.amount * penaltyBps / 10000;
+            // Emit event only - no storage write
+            emit PositionPenalized(user, pos.level, penalty, pos.amount - penalty);
+        }
+    }
+    
+    // Update level totals (O(5) storage writes)
+    for (uint8 level = 1; level <= 5; level++) {
+        $.levels[level].totalStaked = $.levels[level].totalStaked * (10000 - penaltyBps) / 10000;
+    }
+    
+    // Distribute penalty pool
     uint256 jackpot = (penaltyPool * 5000) / 10000;      // 50%
     uint256 burnAmount = (penaltyPool * 3000) / 10000;   // 30%
     uint256 protocolAmount = penaltyPool - jackpot - burnAmount; // 20%
     
-    // Apply penalty to all levels (reduce accRewardsPerShare would be complex)
-    // Instead, we reduce totalStaked and let users claim less
-    // This is a simplification - actual implementation may need refinement
-    
-    // Transfer jackpot
-    if ($.systemReset.lastDepositor != address(0)) {
+    // Transfer jackpot to last depositor
+    if ($.systemReset.lastDepositor != address(0) && jackpot > 0) {
         $.dataToken.transfer($.systemReset.lastDepositor, jackpot);
     }
     
     // Burn
-    $.dataToken.transfer(address(0xdead), burnAmount);
+    if (burnAmount > 0) {
+        $.dataToken.transfer(address(0xdead), burnAmount);
+    }
     
     // Protocol
-    $.dataToken.transfer($.treasury, protocolAmount);
+    if (protocolAmount > 0) {
+        $.dataToken.transfer($.treasury, protocolAmount);
+    }
     
     // Reset deadline
     $.systemReset.deadline = uint64(block.timestamp) + DEFAULT_RESET_DEADLINE;
+    address winner = $.systemReset.lastDepositor;
     $.systemReset.lastDepositor = address(0);
     
-    emit SystemResetTriggered(penaltyPool, $.systemReset.lastDepositor, jackpot);
+    emit SystemResetTriggered(penaltyPool, winner, jackpot);
+}
+
+/// @notice Settle any pending reset penalty for a user
+/// @dev Called internally before any position interaction
+function _settleResetPenalty(address user) internal {
+    GhostCoreStorage storage $ = _getGhostCoreStorage();
+    Position storage pos = $.positions[user];
+    
+    // Check if user has unsettled penalty from a reset
+    if (pos.lastResetEpoch < currentReset.epoch && pos.amount > 0) {
+        // Apply the penalty to storage
+        pos.amount = pos.amount * (10000 - currentReset.penaltyBps) / 10000;
+        pos.lastResetEpoch = currentReset.epoch;
+    }
+}
+
+/// @notice Get effective position after any pending penalties
+/// @dev Use this for accurate balance display in UI
+function getEffectivePosition(address user) external view returns (
+    uint256 amount,
+    uint256 pendingPenalty,
+    bool hasPendingPenalty
+) {
+    GhostCoreStorage storage $ = _getGhostCoreStorage();
+    Position storage pos = $.positions[user];
+    
+    if (pos.lastResetEpoch < currentReset.epoch && pos.amount > 0) {
+        hasPendingPenalty = true;
+        pendingPenalty = pos.amount * currentReset.penaltyBps / 10000;
+        amount = pos.amount - pendingPenalty;
+    } else {
+        amount = pos.amount;
+        pendingPenalty = 0;
+        hasPendingPenalty = false;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// BOOST FUNCTIONS
+// BOOST FUNCTIONS (EIP-712 Typed Signatures)
 // ═══════════════════════════════════════════════════════════════════
+//
+// SECURITY: Uses EIP-712 typed data signatures to prevent cross-chain replay.
+// The DOMAIN_SEPARATOR includes chainId and contract address, ensuring
+// signatures are only valid for this specific deployment.
+
+bytes32 public constant DOMAIN_TYPEHASH = keccak256(
+    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+);
+
+bytes32 public constant BOOST_TYPEHASH = keccak256(
+    "Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)"
+);
+
+/// @notice EIP-712 domain separator (set in initializer)
+bytes32 public DOMAIN_SEPARATOR;
+
+/// @notice Initialize domain separator (called in initialize())
+function _initializeDomainSeparator() internal {
+    DOMAIN_SEPARATOR = keccak256(abi.encode(
+        DOMAIN_TYPEHASH,
+        keccak256("GHOSTNET"),
+        keccak256("1"),
+        block.chainid,
+        address(this)
+    ));
+}
 
 /// @notice Apply a boost from mini-game completion
+/// @param boostType Type of boost (0 = death reduction, 1 = yield multiplier)
+/// @param valueBps Boost value in basis points
+/// @param expiry Timestamp when boost expires
+/// @param nonce Unique nonce to prevent replay
+/// @param signature EIP-712 signature from boost signer
 function applyBoost(
     uint8 boostType,
     uint16 valueBps,
@@ -731,10 +859,25 @@ function applyBoost(
     require(expiry > block.timestamp, "Boost expired");
     require(!$.usedBoostNonces[nonce], "Nonce already used");
     
+    // Build EIP-712 typed data hash
+    bytes32 structHash = keccak256(abi.encode(
+        BOOST_TYPEHASH,
+        msg.sender,
+        boostType,
+        valueBps,
+        expiry,
+        nonce
+    ));
+    
+    // EIP-712 digest
+    bytes32 digest = keccak256(abi.encodePacked(
+        "\x19\x01",
+        DOMAIN_SEPARATOR,
+        structHash
+    ));
+    
     // Verify signature
-    bytes32 hash = keccak256(abi.encode(msg.sender, boostType, valueBps, expiry, nonce));
-    bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-    address signer = ECDSA.recover(ethSignedHash, signature);
+    address signer = ECDSA.recover(digest, signature);
     require(signer == $.boostSigner, "Invalid signature");
     
     $.usedBoostNonces[nonce] = true;
@@ -895,6 +1038,7 @@ event GhostStreaksUpdated(uint8 indexed level, uint256 count);
 event CascadeDistributed(uint8 indexed level, uint256 sameLevel, uint256 upstream, uint256 burned, uint256 protocol);
 event EmissionsAdded(uint8 indexed level, uint256 amount);
 event SystemResetTriggered(uint256 penaltyPool, address indexed jackpotWinner, uint256 jackpotAmount);
+event PositionPenalized(address indexed user, uint8 indexed level, uint256 penalty, uint256 newAmount);
 event BoostApplied(address indexed user, uint8 boostType, uint16 valueBps, uint64 expiry);
 event LevelConfigUpdated(uint8 indexed level);
 event BoostSignerUpdated(address indexed oldSigner, address indexed newSigner);

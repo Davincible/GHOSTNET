@@ -3171,6 +3171,62 @@ export const WEB3_KEY = Symbol('web3');
 
 ## 11. Real-Time Communication
 
+### 11.1 WebSocket Reconnection Strategy
+
+GHOSTNET is a real-time game—connection reliability is critical. The WebSocket client implements a robust reconnection strategy:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     WEBSOCKET RECONNECTION STRATEGY                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  EXPONENTIAL BACKOFF:                                                    │
+│  ────────────────────                                                   │
+│  Attempt 1: 1 second                                                    │
+│  Attempt 2: 2 seconds                                                   │
+│  Attempt 3: 4 seconds                                                   │
+│  Attempt 4: 8 seconds                                                   │
+│  Attempt 5: 16 seconds                                                  │
+│  Attempt 6+: 30 seconds (capped)                                        │
+│                                                                          │
+│  MAX ATTEMPTS: 10 (then show "Connection Lost" state)                   │
+│                                                                          │
+│  STATE RECONCILIATION:                                                   │
+│  ─────────────────────                                                  │
+│  After reconnection:                                                    │
+│  1. Send lastEventId to server                                          │
+│  2. Server replays missed events since that ID                          │
+│  3. Client processes replay (may cause batch feed updates)              │
+│  4. If gap too large: full state refresh instead                        │
+│                                                                          │
+│  USER FEEDBACK:                                                          │
+│  ──────────────                                                         │
+│  • Disconnected: Amber indicator + "Reconnecting..." text               │
+│  • Reconnecting: Pulsing indicator + attempt count                      │
+│  • Connected: Green indicator + "STREAMING" text                        │
+│  • Failed: Red indicator + "Connection Lost - Refresh" prompt           │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Event Sequence Handling
+
+```typescript
+// Events include monotonic sequence IDs for gap detection
+interface ServerEvent extends GhostNetEvent {
+  sequenceId: number;  // Server-assigned, always increasing
+}
+
+// On reconnection, client sends:
+{ type: 'RECONNECT', lastSequenceId: 12345 }
+
+// Server responds with:
+// 1. Missed events (if gap is small): array of events since lastSequenceId
+// 2. Full state snapshot (if gap is large): current positions, network state, etc.
+```
+
+### 11.3 WebSocket Client Implementation
+
 ```typescript
 // lib/core/realtime/client.svelte.ts
 
@@ -3781,6 +3837,166 @@ Load mini-games on demand:
 {:else}
   <LoadingSpinner />
 {/if}
+```
+
+---
+
+## 15.5 Error Handling Patterns
+
+GHOSTNET must gracefully handle errors without breaking the game experience.
+
+### Error Categories
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         ERROR HANDLING STRATEGY                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  CATEGORY 1: NETWORK ERRORS (Recoverable)                               │
+│  ──────────────────────────────────────────                             │
+│  • WebSocket disconnect → Show indicator, auto-reconnect               │
+│  • RPC timeout → Retry with backoff, show "Network slow"               │
+│  • API error → Show toast, allow retry                                  │
+│  • Action: Log, show user feedback, automatic recovery                  │
+│                                                                          │
+│  CATEGORY 2: CONTRACT ERRORS (User-Actionable)                          │
+│  ─────────────────────────────────────────────                          │
+│  • Transaction reverted → Parse reason, show specific error             │
+│  • Insufficient balance → Show balance, suggest amount                  │
+│  • Position locked → Show countdown to unlock                           │
+│  • Action: Clear error message, actionable guidance                     │
+│                                                                          │
+│  CATEGORY 3: APPLICATION ERRORS (Unexpected)                            │
+│  ────────────────────────────────────────────                           │
+│  • JavaScript exception → Error boundary catches                        │
+│  • Invalid state → Log to analytics, reset affected store               │
+│  • Parse error → Log, skip malformed data, continue                     │
+│  • Action: Log to monitoring, graceful degradation                      │
+│                                                                          │
+│  CATEGORY 4: CRITICAL ERRORS (Requires Refresh)                         │
+│  ──────────────────────────────────────────────                         │
+│  • State corruption → Show "Something went wrong" modal                 │
+│  • WebSocket permanently failed → Show offline mode prompt              │
+│  • Contract mismatch → Force app update prompt                          │
+│  • Action: Prompt user to refresh, preserve wallet connection           │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Error Boundary Component
+
+```svelte
+<!-- lib/ui/ErrorBoundary.svelte -->
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Snippet } from 'svelte';
+  
+  interface Props {
+    fallback?: Snippet<[Error]>;
+    children: Snippet;
+    onError?: (error: Error) => void;
+  }
+  
+  let { fallback, children, onError }: Props = $props();
+  
+  let error = $state<Error | null>(null);
+  
+  onMount(() => {
+    const handler = (event: ErrorEvent) => {
+      error = event.error;
+      onError?.(event.error);
+      event.preventDefault();
+    };
+    
+    window.addEventListener('error', handler);
+    return () => window.removeEventListener('error', handler);
+  });
+</script>
+
+{#if error && fallback}
+  {@render fallback(error)}
+{:else if error}
+  <div class="error-fallback">
+    <p>Something went wrong</p>
+    <button onclick={() => location.reload()}>Refresh</button>
+  </div>
+{:else}
+  {@render children()}
+{/if}
+```
+
+### Transaction Error Handling
+
+```typescript
+// lib/core/web3/errors.ts
+
+export function parseContractError(error: unknown): string {
+  // Extract revert reason from various error formats
+  const message = error instanceof Error ? error.message : String(error);
+  
+  // Known error patterns
+  const patterns: Record<string, string> = {
+    'Position locked: scan imminent': 'Cannot extract within 60 seconds of a scan. Wait for the scan to complete.',
+    'Below minimum stake': 'Amount is below the minimum required for this level.',
+    'Position is dead': 'Your position was traced. You can view your history in the dashboard.',
+    'Deadline not reached': 'System reset timer has not expired yet.',
+    'user rejected': 'Transaction was cancelled.',
+    'insufficient funds': 'Insufficient ETH for gas fees.',
+    'nonce too low': 'Transaction conflict. Please try again.',
+  };
+  
+  for (const [pattern, userMessage] of Object.entries(patterns)) {
+    if (message.toLowerCase().includes(pattern.toLowerCase())) {
+      return userMessage;
+    }
+  }
+  
+  // Fallback: Show technical message (logged separately)
+  return 'Transaction failed. Please try again.';
+}
+```
+
+### Toast Notification System
+
+```typescript
+// lib/core/notifications/store.svelte.ts
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration: number;
+}
+
+export function createToastStore() {
+  let toasts = $state<Toast[]>([]);
+  
+  function add(type: ToastType, message: string, duration = 5000) {
+    const id = crypto.randomUUID();
+    toasts = [...toasts, { id, type, message, duration }];
+    
+    if (duration > 0) {
+      setTimeout(() => remove(id), duration);
+    }
+    
+    return id;
+  }
+  
+  function remove(id: string) {
+    toasts = toasts.filter(t => t.id !== id);
+  }
+  
+  return {
+    get toasts() { return toasts; },
+    success: (msg: string) => add('success', msg),
+    error: (msg: string) => add('error', msg, 8000), // Errors stay longer
+    warning: (msg: string) => add('warning', msg),
+    info: (msg: string) => add('info', msg),
+    remove,
+  };
+}
 ```
 
 ---

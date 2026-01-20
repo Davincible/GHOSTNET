@@ -9,6 +9,7 @@
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
+	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
 
 	const provider = getProvider();
 	const toast = getToasts();
@@ -125,16 +126,19 @@
 
 	<main class="main-content">
 		<div class="content-grid">
-			<!-- Left Column: Feed & Network -->
+			<!-- Left Column: Feed & Visualization -->
 			<div class="column column-left">
-				<FeedPanel maxHeight="350px" maxEvents={15} />
-				<NetworkVitalsPanel />
+				<FeedPanel maxHeight="300px" maxEvents={12} />
+				<NetworkVisualizationPanel 
+					operatorCount={provider.networkState.operatorsOnline}
+				/>
 			</div>
 
-			<!-- Right Column: Position, Modifiers, Actions -->
+			<!-- Right Column: Position, Network Stats, Actions -->
 			<div class="column column-right">
 				<PositionPanel />
 				<ModifiersPanel />
+				<NetworkVitalsPanel />
 				<QuickActionsPanel
 					onJackIn={handleJackIn}
 					onExtract={handleExtract}
