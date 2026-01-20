@@ -598,7 +598,7 @@
 	/* Slide hook - cinematic reveal sequence */
 	.slide-hook {
 		justify-content: flex-start;
-		padding-top: var(--space-8);
+		padding-top: var(--space-12);
 		min-height: 260px;
 		position: relative;
 	}
