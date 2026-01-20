@@ -49,6 +49,7 @@ GHOSTNET is a real-time survival game on MegaETH requiring smart contracts for:
 | **Cascade Split** | 30/30/30/10 absolute | Same-level/upstream/burn/protocol (matches product spec) |
 | **Network Modifier** | DATA-based thresholds | No oracle dependency, configurable via admin |
 | **Yield Sources** | Emissions + Cascade | Both additive to accRewardsPerShare |
+| **Level Capacity** | Weighted random culling | Bottom X% eligible when full, lower stake = higher chance. Cascades like death. |
 
 ### Verification Status
 
@@ -58,6 +59,7 @@ GHOSTNET is a real-time survival game on MegaETH requiring smart contracts for:
 | Position model design | **FINALIZED** | Single position per user |
 | Death processing design | **FINALIZED** | Trustless batch verification |
 | Cascade distribution | **FINALIZED** | 30/30/30/10 absolute split per product spec |
+| Level capacity (Culling) | **FINALIZED** | Weighted random from bottom X%, penalty cascades |
 | Gelato Automate | Pending | Verify availability before mainnet |
 | DEX Integration | Pending | Bronto/Bebop for buybacks |
 
@@ -190,6 +192,92 @@ function applyBoost(
     // Apply boost...
 }
 ```
+
+### 2.6 Level Capacity: The Culling
+
+**Decision: Weighted random elimination when levels reach capacity**
+
+**Status:** FINALIZED (January 2026)
+
+**Problem:** System reset iteration over all positions could exceed block gas limits at scale (10,000+ positions = 10M+ gas).
+
+**Solution: "The Culling"**
+
+When a level reaches maximum capacity, new entrants trigger a weighted random elimination from the bottom X% of positions (by stake amount).
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                 THE CULLING - CAPACITY MANAGEMENT                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  New player wants to jackIn when level is FULL                   │
+│                         │                                        │
+│                         ▼                                        │
+│  1. Identify bottom X% positions (configurable, default 50%)    │
+│                         │                                        │
+│  2. Calculate weights (inverse of stake)                         │
+│     • 100 DATA = 10 tickets                                      │
+│     • 50 DATA  = 20 tickets                                      │
+│     • 25 DATA  = 40 tickets                                      │
+│     (Smaller stake = MORE likely to be culled)                   │
+│                         │                                        │
+│  3. Select victim via weighted random (prevrandao)               │
+│                         │                                        │
+│  4. Execute culling:                                             │
+│     • Victim loses Y% (configurable, default 80%)                │
+│     • Penalty amount cascades (like scan death)                  │
+│     • Remaining returned to victim                               │
+│                         │                                        │
+│  5. New player takes the freed slot                              │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Configurable Parameters (per level):**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `maxPositions` | Varies by level | Maximum positions (0 = unlimited) |
+| `cullingBottomPct` | 5000 (50%) | Bottom X% eligible for culling |
+| `cullingPenaltyBps` | 8000 (80%) | Loss amount when culled |
+
+**Suggested Capacity Limits:**
+
+| Level | Capacity | Rationale |
+|-------|----------|-----------|
+| THE VAULT | 5,000 | Safe, high capacity |
+| MAINFRAME | 3,000 | Conservative |
+| SUBNET | 1,500 | Mid-tier |
+| DARKNET | 500 | Elite |
+| BLACK ICE | 100 | Cutthroat, exclusive |
+
+**Weight Curve Options (Document for future tuning):**
+
+| Curve | Formula | Effect | When to Use |
+|-------|---------|--------|-------------|
+| Linear Inverse | `weight = 1/stake` | 2x stake = 2x safer | Default, balanced |
+| Quadratic Inverse | `weight = 1/stake²` | 2x stake = 4x safer | Strong advantage for larger stakes |
+| Square Root | `weight = 1/√stake` | 2x stake = 1.4x safer | Gentle, smaller stakes have better odds |
+
+**Current implementation uses Linear Inverse.** This can be changed via upgrade if gameplay data suggests a different curve is more engaging.
+
+**Why This Works:**
+- **Natural position cap** - No unbounded loops ever
+- **Incentivizes larger stakes** - Bigger = safer
+- **Creates gameplay tension** - "Am I at risk of being culled?"
+- **Cascades like death** - Penalty feeds survivors
+- **Fits theme** - "Survival of the fittest" / "Only the strong survive"
+
+**View Function:**
+```solidity
+function getCullingRisk(address user) external view returns (
+    uint16 riskBps,        // Probability if culled (0-10000)
+    bool isEligible,       // In bottom X%?
+    uint16 levelCapacityPct // Current fullness (10000 = 100%)
+);
+```
+
+This enables UI to show: "⚠️ Culling Risk: 15% - Add 200 DATA to reach safety"
 
 ---
 

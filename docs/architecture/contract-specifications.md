@@ -463,6 +463,11 @@ struct LevelConfig {
     uint256 aliveCount;       // Number of alive positions
     uint256 accRewardsPerShare; // Scaled by 1e18
     uint64 nextScanTime;      // Timestamp of next scan
+    
+    // Culling parameters (capacity management)
+    uint256 maxPositions;     // Maximum positions allowed (0 = unlimited)
+    uint16 cullingBottomPct;  // Bottom X% eligible for culling (default 5000 = 50%)
+    uint16 cullingPenaltyBps; // Penalty on culled positions (default 8000 = 80% loss)
 }
 
 struct SystemReset {
@@ -500,6 +505,10 @@ uint64 public constant LOCK_PERIOD = 60;            // seconds
 // System reset
 uint64 public constant DEFAULT_RESET_DEADLINE = 24 hours;
 uint64 public constant MAX_RESET_DEADLINE = 24 hours;
+
+// Culling defaults
+uint16 public constant DEFAULT_CULLING_BOTTOM_PCT = 5000;  // 50%
+uint16 public constant DEFAULT_CULLING_PENALTY_BPS = 8000; // 80% loss
 
 // Precision
 uint256 public constant PRECISION = 1e18;
@@ -548,6 +557,7 @@ function initialize(
 /// @notice Jack into the network (create or add to position)
 /// @param amount Amount of DATA to stake
 /// @param level Security clearance level (1-5), ignored if position exists
+/// @dev If level is at capacity, triggers weighted random culling of bottom X%
 function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused {
     require(amount > 0, "Amount must be positive");
     require(level >= 1 && level <= 5, "Invalid level");
@@ -563,6 +573,13 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
         // New position
         require(amount >= $.levels[level].minStake, "Below minimum stake");
         
+        LevelConfig storage levelConfig = $.levels[level];
+        
+        // Check if level is at capacity - trigger culling if so
+        if (levelConfig.maxPositions > 0 && levelConfig.aliveCount >= levelConfig.maxPositions) {
+            _triggerCulling(level, msg.sender);
+        }
+        
         pos.level = level;
         pos.entryTimestamp = uint64(block.timestamp);
         pos.alive = true;
@@ -570,7 +587,7 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
         pos.lastResetEpoch = currentReset.epoch; // Start with current epoch
         
         $.positionHolders.add(msg.sender);
-        $.levels[level].aliveCount++;
+        levelConfig.aliveCount++;
     } else {
         // Adding to existing position
         require(pos.alive, "Position is dead");
@@ -940,6 +957,145 @@ function applyBoost(
 // INTERNAL FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
 
+/// @notice Trigger weighted random culling when level is at capacity
+/// @param level The level being entered
+/// @param newEntrant The address of the new player (excluded from culling)
+/// @dev Selects victim from bottom X% by stake using weighted random (lower stake = higher chance)
+function _triggerCulling(uint8 level, address newEntrant) internal {
+    GhostCoreStorage storage $ = _getGhostCoreStorage();
+    LevelConfig storage levelConfig = $.levels[level];
+    
+    // Get eligible positions (bottom X% by stake)
+    address[] memory eligible = _getEligibleForCulling(level, newEntrant);
+    require(eligible.length > 0, "No eligible positions for culling");
+    
+    // Calculate weights (inverse of stake - lower stake = higher weight)
+    uint256 totalWeight;
+    uint256[] memory weights = new uint256[](eligible.length);
+    
+    for (uint256 i = 0; i < eligible.length; i++) {
+        // Weight = inverse of stake (using 1e36 for precision)
+        // Smaller stake = higher weight = higher chance of being culled
+        weights[i] = 1e36 / $.positions[eligible[i]].amount;
+        totalWeight += weights[i];
+    }
+    
+    // Generate random seed using prevrandao
+    uint256 seed = uint256(keccak256(abi.encodePacked(
+        block.prevrandao,
+        block.timestamp,
+        newEntrant,
+        level,
+        block.number
+    )));
+    
+    // Select victim using weighted random
+    uint256 randomValue = seed % totalWeight;
+    address victim;
+    uint256 cumulative;
+    
+    for (uint256 i = 0; i < eligible.length; i++) {
+        cumulative += weights[i];
+        if (randomValue < cumulative) {
+            victim = eligible[i];
+            break;
+        }
+    }
+    
+    // Execute culling
+    _executeCulling(victim, level, levelConfig.cullingPenaltyBps);
+}
+
+/// @notice Get positions eligible for culling (bottom X% by stake)
+/// @param level The level to check
+/// @param excludeAddress Address to exclude (new entrant)
+/// @return eligible Array of addresses in the bottom X%
+function _getEligibleForCulling(uint8 level, address excludeAddress) internal view returns (address[] memory eligible) {
+    GhostCoreStorage storage $ = _getGhostCoreStorage();
+    LevelConfig storage levelConfig = $.levels[level];
+    
+    uint256 bottomPct = levelConfig.cullingBottomPct; // e.g., 5000 = 50%
+    
+    // Collect all positions at this level with their amounts
+    uint256 count;
+    address[] memory allPositions = new address[](levelConfig.aliveCount);
+    uint256[] memory amounts = new uint256[](levelConfig.aliveCount);
+    
+    // Iterate through position holders at this level
+    // Note: In production, use level-specific enumerable set for efficiency
+    uint256 holderCount = $.positionHolders.length();
+    for (uint256 i = 0; i < holderCount && count < levelConfig.aliveCount; i++) {
+        address holder = $.positionHolders.at(i);
+        Position storage pos = $.positions[holder];
+        
+        if (pos.alive && pos.level == level && holder != excludeAddress) {
+            allPositions[count] = holder;
+            amounts[count] = pos.amount;
+            count++;
+        }
+    }
+    
+    // Find threshold for bottom X% (simple approach: sort and take bottom)
+    // Production note: Consider off-chain sorting with on-chain verification
+    uint256 eligibleCount = (count * bottomPct) / 10000;
+    if (eligibleCount == 0) eligibleCount = 1; // At least one must be eligible
+    
+    // Simple selection: find the eligibleCount lowest amounts
+    eligible = new address[](eligibleCount);
+    bool[] memory selected = new bool[](count);
+    
+    for (uint256 j = 0; j < eligibleCount; j++) {
+        uint256 minAmount = type(uint256).max;
+        uint256 minIndex;
+        
+        for (uint256 i = 0; i < count; i++) {
+            if (!selected[i] && amounts[i] < minAmount) {
+                minAmount = amounts[i];
+                minIndex = i;
+            }
+        }
+        
+        selected[minIndex] = true;
+        eligible[j] = allPositions[minIndex];
+    }
+}
+
+/// @notice Execute the culling of a position
+/// @param victim Address being culled
+/// @param level Level of the position
+/// @param penaltyBps Penalty in basis points (e.g., 8000 = 80% loss)
+function _executeCulling(address victim, uint8 level, uint16 penaltyBps) internal {
+    GhostCoreStorage storage $ = _getGhostCoreStorage();
+    Position storage pos = $.positions[victim];
+    
+    uint256 totalAmount = pos.amount;
+    uint256 penaltyAmount = (totalAmount * penaltyBps) / 10000;
+    uint256 returnAmount = totalAmount - penaltyAmount;
+    
+    // Mark position as dead
+    pos.alive = false;
+    pos.ghostStreak = 0;
+    
+    // Update level stats
+    $.levels[level].totalStaked -= totalAmount;
+    $.levels[level].aliveCount--;
+    
+    // Remove from position holders
+    $.positionHolders.remove(victim);
+    
+    // Distribute penalty via cascade (same as death)
+    if (penaltyAmount > 0) {
+        _distributeCascade(level, penaltyAmount);
+    }
+    
+    // Return remaining amount to victim
+    if (returnAmount > 0) {
+        $.dataToken.safeTransfer(victim, returnAmount);
+    }
+    
+    emit PositionCulled(victim, level, totalAmount, penaltyAmount, returnAmount);
+}
+
 function _distributeCascade(uint8 level, uint256 totalDeadCapital) internal {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
     
@@ -1068,6 +1224,17 @@ function getCurrentResetEpoch() external view returns (
     uint16 penaltyBps
 );
 
+/// @notice Get culling risk for a position (probability of being culled on next jackIn at capacity)
+/// @param user Address to check
+/// @return riskBps Risk in basis points (0-10000), 0 if not in bottom X% or level not at capacity
+/// @return isEligible Whether the position is currently in the culling-eligible bottom X%
+/// @return levelCapacityPct Current capacity percentage of the level (10000 = 100%)
+function getCullingRisk(address user) external view returns (
+    uint16 riskBps,
+    bool isEligible,
+    uint16 levelCapacityPct
+);
+
 // ═══════════════════════════════════════════════════════════════════
 // ADMIN FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════
@@ -1079,6 +1246,18 @@ function setNetworkModThresholds(uint256[4] calldata thresholds) external onlyRo
 function updateLevelConfig(uint8 level, LevelConfig calldata config) external onlyRole(DEFAULT_ADMIN_ROLE);
 function emergencyWithdraw() external; // When paused, users can exit without rewards
 function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE);
+
+/// @notice Update culling parameters for a level
+/// @param level Level to update
+/// @param maxPositions Maximum positions (0 = unlimited)
+/// @param cullingBottomPct Bottom X% eligible for culling (5000 = 50%)
+/// @param cullingPenaltyBps Penalty when culled (8000 = 80% loss)
+function setCullingParams(
+    uint8 level,
+    uint256 maxPositions,
+    uint16 cullingBottomPct,
+    uint16 cullingPenaltyBps
+) external onlyRole(DEFAULT_ADMIN_ROLE);
 ```
 
 ### Events
@@ -1096,6 +1275,10 @@ event PositionPenalized(address indexed user, uint8 indexed level, uint256 penal
 event BoostApplied(address indexed user, uint8 boostType, uint16 valueBps, uint64 expiry);
 event LevelConfigUpdated(uint8 indexed level);
 event BoostSignerUpdated(address indexed oldSigner, address indexed newSigner);
+
+// Culling events
+event PositionCulled(address indexed victim, uint8 indexed level, uint256 totalAmount, uint256 penaltyAmount, uint256 returnedAmount);
+event CullingParamsUpdated(uint8 indexed level, uint256 maxPositions, uint16 cullingBottomPct, uint16 cullingPenaltyBps);
 ```
 
 ---
