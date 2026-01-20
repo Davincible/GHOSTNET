@@ -187,9 +187,10 @@ export function createWalletStore() {
 	}
 
 	/**
-	 * Connect wallet using injected provider (MetaMask, etc.)
+	 * Connect wallet using injected provider
+	 * @param target - Optional target wallet: 'metaMask', 'coinbaseWallet', or undefined for any
 	 */
-	async function connectWallet() {
+	async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
 		if (!browser) return;
 
 		const config = getConfig();
@@ -199,16 +200,17 @@ export function createWalletStore() {
 			error = null;
 			status = 'connecting';
 
-			// Get available connectors
-			const connectors = config.connectors;
-			const injectedConnector = connectors.find((c) => c.id === 'injected');
-
-			if (!injectedConnector) {
-				throw new Error('No wallet detected. Please install MetaMask.');
-			}
+			// Import injected connector dynamically to create with target
+			const { injected } = await import('@wagmi/connectors');
+			
+			// Create connector with specific target if provided
+			const connector = injected({ 
+				target: target,
+				shimDisconnect: true 
+			});
 
 			const result = await connect(config, {
-				connector: injectedConnector,
+				connector,
 				chainId: defaultChain.id
 			});
 

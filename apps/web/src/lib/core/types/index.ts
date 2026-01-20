@@ -339,3 +339,9 @@ export interface DeadPoolUserStats {
 	/** Current streak: positive = consecutive wins, negative = consecutive losses */
 	currentStreak: number;
 }
+
+// ════════════════════════════════════════════════════════════════
+// HACK RUN (YIELD MULTIPLIER MINI-GAME)
+// ════════════════════════════════════════════════════════════════
+
+export * from './hackrun';
