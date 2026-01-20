@@ -103,13 +103,18 @@
 	// Slide 0 animation states
 	let logoTypingComplete = $state(false);  // When ASCII art finishes typing
 	let logoSlidUp = $state(false);          // When logo has moved up
+	let showTagline = $state(false);         // When tagline should start typing
 	let taglineComplete = $state(false);     // When tagline finishes typing
 
 	function handleLogoTypingComplete() {
 		logoTypingComplete = true;
-		// Brief pause to let user absorb the logo, then begin the reveal
+		// Brief pause to let user absorb the logo, then begin the slide
 		setTimeout(() => {
 			logoSlidUp = true;
+			// Wait for slide animation to complete before starting tagline
+			setTimeout(() => {
+				showTagline = true;
+			}, 700); // Slightly less than 0.8s slide duration for smooth overlap
 		}, 600);
 	}
 
@@ -122,6 +127,7 @@
 		if (currentSlide === 0) {
 			logoTypingComplete = false;
 			logoSlidUp = false;
+			showTagline = false;
 			taglineComplete = false;
 		}
 	});
@@ -169,9 +175,9 @@
 									onComplete={handleLogoTypingComplete}
 								/>
 							</div>
-							<div class="hook-content" class:visible={logoSlidUp}>
+							<div class="hook-content" class:visible={showTagline}>
 								<h2 class="tagline">
-									{#if logoSlidUp}
+									{#if showTagline}
 										<GlitchText 
 											text="JACK IN. DON'T GET TRACED." 
 											speed={35} 
