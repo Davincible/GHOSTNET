@@ -6,7 +6,6 @@
     width?: number;
     height?: number;
     color?: string;
-    bgColor?: string;
     pulseSpeed?: number;
   }
 
@@ -14,7 +13,6 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
-    bgColor = '#1a0a2e',
     pulseSpeed = 1
   }: Props = $props();
 
@@ -22,17 +20,16 @@
   let animationId: number;
   
   // Store material references for reactive color updates
-  let lineMat = $state<THREE.ShaderMaterial | null>(null);
-  let glowMat = $state<THREE.ShaderMaterial | null>(null);
-  let ringMat = $state<THREE.ShaderMaterial | null>(null);
-  
-  // Reactive color update - primary for rabbit lines, secondary for background elements
+  let lineMaterialRef: THREE.ShaderMaterial | undefined;
+  let glowMaterialRef: THREE.ShaderMaterial | undefined;
+  let ringMaterialRef: THREE.ShaderMaterial | undefined;
+
+  // Reactively update colors when prop changes
   $effect(() => {
-    const primaryClr = new THREE.Color(color);
-    const secondaryClr = new THREE.Color(bgColor);
-    if (lineMat) lineMat.uniforms.uColor.value = primaryClr;
-    if (glowMat) glowMat.uniforms.uColor.value = secondaryClr;
-    if (ringMat) ringMat.uniforms.uColor.value = secondaryClr;
+    const newColor = new THREE.Color(color);
+    if (lineMaterialRef) lineMaterialRef.uniforms.uColor.value = newColor;
+    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
+    if (ringMaterialRef) ringMaterialRef.uniforms.uColor.value = newColor;
   });
 
   // Create smooth curve from control points using Catmull-Rom interpolation
@@ -624,7 +621,7 @@
     container.appendChild(renderer.domElement);
 
     // Enhanced line material with better glow
-    const lineMaterial = lineMat = new THREE.ShaderMaterial({
+    const lineMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -707,10 +704,10 @@
 
     // Atmospheric glow behind rabbit
     const glowGeometry = new THREE.SphereGeometry(1.0, 32, 32);
-    const glowMaterial = glowMat = new THREE.ShaderMaterial({
+    const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(bgColor) }
+        uColor: { value: new THREE.Color(color) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -744,16 +741,16 @@
     scene.add(glowMesh);
 
     // Floor grid
-    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(bgColor).multiplyScalar(0.5), new THREE.Color(bgColor).multiplyScalar(0.25));
+    const gridHelper = new THREE.GridHelper(4, 30, new THREE.Color(color).multiplyScalar(0.25), new THREE.Color(color).multiplyScalar(0.1));
     gridHelper.position.y = -0.65;
     scene.add(gridHelper);
 
     // Scan ring on floor
     const ringGeometry = new THREE.RingGeometry(0.6, 0.62, 64);
-    const ringMaterial = ringMat = new THREE.ShaderMaterial({
+    const ringMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(bgColor) }
+        uColor: { value: new THREE.Color(color) }
       },
       vertexShader: `
         varying vec2 vUv;

@@ -7,7 +7,6 @@
     height?: number;
     particleCount?: number;
     color?: string;
-    bgColor?: string;
     autoDissolve?: boolean;
   }
 
@@ -16,7 +15,6 @@
     height = 400, 
     particleCount = 3000,
     color = '#00e5cc',
-    bgColor = '#1a0a2e',
     autoDissolve = true
   }: Props = $props();
 
@@ -24,17 +22,14 @@
   let animationId: number;
   
   // Store material references for reactive color updates
-  let particleMaterial = $state<THREE.ShaderMaterial | null>(null);
-  let glowMaterial = $state<THREE.ShaderMaterial | null>(null);
-  
-  // Reactive color update - primary color for rabbit, secondary for background
+  let particleMaterialRef: THREE.ShaderMaterial | undefined;
+  let glowMaterialRef: THREE.ShaderMaterial | undefined;
+
+  // Reactively update colors when prop changes
   $effect(() => {
-    if (particleMaterial) {
-      particleMaterial.uniforms.uColor.value = new THREE.Color(color);
-    }
-    if (glowMaterial) {
-      glowMaterial.uniforms.uColor.value = new THREE.Color(bgColor);
-    }
+    const newColor = new THREE.Color(color);
+    if (particleMaterialRef) particleMaterialRef.uniforms.uColor.value = newColor;
+    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
   });
 
   // Generate rabbit shape points procedurally
@@ -169,7 +164,7 @@
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     // Custom shader material for glowing particles
-    const material = particleMaterial = new THREE.ShaderMaterial({
+    const material = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -245,6 +240,7 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
+    particleMaterialRef = material; // Store ref for reactive color updates
 
     // Add phase attribute
     geometry.setAttribute('phase', new THREE.BufferAttribute(phases, 1));
@@ -254,10 +250,10 @@
 
     // Add subtle glow plane behind rabbit
     const glowGeometry = new THREE.PlaneGeometry(2, 2);
-    const glowMat = glowMaterial = new THREE.ShaderMaterial({
+    const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(bgColor) }
+        uColor: { value: new THREE.Color(color) }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -289,6 +285,8 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
+    glowMaterialRef = glowMaterial; // Store ref for reactive color updates
+    
     const glowPlane = new THREE.Mesh(glowGeometry, glowMaterial);
     glowPlane.position.z = -0.5;
     scene.add(glowPlane);
@@ -309,7 +307,7 @@
       
       // Update uniforms
       material.uniforms.uTime.value = elapsed;
-      glowMat.uniforms.uTime.value = elapsed;
+      glowMaterial.uniforms.uTime.value = elapsed;
       
       // Auto dissolve cycle
       if (autoDissolve) {
@@ -349,7 +347,7 @@
       renderer.dispose();
       geometry.dispose();
       material.dispose();
-      glowMat.dispose();
+      glowMaterial.dispose();
       glowGeometry.dispose();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);

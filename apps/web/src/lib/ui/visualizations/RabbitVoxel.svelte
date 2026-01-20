@@ -7,7 +7,6 @@
     height?: number;
     voxelSize?: number;
     color?: string;
-    bgColor?: string;
     glitchIntensity?: number;
   }
 
@@ -16,7 +15,6 @@
     height = 400, 
     voxelSize = 0.08,
     color = '#00e5cc',
-    bgColor = '#1a0a2e',
     glitchIntensity = 0.3
   }: Props = $props();
 
@@ -24,17 +22,16 @@
   let animationId: number;
   
   // Store material references for reactive color updates
-  let voxelMat = $state<THREE.ShaderMaterial | null>(null);
-  let wireframeMat = $state<THREE.ShaderMaterial | null>(null);
-  let glowMat = $state<THREE.ShaderMaterial | null>(null);
-  
-  // Reactive color update - primary for rabbit, secondary for background glow
+  let voxelMaterialRef: THREE.ShaderMaterial | undefined;
+  let wireframeMaterialRef: THREE.ShaderMaterial | undefined;
+  let glowMaterialRef: THREE.ShaderMaterial | undefined;
+
+  // Reactively update colors when prop changes
   $effect(() => {
-    const primaryClr = new THREE.Color(color);
-    const secondaryClr = new THREE.Color(bgColor);
-    if (voxelMat) voxelMat.uniforms.uColor.value = primaryClr;
-    if (wireframeMat) wireframeMat.uniforms.uColor.value = primaryClr;
-    if (glowMat) glowMat.uniforms.uColor.value = secondaryClr;
+    const newColor = new THREE.Color(color);
+    if (voxelMaterialRef) voxelMaterialRef.uniforms.uColor.value = newColor;
+    if (wireframeMaterialRef) wireframeMaterialRef.uniforms.uColor.value = newColor;
+    if (glowMaterialRef) glowMaterialRef.uniforms.uColor.value = newColor;
   });
 
   // Define rabbit as 3D voxel grid (1 = filled, 0 = empty)
@@ -153,7 +150,7 @@
     const cubeGeometry = new THREE.BoxGeometry(voxelSize * 0.9, voxelSize * 0.9, voxelSize * 0.9);
     
     // Custom shader material for glowing voxels
-    const voxelMaterial = voxelMat = new THREE.ShaderMaterial({
+    const voxelMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) },
@@ -227,6 +224,7 @@
       `,
       transparent: true
     });
+    voxelMaterialRef = voxelMaterial; // Store ref for reactive color updates
 
     const instancedMesh = new THREE.InstancedMesh(cubeGeometry, voxelMaterial, voxelData.length);
     
@@ -249,7 +247,7 @@
     scene.add(instancedMesh);
 
     // Add wireframe outline for extra retro feel
-    const wireframeMaterial = wireframeMat = new THREE.ShaderMaterial({
+    const wireframeMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color(color) }
@@ -272,6 +270,7 @@
       transparent: true,
       wireframe: true
     });
+    wireframeMaterialRef = wireframeMaterial; // Store ref for reactive color updates
     
     const wireframeGeometry = new THREE.BoxGeometry(voxelSize, voxelSize, voxelSize);
     const wireframeMesh = new THREE.InstancedMesh(wireframeGeometry, wireframeMaterial, voxelData.length);
@@ -289,10 +288,10 @@
 
     // Add ambient glow
     const glowGeometry = new THREE.SphereGeometry(1.2, 32, 32);
-    const glowMaterial = glowMat = new THREE.ShaderMaterial({
+    const glowMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
-        uColor: { value: new THREE.Color(bgColor) }
+        uColor: { value: new THREE.Color(color) }
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -317,6 +316,7 @@
       depthWrite: false,
       blending: THREE.AdditiveBlending
     });
+    glowMaterialRef = glowMaterial; // Store ref for reactive color updates
     
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     scene.add(glowMesh);

@@ -5,7 +5,6 @@
     width?: number;
     height?: number;
     color?: string;
-    bgColor?: string;
     rainSpeed?: number;
     showRain?: boolean;
   }
@@ -14,7 +13,6 @@
     width = 400, 
     height = 400, 
     color = '#00e5cc',
-    bgColor = '#1a0a2e',
     rainSpeed = 1,
     showRain = true
   }: Props = $props();
@@ -22,7 +20,7 @@
   let canvas: HTMLCanvasElement;
   let animationId: number;
   
-  // Parse hex color to RGB - reactive
+  // Parse hex color to RGB - used reactively
   function hexToRgb(hex: string) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
@@ -32,14 +30,12 @@
     } : { r: 0, g: 229, b: 204 };
   }
   
-  // Reactive RGB objects that animation loop can reference
-  let rgb = $state(hexToRgb(color));
-  let bgRgb = $state(hexToRgb(bgColor));
+  // Store current RGB values - updated reactively
+  let currentRgb = $state(hexToRgb(color));
   
-  // Update RGB when color props change
+  // Update RGB when color prop changes
   $effect(() => {
-    rgb = hexToRgb(color);
-    bgRgb = hexToRgb(bgColor);
+    currentRgb = hexToRgb(color);
   });
 
   // ASCII art frames for the rabbit (multiple frames for animation)
@@ -180,7 +176,7 @@
       animationId = requestAnimationFrame(animate);
 
       // Semi-transparent black for trail effect
-      ctx.fillStyle = 'rgba(3, 3, 5, 0.1)';
+      ctx.fillStyle = 'currentRgba(3, 3, 5, 0.1)';
       ctx.fillRect(0, 0, width, height);
 
       // Draw Matrix rain
@@ -199,11 +195,11 @@
           const brightness = Math.random();
           if (brightness > 0.95) {
             // Bright leading character
-            ctx.fillStyle = `rgba(255, 255, 255, 0.9)`;
+            ctx.fillStyle = `currentRgba(255, 255, 255, 0.9)`;
           } else {
             // Normal rain character
             const alpha = 0.3 + brightness * 0.4;
-            ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+            ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, ${alpha})`;
           }
           
           ctx.fillText(char, x, y);
@@ -255,17 +251,17 @@
         const intensity = 1 - distFromCenter * 0.3;
         
         // Draw glow layer
-        ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${0.3 * rabbitAlpha * intensity})`;
+        ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, ${0.3 * rabbitAlpha * intensity})`;
         ctx.fillText(line, width / 2 + xOffset + 1, y + 1);
         ctx.fillText(line, width / 2 + xOffset - 1, y - 1);
         
         // Draw main text
-        ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rabbitAlpha * intensity})`;
+        ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, ${rabbitAlpha * intensity})`;
         ctx.fillText(line, width / 2 + xOffset, y);
         
         // Bright leading edge on some characters
         if (Math.random() > 0.95) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * rabbitAlpha})`;
+          ctx.fillStyle = `currentRgba(255, 255, 255, ${0.8 * rabbitAlpha})`;
           const charIndex = Math.floor(Math.random() * line.length);
           const char = line[charIndex];
           if (char && char !== ' ') {
@@ -277,7 +273,7 @@
       });
 
       // Draw scanline effect
-      ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.03)`;
+      ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.03)`;
       ctx.fillRect(0, scanlineY, width, 2);
       
       // Draw "FOLLOW THE WHITE RABBIT" text
@@ -292,12 +288,12 @@
       const displayMessage = message.substring(0, Math.min(visibleChars, message.length));
       
       // Glow
-      ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.4)`;
+      ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.4)`;
       ctx.fillText(displayMessage, width / 2 + 1, messageY + 1);
       ctx.fillText(displayMessage, width / 2 - 1, messageY - 1);
       
       // Main text
-      ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`;
+      ctx.fillStyle = `currentRgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.9)`;
       ctx.fillText(displayMessage, width / 2, messageY);
       
       // Cursor blink
@@ -313,13 +309,13 @@
         width / 2, height / 2, 0,
         width / 2, height / 2, width * 0.7
       );
-      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+      gradient.addColorStop(0, 'currentRgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'currentRgba(0, 0, 0, 0.4)');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
 
       // Horizontal scan lines (CRT effect)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'currentRgba(0, 0, 0, 0.05)';
       for (let y = 0; y < height; y += 3) {
         ctx.fillRect(0, y, width, 1);
       }
