@@ -232,7 +232,6 @@ contract E2ETest is Test {
             console.log("\n5. Alice extracts after surviving...");
             vm.warp(block.timestamp + 5 hours);
 
-            uint256 balanceBefore = token.balanceOf(alice);
             vm.prank(alice);
             (uint256 principal, uint256 rewards) = ghostCore.extract();
 

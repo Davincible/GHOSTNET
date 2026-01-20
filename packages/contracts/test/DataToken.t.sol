@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { Test, console } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { DataToken } from "../src/token/DataToken.sol";
 import { IDataToken } from "../src/token/interfaces/IDataToken.sol";
 
@@ -322,9 +322,9 @@ contract DataTokenTest is Test {
         vm.prank(alice);
         token.transfer(carol, transferAmount);
 
-        uint256 expectedTax = 1; // 10% of 10 = 1
-        uint256 expectedBurn = 0; // 90% of 1 = 0 (rounds down)
-        uint256 expectedTreasury = 1; // 1 - 0 = 1
+        // 10% of 10 = 1 tax, 90% of 1 = 0 burn (rounds down), 1 - 0 = 1 treasury
+        uint256 expectedBurn = 0;
+        uint256 expectedTreasury = 1;
         uint256 expectedReceived = 9; // 10 - 1 = 9
 
         assertEq(token.balanceOf(carol), expectedReceived, "Recipient gets 9 wei");

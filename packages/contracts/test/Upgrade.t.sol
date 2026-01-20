@@ -6,9 +6,7 @@ import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy
 
 import { DataToken } from "../src/token/DataToken.sol";
 import { GhostCore } from "../src/core/GhostCore.sol";
-import { GhostCoreStorage } from "../src/core/GhostCoreStorage.sol";
 import { TraceScan } from "../src/core/TraceScan.sol";
-import { TraceScanStorage } from "../src/core/TraceScanStorage.sol";
 import { DeadPool } from "../src/markets/DeadPool.sol";
 import { IDeadPool } from "../src/markets/interfaces/IDeadPool.sol";
 import { IGhostCore } from "../src/core/interfaces/IGhostCore.sol";

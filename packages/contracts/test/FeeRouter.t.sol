@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { Test, console } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { DataToken } from "../src/token/DataToken.sol";
 import { FeeRouter } from "../src/periphery/FeeRouter.sol";
@@ -362,10 +362,10 @@ contract FeeRouterTest is Test {
         assertEq(operationsAmount, 1 ether); // 10%
     }
 
-    function test_PreviewSplit_ZeroBalance() public {
+    function test_PreviewSplit_ZeroBalance() public view {
         (uint256 buybackAmount, uint256 operationsAmount) = feeRouter.previewSplit();
-        assertEq(buybackAmount, 0);
-        assertEq(operationsAmount, 0);
+        assert(buybackAmount == 0);
+        assert(operationsAmount == 0);
     }
 
     function test_Constants() public view {
@@ -519,7 +519,6 @@ contract FeeRouterTest is Test {
         token.transfer(address(feeRouter), 1000 * 1e18);
 
         address recipient = makeAddr("recipient");
-        uint256 feeRouterBalance = token.balanceOf(address(feeRouter));
 
         vm.prank(owner);
         feeRouter.emergencyWithdrawTokens(address(token), recipient);

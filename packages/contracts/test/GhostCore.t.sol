@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { Test, console } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { DataToken } from "../src/token/DataToken.sol";
 import { GhostCore } from "../src/core/GhostCore.sol";
@@ -655,7 +655,7 @@ contract GhostCoreTest is Test {
         bytes32 nonce = keccak256("nonce1");
 
         // Sign with wrong private key
-        (address wrongSigner, uint256 wrongPk) = makeAddrAndKey("wrongSigner");
+        (, uint256 wrongPk) = makeAddrAndKey("wrongSigner");
         bytes memory signature = _signBoostWithKey(alice, boostType, valueBps, expiry, nonce, wrongPk);
 
         vm.prank(alice);

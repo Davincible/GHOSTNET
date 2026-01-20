@@ -148,6 +148,7 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
 
     /// @notice Receive ETH directly (for manual deposits or refunds)
     receive() external payable {
+        // forge-lint: disable-next-line(unsafe-typecast) - Safe: string literal padded to bytes32
         emit TollCollected(msg.sender, msg.value, bytes32("direct"));
     }
 

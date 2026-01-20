@@ -90,6 +90,7 @@ contract GhostCore is
         $.boostSigner = _boostSigner;
 
         // Initialize system reset
+        // forge-lint: disable-next-line(unsafe-typecast) - Safe: timestamp + days fits in uint64 for centuries
         $.systemReset = SystemReset({
             deadline: uint64(block.timestamp + DEFAULT_RESET_DEADLINE),
             lastDepositor: address(0),
@@ -502,8 +503,10 @@ contract GhostCore is
         IERC20(address($.dataToken)).safeTransfer($.treasury, protocolAmount);
 
         // Reset timer
+        // forge-lint: disable-next-line(unsafe-typecast) - Safe: timestamp + days fits in uint64 for centuries
         reset.deadline = uint64(block.timestamp + DEFAULT_RESET_DEADLINE);
         reset.lastDepositor = address(0);
+        // forge-lint: disable-next-line(unsafe-typecast) - Safe: block.timestamp fits in uint64 for centuries
         reset.lastDepositTime = uint64(block.timestamp);
 
         emit SystemResetTriggered(penaltyPool, reset.lastDepositor, jackpotAmount);
@@ -708,6 +711,7 @@ contract GhostCore is
         }
 
         if (totalReduction >= baseRate) return 0;
+        // forge-lint: disable-next-line(unsafe-typecast) - Safe: totalReduction < baseRate (uint16)
         return baseRate - uint16(totalReduction);
     }
 
@@ -762,6 +766,7 @@ contract GhostCore is
         uint256 extension;
         if (amount >= TIER4_THRESHOLD) {
             // Full reset
+            // forge-lint: disable-next-line(unsafe-typecast) - Safe: timestamp + days fits in uint64
             reset.deadline = uint64(block.timestamp + MAX_RESET_DEADLINE);
         } else {
             if (amount < TIER1_THRESHOLD) {
@@ -774,6 +779,7 @@ contract GhostCore is
                 extension = TIER4_EXTENSION;
             }
 
+            // forge-lint: disable-next-line(unsafe-typecast) - Safe: timestamp + hours fits in uint64
             uint64 newDeadline = uint64(block.timestamp + extension);
             if (newDeadline > reset.deadline) {
                 reset.deadline = newDeadline;
@@ -781,6 +787,7 @@ contract GhostCore is
 
             // Cap at max
             if (reset.deadline > block.timestamp + MAX_RESET_DEADLINE) {
+                // forge-lint: disable-next-line(unsafe-typecast) - Safe: timestamp + days fits in uint64
                 reset.deadline = uint64(block.timestamp + MAX_RESET_DEADLINE);
             }
         }
@@ -818,7 +825,7 @@ contract GhostCore is
         GhostCoreStorageLayout storage $,
         Level level,
         address newEntrant,
-        uint256 newAmount
+        uint256 /* newAmount */
     ) internal {
         // Simplified culling - select random victim from bottom positions
         // Full implementation would use weighted random selection

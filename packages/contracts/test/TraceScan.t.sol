@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { Test, console } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { DataToken } from "../src/token/DataToken.sol";
 import { GhostCore } from "../src/core/GhostCore.sol";
@@ -158,7 +158,7 @@ contract TraceScanTest is Test {
         assertEq(result1, result2);
     }
 
-    function test_IsDead_RespectsDeathRate() public {
+    function test_IsDead_RespectsDeathRate() public view {
         uint256 seed = 12345;
         uint16 lowDeathRate = 100; // 1%
         uint16 highDeathRate = 9900; // 99%
@@ -174,21 +174,22 @@ contract TraceScanTest is Test {
         }
 
         // Low death rate should have fewer deaths
-        assertLt(lowDeaths, highDeaths);
+        assert(lowDeaths < highDeaths);
     }
 
-    function testFuzz_IsDead_AlwaysBelowRate(uint256 seed, address user, uint16 deathRate) public {
-        vm.assume(deathRate <= 10_000);
+    function testFuzz_IsDead_AlwaysBelowRate(uint256 seed, address user, uint16 deathRate) public view {
+        // forge-lint: disable-next-line
+        if (deathRate > 10_000) return;
 
         bool result = traceScan.isDead(seed, user, deathRate);
 
         // If death rate is 0, should never die
         if (deathRate == 0) {
-            assertFalse(result);
+            assert(!result);
         }
         // If death rate is 10000, should always die
         if (deathRate == 10_000) {
-            assertTrue(result);
+            assert(result);
         }
     }
 

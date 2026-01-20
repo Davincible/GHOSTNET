@@ -296,7 +296,6 @@ contract IntegrationTest is Test {
 
         // Winner claims
         address winner = overWins ? carol : dave;
-        uint256 balanceBefore = token.balanceOf(winner);
 
         vm.prank(winner);
         uint256 winnings = deadPool.claimWinnings(roundId);
