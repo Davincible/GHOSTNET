@@ -8,6 +8,7 @@
 	import { NavigationBar } from '$lib/features/nav';
 	import { WelcomePanel } from '$lib/features/welcome';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
+	import { FAQPanel } from '$lib/features/faq';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
@@ -160,6 +161,7 @@
 					onCrew={handleCrew}
 					onDeadPool={handleDeadPool}
 				/>
+				<FAQPanel />
 			</div>
 		</div>
 	</main>
