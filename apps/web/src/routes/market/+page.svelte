@@ -2,7 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { Header } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
-	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
+	import {
+		DeadPoolHeader,
+		ActiveRoundsGrid,
+		ResultsPanel,
+		BetModal
+	} from '$lib/features/deadpool';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
 	import { getProvider } from '$lib/core/stores/index.svelte';
@@ -10,13 +15,13 @@
 		generateActiveRounds,
 		generateMockHistoryList,
 		generateUserStats,
-		updatePoolsWithBet,
+		updatePoolsWithBet
 	} from '$lib/core/providers/mock/generators/deadpool';
 	import type {
 		DeadPoolRound,
 		DeadPoolSide,
 		DeadPoolHistory,
-		DeadPoolUserStats,
+		DeadPoolUserStats
 	} from '$lib/core/types';
 
 	const provider = getProvider();
@@ -33,52 +38,45 @@
 	// Modal state
 	let showBetModal = $state(false);
 	let selectedRound = $state<DeadPoolRound | null>(null);
-	let selectedSide = $state<DeadPoolSide | null>(null);
 
 	// User balance (from provider or mock)
-	let userBalance = $derived(provider.currentUser?.tokenBalance ?? 1000n * 10n ** 18n);
+	const userBalance = $derived(provider.currentUser?.tokenBalance ?? 1000n * 10n ** 18n);
 
 	// Handlers
-	function handleBet(round: DeadPoolRound, side: DeadPoolSide) {
+	function handleBet(round: DeadPoolRound) {
 		if (!provider.currentUser) {
 			toast.warning('Connect wallet to place bets');
 			return;
 		}
 
 		selectedRound = round;
-		selectedSide = side;
 		showBetModal = true;
 	}
 
-	function handleConfirmBet(amount: bigint) {
-		if (!selectedRound || !selectedSide) return;
+	function handleConfirmBet(side: DeadPoolSide, amount: bigint) {
+		if (!selectedRound) return;
 
 		// Update round with user's bet
 		const roundIndex = rounds.findIndex((r) => r.id === selectedRound!.id);
 		if (roundIndex !== -1) {
 			rounds[roundIndex] = {
 				...rounds[roundIndex],
-				pools: updatePoolsWithBet(rounds[roundIndex].pools, selectedSide!, amount),
+				pools: updatePoolsWithBet(rounds[roundIndex].pools, side, amount),
 				userBet: {
-					side: selectedSide!,
+					side,
 					amount,
-					timestamp: Date.now(),
-				},
+					timestamp: Date.now()
+				}
 			};
 		}
 
-		toast.success(
-			`Bet placed: ${(Number(amount) / 1e18).toFixed(2)} Đ on ${selectedSide!.toUpperCase()}`
-		);
-		showBetModal = false;
-		selectedRound = null;
-		selectedSide = null;
+		toast.success(`Bet placed: ${(Number(amount) / 1e18).toFixed(2)} Đ on ${side.toUpperCase()}`);
+		handleCloseBetModal();
 	}
 
 	function handleCloseBetModal() {
 		showBetModal = false;
 		selectedRound = null;
-		selectedSide = null;
 	}
 
 	function handleNavigate(id: string) {
@@ -108,8 +106,8 @@
 					...round,
 					pools: {
 						under: round.pools.under + underChange,
-						over: round.pools.over + overChange,
-					},
+						over: round.pools.over + overChange
+					}
 				};
 			});
 		}, 5000);
@@ -128,7 +126,7 @@
 
 	<main class="main-content">
 		<Stack gap={4}>
-			<DeadPoolHeader balance={userBalance} stats={userStats} onHelp={handleHelp} />
+			<DeadPoolHeader stats={userStats} balance={userBalance} onHelp={handleHelp} />
 
 			<section class="section">
 				<h2 class="section-title">ACTIVE ROUNDS</h2>
@@ -136,7 +134,7 @@
 			</section>
 
 			<section class="section">
-				<ResultsPanel {history} maxItems={5} />
+				<ResultsPanel {history} limit={5} />
 			</section>
 		</Stack>
 	</main>
@@ -148,9 +146,8 @@
 <BetModal
 	open={showBetModal}
 	round={selectedRound}
-	side={selectedSide}
 	balance={userBalance}
-	onclose={handleCloseBetModal}
+	onClose={handleCloseBetModal}
 	onConfirm={handleConfirmBet}
 />
 

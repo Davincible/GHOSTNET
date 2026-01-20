@@ -2,55 +2,47 @@
 	import type { DeadPoolHistory } from '$lib/core/types';
 	import { Box } from '$lib/ui/terminal';
 	import { AmountDisplay, LevelBadge } from '$lib/ui/data-display';
-	import { Row, Stack } from '$lib/ui/layout';
+	import { formatRelativeTime } from '$lib/core/utils';
 
 	interface Props {
 		/** Recent round results */
 		history: DeadPoolHistory[];
-		/** Maximum items to show */
+		/** Maximum items to show (default: 5) */
 		limit?: number;
 	}
 
 	let { history, limit = 5 }: Props = $props();
 
-	let displayHistory = $derived(history.slice(0, limit));
-
-	// Format timestamp
-	function formatTime(timestamp: number): string {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffMins = Math.floor(diffMs / 60000);
-		const diffHours = Math.floor(diffMins / 60);
-
-		if (diffMins < 60) return `${diffMins}m ago`;
-		if (diffHours < 24) return `${diffHours}h ago`;
-		return date.toLocaleDateString();
-	}
+	const displayHistory = $derived(history.slice(0, limit));
 </script>
 
 <Box variant="single" title="RECENT RESULTS" padding={2}>
-	<Stack gap={2}>
+	<div class="results-list" role="list" aria-label="Recent round results">
 		{#if displayHistory.length === 0}
 			<div class="empty-state">
 				<span class="empty-text">No resolved rounds yet</span>
 			</div>
 		{:else}
 			{#each displayHistory as { round, result } (result.roundId)}
-				<div class="result-row" class:user-won={result.userWon === true} class:user-lost={result.userWon === false}>
-					<Row justify="between" align="center">
-					<div class="result-meta">
-						<span class="round-number">#{round.roundNumber}</span>
-						{#if round.targetLevel}
-							<LevelBadge level={round.targetLevel} compact />
-						{/if}
+				<div
+					class="result-row"
+					class:user-won={result.userWon === true}
+					class:user-lost={result.userWon === false}
+					role="listitem"
+				>
+					<div class="result-header">
+						<div class="result-meta">
+							<span class="round-number">#{round.roundNumber}</span>
+							{#if round.targetLevel}
+								<LevelBadge level={round.targetLevel} compact />
+							{/if}
+						</div>
+						<span class="result-time">{formatRelativeTime(round.endsAt)}</span>
 					</div>
-						<span class="result-time">{formatTime(round.endsAt)}</span>
-					</Row>
 
 					<p class="result-question">{round.question}</p>
 
-					<Row justify="between" align="center" class="result-details">
+					<div class="result-details">
 						<div class="result-outcome">
 							<span class="outcome-label">RESULT:</span>
 							<span class="outcome-value">{result.actualValue}</span>
@@ -69,14 +61,20 @@
 								{/if}
 							</div>
 						{/if}
-					</Row>
+					</div>
 				</div>
 			{/each}
 		{/if}
-	</Stack>
+	</div>
 </Box>
 
 <style>
+	.results-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
 	.empty-state {
 		padding: var(--space-4);
 		text-align: center;
@@ -96,12 +94,18 @@
 
 	.result-row.user-won {
 		border-color: var(--color-profit-dim);
-		background: rgba(0, 255, 136, 0.05);
+		background: var(--color-profit-glow);
 	}
 
 	.result-row.user-lost {
-		border-color: var(--color-loss-dim);
-		background: rgba(255, 68, 68, 0.05);
+		border-color: var(--color-red-dim);
+		background: var(--color-red-glow);
+	}
+
+	.result-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 	}
 
 	.result-meta {
@@ -128,7 +132,10 @@
 		line-height: var(--leading-snug);
 	}
 
-	:global(.result-details) {
+	.result-details {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-top: var(--space-1);
 	}
 

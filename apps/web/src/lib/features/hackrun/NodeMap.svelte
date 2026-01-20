@@ -16,19 +16,19 @@
 	let { run, progress, currentIndex }: Props = $props();
 
 	// Get main path nodes (sorted by position, excluding backdoors)
-	let mainNodes = $derived(
+	const mainNodes = $derived(
 		run.nodes
 			.filter((n) => n.type !== 'backdoor')
 			.sort((a, b) => a.position - b.position)
 	);
 
-	// Get node status
+	// Get node status from progress
 	function getNodeStatus(nodeId: string): string {
 		const p = progress.find((p) => p.nodeId === nodeId);
 		return p?.status ?? 'pending';
 	}
 
-	// Get node config
+	// Get node icon from config
 	function getNodeIcon(node: HackRunNode): string {
 		return NODE_TYPE_CONFIG[node.type].icon;
 	}
@@ -36,7 +36,7 @@
 
 <Box variant="single" title="NETWORK MAP" padding={3}>
 	<Stack gap={2}>
-		<div class="map-container">
+		<div class="map-container" role="list" aria-label="Network nodes">
 			{#each mainNodes as node, i (node.id)}
 				{@const status = getNodeStatus(node.id)}
 				{@const isHidden = node.hidden && status === 'pending' && i > currentIndex + 1}
@@ -46,6 +46,7 @@
 					<div
 						class="connection-line"
 						class:completed={status === 'completed' || status === 'skipped'}
+						aria-hidden="true"
 					></div>
 				{/if}
 
@@ -57,8 +58,10 @@
 					class:failed={status === 'failed'}
 					class:skipped={status === 'skipped'}
 					class:hidden={isHidden}
+					role="listitem"
+					aria-current={status === 'current' ? 'step' : undefined}
 				>
-					<div class="node-icon">
+					<div class="node-icon" aria-hidden="true">
 						{#if isHidden}
 							[?]
 						{:else}
@@ -68,12 +71,13 @@
 					<div class="node-info">
 						{#if isHidden}
 							<span class="node-name">UNKNOWN</span>
+							<span class="node-type">SCANNING...</span>
 						{:else}
 							<span class="node-name">{node.name}</span>
 							<span class="node-type">{node.type.replace('_', ' ').toUpperCase()}</span>
 						{/if}
 					</div>
-					<div class="node-status-indicator">
+					<div class="node-status-indicator" aria-label="Status: {status}">
 						{#if status === 'completed'}
 							<span class="status-icon completed">[OK]</span>
 						{:else if status === 'failed'}
@@ -91,10 +95,19 @@
 		</div>
 
 		<!-- Legend -->
-		<div class="legend">
-			<span class="legend-item"><span class="legend-icon completed">[OK]</span> CLEARED</span>
-			<span class="legend-item"><span class="legend-icon current">[>>]</span> ACTIVE</span>
-			<span class="legend-item"><span class="legend-icon pending">[..]</span> LOCKED</span>
+		<div class="legend" aria-label="Map legend">
+			<span class="legend-item">
+				<span class="legend-icon completed" aria-hidden="true">[OK]</span>
+				<span>CLEARED</span>
+			</span>
+			<span class="legend-item">
+				<span class="legend-icon current" aria-hidden="true">[>>]</span>
+				<span>ACTIVE</span>
+			</span>
+			<span class="legend-item">
+				<span class="legend-icon pending" aria-hidden="true">[..]</span>
+				<span>LOCKED</span>
+			</span>
 		</div>
 	</Stack>
 </Box>
@@ -129,18 +142,18 @@
 
 	.node.current {
 		border-color: var(--color-cyan);
-		background: rgba(0, 229, 204, 0.1);
-		box-shadow: 0 0 8px rgba(0, 229, 204, 0.2);
+		background: var(--color-cyan-glow);
+		box-shadow: 0 0 8px var(--color-cyan-glow);
 	}
 
 	.node.completed {
 		border-color: var(--color-profit-dim);
-		background: rgba(0, 255, 136, 0.05);
+		background: var(--color-profit-glow);
 	}
 
 	.node.failed {
-		border-color: var(--color-loss-dim);
-		background: rgba(255, 68, 68, 0.05);
+		border-color: var(--color-red-dim);
+		background: var(--color-red-glow);
 	}
 
 	.node.skipped {
@@ -225,8 +238,13 @@
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.3; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.3;
+		}
 	}
 
 	.legend {

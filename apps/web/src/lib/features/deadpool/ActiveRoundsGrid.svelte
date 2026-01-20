@@ -15,12 +15,12 @@
 	let { rounds, onBet, empty }: Props = $props();
 </script>
 
-<div class="rounds-grid">
+<div class="rounds-grid" role="list" aria-label="Active betting rounds">
 	{#if rounds.length === 0}
 		{#if empty}
 			{@render empty()}
 		{:else}
-			<div class="empty-state">
+			<div class="empty-state" role="listitem">
 				<span class="empty-icon">[?]</span>
 				<p class="empty-text">NO ACTIVE ROUNDS</p>
 				<p class="empty-subtext">Check back soon for new predictions</p>
@@ -28,7 +28,9 @@
 		{/if}
 	{:else}
 		{#each rounds as round (round.id)}
-			<RoundCard {round} onBet={() => onBet?.(round)} />
+			<div role="listitem">
+				<RoundCard {round} onBet={() => onBet?.(round)} />
+			</div>
 		{/each}
 	{/if}
 </div>

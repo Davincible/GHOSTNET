@@ -1,17 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { Shell } from '$lib/ui/terminal';
-	import { Box } from '$lib/ui/terminal';
+	import { Shell, Box } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
 	import { getAudioManager } from '$lib/core/audio';
 	import {
 		getHackRunStore,
 		RunSelectionView,
 		ActiveRunView,
-		RunCompleteView,
+		RunCompleteView
 	} from '$lib/features/hackrun';
-	import type { HackRun, NodeResult } from '$lib/core/types/hackrun';
+	import type { HackRun, HackRunNode, NodeResult } from '$lib/core/types/hackrun';
 
 	const store = getHackRunStore();
 	const audio = getAudioManager();
@@ -35,6 +34,11 @@
 		store.startRun(run);
 	}
 
+	// Handle cancel/exit from selection
+	function handleCancelSelection(): void {
+		goto('/');
+	}
+
 	// Handle starting node typing
 	function handleStartNode(): void {
 		typed = '';
@@ -55,8 +59,13 @@
 		}
 	}
 
+	// Handle abort
+	function handleAbort(): void {
+		store.abort();
+	}
+
 	// Handle run again
-	function handleRunAgain(): void {
+	function handleNewRun(): void {
 		store.reset();
 		store.selectDifficulty();
 	}
@@ -66,6 +75,22 @@
 		store.reset();
 		goto('/');
 	}
+
+	// Get current node for typing mode
+	const currentNode = $derived.by((): HackRunNode | null => {
+		if (store.state.status === 'node_typing') {
+			return store.state.node;
+		}
+		if (store.state.status === 'running' || store.state.status === 'node_result') {
+			const progress = store.state.progress;
+			const currentIndex = progress.findIndex((p) => p.status === 'current');
+			if (currentIndex >= 0) {
+				const nodeId = progress[currentIndex].nodeId;
+				return store.state.run.nodes.find((n) => n.id === nodeId) ?? null;
+			}
+		}
+		return null;
+	});
 
 	// Global keyboard handler
 	function handleKeydown(event: KeyboardEvent): void {
@@ -82,6 +107,21 @@
 				store.abort();
 			}
 			return;
+		}
+
+		// Space to start new run or continue
+		if (event.key === ' ' && !event.repeat) {
+			const status = store.state.status;
+			if (status === 'complete' || status === 'failed') {
+				event.preventDefault();
+				handleNewRun();
+				return;
+			}
+			if (status === 'running' && currentNode) {
+				event.preventDefault();
+				handleStartNode();
+				return;
+			}
 		}
 
 		// Only capture during typing state
@@ -159,7 +199,7 @@
 		<!-- Header -->
 		<header class="page-header">
 			<button class="back-button" onclick={() => goto('/')} aria-label="Return to network">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<line x1="19" y1="12" x2="5" y2="12"></line>
 					<polyline points="12 19 5 12 12 5"></polyline>
 				</svg>
@@ -172,13 +212,19 @@
 		<!-- Main Content -->
 		<main class="page-content">
 			{#if store.state.status === 'selecting'}
-				<RunSelectionView availableRuns={store.state.availableRuns} onSelectRun={handleSelectRun} />
+				<RunSelectionView
+					availableRuns={store.state.availableRuns}
+					onSelectRun={handleSelectRun}
+					onCancel={handleCancelSelection}
+				/>
 			{:else if store.state.status === 'countdown'}
 				<div class="countdown-view">
 					<Box borderColor="cyan" glow>
 						<Stack gap={4} align="center">
 							<span class="countdown-label">INITIATING HACK RUN</span>
-							<span class="countdown-number">{store.state.secondsLeft}</span>
+							<span class="countdown-number" aria-live="polite" aria-atomic="true">
+								{store.state.secondsLeft}
+							</span>
 							<span class="countdown-hint">Prepare for infiltration...</span>
 						</Stack>
 					</Box>
@@ -186,28 +232,30 @@
 			{:else if store.state.status === 'running' || store.state.status === 'node_typing' || store.state.status === 'node_result'}
 				<ActiveRunView
 					run={store.state.run}
-					currentNode={store.state.status === 'node_typing' ? store.state.node : null}
 					progress={store.state.progress}
+					currentNode={currentNode}
 					timeRemaining={store.state.timeRemaining}
 					currentMultiplier={store.currentMultiplier}
 					totalLoot={store.totalLoot}
 					{typed}
 					{typingStartTime}
 					isTyping={store.state.status === 'node_typing'}
-					onNodeComplete={handleNodeComplete}
 					onStartNode={handleStartNode}
+					onNodeComplete={handleNodeComplete}
+					onAbort={handleAbort}
 				/>
 			{:else if store.state.status === 'complete'}
 				<RunCompleteView
+					run={store.state.run}
 					result={store.state.result}
-					onRunAgain={handleRunAgain}
+					onNewRun={handleNewRun}
 					onExit={handleExit}
 				/>
 			{:else if store.state.status === 'failed'}
 				<div class="failed-view">
 					<Box borderColor="red" glow>
 						<Stack gap={4} align="center">
-							<span class="failed-icon">[X]</span>
+							<span class="failed-icon" aria-hidden="true">[X]</span>
 							<h2 class="failed-title">RUN FAILED</h2>
 							<p class="failed-reason">
 								{#if store.state.reason === 'TIME_EXPIRED'}
@@ -222,14 +270,14 @@
 							</p>
 							<p class="failed-penalty">Entry fee lost</p>
 							<div class="failed-actions">
-								<button class="action-btn" onclick={handleRunAgain}>TRY AGAIN</button>
+								<button class="action-btn" onclick={handleNewRun}>TRY AGAIN</button>
 								<button class="action-btn action-btn-secondary" onclick={handleExit}>EXIT</button>
 							</div>
 						</Stack>
 					</Box>
 				</div>
 			{:else}
-				<div class="loading-state">
+				<div class="loading-state" aria-live="polite">
 					<span>Loading...</span>
 				</div>
 			{/if}
@@ -273,6 +321,11 @@
 		background: var(--color-bg-secondary);
 		border-color: var(--color-accent-dim);
 		color: var(--color-accent);
+	}
+
+	.back-button:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
 	}
 
 	.back-button svg {
@@ -381,6 +434,11 @@
 	.action-btn:hover {
 		background: var(--color-accent);
 		color: var(--color-bg-void);
+	}
+
+	.action-btn:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
 	}
 
 	.action-btn-secondary {

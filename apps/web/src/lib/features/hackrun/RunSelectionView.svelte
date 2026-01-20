@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HackRun } from '$lib/core/types/hackrun';
 	import { Box } from '$lib/ui/terminal';
-	import { Stack, Row } from '$lib/ui/layout';
+	import { Stack } from '$lib/ui/layout';
 	import RunCard from './RunCard.svelte';
 
 	interface Props {
@@ -14,9 +14,19 @@
 	}
 
 	let { availableRuns, onSelectRun, onCancel }: Props = $props();
+
+	// Keyboard handler for escape
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && onCancel) {
+			event.preventDefault();
+			onCancel();
+		}
+	}
 </script>
 
-<div class="selection-view">
+<svelte:window onkeydown={handleKeydown} />
+
+<div class="selection-view" role="region" aria-label="Hack Run Selection">
 	<Box variant="double" borderColor="cyan" padding={4}>
 		<Stack gap={4}>
 			<!-- Header -->
@@ -26,18 +36,22 @@
 			</div>
 
 			<!-- Run cards grid -->
-			<div class="runs-grid">
+			<div class="runs-grid" role="list" aria-label="Available difficulty levels">
 				{#each availableRuns as run (run.id)}
-					<RunCard {run} onSelect={() => onSelectRun?.(run)} />
+					<div role="listitem">
+						<RunCard {run} onSelect={() => onSelectRun?.(run)} />
+					</div>
 				{/each}
 			</div>
 
 			<!-- Cancel option -->
-			<Row justify="center">
-				<button class="cancel-btn" onclick={onCancel}>
-					[ESC] ABORT MISSION
-				</button>
-			</Row>
+			{#if onCancel}
+				<div class="cancel-row">
+					<button class="cancel-btn" onclick={onCancel} aria-label="Cancel and return">
+						[ESC] ABORT MISSION
+					</button>
+				</div>
+			{/if}
 		</Stack>
 	</Box>
 </div>
@@ -73,6 +87,10 @@
 		gap: var(--space-4);
 	}
 
+	.cancel-row {
+		text-align: center;
+	}
+
 	.cancel-btn {
 		background: none;
 		border: none;
@@ -86,5 +104,10 @@
 
 	.cancel-btn:hover {
 		color: var(--color-text-primary);
+	}
+
+	.cancel-btn:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
 	}
 </style>

@@ -3,8 +3,8 @@
 	import { Box } from '$lib/ui/terminal';
 	import { AmountDisplay } from '$lib/ui/data-display';
 	import { Button } from '$lib/ui/primitives';
-	import { Stack, Row } from '$lib/ui/layout';
-	import { RUN_CONFIG } from './generators';
+	import { Stack } from '$lib/ui/layout';
+	import { formatDuration } from '$lib/core/utils';
 
 	interface Props {
 		/** Run configuration */
@@ -16,19 +16,17 @@
 	let { run, onSelect }: Props = $props();
 
 	// Difficulty display config
-	const DIFFICULTY_CONFIG: Record<HackRunDifficulty, { label: string; color: string; borderColor: 'default' | 'cyan' | 'amber' | 'red' }> = {
+	const DIFFICULTY_CONFIG: Record<
+		HackRunDifficulty,
+		{ label: string; color: string; borderColor: 'default' | 'cyan' | 'amber' | 'red' }
+	> = {
 		easy: { label: 'ROUTINE', color: 'var(--color-profit)', borderColor: 'cyan' },
 		medium: { label: 'COMPLEX', color: 'var(--color-amber)', borderColor: 'amber' },
 		hard: { label: 'CRITICAL', color: 'var(--color-loss)', borderColor: 'red' }
 	};
 
-	let config = $derived(DIFFICULTY_CONFIG[run.difficulty]);
-
-	// Format time limit
-	function formatTime(ms: number): string {
-		const minutes = Math.floor(ms / 60000);
-		return `${minutes}:00`;
-	}
+	const config = $derived(DIFFICULTY_CONFIG[run.difficulty]);
+	const mainNodeCount = $derived(run.nodes.filter((n) => n.type !== 'backdoor').length);
 </script>
 
 <Box variant="single" borderColor={config.borderColor} padding={3}>
@@ -40,30 +38,30 @@
 		</div>
 
 		<!-- Stats -->
-		<div class="stats">
-			<Row justify="between" class="stat-row">
+		<div class="stats" role="list" aria-label="Run statistics">
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">ENTRY FEE:</span>
 				<span class="stat-value">
 					<AmountDisplay amount={run.entryFee} format="compact" />
 				</span>
-			</Row>
-			<Row justify="between" class="stat-row">
+			</div>
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">BASE MULT:</span>
 				<span class="stat-value multiplier">{run.baseMultiplier.toFixed(1)}x</span>
-			</Row>
-			<Row justify="between" class="stat-row">
+			</div>
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">TIME LIMIT:</span>
-				<span class="stat-value">{formatTime(run.timeLimit)}</span>
-			</Row>
-			<Row justify="between" class="stat-row">
+				<span class="stat-value">{formatDuration(run.timeLimit)}</span>
+			</div>
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">NODES:</span>
-				<span class="stat-value">{run.nodes.filter(n => n.type !== 'backdoor').length}</span>
-			</Row>
+				<span class="stat-value">{mainNodeCount}</span>
+			</div>
 			{#if run.shortcuts > 0}
-				<Row justify="between" class="stat-row">
+				<div class="stat-row" role="listitem">
 					<span class="stat-label">SHORTCUTS:</span>
 					<span class="stat-value shortcut">{run.shortcuts}</span>
-				</Row>
+				</div>
 			{/if}
 		</div>
 
@@ -103,7 +101,9 @@
 		gap: var(--space-1);
 	}
 
-	:global(.stat-row) {
+	.stat-row {
+		display: flex;
+		justify-content: space-between;
 		font-size: var(--text-sm);
 	}
 

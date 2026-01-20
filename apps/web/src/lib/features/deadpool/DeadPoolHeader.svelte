@@ -2,77 +2,97 @@
 	import type { DeadPoolUserStats } from '$lib/core/types';
 	import { Box } from '$lib/ui/terminal';
 	import { AmountDisplay } from '$lib/ui/data-display';
-	import { Row } from '$lib/ui/layout';
+	import { Button } from '$lib/ui/primitives';
+	import { formatPercent } from '$lib/core/utils';
 
 	interface Props {
 		/** User statistics for Dead Pool */
 		stats: DeadPoolUserStats;
+		/** User's current balance (optional) */
+		balance?: bigint;
+		/** Help button handler (optional) */
+		onHelp?: () => void;
 	}
 
-	let { stats }: Props = $props();
+	let { stats, balance, onHelp }: Props = $props();
 
-	// Format win rate as percentage
-	let winRatePercent = $derived(Math.round(stats.winRate * 100));
+	// Win rate as percentage
+	const winRatePercent = $derived(Math.round(stats.winRate * 100));
 
-	// Streak display
-	let streakText = $derived(() => {
+	// Streak display - using $derived.by for complex logic
+	const streakText = $derived.by(() => {
 		if (stats.currentStreak === 0) return '0';
 		if (stats.currentStreak > 0) return `+${stats.currentStreak}W`;
 		return `${stats.currentStreak}L`;
 	});
 
-	let streakClass = $derived(() => {
+	const streakClass = $derived.by(() => {
 		if (stats.currentStreak > 0) return 'streak-win';
 		if (stats.currentStreak < 0) return 'streak-loss';
 		return '';
 	});
 
-	// Net P/L calculation (bigint comparison)
-	let netProfit = $derived(stats.totalWon >= stats.totalLost);
-	let netAmount = $derived(netProfit ? stats.totalWon - stats.totalLost : stats.totalLost - stats.totalWon);
+	// Net P/L calculation
+	const netProfit = $derived(stats.totalWon >= stats.totalLost);
+	const netAmount = $derived(
+		netProfit ? stats.totalWon - stats.totalLost : stats.totalLost - stats.totalWon
+	);
 </script>
 
 <Box variant="double" borderColor="amber" padding={3}>
 	<div class="deadpool-header">
 		<!-- Title row -->
-		<Row justify="between" align="center">
+		<div class="header-row">
 			<div class="title-section">
 				<span class="title-label">DEAD</span>
 				<span class="title-pool">POOL</span>
+				<span class="subtitle">PREDICTION MARKET</span>
 			</div>
-			<div class="subtitle">PREDICTION MARKET</div>
-		</Row>
+			{#if onHelp}
+				<Button variant="ghost" size="sm" onclick={onHelp} aria-label="Help">
+					[?]
+				</Button>
+			{/if}
+		</div>
 
 		<!-- Divider -->
 		<div class="divider" aria-hidden="true"></div>
 
 		<!-- Stats row -->
-		<Row justify="between" align="center" class="stats-row">
+		<div class="stats-row">
+			{#if balance !== undefined}
+				<div class="stat">
+					<span class="stat-label">BALANCE:</span>
+					<span class="stat-value">
+						<AmountDisplay amount={balance} format="compact" />
+					</span>
+				</div>
+			{/if}
 			<div class="stat">
 				<span class="stat-label">BETS:</span>
 				<span class="stat-value">{stats.totalBets}</span>
 			</div>
 			<div class="stat">
 				<span class="stat-label">WIN RATE:</span>
-				<span class="stat-value" class:positive={winRatePercent >= 50} class:negative={winRatePercent < 50}>
+				<span
+					class="stat-value"
+					class:positive={winRatePercent >= 50}
+					class:negative={winRatePercent < 50}
+				>
 					{winRatePercent}%
 				</span>
 			</div>
 			<div class="stat">
 				<span class="stat-label">NET P/L:</span>
 				<span class="stat-value" class:positive={netProfit} class:negative={!netProfit}>
-					{#if netProfit}
-						+<AmountDisplay amount={netAmount} format="compact" />
-					{:else}
-						-<AmountDisplay amount={netAmount} format="compact" />
-					{/if}
+					{#if netProfit}+{:else}-{/if}<AmountDisplay amount={netAmount} format="compact" />
 				</span>
 			</div>
 			<div class="stat">
 				<span class="stat-label">STREAK:</span>
-				<span class="stat-value {streakClass()}">{streakText()}</span>
+				<span class="stat-value {streakClass}">{streakText}</span>
 			</div>
-		</Row>
+		</div>
 	</div>
 </Box>
 
@@ -83,10 +103,16 @@
 		gap: var(--space-2);
 	}
 
-	.title-section {
+	.header-row {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
+		justify-content: space-between;
+	}
+
+	.title-section {
+		display: flex;
+		align-items: baseline;
+		gap: var(--space-2);
 	}
 
 	.title-label {
@@ -105,8 +131,9 @@
 
 	.subtitle {
 		color: var(--color-text-tertiary);
-		font-size: var(--text-sm);
+		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-widest);
+		margin-left: var(--space-2);
 	}
 
 	.divider {
@@ -115,9 +142,10 @@
 		margin: var(--space-1) 0;
 	}
 
-	:global(.stats-row) {
+	.stats-row {
+		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-3);
+		gap: var(--space-4);
 	}
 
 	.stat {
@@ -156,18 +184,18 @@
 
 	/* Mobile responsiveness */
 	@media (max-width: 480px) {
-		.title-label,
-		.title-pool {
-			font-size: var(--text-lg);
+		.title-section {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0;
 		}
 
 		.subtitle {
-			font-size: var(--text-xs);
+			margin-left: 0;
 		}
 
-		:global(.stats-row) {
+		.stats-row {
 			flex-direction: column;
-			align-items: flex-start;
 			gap: var(--space-1);
 		}
 	}

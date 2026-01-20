@@ -2,7 +2,7 @@
 	import type { HackRunNode } from '$lib/core/types/hackrun';
 	import { NODE_TYPE_CONFIG } from '$lib/core/types/hackrun';
 	import { Box } from '$lib/ui/terminal';
-	import { Stack, Row } from '$lib/ui/layout';
+	import { Stack } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
 
 	interface Props {
@@ -14,24 +14,24 @@
 
 	let { node, onStart }: Props = $props();
 
-	let config = $derived(NODE_TYPE_CONFIG[node.type]);
+	const config = $derived(NODE_TYPE_CONFIG[node.type]);
 
 	// Risk color mapping
 	const RISK_COLORS: Record<string, string> = {
 		low: 'var(--color-profit)',
 		medium: 'var(--color-amber)',
 		high: 'var(--color-loss)',
-		extreme: 'var(--color-red-bright)'
+		extreme: 'var(--color-red)'
 	};
 
-	let riskColor = $derived(RISK_COLORS[node.risk] ?? 'var(--color-text-tertiary)');
+	const riskColor = $derived(RISK_COLORS[node.risk] ?? 'var(--color-text-tertiary)');
 </script>
 
 <Box variant="double" borderColor="cyan" title="CURRENT NODE" padding={3}>
 	<Stack gap={3}>
 		<!-- Node header -->
 		<div class="node-header">
-			<div class="node-icon">{config.icon}</div>
+			<div class="node-icon" aria-hidden="true">{config.icon}</div>
 			<div class="node-title">
 				<span class="node-name">{node.name}</span>
 				<span class="node-type">{node.type.replace('_', ' ').toUpperCase()}</span>
@@ -42,19 +42,19 @@
 		<p class="node-description">{node.description}</p>
 
 		<!-- Stats -->
-		<div class="node-stats">
-			<Row justify="between" class="stat-row">
+		<div class="node-stats" role="list" aria-label="Node statistics">
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">RISK LEVEL:</span>
 				<span class="stat-value" style:color={riskColor}>{node.risk.toUpperCase()}</span>
-			</Row>
-			<Row justify="between" class="stat-row">
+			</div>
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">REWARD:</span>
 				<span class="stat-value reward">{node.reward.label}</span>
-			</Row>
-			<Row justify="between" class="stat-row">
+			</div>
+			<div class="stat-row" role="listitem">
 				<span class="stat-label">TIME LIMIT:</span>
 				<span class="stat-value">{node.challenge.timeLimit}s</span>
-			</Row>
+			</div>
 		</div>
 
 		<!-- Challenge preview -->
@@ -70,8 +70,8 @@
 
 		<!-- Warning for high-risk nodes -->
 		{#if node.risk === 'high' || node.risk === 'extreme'}
-			<div class="warning-box" style:--warning-color={riskColor}>
-				<span class="warning-icon">[!]</span>
+			<div class="warning-box" style:--warning-color={riskColor} role="alert">
+				<span class="warning-icon" aria-hidden="true">[!]</span>
 				<span class="warning-text">
 					{#if node.risk === 'extreme'}
 						EXTREME RISK: Failure may terminate run
@@ -130,7 +130,9 @@
 		gap: var(--space-1);
 	}
 
-	:global(.stat-row) {
+	.stat-row {
+		display: flex;
+		justify-content: space-between;
 		font-size: var(--text-sm);
 	}
 
@@ -175,7 +177,7 @@
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-2);
-		background: rgba(255, 68, 68, 0.1);
+		background: var(--color-red-glow);
 		border: 1px solid var(--warning-color);
 	}
 

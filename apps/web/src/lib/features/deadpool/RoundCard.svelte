@@ -3,8 +3,7 @@
 	import { Box } from '$lib/ui/terminal';
 	import { Button } from '$lib/ui/primitives';
 	import { LevelBadge } from '$lib/ui/data-display';
-	import type { Level } from '$lib/core/types';
-	import { Row } from '$lib/ui/layout';
+	import { formatCountdown, formatDuration } from '$lib/core/utils';
 	import OddsDisplay from './OddsDisplay.svelte';
 	import PoolBars from './PoolBars.svelte';
 
@@ -17,15 +16,22 @@
 
 	let { round, onBet }: Props = $props();
 
-	// Calculate odds multipliers
-	let totalPool = $derived(round.pools.under + round.pools.over);
-	let odds = $derived({
-		under: totalPool > 0n ? Number(totalPool) / Number(round.pools.under || 1n) : 2,
-		over: totalPool > 0n ? Number(totalPool) / Number(round.pools.over || 1n) : 2
+	// Calculate odds multipliers - safe division
+	const totalPool = $derived(round.pools.under + round.pools.over);
+	const odds = $derived({
+		under:
+			round.pools.under > 0n && totalPool > 0n
+				? Number(totalPool) / Number(round.pools.under)
+				: 2,
+		over:
+			round.pools.over > 0n && totalPool > 0n
+				? Number(totalPool) / Number(round.pools.over)
+				: 2
 	});
 
-	// Time until lock/end
+	// Time tracking
 	let now = $state(Date.now());
+
 	$effect(() => {
 		const interval = setInterval(() => {
 			now = Date.now();
@@ -33,25 +39,11 @@
 		return () => clearInterval(interval);
 	});
 
-	let timeUntilLock = $derived(Math.max(0, round.locksAt - now));
-	let timeUntilEnd = $derived(Math.max(0, round.endsAt - now));
+	const timeUntilLock = $derived(Math.max(0, round.locksAt - now));
+	const timeUntilEnd = $derived(Math.max(0, round.endsAt - now));
 
-	// Format time display
-	function formatTime(ms: number): string {
-		if (ms <= 0) return '00:00';
-		const totalSeconds = Math.floor(ms / 1000);
-		const minutes = Math.floor(totalSeconds / 60);
-		const seconds = totalSeconds % 60;
-		if (minutes >= 60) {
-			const hours = Math.floor(minutes / 60);
-			const mins = minutes % 60;
-			return `${hours}h ${mins.toString().padStart(2, '0')}m`;
-		}
-		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-	}
-
-	// Status display
-	let statusLabel = $derived(() => {
+	// Status display using $derived.by for complex logic
+	const statusLabel = $derived.by(() => {
 		switch (round.status) {
 			case 'betting':
 				return 'BETTING OPEN';
@@ -66,7 +58,7 @@
 		}
 	});
 
-	let statusClass = $derived(() => {
+	const statusClass = $derived.by(() => {
 		switch (round.status) {
 			case 'betting':
 				return 'status-betting';
@@ -82,21 +74,25 @@
 	});
 
 	// Can user bet?
-	let canBet = $derived(round.status === 'betting' && timeUntilLock > 0);
+	const canBet = $derived(round.status === 'betting' && timeUntilLock > 0);
 </script>
 
-<Box variant="single" borderColor={round.userBet ? 'cyan' : 'default'} padding={3}>
+<Box
+	variant="single"
+	borderColor={round.userBet ? 'cyan' : 'default'}
+	padding={3}
+>
 	<div class="round-card">
 		<!-- Header: Round number, type, level -->
-		<Row justify="between" align="center" class="round-header">
+		<div class="round-header">
 			<div class="round-meta">
 				<span class="round-number">ROUND #{round.roundNumber}</span>
 				{#if round.targetLevel}
 					<LevelBadge level={round.targetLevel} compact />
 				{/if}
 			</div>
-			<span class="round-status {statusClass()}">{statusLabel()}</span>
-		</Row>
+			<span class="round-status {statusClass}" role="status">{statusLabel}</span>
+		</div>
 
 		<!-- Question -->
 		<p class="round-question">{round.question}</p>
@@ -114,14 +110,14 @@
 		<PoolBars pools={round.pools} width={24} />
 
 		<!-- Timer and action -->
-		<Row justify="between" align="center" class="round-footer">
-			<div class="timer">
+		<div class="round-footer">
+			<div class="timer" aria-live="polite">
 				{#if round.status === 'betting'}
 					<span class="timer-label">LOCKS IN:</span>
-					<span class="timer-value">{formatTime(timeUntilLock)}</span>
+					<span class="timer-value">{formatCountdown(timeUntilLock)}</span>
 				{:else if round.status === 'locked' || round.status === 'resolving'}
 					<span class="timer-label">RESOLVES IN:</span>
-					<span class="timer-value">{formatTime(timeUntilEnd)}</span>
+					<span class="timer-value">{formatCountdown(timeUntilEnd)}</span>
 				{:else}
 					<span class="timer-label">COMPLETE</span>
 				{/if}
@@ -132,11 +128,11 @@
 					PLACE BET
 				</Button>
 			{:else if round.userBet}
-				<div class="user-bet-indicator">
+				<div class="user-bet-indicator" aria-label="Your bet: {round.userBet.side}">
 					<span class="bet-side">{round.userBet.side.toUpperCase()}</span>
 				</div>
 			{/if}
-		</Row>
+		</div>
 	</div>
 </Box>
 
@@ -147,8 +143,11 @@
 		gap: var(--space-3);
 	}
 
-	:global(.round-header) {
+	.round-header {
+		display: flex;
 		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: center;
 		gap: var(--space-2);
 	}
 
@@ -174,17 +173,17 @@
 
 	.status-betting {
 		color: var(--color-profit);
-		background: rgba(0, 255, 136, 0.1);
+		background: var(--color-profit-glow);
 	}
 
 	.status-locked {
 		color: var(--color-amber);
-		background: rgba(255, 193, 7, 0.1);
+		background: var(--color-amber-glow);
 	}
 
 	.status-resolving {
 		color: var(--color-cyan);
-		background: rgba(0, 229, 204, 0.1);
+		background: var(--color-cyan-glow);
 		animation: pulse 1s ease-in-out infinite;
 	}
 
@@ -232,7 +231,10 @@
 		font-weight: var(--font-bold);
 	}
 
-	:global(.round-footer) {
+	.round-footer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-top: var(--space-1);
 	}
 
@@ -267,6 +269,6 @@
 	.bet-side {
 		padding: var(--space-1) var(--space-2);
 		border: 1px solid var(--color-cyan);
-		background: rgba(0, 229, 204, 0.1);
+		background: var(--color-cyan-glow);
 	}
 </style>

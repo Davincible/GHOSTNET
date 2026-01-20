@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { HackRun, HackRunResult } from '$lib/core/types/hackrun';
 	import { Box } from '$lib/ui/terminal';
-	import { Stack, Row } from '$lib/ui/layout';
+	import { Stack } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
 	import { AmountDisplay } from '$lib/ui/data-display';
+	import { formatCountdown, formatHours } from '$lib/core/utils';
 	import { MULTIPLIER_DURATION } from './generators';
 
 	interface Props {
@@ -18,20 +19,6 @@
 	}
 
 	let { run, result, onNewRun, onExit }: Props = $props();
-
-	// Format duration
-	function formatDuration(ms: number): string {
-		const hours = Math.floor(ms / 3600000);
-		return `${hours} HOURS`;
-	}
-
-	// Format elapsed time
-	function formatElapsed(ms: number): string {
-		const totalSeconds = Math.floor(ms / 1000);
-		const minutes = Math.floor(totalSeconds / 60);
-		const seconds = totalSeconds % 60;
-		return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-	}
 </script>
 
 <div class="complete-view">
@@ -40,41 +27,41 @@
 			<!-- Header -->
 			<div class="header" class:success={result.success} class:failure={!result.success}>
 				{#if result.success}
-					<div class="status-icon success">[OK]</div>
+					<div class="status-icon success" aria-hidden="true">[OK]</div>
 					<h2 class="status-title">INFILTRATION COMPLETE</h2>
 					<p class="status-subtitle">Successfully extracted from {run.difficulty.toUpperCase()} network</p>
 				{:else}
-					<div class="status-icon failure">[XX]</div>
+					<div class="status-icon failure" aria-hidden="true">[XX]</div>
 					<h2 class="status-title">INFILTRATION FAILED</h2>
 					<p class="status-subtitle">Connection terminated by ICE</p>
 				{/if}
 			</div>
 
 			<!-- Stats -->
-			<div class="stats-grid">
-				<div class="stat-card">
+			<div class="stats-grid" role="list" aria-label="Run results">
+				<div class="stat-card" role="listitem">
 					<span class="stat-label">NODES CLEARED</span>
 					<span class="stat-value">{result.nodesCompleted}/{result.totalNodes}</span>
 				</div>
-				<div class="stat-card">
+				<div class="stat-card" role="listitem">
 					<span class="stat-label">TIME ELAPSED</span>
-					<span class="stat-value">{formatElapsed(result.timeElapsed)}</span>
+					<span class="stat-value">{formatCountdown(result.timeElapsed)}</span>
 				</div>
-				<div class="stat-card highlight">
+				<div class="stat-card highlight" role="listitem">
 					<span class="stat-label">YIELD MULTIPLIER</span>
 					<span class="stat-value multiplier">{result.finalMultiplier.toFixed(2)}x</span>
 				</div>
-				<div class="stat-card">
+				<div class="stat-card" role="listitem">
 					<span class="stat-label">LOOT EXTRACTED</span>
 					<span class="stat-value loot">
 						<AmountDisplay amount={result.lootGained} format="compact" />
 					</span>
 				</div>
-				<div class="stat-card">
+				<div class="stat-card" role="listitem">
 					<span class="stat-label">XP EARNED</span>
 					<span class="stat-value xp">+{result.xpGained} XP</span>
 				</div>
-				<div class="stat-card">
+				<div class="stat-card" role="listitem">
 					<span class="stat-label">ENTRY FEE</span>
 					<span class="stat-value" class:refunded={result.entryRefunded}>
 						{#if result.entryRefunded}
@@ -88,26 +75,26 @@
 
 			<!-- Multiplier info (if successful) -->
 			{#if result.success && result.finalMultiplier > 0}
-				<div class="multiplier-info">
-					<span class="multiplier-icon">[*]</span>
+				<div class="multiplier-info" role="status">
+					<span class="multiplier-icon" aria-hidden="true">[*]</span>
 					<div class="multiplier-text">
 						<span class="multiplier-label">YIELD BOOST ACTIVE</span>
 						<span class="multiplier-duration">
-							{result.finalMultiplier.toFixed(2)}x multiplier for {formatDuration(MULTIPLIER_DURATION)}
+							{result.finalMultiplier.toFixed(2)}x multiplier for {formatHours(MULTIPLIER_DURATION)}
 						</span>
 					</div>
 				</div>
 			{/if}
 
 			<!-- Actions -->
-			<Row gap={2} justify="center">
+			<div class="actions">
 				<Button variant="secondary" onclick={onExit}>
 					[ESC] EXIT
 				</Button>
 				<Button variant="primary" onclick={onNewRun}>
 					[SPACE] NEW RUN
 				</Button>
-			</Row>
+			</div>
 		</Stack>
 	</Box>
 </div>
@@ -175,7 +162,7 @@
 	}
 
 	.stat-card.highlight {
-		background: rgba(0, 229, 204, 0.1);
+		background: var(--color-cyan-glow);
 		border-color: var(--color-cyan-dim);
 	}
 
@@ -214,7 +201,7 @@
 		align-items: center;
 		gap: var(--space-3);
 		padding: var(--space-3);
-		background: rgba(0, 229, 204, 0.1);
+		background: var(--color-cyan-glow);
 		border: 1px solid var(--color-cyan-dim);
 	}
 
@@ -239,6 +226,12 @@
 	.multiplier-duration {
 		color: var(--color-text-secondary);
 		font-size: var(--text-xs);
+	}
+
+	.actions {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-2);
 	}
 
 	/* Mobile responsiveness */
