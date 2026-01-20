@@ -4,31 +4,33 @@
 	import { Button } from '$lib/ui/primitives';
 	import { AddressDisplay } from '$lib/ui/data-display';
 	import { Row } from '$lib/ui/layout';
+	import { WalletModal } from '$lib/features/modals';
 	import { wallet } from '$lib/web3';
 
+	// Modal state
+	let showWalletModal = $state(false);
+
 	// Initialize wallet watchers on mount (one-time setup)
-	// Use onMount instead of $effect to avoid tracking store state during init
 	onMount(() => {
-		// init() returns cleanup function
 		return wallet.init();
 	});
 
-	async function handleClick() {
-		if (wallet.isConnected) {
-			await wallet.disconnect();
-		} else {
-			await wallet.connect();
-		}
+	function openModal() {
+		showWalletModal = true;
 	}
 
-	function dismissError() {
-		wallet.clearError();
+	function closeModal() {
+		showWalletModal = false;
+	}
+
+	async function handleDisconnect() {
+		await wallet.disconnect();
 	}
 </script>
 
 {#if browser}
 	{#if wallet.isConnected && wallet.address}
-		<button class="wallet-connected" onclick={handleClick} type="button">
+		<button class="wallet-connected" onclick={handleDisconnect} type="button" title="Click to disconnect">
 			<Row gap={2} align="center">
 				<span class="wallet-indicator" aria-hidden="true"></span>
 				<AddressDisplay address={wallet.address} />
@@ -39,18 +41,9 @@
 			{wallet.status === 'reconnecting' ? 'Reconnecting...' : 'Connecting...'}
 		</Button>
 	{:else}
-		<Button variant="primary" size="sm" onclick={handleClick}>
+		<Button variant="primary" size="sm" onclick={openModal}>
 			Connect
 		</Button>
-	{/if}
-
-	{#if wallet.error}
-		<div class="wallet-error" role="alert">
-			<span>{wallet.error}</span>
-			<button class="dismiss-btn" onclick={dismissError} type="button" aria-label="Dismiss error">
-				×
-			</button>
-		</div>
 	{/if}
 
 	{#if wallet.isConnected && !wallet.isCorrectChain}
@@ -58,6 +51,9 @@
 			Wrong network - Click to switch to {wallet.defaultChain.name}
 		</button>
 	{/if}
+
+	<!-- Wallet Selection Modal -->
+	<WalletModal open={showWalletModal} onclose={closeModal} />
 {:else}
 	<!-- SSR fallback -->
 	<Button variant="primary" size="sm" disabled>
@@ -102,38 +98,6 @@
 		background-color: var(--color-accent);
 		box-shadow: 0 0 4px var(--color-accent-glow);
 		transition: all var(--duration-fast) var(--ease-default);
-	}
-
-	.wallet-error {
-		position: absolute;
-		top: 100%;
-		right: 0;
-		margin-top: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		background: var(--color-surface-raised);
-		border: var(--border-width) solid var(--color-red-dim);
-		color: var(--color-red);
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		z-index: 100;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.dismiss-btn {
-		background: none;
-		border: none;
-		color: inherit;
-		font-size: var(--text-base);
-		opacity: 0.7;
-		cursor: pointer;
-		padding: 0;
-		line-height: 1;
-	}
-
-	.dismiss-btn:hover {
-		opacity: 1;
 	}
 
 	.chain-warning {
