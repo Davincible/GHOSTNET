@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-vercel';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
@@ -7,8 +7,9 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// adapter-auto automatically selects the right adapter for your deployment target
-		// See https://svelte.dev/docs/kit/adapters for available adapters
+		// Vercel adapter for deployment
+		// Bun runtime is configured project-wide via vercel.json (bunVersion: "1.x")
+		// See https://vercel.com/docs/functions/runtimes/bun
 		adapter: adapter(),
 
 		// Alias configuration for cleaner imports

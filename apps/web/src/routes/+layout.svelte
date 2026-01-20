@@ -4,6 +4,7 @@
 	import '../app.css';
 	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
 	import { initializeProvider } from '$lib/core/stores/index.svelte';
+	import { getSettings } from '$lib/core/settings';
 
 	interface Props {
 		children: Snippet;
@@ -13,6 +14,9 @@
 
 	// Initialize the data provider and set in context
 	const provider = initializeProvider();
+
+	// Get settings for visual effects
+	const settings = getSettings();
 
 	// Screen flash state (controlled by feed events)
 	let flashType: 'death' | 'jackpot' | 'warning' | 'success' | null = $state(null);
@@ -42,9 +46,11 @@
 </script>
 
 <Shell>
-	<Scanlines />
-	<Flicker>
+	<Scanlines enabled={settings.scanlinesEnabled} />
+	<Flicker enabled={settings.flickerEnabled}>
 		{@render children()}
 	</Flicker>
-	<ScreenFlash type={flashType} onComplete={() => (flashType = null)} />
+	{#if settings.effectsEnabled}
+		<ScreenFlash type={flashType} onComplete={() => (flashType = null)} />
+	{/if}
 </Shell>

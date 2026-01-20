@@ -161,8 +161,9 @@
 	}
 
 	.setting-row {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: var(--space-3);
 		align-items: center;
 		padding: var(--space-2) 0;
 		transition: opacity var(--duration-fast) var(--ease-default);
@@ -178,11 +179,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
+		min-width: 0; /* Allow text to shrink and wrap */
 	}
 
 	.setting-hint {
 		color: var(--color-green-dim);
 		font-size: var(--text-xs);
+		line-height: var(--leading-snug);
 	}
 
 	/* Toggle Switch */

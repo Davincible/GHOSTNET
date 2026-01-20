@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: Settings = {
 	audioVolume: 0.5,
 	effectsEnabled: true,
 	scanlinesEnabled: true,
-	flickerEnabled: false
+	flickerEnabled: true
 };
 
 const STORAGE_KEY = 'ghostnet_settings';
