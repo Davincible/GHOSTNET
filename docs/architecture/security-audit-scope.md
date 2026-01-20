@@ -397,13 +397,22 @@ When a level reaches maximum capacity (`maxPositions`), new entrants trigger "Th
 
 ### 6.1 Unit Tests
 
-| Category | Coverage Target | Current |
-|----------|-----------------|---------|
-| Happy path | 100% | [TBD]% |
-| Edge cases | 90%+ | [TBD]% |
-| Revert conditions | 100% | [TBD]% |
-| Access control | 100% | [TBD]% |
-| Math operations | 100% | [TBD]% |
+| Category | Target | Minimum | Current |
+|----------|--------|---------|---------|
+| Line Coverage | 95%+ | 90% | [TBD]% |
+| Branch Coverage | 90%+ | 85% | [TBD]% |
+| Happy Path | 100% | 100% | [TBD]% |
+| Edge Cases | 95%+ | 90% | [TBD]% |
+| Revert Conditions | 100% | 100% | [TBD]% |
+| Access Control | 100% | 100% | [TBD]% |
+| Math Operations | 100% | 100% | [TBD]% |
+| Mutation Testing Score | 85%+ | 75% | [TBD]% |
+
+**Coverage Requirements:**
+- All public/external functions must have at least one test
+- All revert conditions must be explicitly tested
+- Access control modifiers must be tested from both authorized and unauthorized callers
+- Boundary conditions (0, 1, max values) must be tested for numerical inputs
 
 ### 6.2 Integration Tests
 

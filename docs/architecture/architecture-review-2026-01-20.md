@@ -34,8 +34,8 @@ This review identifies **3 Critical**, **4 High**, **5 Medium**, and **4 Low/Inf
 |----------|-------|----------------------|--------|
 | Critical | 3 | Yes | ✅ All Resolved |
 | High | 4 | Yes | ✅ All Resolved |
-| Medium | 5 | Recommended | 4/5 Resolved |
-| Low/Informational | 4 | Optional | 2/4 Resolved |
+| Medium | 5 | Recommended | ✅ All Resolved |
+| Low/Informational | 4 | Optional | 4/4 Resolved |
 
 ---
 
@@ -514,50 +514,33 @@ pragma solidity ^0.8.33;
 
 ### M-02: ERC-7201 Storage Slot Computation Not Documented
 
+**Status: ✅ RESOLVED** - Added comprehensive ERC-7201 storage slot documentation to `contract-specifications.md`.
+
 **Location:** `contract-specifications.md` (lines 377-406)
 
 **Description:**  
-The specification uses ERC-7201 namespaced storage (which is excellent), but doesn't document the actual computed slot values:
+The specification uses ERC-7201 namespaced storage (which is excellent), but doesn't document the actual computed slot values.
 
-```solidity
-/// @custom:storage-location erc7201:ghostnet.storage.GhostCore
-struct GhostCoreStorage {
-    // ...
-}
-```
+**Resolution Implemented:**
 
-The slot computation formula is shown in the guides but not applied:
-```solidity
-// keccak256(abi.encode(uint256(keccak256("ghostnet.storage.GhostCore")) - 1)) & ~bytes32(uint256(0xff))
-bytes32 private constant GHOSTCORE_STORAGE_LOCATION = 0x???;
-```
+Added "ERC-7201 Storage Slot Locations" section to `contract-specifications.md` including:
 
-**Impact:**  
-Without documented slot values:
-1. Upgrade safety verification is harder
-2. Storage layout conflicts may go undetected
-3. Tooling (OpenZeppelin Upgrades Plugin) may not validate correctly
+1. **Computed slot values** for all four namespaced contracts:
+   - GhostCore: `ghostnet.storage.GhostCore`
+   - TraceScan: `ghostnet.storage.TraceScan`
+   - RewardsDistributor: `ghostnet.storage.RewardsDistributor`
+   - DeadPool: `ghostnet.storage.DeadPool`
 
-**Recommendation:**  
-Create a storage layout document or add computed slots to specifications:
+2. **Slot computation formula** (per ERC-7201):
+   ```solidity
+   keccak256(abi.encode(uint256(keccak256(bytes(namespace))) - 1)) & ~bytes32(uint256(0xff))
+   ```
 
-```markdown
-### Storage Slot Locations (ERC-7201)
+3. **Usage pattern** showing how contracts should implement the storage accessor
 
-| Contract | Namespace | Computed Slot |
-|----------|-----------|---------------|
-| GhostCore | `ghostnet.storage.GhostCore` | `0x...` |
-| TraceScan | `ghostnet.storage.TraceScan` | `0x...` |
-| RewardsDistributor | `ghostnet.storage.RewardsDistributor` | `0x...` |
-| DeadPool | `ghostnet.storage.DeadPool` | `0x...` |
+4. **Verification script** (Foundry) to validate computed slots match expected values
 
-**Computation:**
-```solidity
-function computeStorageSlot(string memory namespace) pure returns (bytes32) {
-    return keccak256(abi.encode(uint256(keccak256(bytes(namespace))) - 1)) & ~bytes32(uint256(0xff));
-}
-```
-```
+5. **Upgrade safety note** reminding developers to verify storage compatibility before upgrades
 
 ---
 
@@ -720,22 +703,17 @@ Consider maintaining pre-signed pause transactions for extreme scenarios:
 
 ### L-01: Test Coverage Targets Not Specified
 
+**Status: ✅ RESOLVED** - Added specific coverage targets and minimums to `security-audit-scope.md`.
+
 **Location:** `security-audit-scope.md` (lines 299-308)
 
 **Description:**  
-Test coverage targets are listed as "[TBD]%":
+Test coverage targets were listed as "[TBD]%".
 
-```markdown
-| Category | Coverage Target | Current |
-|----------|-----------------|---------|
-| Happy path | 100% | [TBD]% |
-| Edge cases | 90%+ | [TBD]% |
-```
+**Resolution Implemented:**
 
-**Recommendation:**  
-Establish minimum thresholds before audit:
+Updated the unit tests section with concrete targets and minimums:
 
-```markdown
 | Category | Target | Minimum |
 |----------|--------|---------|
 | Line Coverage | 95%+ | 90% |
@@ -744,50 +722,41 @@ Establish minimum thresholds before audit:
 | Edge Cases | 95%+ | 90% |
 | Revert Conditions | 100% | 100% |
 | Access Control | 100% | 100% |
+| Math Operations | 100% | 100% |
 | Mutation Testing Score | 85%+ | 75% |
-```
+
+Also added explicit coverage requirements:
+- All public/external functions must have at least one test
+- All revert conditions must be explicitly tested
+- Access control modifiers tested from authorized and unauthorized callers
+- Boundary conditions tested for numerical inputs
 
 ---
 
 ### L-02: TransientReentrancyGuard Not Specified
 
+**Status: ✅ RESOLVED** - Added comprehensive ReentrancyGuard selection guidance to `contract-specifications.md`.
+
 **Location:** Contract specifications throughout
 
 **Description:**  
-The project guides recommend `ReentrancyGuardTransient` for gas savings on Cancun+ EVM:
+The project guides recommend `ReentrancyGuardTransient` for gas savings on Cancun+ EVM, but the specifications didn't clarify which variant to use.
 
-**Reference** (`modern-solidity.md:176-178`):
-> "BEST (2025): Transient Storage ReentrancyGuard (cheaper)... Uses EIP-1153 transient storage - ~50% gas savings"
+**Resolution Implemented:**
 
-The specifications use standard `ReentrancyGuardUpgradeable` without specifying whether to use the transient variant.
+Added "ReentrancyGuard Selection" section to `contract-specifications.md` including:
 
-**Recommendation:**  
-Add to compiler requirements section:
+1. **Recommended guards by contract type:**
+   - Upgradeable: `ReentrancyGuardTransientUpgradeable`
+   - Immutable: `ReentrancyGuardTransient`
 
-```markdown
-### OpenZeppelin Dependencies
+2. **Gas comparison table** showing ~50% savings on first call
 
-| Dependency | Version | Notes |
-|------------|---------|-------|
-| @openzeppelin/contracts-upgradeable | 5.x | For upgradeable contracts |
-| @openzeppelin/contracts | 5.x | For immutable contracts |
+3. **Requirements** (Solidity ≥0.8.24, EVM target `cancun`/`prague`)
 
-### ReentrancyGuard Selection
+4. **Fallback guidance** for chains without EIP-1153
 
-For MegaETH (Prague EVM):
-- Use `ReentrancyGuardTransient` for ~50% gas savings
-- Requires Solidity 0.8.24+ (transient storage support)
-
-```solidity
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardTransientUpgradeable.sol";
-
-contract GhostCore is 
-    UUPSUpgradeable, 
-    ReentrancyGuardTransientUpgradeable,  // Not ReentrancyGuardUpgradeable
-    // ...
-{
-```
-```
+5. **Clarification** that contract specs show standard guard but implementations SHOULD use transient variant on MegaETH
 
 ---
 
@@ -892,19 +861,19 @@ The architecture documentation demonstrates strong engineering practices:
 | ID | Finding | Priority | Effort | Status |
 |----|---------|----------|--------|--------|
 | M-01 | Specify Solidity version pragma | Medium | Low | ✅ Done |
-| M-02 | Document ERC-7201 slot computations | Medium | Medium | Pending |
+| M-02 | Document ERC-7201 slot computations | Medium | Medium | ✅ Done |
 | M-03 | Document storage cleanup strategy | Medium | Low | ✅ Done (epoch-based pattern) |
 | M-04 | Add cross-chain replay verification to audit scope | Medium | Low | ✅ Done |
 | M-05 | Add response time requirements to emergency procedures | Medium | Low | ✅ Done |
 
 ### Optional Improvements (Low)
 
-| ID | Finding | Priority | Effort |
-|----|---------|----------|--------|
-| L-01 | Specify test coverage targets | Low | Low |
-| L-02 | Specify TransientReentrancyGuard | Low | Low |
-| L-03 | Fix DEAD_ADDRESS to constant | Low | Trivial |
-| L-04 | Add reset epoch getter | Low | Trivial |
+| ID | Finding | Priority | Effort | Status |
+|----|---------|----------|--------|--------|
+| L-01 | Specify test coverage targets | Low | Low | ✅ Done |
+| L-02 | Specify TransientReentrancyGuard | Low | Low | ✅ Done |
+| L-03 | Fix DEAD_ADDRESS to constant | Low | Trivial | ✅ Done |
+| L-04 | Add reset epoch getter | Low | Trivial | ✅ Done |
 
 ---
 

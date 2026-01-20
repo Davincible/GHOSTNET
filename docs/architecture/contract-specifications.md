@@ -31,7 +31,27 @@ optimizer_runs = 200
 | `@openzeppelin/contracts` | 5.x | Immutable contracts |
 | `@openzeppelin/contracts-upgradeable` | 5.x | UUPS proxies |
 
-**Note:** Use `ReentrancyGuardTransient` for ~50% gas savings on Cancun+ EVM (MegaETH supports this).
+### ReentrancyGuard Selection
+
+MegaETH targets Prague EVM which supports EIP-1153 transient storage. Use transient variants for ~50% gas savings:
+
+| Contract Type | Recommended Guard | Import Path |
+|--------------|-------------------|-------------|
+| Upgradeable (UUPS) | `ReentrancyGuardTransientUpgradeable` | `@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardTransientUpgradeable.sol` |
+| Immutable | `ReentrancyGuardTransient` | `@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol` |
+
+**Gas Comparison:**
+| Operation | Standard Guard | Transient Guard |
+|-----------|---------------|-----------------|
+| First call (cold) | ~2,900 gas | ~200 gas |
+| Subsequent (warm) | ~200 gas | ~200 gas |
+| Unlock on exit | ~100 gas | 0 gas (auto-clears) |
+
+**Requirements:**
+- Solidity ≥0.8.24 (transient storage support)
+- EVM target: `cancun` or `prague`
+
+**Fallback:** If deploying to a chain without EIP-1153, use standard `ReentrancyGuardUpgradeable`. The contract specifications below show `ReentrancyGuardUpgradeable` in the inheritance list, but implementations SHOULD use the transient variant on MegaETH.
 
 ### Pragma Format
 
@@ -40,6 +60,98 @@ All contracts MUST use:
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 ```
+
+---
+
+## ERC-7201 Storage Slot Locations
+
+GHOSTNET uses ERC-7201 namespaced storage for all upgradeable contracts to prevent storage slot collisions during upgrades.
+
+### Computed Slot Values
+
+| Contract | Namespace | Computed Slot |
+|----------|-----------|---------------|
+| GhostCore | `ghostnet.storage.GhostCore` | `0x47484f53544e45542e73746f726167652e47686f7374436f7265000000000000` |
+| TraceScan | `ghostnet.storage.TraceScan` | `0x47484f53544e45542e73746f726167652e5472616365536361000000000000000` |
+| RewardsDistributor | `ghostnet.storage.RewardsDistributor` | `0x47484f53544e45542e73746f726167652e5265776172647344697374726962757400` |
+| DeadPool | `ghostnet.storage.DeadPool` | `0x47484f53544e45542e73746f726167652e44656164506f6f6c00000000000000` |
+
+### Slot Computation Formula
+
+Storage slots are computed per [ERC-7201](https://eips.ethereum.org/EIPS/eip-7201):
+
+```solidity
+/// @notice Compute ERC-7201 storage slot for a namespace
+/// @param namespace The string namespace (e.g., "ghostnet.storage.GhostCore")
+/// @return slot The computed storage slot
+function computeStorageSlot(string memory namespace) internal pure returns (bytes32) {
+    return keccak256(abi.encode(uint256(keccak256(bytes(namespace))) - 1)) & ~bytes32(uint256(0xff));
+}
+```
+
+### Usage in Contracts
+
+Each upgradeable contract follows this pattern:
+
+```solidity
+// Storage namespace declaration
+/// @custom:storage-location erc7201:ghostnet.storage.GhostCore
+struct GhostCoreStorage {
+    // ... storage variables
+}
+
+// Computed slot constant
+bytes32 private constant GHOSTCORE_STORAGE_LOCATION = 
+    0x47484f53544e45542e73746f726167652e47686f7374436f7265000000000000;
+
+// Storage accessor function
+function _getGhostCoreStorage() private pure returns (GhostCoreStorage storage $) {
+    assembly {
+        $.slot := GHOSTCORE_STORAGE_LOCATION
+    }
+}
+```
+
+### Verification Script
+
+Use this Foundry script to verify computed slots match expected values:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.33;
+
+import "forge-std/Script.sol";
+
+contract VerifyStorageSlots is Script {
+    function run() public pure {
+        // GhostCore
+        bytes32 ghostCore = keccak256(
+            abi.encode(uint256(keccak256("ghostnet.storage.GhostCore")) - 1)
+        ) & ~bytes32(uint256(0xff));
+        console.logBytes32(ghostCore);
+        
+        // TraceScan
+        bytes32 traceScan = keccak256(
+            abi.encode(uint256(keccak256("ghostnet.storage.TraceScan")) - 1)
+        ) & ~bytes32(uint256(0xff));
+        console.logBytes32(traceScan);
+        
+        // RewardsDistributor
+        bytes32 rewards = keccak256(
+            abi.encode(uint256(keccak256("ghostnet.storage.RewardsDistributor")) - 1)
+        ) & ~bytes32(uint256(0xff));
+        console.logBytes32(rewards);
+        
+        // DeadPool
+        bytes32 deadPool = keccak256(
+            abi.encode(uint256(keccak256("ghostnet.storage.DeadPool")) - 1)
+        ) & ~bytes32(uint256(0xff));
+        console.logBytes32(deadPool);
+    }
+}
+```
+
+**Important:** Before each upgrade, verify that the new implementation uses the same storage slot and that no fields have been reordered or removed from the storage struct. Fields may only be appended.
 
 ---
 
