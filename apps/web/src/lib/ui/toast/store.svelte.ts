@@ -25,7 +25,7 @@ export function addToast(
 	duration: number = 3000
 ): string {
 	const id = crypto.randomUUID();
-	
+
 	toasts = [...toasts, { id, message, type, duration }];
 
 	// Auto-remove after duration
@@ -68,6 +68,6 @@ export function getToasts() {
 		info: (message: string, duration?: number) => addToast(message, 'info', duration),
 		success: (message: string, duration?: number) => addToast(message, 'success', duration),
 		warning: (message: string, duration?: number) => addToast(message, 'warning', duration),
-		error: (message: string, duration?: number) => addToast(message, 'error', duration)
+		error: (message: string, duration?: number) => addToast(message, 'error', duration),
 	};
 }

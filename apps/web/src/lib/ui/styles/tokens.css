@@ -6,260 +6,247 @@
  */
 
 :root {
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      COLORS - Core Palette
      Inspired by mission control interfaces, void-like deep blacks
      with luminous teal-cyan accents
      ══════════════════════════════════════════════════════════════ */
 
-  /* Backgrounds - Cold, void-like blacks */
-  --color-bg-void: #030305;         /* Deepest black - true void */
-  --color-bg-primary: #050507;      /* Near black - main background */
-  --color-bg-secondary: #0a0a0e;    /* Panel backgrounds */
-  --color-bg-tertiary: #12121a;     /* Elevated surfaces */
-  --color-bg-elevated: #18182a;     /* Hover states, highlights */
+	/* Backgrounds - Cold, void-like blacks */
+	--color-bg-void: #030305; /* Deepest black - true void */
+	--color-bg-primary: #050507; /* Near black - main background */
+	--color-bg-secondary: #0a0a0e; /* Panel backgrounds */
+	--color-bg-tertiary: #12121a; /* Elevated surfaces */
+	--color-bg-elevated: #18182a; /* Hover states, highlights */
 
-  /* Primary Accent - Teal/Cyan (the signature color) */
-  --color-accent: #00e5cc;          /* Primary teal - key metrics, active states */
-  --color-accent-bright: #00fff2;   /* Bright teal - highlights, glows */
-  --color-accent-mid: #00b8a3;      /* Medium teal - secondary elements */
-  --color-accent-dim: #007a6b;      /* Dim teal - borders, subtle accents */
-  --color-accent-faint: #004d43;    /* Very subtle accents */
-  --color-accent-glow: rgba(0, 229, 204, 0.25);
+	/* Primary Accent - Teal/Cyan (the signature color) */
+	--color-accent: #00e5cc; /* Primary teal - key metrics, active states */
+	--color-accent-bright: #00fff2; /* Bright teal - highlights, glows */
+	--color-accent-mid: #00b8a3; /* Medium teal - secondary elements */
+	--color-accent-dim: #007a6b; /* Dim teal - borders, subtle accents */
+	--color-accent-faint: #004d43; /* Very subtle accents */
+	--color-accent-glow: rgba(0, 229, 204, 0.25);
 
-  /* Text Colors */
-  --color-text-primary: #ffffff;    /* Pure white - primary data values */
-  --color-text-secondary: #a0a0b0;  /* Medium gray - labels, secondary text */
-  --color-text-tertiary: #606070;   /* Dim gray - disabled, hints */
-  --color-text-muted: #404050;      /* Very dim - borders as text */
+	/* Text Colors */
+	--color-text-primary: #ffffff; /* Pure white - primary data values */
+	--color-text-secondary: #a0a0b0; /* Medium gray - labels, secondary text */
+	--color-text-tertiary: #606070; /* Dim gray - disabled, hints */
+	--color-text-muted: #404050; /* Very dim - borders as text */
 
-  /* Border Colors - Barely-there, subtle separation */
-  --color-border-subtle: #1a1a24;   /* Barely visible borders */
-  --color-border-default: #252532;  /* Default card borders */
-  --color-border-strong: #35354a;   /* Emphasized borders */
+	/* Border Colors - Barely-there, subtle separation */
+	--color-border-subtle: #1a1a24; /* Barely visible borders */
+	--color-border-default: #252532; /* Default card borders */
+	--color-border-strong: #35354a; /* Emphasized borders */
 
-  /* Status Colors - Functional, not decorative */
-  --color-cyan: #00e5ff;            /* Info, links, interactive */
-  --color-cyan-dim: #00a0b0;
-  --color-cyan-glow: rgba(0, 229, 255, 0.2);
+	/* Status Colors - Functional, not decorative */
+	--color-cyan: #00e5ff; /* Info, links, interactive */
+	--color-cyan-dim: #00a0b0;
+	--color-cyan-glow: rgba(0, 229, 255, 0.2);
 
-  --color-amber: #ffb000;           /* Warnings, caution */
-  --color-amber-dim: #a07000;
-  --color-amber-glow: rgba(255, 176, 0, 0.2);
+	--color-amber: #ffb000; /* Warnings, caution */
+	--color-amber-dim: #a07000;
+	--color-amber-glow: rgba(255, 176, 0, 0.2);
 
-  --color-red: #ff3366;             /* Danger, deaths, losses */
-  --color-red-dim: #a02040;
-  --color-red-glow: rgba(255, 51, 102, 0.25);
+	--color-red: #ff3366; /* Danger, deaths, losses */
+	--color-red-dim: #a02040;
+	--color-red-glow: rgba(255, 51, 102, 0.25);
 
-  /* Success/Profit - Kept green for financial context */
-  --color-profit: #00ff88;          /* Gains, positive numbers */
-  --color-profit-dim: #00a058;
-  --color-profit-glow: rgba(0, 255, 136, 0.2);
+	/* Success/Profit - Kept green for financial context */
+	--color-profit: #00ff88; /* Gains, positive numbers */
+	--color-profit-dim: #00a058;
+	--color-profit-glow: rgba(0, 255, 136, 0.2);
 
-  --color-loss: #ff4466;            /* Losses, negative numbers */
+	--color-loss: #ff4466; /* Losses, negative numbers */
 
-  /* Gold - For special achievements */
-  --color-gold: #ffd700;
-  --color-gold-glow: rgba(255, 215, 0, 0.3);
+	/* Gold - For special achievements */
+	--color-gold: #ffd700;
+	--color-gold-glow: rgba(255, 215, 0, 0.3);
 
-  /* Legacy Terminal Green (for maintaining some terminal flavor) */
-  --color-green-bright: #00ff66;
-  --color-green-mid: #00cc55;
-  --color-green-dim: #008844;
-  --color-green-glow: rgba(0, 255, 102, 0.2);
+	/* Legacy Terminal Green (for maintaining some terminal flavor) */
+	--color-green-bright: #00ff66;
+	--color-green-mid: #00cc55;
+	--color-green-dim: #008844;
+	--color-green-glow: rgba(0, 255, 102, 0.2);
 
-  /* Special Effects - More subtle */
-  --color-scan-line: rgba(0, 229, 204, 0.015);
-  --color-flicker: rgba(255, 255, 255, 0.02);
+	/* Special Effects - More subtle */
+	--color-scan-line: rgba(0, 229, 204, 0.015);
+	--color-flicker: rgba(255, 255, 255, 0.02);
 
-  /* Level Colors (Security Clearances) */
-  --color-level-vault: #00e5cc;     /* Teal - safe */
-  --color-level-mainframe: #00e5ff; /* Cyan */
-  --color-level-subnet: #ffb000;    /* Amber */
-  --color-level-darknet: #ff6633;   /* Orange */
-  --color-level-black-ice: #ff3366; /* Red/Danger */
+	/* Level Colors (Security Clearances) */
+	--color-level-vault: #00e5cc; /* Teal - safe */
+	--color-level-mainframe: #00e5ff; /* Cyan */
+	--color-level-subnet: #ffb000; /* Amber */
+	--color-level-darknet: #ff6633; /* Orange */
+	--color-level-black-ice: #ff3366; /* Red/Danger */
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      TYPOGRAPHY
      Monospace throughout, dense and technical
      ══════════════════════════════════════════════════════════════ */
 
-  /* Font Family */
-  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+	/* Font Family */
+	--font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
 
-  /* Font Sizes - Slightly smaller for density */
-  --text-xs: 0.625rem;    /* 10px - Timestamps, minor data */
-  --text-sm: 0.6875rem;   /* 11px - Labels, secondary info */
-  --text-base: 0.75rem;   /* 12px - Primary text */
-  --text-lg: 0.8125rem;   /* 13px - Emphasis */
-  --text-xl: 0.875rem;    /* 14px - Section titles */
-  --text-2xl: 1.25rem;    /* 20px - Major numbers */
-  --text-3xl: 1.75rem;    /* 28px - Hero stats */
-  --text-4xl: 2.5rem;     /* 40px - Huge displays */
+	/* Font Sizes - Slightly smaller for density */
+	--text-xs: 0.625rem; /* 10px - Timestamps, minor data */
+	--text-sm: 0.6875rem; /* 11px - Labels, secondary info */
+	--text-base: 0.75rem; /* 12px - Primary text */
+	--text-lg: 0.8125rem; /* 13px - Emphasis */
+	--text-xl: 0.875rem; /* 14px - Section titles */
+	--text-2xl: 1.25rem; /* 20px - Major numbers */
+	--text-3xl: 1.75rem; /* 28px - Hero stats */
+	--text-4xl: 2.5rem; /* 40px - Huge displays */
 
-  /* Font Weights */
-  --font-thin: 300;
-  --font-normal: 400;
-  --font-medium: 500;
-  --font-bold: 600;
+	/* Font Weights */
+	--font-thin: 300;
+	--font-normal: 400;
+	--font-medium: 500;
+	--font-bold: 600;
 
-  /* Line Heights */
-  --leading-none: 1;
-  --leading-tight: 1.2;
-  --leading-normal: 1.4;
-  --leading-relaxed: 1.6;
+	/* Line Heights */
+	--leading-none: 1;
+	--leading-tight: 1.2;
+	--leading-normal: 1.4;
+	--leading-relaxed: 1.6;
 
-  /* Letter Spacing - More generous for labels */
-  --tracking-tight: -0.02em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.08em;
-  --tracking-wider: 0.12em;
-  --tracking-widest: 0.2em;
+	/* Letter Spacing - More generous for labels */
+	--tracking-tight: -0.02em;
+	--tracking-normal: 0;
+	--tracking-wide: 0.08em;
+	--tracking-wider: 0.12em;
+	--tracking-widest: 0.2em;
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      SPACING
      ══════════════════════════════════════════════════════════════ */
 
-  --space-0: 0;
-  --space-px: 1px;
-  --space-0-5: 0.125rem; /* 2px */
-  --space-1: 0.25rem;    /* 4px */
-  --space-1-5: 0.375rem; /* 6px */
-  --space-2: 0.5rem;     /* 8px */
-  --space-3: 0.75rem;    /* 12px */
-  --space-4: 1rem;       /* 16px */
-  --space-5: 1.25rem;    /* 20px */
-  --space-6: 1.5rem;     /* 24px */
-  --space-8: 2rem;       /* 32px */
-  --space-10: 2.5rem;    /* 40px */
-  --space-12: 3rem;      /* 48px */
-  --space-16: 4rem;      /* 64px */
+	--space-0: 0;
+	--space-px: 1px;
+	--space-0-5: 0.125rem; /* 2px */
+	--space-1: 0.25rem; /* 4px */
+	--space-1-5: 0.375rem; /* 6px */
+	--space-2: 0.5rem; /* 8px */
+	--space-3: 0.75rem; /* 12px */
+	--space-4: 1rem; /* 16px */
+	--space-5: 1.25rem; /* 20px */
+	--space-6: 1.5rem; /* 24px */
+	--space-8: 2rem; /* 32px */
+	--space-10: 2.5rem; /* 40px */
+	--space-12: 3rem; /* 48px */
+	--space-16: 4rem; /* 64px */
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      BORDERS & RADIUS
      Sharp corners - engineered, machined precision
      ══════════════════════════════════════════════════════════════ */
 
-  --border-width: 1px;
-  --border-width-2: 2px;
+	--border-width: 1px;
+	--border-width-2: 2px;
 
-  /* All borders are sharp - no radius */
-  --radius-none: 0;
+	/* All borders are sharp - no radius */
+	--radius-none: 0;
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      SHADOWS & GLOWS
      Subtle, targeted glows that feel like light emission
      ══════════════════════════════════════════════════════════════ */
 
-  /* Subtle inner glow for active elements */
-  --shadow-glow-accent: 
-    0 0 4px var(--color-accent-glow),
-    0 0 8px var(--color-accent-glow);
+	/* Subtle inner glow for active elements */
+	--shadow-glow-accent: 0 0 4px var(--color-accent-glow), 0 0 8px var(--color-accent-glow);
 
-  --shadow-glow-accent-strong:
-    0 0 8px var(--color-accent-glow),
-    0 0 16px var(--color-accent-glow),
-    0 0 32px var(--color-accent-glow);
+	--shadow-glow-accent-strong:
+		0 0 8px var(--color-accent-glow), 0 0 16px var(--color-accent-glow),
+		0 0 32px var(--color-accent-glow);
 
-  --shadow-glow-cyan:
-    0 0 4px var(--color-cyan-glow),
-    0 0 8px var(--color-cyan-glow);
+	--shadow-glow-cyan: 0 0 4px var(--color-cyan-glow), 0 0 8px var(--color-cyan-glow);
 
-  --shadow-glow-red:
-    0 0 4px var(--color-red-glow),
-    0 0 8px var(--color-red-glow);
+	--shadow-glow-red: 0 0 4px var(--color-red-glow), 0 0 8px var(--color-red-glow);
 
-  --shadow-glow-amber:
-    0 0 4px var(--color-amber-glow),
-    0 0 8px var(--color-amber-glow);
+	--shadow-glow-amber: 0 0 4px var(--color-amber-glow), 0 0 8px var(--color-amber-glow);
 
-  --shadow-glow-profit:
-    0 0 4px var(--color-profit-glow),
-    0 0 8px var(--color-profit-glow);
+	--shadow-glow-profit: 0 0 4px var(--color-profit-glow), 0 0 8px var(--color-profit-glow);
 
-  --shadow-glow-gold:
-    0 0 8px var(--color-gold-glow),
-    0 0 16px var(--color-gold-glow),
-    0 0 32px var(--color-gold-glow);
+	--shadow-glow-gold:
+		0 0 8px var(--color-gold-glow), 0 0 16px var(--color-gold-glow), 0 0 32px var(--color-gold-glow);
 
-  /* Card/Panel shadows - very subtle elevation */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
+	/* Card/Panel shadows - very subtle elevation */
+	--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+	--shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.4);
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      ANIMATION TIMING
      ══════════════════════════════════════════════════════════════ */
 
-  --duration-instant: 50ms;
-  --duration-fast: 100ms;
-  --duration-normal: 200ms;
-  --duration-slow: 400ms;
-  --duration-slower: 600ms;
+	--duration-instant: 50ms;
+	--duration-fast: 100ms;
+	--duration-normal: 200ms;
+	--duration-slow: 400ms;
+	--duration-slower: 600ms;
 
-  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-in: cubic-bezier(0.4, 0, 1, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--ease-out: cubic-bezier(0, 0, 0.2, 1);
+	--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      Z-INDEX SCALE
      ══════════════════════════════════════════════════════════════ */
 
-  --z-base: 0;
-  --z-dropdown: 10;
-  --z-sticky: 20;
-  --z-modal: 30;
-  --z-popover: 40;
-  --z-tooltip: 50;
-  --z-effects: 100;     /* Scanlines, flicker overlays */
-  --z-flash: 200;       /* Screen flashes */
+	--z-base: 0;
+	--z-dropdown: 10;
+	--z-sticky: 20;
+	--z-modal: 30;
+	--z-popover: 40;
+	--z-tooltip: 50;
+	--z-effects: 100; /* Scanlines, flicker overlays */
+	--z-flash: 200; /* Screen flashes */
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      LAYOUT
      ══════════════════════════════════════════════════════════════ */
 
-  --container-sm: 640px;
-  --container-md: 768px;
-  --container-lg: 1024px;
-  --container-xl: 1280px;
-  --container-2xl: 1536px;
+	--container-sm: 640px;
+	--container-md: 768px;
+	--container-lg: 1024px;
+	--container-xl: 1280px;
+	--container-2xl: 1536px;
 
-  /* Panel dimensions */
-  --panel-min-width: 280px;
-  --panel-max-width: 600px;
+	/* Panel dimensions */
+	--panel-min-width: 280px;
+	--panel-max-width: 600px;
 
-  /* Feed dimensions */
-  --feed-max-items: 15;
+	/* Feed dimensions */
+	--feed-max-items: 15;
 
-  /* ══════════════════════════════════════════════════════════════
+	/* ══════════════════════════════════════════════════════════════
      ASCII BOX CHARACTERS
      ══════════════════════════════════════════════════════════════ */
 
-  /* Single line box */
-  --box-top-left: '\250C';      /* ┌ */
-  --box-top-right: '\2510';     /* ┐ */
-  --box-bottom-left: '\2514';   /* └ */
-  --box-bottom-right: '\2518';  /* ┘ */
-  --box-horizontal: '\2500';    /* ─ */
-  --box-vertical: '\2502';      /* │ */
-  --box-t-down: '\252C';        /* ┬ */
-  --box-t-up: '\2534';          /* ┴ */
-  --box-t-right: '\251C';       /* ├ */
-  --box-t-left: '\2524';        /* ┤ */
-  --box-cross: '\253C';         /* ┼ */
+	/* Single line box */
+	--box-top-left: '\250C'; /* ┌ */
+	--box-top-right: '\2510'; /* ┐ */
+	--box-bottom-left: '\2514'; /* └ */
+	--box-bottom-right: '\2518'; /* ┘ */
+	--box-horizontal: '\2500'; /* ─ */
+	--box-vertical: '\2502'; /* │ */
+	--box-t-down: '\252C'; /* ┬ */
+	--box-t-up: '\2534'; /* ┴ */
+	--box-t-right: '\251C'; /* ├ */
+	--box-t-left: '\2524'; /* ┤ */
+	--box-cross: '\253C'; /* ┼ */
 
-  /* Double line box */
-  --box-double-top-left: '\2554';     /* ╔ */
-  --box-double-top-right: '\2557';    /* ╗ */
-  --box-double-bottom-left: '\255A';  /* ╚ */
-  --box-double-bottom-right: '\255D'; /* ╝ */
-  --box-double-horizontal: '\2550';   /* ═ */
-  --box-double-vertical: '\2551';     /* ║ */
+	/* Double line box */
+	--box-double-top-left: '\2554'; /* ╔ */
+	--box-double-top-right: '\2557'; /* ╗ */
+	--box-double-bottom-left: '\255A'; /* ╚ */
+	--box-double-bottom-right: '\255D'; /* ╝ */
+	--box-double-horizontal: '\2550'; /* ═ */
+	--box-double-vertical: '\2551'; /* ║ */
 
-  /* Progress bar characters */
-  --progress-filled: '\2588';   /* █ */
-  --progress-empty: '\2591';    /* ░ */
-  --progress-half: '\2593';     /* ▓ */
+	/* Progress bar characters */
+	--progress-filled: '\2588'; /* █ */
+	--progress-empty: '\2591'; /* ░ */
+	--progress-half: '\2593'; /* ▓ */
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -267,5 +254,5 @@
    ══════════════════════════════════════════════════════════════════ */
 
 :root {
-  color-scheme: dark;
+	color-scheme: dark;
 }

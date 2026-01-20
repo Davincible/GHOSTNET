@@ -18,42 +18,45 @@ export type Level = 'VAULT' | 'MAINFRAME' | 'SUBNET' | 'DARKNET' | 'BLACK_ICE';
 export const LEVELS: Level[] = ['VAULT', 'MAINFRAME', 'SUBNET', 'DARKNET', 'BLACK_ICE'];
 
 /** Level configuration */
-export const LEVEL_CONFIG: Record<Level, {
-	baseDeathRate: number;
-	scanIntervalHours: number;
-	minStake: bigint;
-	color: string;
-}> = {
+export const LEVEL_CONFIG: Record<
+	Level,
+	{
+		baseDeathRate: number;
+		scanIntervalHours: number;
+		minStake: bigint;
+		color: string;
+	}
+> = {
 	VAULT: {
 		baseDeathRate: 0,
 		scanIntervalHours: Infinity,
 		minStake: 100n * 10n ** 18n,
-		color: 'var(--color-level-vault)'
+		color: 'var(--color-level-vault)',
 	},
 	MAINFRAME: {
 		baseDeathRate: 0.02,
 		scanIntervalHours: 24,
 		minStake: 50n * 10n ** 18n,
-		color: 'var(--color-level-mainframe)'
+		color: 'var(--color-level-mainframe)',
 	},
 	SUBNET: {
 		baseDeathRate: 0.15,
 		scanIntervalHours: 8,
 		minStake: 25n * 10n ** 18n,
-		color: 'var(--color-level-subnet)'
+		color: 'var(--color-level-subnet)',
 	},
 	DARKNET: {
-		baseDeathRate: 0.40,
+		baseDeathRate: 0.4,
 		scanIntervalHours: 2,
 		minStake: 10n * 10n ** 18n,
-		color: 'var(--color-level-darknet)'
+		color: 'var(--color-level-darknet)',
 	},
 	BLACK_ICE: {
-		baseDeathRate: 0.90,
+		baseDeathRate: 0.9,
 		scanIntervalHours: 0.5,
 		minStake: 5n * 10n ** 18n,
-		color: 'var(--color-level-black-ice)'
-	}
+		color: 'var(--color-level-black-ice)',
+	},
 };
 
 /** Connection status for WebSocket/provider */
@@ -191,7 +194,7 @@ export const FEED_EVENT_PRIORITY: Record<FeedEventType, number> = {
 	CREW_EVENT: 3,
 	MINIGAME_RESULT: 3,
 	SURVIVED: 2,
-	JACK_IN: 1
+	JACK_IN: 1,
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -224,35 +227,158 @@ export type TypingGameState = 'idle' | 'countdown' | 'active' | 'complete';
 // CREW SYSTEM
 // ════════════════════════════════════════════════════════════════
 
-/** Crew (guild/team) */
+/** Crew role within the team hierarchy */
+export type CrewRole = 'leader' | 'officer' | 'member';
+
+/** Crew (guild/team) - max 50 members */
 export interface Crew {
+	/** Unique identifier */
 	id: string;
+	/** Display name */
 	name: string;
+	/** 3-4 character tag displayed as [TAG] */
+	tag: string;
+	/** Crew description / mission statement */
+	description: string;
+	/** Current member count */
 	memberCount: number;
+	/** Maximum allowed members (50) */
 	maxMembers: number;
+	/** Global ranking position */
 	rank: number;
+	/** Total $DATA staked by all members */
 	totalStaked: bigint;
+	/** $DATA extracted this week */
 	weeklyExtracted: bigint;
+	/** Active and potential bonuses */
 	bonuses: CrewBonus[];
-	members: CrewMember[];
+	/** Crew leader's address */
+	leader: `0x${string}`;
+	/** Unix timestamp of creation */
+	createdAt: number;
+	/** Whether anyone can join (vs invite-only) */
+	isPublic: boolean;
 }
 
-/** Crew member */
+/** Crew member with full details */
 export interface CrewMember {
+	/** Wallet address */
 	address: `0x${string}`;
-	level: Level;
+	/** ENS name if available */
+	ensName?: string;
+	/** Current risk level (null if not jacked in) */
+	level: Level | null;
+	/** Amount currently staked */
 	stakedAmount: bigint;
+	/** Consecutive scan survivals */
 	ghostStreak: number;
+	/** Currently connected */
 	isOnline: boolean;
+	/** Is this the current user */
 	isYou: boolean;
+	/** Role within the crew */
+	role: CrewRole;
+	/** Unix timestamp when joined */
+	joinedAt: number;
+	/** $DATA contributed this week */
+	weeklyContribution: bigint;
 }
 
-/** Crew bonus effect */
+/** Crew bonus effect - can be active or progressing toward activation */
 export interface CrewBonus {
+	/** Unique identifier */
+	id: string;
+	/** Display name */
 	name: string;
+	/** Human-readable activation condition */
 	condition: string;
+	/** Human-readable effect description */
 	effect: string;
+	/** Type of effect applied */
+	effectType: 'death_rate' | 'yield_multiplier';
+	/** Effect value: -0.05 = -5% death rate, 0.15 = +15% yield */
+	effectValue: number;
+	/** Whether bonus is currently active */
 	active: boolean;
+	/** Progress toward activation (0-1) */
+	progress: number;
+	/** Threshold value to activate */
+	requiredValue: number;
+	/** Current progress value */
+	currentValue: number;
+}
+
+/** Pending crew invitation */
+export interface CrewInvite {
+	/** Unique identifier */
+	id: string;
+	/** Target crew ID */
+	crewId: string;
+	/** Crew display name */
+	crewName: string;
+	/** Crew tag */
+	crewTag: string;
+	/** Address of the inviter */
+	inviterAddress: `0x${string}`;
+	/** Inviter's ENS name if available */
+	inviterName?: string;
+	/** Unix timestamp when invite expires */
+	expiresAt: number;
+	/** Unix timestamp when invite was created */
+	createdAt: number;
+}
+
+/** Types of crew activity events */
+export type CrewActivityType =
+	| 'member_joined'
+	| 'member_left'
+	| 'member_kicked'
+	| 'bonus_activated'
+	| 'bonus_deactivated'
+	| 'member_survived'
+	| 'member_traced'
+	| 'member_extracted'
+	| 'raid_started'
+	| 'raid_completed';
+
+/** Crew activity feed event */
+export interface CrewActivity {
+	/** Unique identifier */
+	id: string;
+	/** Type of activity */
+	type: CrewActivityType;
+	/** Unix timestamp */
+	timestamp: number;
+	/** Address of the actor (if applicable) */
+	actorAddress?: `0x${string}`;
+	/** Display name of the actor */
+	actorName?: string;
+	/** Target address (if applicable) */
+	targetAddress?: `0x${string}`;
+	/** Display name of the target */
+	targetName?: string;
+	/** Bonus ID (for bonus events) */
+	bonusId?: string;
+	/** Bonus name (for bonus events) */
+	bonusName?: string;
+	/** Amount involved (for financial events) */
+	amount?: bigint;
+	/** Level involved (for level-specific events) */
+	level?: Level;
+	/** Pre-formatted display message */
+	message: string;
+}
+
+/** Current user's crew membership status */
+export interface UserCrewStatus {
+	/** The crew the user belongs to (null if not in a crew) */
+	crew: Crew | null;
+	/** User's role in the crew (null if not in a crew) */
+	role: CrewRole | null;
+	/** Pending invitations to join crews */
+	pendingInvites: CrewInvite[];
+	/** Whether user can create a new crew */
+	canCreateCrew: boolean;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -345,3 +471,9 @@ export interface DeadPoolUserStats {
 // ════════════════════════════════════════════════════════════════
 
 export * from './hackrun';
+
+// ════════════════════════════════════════════════════════════════
+// LEADERBOARD & RANKINGS
+// ════════════════════════════════════════════════════════════════
+
+export * from './leaderboard';
