@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Header } from '$lib/features/header';
+	import { Header, KeyboardHints } from '$lib/features/header';
 	import { FeedPanel } from '$lib/features/feed';
 	import { PositionPanel, ModifiersPanel } from '$lib/features/position';
 	import { NetworkVitalsPanel } from '$lib/features/network';
@@ -160,6 +160,7 @@
 
 <div class="command-center">
 	<Header onSettings={() => (showSettingsModal = true)} />
+	<KeyboardHints />
 
 	<main class="main-content">
 		<div class="content-grid">
