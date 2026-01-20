@@ -281,21 +281,21 @@
 							</h2>
 							<div class="edge-options">
 								<div class="edge-item" style="--delay: 0">
-									<span class="edge-icon">⌨️</span>
+									<span class="edge-icon bracket">&gt;_</span>
 									<div class="edge-info">
 										<span class="edge-name">TRACE EVASION</span>
 										<span class="edge-desc">Type fast. Reduce death rate up to <span class="highlight">-25%</span></span>
 									</div>
 								</div>
 								<div class="edge-item" style="--delay: 1">
-									<span class="edge-icon">🎮</span>
+									<span class="edge-icon bracket">&lt;/&gt;</span>
 									<div class="edge-info">
 										<span class="edge-name">HACK RUNS</span>
 										<span class="edge-desc">Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span>
 									</div>
 								</div>
 								<div class="edge-item" style="--delay: 2">
-									<span class="edge-icon">🎲</span>
+									<span class="edge-icon bracket">%$</span>
 									<div class="edge-info">
 										<span class="edge-name">DEAD POOL</span>
 										<span class="edge-desc">Bet on outcomes. Win more <span class="highlight">$DATA</span></span>
@@ -934,6 +934,15 @@
 		font-size: var(--text-xl);
 		width: 2.5ch;
 		text-align: center;
+	}
+
+	.edge-icon.bracket {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		color: var(--color-accent);
+		font-weight: var(--font-bold);
+		text-shadow: 0 0 8px var(--color-accent-glow);
+		width: 3ch;
 	}
 
 	.edge-info {
