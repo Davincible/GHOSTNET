@@ -179,6 +179,46 @@ Developer finds issue
                 takes control
 ```
 
+### Response Time Requirements
+
+| Severity | Gather 3 Signers | Execute Action | Total Budget |
+|----------|------------------|----------------|--------------|
+| SEV-1 | 15 minutes | 5 minutes | **20 minutes** |
+| SEV-2 | 60 minutes | 30 minutes | **90 minutes** |
+| SEV-3 | 4 hours | 1 hour | **5 hours** |
+| SEV-4 | 24 hours | 4 hours | **28 hours** |
+
+### Signer Availability Matrix
+
+Ensure 24/7 coverage across time zones:
+
+| Time Zone (UTC) | Primary Signers | Backup Signers |
+|-----------------|-----------------|----------------|
+| 00:00-08:00 | [Signer A, B] | [Signer E] |
+| 08:00-16:00 | [Signer B, C] | [Signer A] |
+| 16:00-24:00 | [Signer C, D] | [Signer B] |
+
+### Escalation Fallbacks
+
+If 3 signers unavailable within response budget:
+
+**SEV-1 (15 min exceeded):**
+1. Attempt secondary signer pool
+2. If 20 min exceeded: Notify community of delay, continue attempts
+3. If 60 min exceeded: Consider if single-signer emergency pause is safer than waiting
+
+**SEV-2 (60 min exceeded):**
+1. Re-evaluate if pause is warranted
+2. Expand notification to all signers regardless of time zone
+3. Document delay reason for post-mortem
+
+**Pre-signed Emergency Transactions (Optional):**
+Consider maintaining pre-signed pause transactions for extreme scenarios:
+- Stored securely offline (hardware wallet or secure enclave)
+- Rotated monthly with nonce updates
+- Used only when multisig coordination demonstrably impossible
+- Requires documented approval from Incident Commander
+
 ---
 
 ## 4. Emergency Procedures

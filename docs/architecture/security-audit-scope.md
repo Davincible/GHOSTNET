@@ -113,6 +113,27 @@ GHOSTNET is a real-time survival game on MegaETH where users stake $DATA tokens 
 - [ ] Timelock delays are enforced correctly
 - [ ] Emergency multisig cannot bypass timelock for non-emergencies
 
+### 4.1.1 EIP-7702 Considerations (Pectra Upgrade)
+
+**Priority: CRITICAL**
+
+EIP-7702 (activated May 2025) allows EOAs to delegate to smart contracts, breaking traditional EOA detection patterns. MegaETH inherits this capability.
+
+| Check | Status |
+|-------|--------|
+| No `tx.origin == msg.sender` checks for EOA detection | [ ] |
+| No `extcodesize == 0` checks for EOA detection | [ ] |
+| No `msg.sender.code.length == 0` checks | [ ] |
+| Rate limiting uses time-based delays, not caller-type assumptions | [ ] |
+| Anti-bot measures don't rely on EOA detection | [ ] |
+
+**Background:** Over $5.3M was stolen via broken EOA assumptions in the months following the Pectra upgrade. A delegated EOA:
+- Passes `tx.origin == msg.sender` checks
+- Has 23 bytes of code (`0xef0100 || delegateAddress`)
+- Can execute arbitrary contract logic
+
+**Note:** If any anti-bot or human-verification logic is added during implementation, it MUST NOT rely on EOA detection patterns. Use time delays, economic incentives, or EIP-712 signatures instead.
+
 ### 4.2 Reentrancy
 
 **Priority: CRITICAL**
@@ -231,10 +252,24 @@ GHOSTNET is a real-time survival game on MegaETH where users stake $DATA tokens 
 
 **Specific Checks:**
 - [ ] DOMAIN_SEPARATOR includes chainId and verifyingContract
-- [ ] Nonces are marked used before processing
-- [ ] ECDSA.recover from OpenZeppelin used correctly
+- [ ] Nonces are marked used before processing (CEI pattern)
+- [ ] ECDSA.tryRecover from OpenZeppelin 5.x used with error handling
 - [ ] Signature cannot be reused after expiry
 - [ ] Boost signer address properly managed
+
+**Cross-Chain Replay Protection:**
+
+| Check | Status |
+|-------|--------|
+| DOMAIN_SEPARATOR computed at deployment with `block.chainid` | [ ] |
+| Testnet (6343) and mainnet (4326) use different chain IDs | [ ] |
+| No signature created on testnet can be valid on mainnet | [ ] |
+| For upgradeable contracts, domain separator handled correctly across upgrades | [ ] |
+
+**Chain Fork Consideration:**
+If MegaETH forks, cached DOMAIN_SEPARATOR becomes invalid. Verify handling:
+- Option A: Compute fresh each time (~200 gas)
+- Option B: Cache and verify against `block.chainid`, revert if changed
 
 ### 4.9 Denial of Service
 

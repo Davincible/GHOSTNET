@@ -1,8 +1,45 @@
 # GHOSTNET Contract Specifications
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** January 2026  
 **Status:** Ready for Implementation
+
+---
+
+## Compiler Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| **Solidity Version** | `^0.8.33` (minimum `0.8.28` for transient storage) |
+| **EVM Target** | `prague` (for MegaETH compatibility) |
+| **Optimizer** | Enabled, 200 runs |
+
+### Foundry Configuration
+
+```toml
+[profile.default]
+solc_version = "0.8.33"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 200
+```
+
+### Dependencies (OpenZeppelin 5.x)
+
+| Package | Version | Usage |
+|---------|---------|-------|
+| `@openzeppelin/contracts` | 5.x | Immutable contracts |
+| `@openzeppelin/contracts-upgradeable` | 5.x | UUPS proxies |
+
+**Note:** Use `ReentrancyGuardTransient` for ~50% gas savings on Cancun+ EVM (MegaETH supports this).
+
+### Pragma Format
+
+All contracts MUST use:
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.33;
+```
 
 ---
 
@@ -139,8 +176,8 @@ Inherits:    ERC20, ERC20Burnable, Ownable2Step
 ### Storage
 
 ```solidity
-// Immutable
-address public immutable DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+// Constants
+address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
 // State
 address public treasury;
@@ -273,6 +310,7 @@ TOTAL                 100,000,000
 Type:        Linear Vesting
 Upgradeable: NO (immutable)
 Inherits:    Ownable2Step
+Uses:        SafeERC20 for IERC20
 ```
 
 ### Storage
@@ -331,12 +369,13 @@ function releasableAmount() public view returns (uint256) {
 }
 
 /// @notice Release vested tokens
+/// @dev Uses SafeERC20 for defense in depth
 function release() external {
     uint256 amount = releasableAmount();
     require(amount > 0, "Nothing to release");
     
     released += amount;
-    dataToken.transfer(beneficiary, amount);
+    dataToken.safeTransfer(beneficiary, amount);
     
     emit TokensReleased(beneficiary, amount);
 }
@@ -619,11 +658,12 @@ function claimRewards() external nonReentrant whenNotPaused {
 /// @param level The level being processed
 /// @param deadUsers Array of users who died
 /// @param totalDeadCapital Total DATA from dead positions
+/// @dev nonReentrant for defense in depth (cascade makes external transfers)
 function processDeaths(
     uint8 level,
     address[] calldata deadUsers,
     uint256 totalDeadCapital
-) external onlyRole(SCANNER_ROLE) {
+) external onlyRole(SCANNER_ROLE) nonReentrant {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
     
     // Mark users as dead
@@ -846,6 +886,7 @@ function _initializeDomainSeparator() internal {
 /// @param expiry Timestamp when boost expires
 /// @param nonce Unique nonce to prevent replay
 /// @param signature EIP-712 signature from boost signer
+/// @dev Follows CEI pattern: nonce marked used BEFORE signature verification
 function applyBoost(
     uint8 boostType,
     uint16 valueBps,
@@ -855,9 +896,13 @@ function applyBoost(
 ) external {
     GhostCoreStorage storage $ = _getGhostCoreStorage();
     
+    // CHECKS
     require($.positions[msg.sender].alive, "No active position");
     require(expiry > block.timestamp, "Boost expired");
     require(!$.usedBoostNonces[nonce], "Nonce already used");
+    
+    // EFFECTS - Mark nonce used BEFORE verification (CEI pattern)
+    $.usedBoostNonces[nonce] = true;
     
     // Build EIP-712 typed data hash
     bytes32 structHash = keccak256(abi.encode(
@@ -876,13 +921,12 @@ function applyBoost(
         structHash
     ));
     
-    // Verify signature
-    address signer = ECDSA.recover(digest, signature);
-    require(signer == $.boostSigner, "Invalid signature");
+    // Verify signature with error handling
+    (address signer, ECDSA.RecoverError error, ) = ECDSA.tryRecover(digest, signature);
+    require(error == ECDSA.RecoverError.NoError, "Invalid signature format");
+    require(signer == $.boostSigner, "Invalid signer");
     
-    $.usedBoostNonces[nonce] = true;
-    
-    // Add boost
+    // INTERACTIONS - Add boost
     activeBoosts[msg.sender].push(Boost({
         boostType: boostType,
         valueBps: valueBps,
@@ -1013,6 +1057,16 @@ function getSystemResetInfo() external view returns (SystemReset memory);
 function isInLockPeriod(uint8 level) external view returns (bool);
 function getTotalValueLocked() external view returns (uint256);
 function getPositionCount(uint8 level) external view returns (uint256);
+
+/// @notice Get current reset epoch information
+/// @return epoch The current reset epoch number
+/// @return timestamp When the current epoch started  
+/// @return penaltyBps Penalty applied in current epoch (basis points)
+function getCurrentResetEpoch() external view returns (
+    uint64 epoch,
+    uint64 timestamp,
+    uint16 penaltyBps
+);
 
 // ═══════════════════════════════════════════════════════════════════
 // ADMIN FUNCTIONS
@@ -1519,18 +1573,21 @@ receive() external payable {
 }
 
 /// @notice Execute buyback with accumulated ETH
-function executeBuyback() external nonReentrant {
+/// @param minDataOut Minimum DATA tokens to receive (slippage protection)
+/// @dev Slippage protection prevents sandwich attacks and DEX manipulation
+function executeBuyback(uint256 minDataOut) external nonReentrant {
     uint256 ethBalance = address(this).balance;
     require(ethBalance > 0, "No ETH to process");
     
     uint256 buybackAmount = (ethBalance * buybackShareBps) / 10000;
     uint256 operationsAmount = ethBalance - buybackAmount;
     
-    // Swap ETH for DATA
-    uint256 dataReceived = _swapETHForDATA(buybackAmount);
+    // Swap ETH for DATA with slippage protection
+    uint256 dataReceived = _swapETHForDATA(buybackAmount, minDataOut);
+    require(dataReceived >= minDataOut, "Slippage exceeded");
     
     // Burn received DATA
-    dataToken.transfer(DEAD, dataReceived);
+    dataToken.safeTransfer(DEAD, dataReceived);
     
     // Send to operations
     (bool success, ) = treasury.call{value: operationsAmount}("");
@@ -1539,7 +1596,12 @@ function executeBuyback() external nonReentrant {
     emit BuybackExecuted(buybackAmount, dataReceived, operationsAmount);
 }
 
-function _swapETHForDATA(uint256 ethAmount) internal returns (uint256);
+/// @notice Get expected output for buyback (for frontend slippage calculation)
+/// @param ethAmount Amount of ETH to quote
+/// @return expectedData Expected DATA output at current prices
+function getBuybackQuote(uint256 ethAmount) external view returns (uint256 expectedData);
+
+function _swapETHForDATA(uint256 ethAmount, uint256 minOut) internal returns (uint256);
 
 // Admin
 function setDexRouter(address router) external onlyOwner;
@@ -1633,13 +1695,19 @@ library CascadeLib {
         uint256 protocol;
     }
     
-    function calculateSplit(uint256 totalCapital) internal pure returns (CascadeSplit memory) {
-        return CascadeSplit({
-            sameLevel: (totalCapital * SAME_LEVEL) / 10000,
-            upstream: (totalCapital * UPSTREAM) / 10000,
-            burn: (totalCapital * BURN) / 10000,
-            protocol: totalCapital - sameLevel - upstream - burn
-        });
+    /// @notice Calculate cascade distribution split
+    /// @param totalCapital Total dead capital to distribute
+    /// @return split The calculated split amounts
+    /// @dev Protocol amount is remainder to avoid dust accumulation
+    function calculateSplit(uint256 totalCapital) internal pure returns (CascadeSplit memory split) {
+        split.sameLevel = (totalCapital * SAME_LEVEL) / 10000;
+        split.upstream = (totalCapital * UPSTREAM) / 10000;
+        split.burn = (totalCapital * BURN) / 10000;
+        // Protocol gets remainder - ensures no dust lost
+        split.protocol = totalCapital - split.sameLevel - split.upstream - split.burn;
+        
+        // Invariant: sum must equal total (verified in tests)
+        // assert(split.sameLevel + split.upstream + split.burn + split.protocol == totalCapital);
     }
 }
 ```
