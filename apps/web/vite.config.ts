@@ -1,9 +1,26 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { playwright } from '@vitest/browser-playwright';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [
+		// Node polyfills for WalletConnect compatibility
+		nodePolyfills({
+			exclude: ['fs'],
+			globals: {
+				Buffer: true,
+				global: true,
+				process: true
+			},
+			protocolImports: true
+		}),
+		sveltekit()
+	],
+	// Pre-bundle WalletConnect for faster dev startup
+	optimizeDeps: {
+		include: ['@walletconnect/ethereum-provider']
+	},
 	test: {
 		projects: [
 			// Client-side component tests (Browser Mode - recommended for Svelte 5)
