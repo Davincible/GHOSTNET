@@ -57,12 +57,13 @@ contract SecurityTest is Test {
         recipients[3] = treasury;
         recipients[4] = address(this);
 
+        uint256 vestingAmount = 1_000_000 * 1e18;
         uint256[] memory amounts = new uint256[](5);
         amounts[0] = USER_BALANCE;
         amounts[1] = USER_BALANCE;
         amounts[2] = USER_BALANCE;
-        amounts[3] = TOTAL_SUPPLY - (USER_BALANCE * 3) - EMISSIONS;
-        amounts[4] = EMISSIONS;
+        amounts[3] = TOTAL_SUPPLY - (USER_BALANCE * 3) - EMISSIONS - vestingAmount;
+        amounts[4] = EMISSIONS + vestingAmount;
 
         token = new DataToken(treasury, owner, recipients, amounts);
 
@@ -564,7 +565,7 @@ contract SecurityTest is Test {
 
         // Alice tries to front-run extract before she might die
         vm.prank(alice);
-        vm.expectRevert(IGhostCore.InLockPeriod.selector);
+        vm.expectRevert(IGhostCore.PositionLocked.selector);
         ghostCore.extract();
     }
 
@@ -579,7 +580,7 @@ contract SecurityTest is Test {
 
         // Try to extract during active scan (still in lock period)
         vm.prank(alice);
-        vm.expectRevert(IGhostCore.InLockPeriod.selector);
+        vm.expectRevert(IGhostCore.PositionLocked.selector);
         ghostCore.extract();
     }
 
@@ -711,7 +712,7 @@ contract SecurityTest is Test {
         // (should only be callable by TraceScan with SCANNER_ROLE)
         vm.prank(attacker);
         vm.expectRevert();
-        ghostCore.processDeaths(IGhostCore.Level.VAULT, new address[](0), 0);
+        ghostCore.processDeaths(IGhostCore.Level.VAULT, new address[](0));
     }
 
     function test_Attack_FakeDeathSubmission() public {
