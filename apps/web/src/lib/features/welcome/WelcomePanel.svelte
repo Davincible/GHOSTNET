@@ -174,6 +174,7 @@
 									glitchChance={0.02}
 									onComplete={handleLogoTypingComplete}
 								/>
+								<span class="logo-subtitle">THE RABBITZ HOLE</span>
 							</div>
 							<div class="hook-content" class:visible={showTagline}>
 								<h2 class="tagline">
@@ -610,6 +611,24 @@
 
 	.logo-container.slid-up {
 		transform: translateY(0); /* Slide to top position */
+	}
+
+	.logo-subtitle {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		letter-spacing: var(--tracking-widest);
+		margin-top: var(--space-2);
+		text-align: center;
+		opacity: 0;
+		animation: subtitle-fade-in 0.5s ease-out 0.3s forwards;
+	}
+
+	@keyframes subtitle-fade-in {
+		to {
+			opacity: 1;
+		}
 	}
 
 	.hook-content {
