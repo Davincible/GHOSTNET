@@ -296,77 +296,103 @@
     paths.push(rightEarInner2);
 
     // ============================================
-    // EYES - Positioned on SIDES of head (prey animal)
-    // Wide-set, further back on skull (~60% from nose tip)
-    // Almond/oval shaped, angled to face outward
+    // EYES - Evil/demonic slanted eyes
+    // Angular shape with sharp corners, vertical slit pupils
+    // Outer corners angle UP, inner corners angle DOWN (sinister)
     // ============================================
     
-    // Left eye - positioned on left side, facing outward
-    // Adjusted to fit narrower head proportions
+    // Left eye - angular, slanted evil eye
+    // Sharp outer corner pointing up, inner corner pointing down
     const leftEye = createSmoothCurve(s([
-      [-0.16, 0.48, 0.10],    // Outer corner (most lateral)
-      [-0.17, 0.52, 0.11],    // Upper outer
-      [-0.15, 0.55, 0.13],    // Top
-      [-0.12, 0.56, 0.14],    // Upper inner
-      [-0.10, 0.54, 0.15],    // Inner corner
-      [-0.09, 0.50, 0.14],    // Lower inner
-      [-0.11, 0.46, 0.12],    // Bottom
-      [-0.14, 0.45, 0.11],    // Lower outer
-      [-0.16, 0.48, 0.10],    // Back to start
-    ]), 24, true);
+      [-0.16, 0.54, 0.10],    // Outer corner - HIGH (sharp, angled up)
+      [-0.15, 0.53, 0.12],    // Upper outer edge
+      [-0.13, 0.52, 0.13],    // Upper mid
+      [-0.11, 0.50, 0.14],    // Upper inner
+      [-0.09, 0.47, 0.14],    // Inner corner - LOW (angled down, sinister)
+      [-0.10, 0.46, 0.13],    // Lower inner
+      [-0.12, 0.46, 0.12],    // Lower mid
+      [-0.14, 0.48, 0.11],    // Lower outer
+      [-0.16, 0.54, 0.10],    // Back to outer corner
+    ]), 20, true);
     paths.push(leftEye);
 
-    // Left eye inner detail (pupil area)
-    const leftPupil: THREE.Vector3[] = [];
-    for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
-      // Pupil is slightly offset toward outer edge of eye
-      leftPupil.push(new THREE.Vector3(
-        (-0.13 + Math.cos(a) * 0.02) * scale,
-        (0.51 + Math.sin(a) * 0.025) * scale,
-        (0.12 + Math.cos(a) * 0.01) * scale
-      ));
-    }
+    // Left eye - vertical slit pupil (demon/cat eye)
+    const leftPupil = createSmoothCurve(s([
+      [-0.125, 0.53, 0.12],   // Top of slit
+      [-0.130, 0.51, 0.125],  // Upper mid (slight bulge)
+      [-0.128, 0.49, 0.125],  // Center
+      [-0.130, 0.47, 0.125],  // Lower mid (slight bulge)
+      [-0.125, 0.45, 0.12],   // Bottom of slit
+    ]), 16);
     paths.push(leftPupil);
 
-    // Right eye - mirrored, positioned on right side
+    // Left eye inner glow line (adds menace)
+    const leftEyeInner = createSmoothCurve(s([
+      [-0.15, 0.53, 0.11],    // Upper
+      [-0.12, 0.50, 0.13],    // Center
+      [-0.10, 0.47, 0.13],    // Lower
+    ]), 12);
+    paths.push(leftEyeInner);
+
+    // Right eye - mirrored evil eye
     const rightEye = createSmoothCurve(s([
-      [0.16, 0.48, 0.10],     // Outer corner
-      [0.17, 0.52, 0.11],     // Upper outer
-      [0.15, 0.55, 0.13],     // Top
-      [0.12, 0.56, 0.14],     // Upper inner
-      [0.10, 0.54, 0.15],     // Inner corner
-      [0.09, 0.50, 0.14],     // Lower inner
-      [0.11, 0.46, 0.12],     // Bottom
-      [0.14, 0.45, 0.11],     // Lower outer
-      [0.16, 0.48, 0.10],     // Back to start
-    ]), 24, true);
+      [0.16, 0.54, 0.10],     // Outer corner - HIGH
+      [0.15, 0.53, 0.12],     // Upper outer edge
+      [0.13, 0.52, 0.13],     // Upper mid
+      [0.11, 0.50, 0.14],     // Upper inner
+      [0.09, 0.47, 0.14],     // Inner corner - LOW
+      [0.10, 0.46, 0.13],     // Lower inner
+      [0.12, 0.46, 0.12],     // Lower mid
+      [0.14, 0.48, 0.11],     // Lower outer
+      [0.16, 0.54, 0.10],     // Back to outer corner
+    ]), 20, true);
     paths.push(rightEye);
 
-    // Right pupil
-    const rightPupil: THREE.Vector3[] = [];
-    for (let a = 0; a <= Math.PI * 2; a += Math.PI / 12) {
-      rightPupil.push(new THREE.Vector3(
-        (0.13 + Math.cos(a) * 0.02) * scale,
-        (0.51 + Math.sin(a) * 0.025) * scale,
-        (0.12 + Math.cos(a) * 0.01) * scale
-      ));
-    }
+    // Right eye - vertical slit pupil
+    const rightPupil = createSmoothCurve(s([
+      [0.125, 0.53, 0.12],    // Top of slit
+      [0.130, 0.51, 0.125],   // Upper mid
+      [0.128, 0.49, 0.125],   // Center
+      [0.130, 0.47, 0.125],   // Lower mid
+      [0.125, 0.45, 0.12],    // Bottom of slit
+    ]), 16);
     paths.push(rightPupil);
 
-    // Eye socket contours (brow ridge)
+    // Right eye inner glow line
+    const rightEyeInner = createSmoothCurve(s([
+      [0.15, 0.53, 0.11],     // Upper
+      [0.12, 0.50, 0.13],     // Center
+      [0.10, 0.47, 0.13],     // Lower
+    ]), 12);
+    paths.push(rightEyeInner);
+
+    // Angry brow ridges - angled DOWN toward center (menacing)
     const leftBrow = createSmoothCurve(s([
-      [-0.09, 0.56, 0.14],    // Inner brow
-      [-0.13, 0.58, 0.12],    // Mid brow
-      [-0.16, 0.56, 0.10],    // Outer brow
+      [-0.08, 0.52, 0.14],    // Inner brow - LOW (angry)
+      [-0.12, 0.55, 0.12],    // Mid brow - rising
+      [-0.16, 0.57, 0.10],    // Outer brow - HIGH
     ]), 12);
     paths.push(leftBrow);
 
     const rightBrow = createSmoothCurve(s([
-      [0.09, 0.56, 0.14],     // Inner brow
-      [0.13, 0.58, 0.12],     // Mid brow
-      [0.16, 0.56, 0.10],     // Outer brow
+      [0.08, 0.52, 0.14],     // Inner brow - LOW (angry)
+      [0.12, 0.55, 0.12],     // Mid brow - rising
+      [0.16, 0.57, 0.10],     // Outer brow - HIGH
     ]), 12);
     paths.push(rightBrow);
+    
+    // Extra brow furrow lines (adds aggression)
+    const browFurrowLeft = createSmoothCurve(s([
+      [-0.07, 0.54, 0.14],
+      [-0.10, 0.56, 0.13],
+    ]), 8);
+    paths.push(browFurrowLeft);
+    
+    const browFurrowRight = createSmoothCurve(s([
+      [0.07, 0.54, 0.14],
+      [0.10, 0.56, 0.13],
+    ]), 8);
+    paths.push(browFurrowRight);
 
     // ============================================
     // NOSE - Positioned at front of protruding snout
