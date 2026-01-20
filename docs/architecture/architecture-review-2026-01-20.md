@@ -30,12 +30,12 @@ This review identifies **3 Critical**, **4 High**, **5 Medium**, and **4 Low/Inf
 
 ### Findings Summary
 
-| Severity | Count | Must Fix Before Audit |
-|----------|-------|----------------------|
-| Critical | 3 | Yes |
-| High | 4 | Yes |
-| Medium | 5 | Recommended |
-| Low/Informational | 4 | Optional |
+| Severity | Count | Must Fix Before Audit | Status |
+|----------|-------|----------------------|--------|
+| Critical | 3 | Yes | ✅ All Resolved |
+| High | 4 | Yes | ✅ All Resolved |
+| Medium | 5 | Recommended | 3/5 Resolved |
+| Low/Informational | 4 | Optional | Pending |
 
 ---
 
@@ -79,6 +79,8 @@ MegaETH inherits Ethereum's EIP-7702 delegation capability. Verify:
 
 ### C-02: System Reset Loop Gas Bounds Create DoS Vector
 
+**Status: ✅ RESOLVED** - Addressed via "The Culling" mechanism (see `contract-specifications.md` section on Level Capacity and `smart-contracts-plan.md` section 2.6).
+
 **Location:** `contract-specifications.md` (lines 709-776)
 
 **Description:**  
@@ -99,8 +101,25 @@ The `triggerSystemReset()` function iterates over all position holders to emit e
 **Impact:**  
 System reset becomes unexecutable above a certain position count, potentially locking significant value and breaking core game mechanics.
 
-**Recommendation:**  
-Option A - Document explicit position cap:
+**Resolution Implemented:**  
+Instead of hard caps that block new entrants or complex batched resets, "The Culling" mechanism was implemented:
+
+1. **Per-level capacity limits** (`maxPositions` in `LevelConfig`)
+2. **When at capacity**, new `jackIn()` triggers weighted random elimination from bottom X% of positions
+3. **Lower stakes have higher cull probability**, creating natural pressure to maintain competitive positions
+4. **Penalty cascades like death** (default 80% redistributed), victim receives severance (20%)
+5. **Bounded position count** ensures reset always executable within gas limits
+
+This solution:
+- Prevents unbounded growth (addresses the DoS vector)
+- Doesn't block new entrants (better UX than hard caps)
+- Creates interesting game dynamics (stake size competition)
+- Adds new content for the live feed (CULLED events)
+
+See `security-audit-scope.md` section 4.11 for audit verification checklist.
+
+~~**Recommendation:**~~  
+~~Option A - Document explicit position cap:~~
 ```solidity
 // In GhostCore.sol
 uint256 public constant MAX_POSITIONS_PER_LEVEL = 2000;  // 10,000 total max
@@ -114,7 +133,7 @@ function jackIn(uint256 amount, uint8 level) external nonReentrant whenNotPaused
 }
 ```
 
-Option B - Implement batched reset:
+~~Option B - Implement batched reset:~~
 ```solidity
 function triggerSystemResetBatch(uint256 startIndex, uint256 batchSize) external nonReentrant {
     require(block.timestamp >= $.systemReset.deadline, "Deadline not reached");
@@ -133,7 +152,7 @@ function triggerSystemResetBatch(uint256 startIndex, uint256 batchSize) external
 }
 ```
 
-Add to `security-audit-scope.md` section 4.9:
+~~Add to `security-audit-scope.md` section 4.9:~~
 ```markdown
 - [ ] System reset execution verified at 2x expected maximum position count
 - [ ] Gas estimation at maximum positions doesn't exceed 80% of block gas limit
@@ -877,25 +896,25 @@ The architecture documentation demonstrates strong engineering practices:
 
 ### Must Fix Before Audit (Critical + High)
 
-| ID | Finding | Priority | Effort |
-|----|---------|----------|--------|
-| C-01 | Add EIP-7702 considerations to audit scope | Critical | Low |
-| C-02 | Implement position cap or batched reset | Critical | Medium |
-| C-03 | Fix CEI pattern in boost signature verification | Critical | Low |
-| H-01 | Add nonReentrant to processDeaths and related | High | Low |
-| H-02 | Use SafeERC20 in TeamVesting | High | Low |
-| H-03 | Add slippage protection to FeeRouter | High | Medium |
-| H-04 | Fix and test CascadeLib precision | High | Low |
+| ID | Finding | Priority | Effort | Status |
+|----|---------|----------|--------|--------|
+| C-01 | Add EIP-7702 considerations to audit scope | Critical | Low | ✅ Done |
+| C-02 | Implement position cap or batched reset | Critical | Medium | ✅ Done (The Culling) |
+| C-03 | Fix CEI pattern in boost signature verification | Critical | Low | ✅ Done |
+| H-01 | Add nonReentrant to processDeaths and related | High | Low | ✅ Done |
+| H-02 | Use SafeERC20 in TeamVesting | High | Low | ✅ Done |
+| H-03 | Add slippage protection to FeeRouter | High | Medium | ✅ Done |
+| H-04 | Fix and test CascadeLib precision | High | Low | ✅ Done |
 
 ### Should Fix Before Audit (Medium)
 
-| ID | Finding | Priority | Effort |
-|----|---------|----------|--------|
-| M-01 | Specify Solidity version pragma | Medium | Low |
-| M-02 | Document ERC-7201 slot computations | Medium | Medium |
-| M-03 | Document storage cleanup strategy | Medium | Low |
-| M-04 | Add cross-chain replay verification to audit scope | Medium | Low |
-| M-05 | Add response time requirements to emergency procedures | Medium | Low |
+| ID | Finding | Priority | Effort | Status |
+|----|---------|----------|--------|--------|
+| M-01 | Specify Solidity version pragma | Medium | Low | ✅ Done |
+| M-02 | Document ERC-7201 slot computations | Medium | Medium | Pending |
+| M-03 | Document storage cleanup strategy | Medium | Low | Pending |
+| M-04 | Add cross-chain replay verification to audit scope | Medium | Low | ✅ Done |
+| M-05 | Add response time requirements to emergency procedures | Medium | Low | ✅ Done |
 
 ### Optional Improvements (Low)
 
