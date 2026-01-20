@@ -598,11 +598,11 @@
 
 	.logo-container {
 		transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
-		transform: translateY(30px); /* Start slightly lower to center visually */
+		transform: translateY(18px); /* Start slightly lower to center visually */
 	}
 
 	.logo-container.slid-up {
-		transform: translateY(0); /* Gentle lift - only 30px movement */
+		transform: translateY(-12px); /* Gentle lift to final position */
 	}
 
 	.hook-content {
