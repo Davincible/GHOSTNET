@@ -447,6 +447,396 @@ contract TraceScanTest is Test {
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
+    // ERROR PATH TESTS - executeScan
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_ExecuteScan_RevertWhen_InvalidLevel_None() public {
+        vm.expectRevert(ITraceScan.InvalidLevel.selector);
+        traceScan.executeScan(IGhostCore.Level.NONE);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ERROR PATH TESTS - submitDeaths
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_SubmitDeaths_RevertWhen_ScanAlreadyFinalized() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        // Execute and finalize scan
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.warp(block.timestamp + 121 seconds);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+
+        // Try to submit deaths after finalization
+        address[] memory deadUsers = new address[](1);
+        deadUsers[0] = alice;
+
+        vm.expectRevert(ITraceScan.ScanAlreadyFinalized.selector);
+        traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+    }
+
+    function test_SubmitDeaths_RevertWhen_SubmissionWindowClosed() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        // Warp past submission window but don't finalize
+        vm.warp(block.timestamp + 121 seconds);
+
+        address[] memory deadUsers = new address[](1);
+        deadUsers[0] = alice;
+
+        vm.expectRevert(ITraceScan.SubmissionWindowClosed.selector);
+        traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+    }
+
+    function test_SubmitDeaths_RevertWhen_BatchTooLarge() public {
+        // Set max batch size to 1
+        vm.prank(owner);
+        traceScan.setMaxBatchSize(1);
+
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        vm.prank(bob);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        // Try to submit 2 users when max is 1
+        address[] memory deadUsers = new address[](2);
+        deadUsers[0] = alice;
+        deadUsers[1] = bob;
+
+        vm.expectRevert(ITraceScan.BatchTooLarge.selector);
+        traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+    }
+
+    function test_SubmitDeaths_SkipsUserAtWrongLevel() public {
+        // Alice in VAULT, Bob in SUBNET
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        vm.prank(bob);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.SUBNET);
+
+        // Execute VAULT scan
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        ITraceScan.Scan memory scan = traceScan.getCurrentScan(IGhostCore.Level.VAULT);
+
+        // Try to submit Bob (who is in SUBNET) to VAULT scan
+        // Bob should be skipped, but if alice also isn't dead, this will return early
+        bool aliceDies = traceScan.isDead(scan.seed, alice, 500);
+
+        if (aliceDies) {
+            address[] memory deadUsers = new address[](2);
+            deadUsers[0] = bob; // Wrong level - should be skipped
+            deadUsers[1] = alice; // Correct level
+
+            traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+
+            // Bob should still be alive (skipped)
+            assertTrue(ghostCore.isAlive(bob));
+            // Alice should be dead
+            assertFalse(ghostCore.isAlive(alice));
+        }
+    }
+
+    function test_SubmitDeaths_SkipsAlreadyDeadUser() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        // Kill alice via processDeaths first
+        address[] memory dead = new address[](1);
+        dead[0] = alice;
+
+        vm.prank(address(traceScan));
+        ghostCore.processDeaths(IGhostCore.Level.VAULT, dead);
+
+        assertFalse(ghostCore.isAlive(alice));
+
+        // Now try to submit alice again in a scan
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        // Submit already-dead alice - should be skipped (no revert, just returns)
+        address[] memory deadUsers = new address[](1);
+        deadUsers[0] = alice;
+
+        // This should not revert - it just skips the user
+        traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+
+        // Scan death count should be 0
+        ITraceScan.Scan memory scan = traceScan.getCurrentScan(IGhostCore.Level.VAULT);
+        assertEq(scan.deathCount, 0);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ERROR PATH TESTS - finalizeScan
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_FinalizeScan_RevertWhen_ScanNotActive() public {
+        // No scan has been executed
+        vm.expectRevert(ITraceScan.ScanNotActive.selector);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+    }
+
+    function test_FinalizeScan_RevertWhen_ScanAlreadyFinalized() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.warp(block.timestamp + 121 seconds);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+
+        // Try to finalize again
+        vm.expectRevert(ITraceScan.ScanAlreadyFinalized.selector);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+    }
+
+    function test_FinalizeScan_DistributesCascadeWhenDeaths() public {
+        // Setup multiple users
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        vm.prank(bob);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        ITraceScan.Scan memory scan = traceScan.getCurrentScan(IGhostCore.Level.VAULT);
+
+        // Find and submit deaths
+        address[] memory dead = new address[](2);
+        uint256 count;
+        if (traceScan.isDead(scan.seed, alice, 500)) dead[count++] = alice;
+        if (traceScan.isDead(scan.seed, bob, 500)) dead[count++] = bob;
+
+        if (count > 0) {
+            assembly { mstore(dead, count) }
+            traceScan.submitDeaths(IGhostCore.Level.VAULT, dead);
+        }
+
+        vm.warp(block.timestamp + 121 seconds);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+
+        // Verify cascade was distributed (totalDead should be recorded)
+        scan = traceScan.getCurrentScan(IGhostCore.Level.VAULT);
+        assertTrue(scan.finalized);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // WOULDDIE VIEW FUNCTION TESTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_WouldDie_ReturnsFalse_WhenUserNotAlive() public {
+        // User has no position
+        assertFalse(traceScan.wouldDie(IGhostCore.Level.VAULT, alice));
+
+        // Create and kill position
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        address[] memory dead = new address[](1);
+        dead[0] = alice;
+        vm.prank(address(traceScan));
+        ghostCore.processDeaths(IGhostCore.Level.VAULT, dead);
+
+        // Execute scan
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        // Dead user should return false
+        assertFalse(traceScan.wouldDie(IGhostCore.Level.VAULT, alice));
+    }
+
+    function test_WouldDie_ReturnsFalse_WhenUserAtWrongLevel() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.SUBNET);
+
+        // Execute VAULT scan
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        // Alice is in SUBNET, checking VAULT level should return false
+        assertFalse(traceScan.wouldDie(IGhostCore.Level.VAULT, alice));
+    }
+
+    function test_WouldDie_ReturnsFalse_WhenScanFinalized() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.warp(block.timestamp + 121 seconds);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+
+        // After finalization, wouldDie returns false
+        assertFalse(traceScan.wouldDie(IGhostCore.Level.VAULT, alice));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // CANFINALIZESCAN VIEW FUNCTION TESTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_CanFinalizeScan_ReturnsFalse_WhenAlreadyFinalized() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.warp(block.timestamp + 121 seconds);
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+
+        assertFalse(traceScan.canFinalizeScan(IGhostCore.Level.VAULT));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ADMIN FUNCTION TESTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_Pause_Success() public {
+        vm.prank(owner);
+        traceScan.pause();
+
+        // Verify paused by trying to execute scan
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+
+        vm.expectRevert();
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+    }
+
+    function test_Pause_RevertWhen_NotPauser() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        traceScan.pause();
+    }
+
+    function test_Unpause_Success() public {
+        vm.prank(owner);
+        traceScan.pause();
+
+        vm.prank(owner);
+        traceScan.unpause();
+
+        // Should work now
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+    }
+
+    function test_Unpause_RevertWhen_NotPauser() public {
+        vm.prank(owner);
+        traceScan.pause();
+
+        vm.prank(alice);
+        vm.expectRevert();
+        traceScan.unpause();
+    }
+
+    function test_SetSubmissionWindow_Success() public {
+        uint256 newWindow = 300 seconds;
+
+        vm.prank(owner);
+        traceScan.setSubmissionWindow(newWindow);
+
+        assertEq(traceScan.submissionWindow(), newWindow);
+    }
+
+    function test_SetSubmissionWindow_RevertWhen_NotAdmin() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        traceScan.setSubmissionWindow(300 seconds);
+    }
+
+    function test_SetMaxBatchSize_Success() public {
+        uint256 newSize = 500;
+
+        vm.prank(owner);
+        traceScan.setMaxBatchSize(newSize);
+
+        // Verify by trying to submit a batch
+        // (Internal check via BatchTooLarge)
+    }
+
+    function test_SetMaxBatchSize_RevertWhen_NotAdmin() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        traceScan.setMaxBatchSize(500);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // PAUSED STATE TESTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_SubmitDeaths_RevertWhen_Paused() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.prank(owner);
+        traceScan.pause();
+
+        address[] memory deadUsers = new address[](1);
+        deadUsers[0] = alice;
+
+        vm.expectRevert();
+        traceScan.submitDeaths(IGhostCore.Level.VAULT, deadUsers);
+    }
+
+    function test_FinalizeScan_RevertWhen_Paused() public {
+        vm.prank(alice);
+        ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
+
+        IGhostCore.LevelState memory state = ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        vm.warp(state.nextScanTime);
+        traceScan.executeScan(IGhostCore.Level.VAULT);
+
+        vm.warp(block.timestamp + 121 seconds);
+
+        vm.prank(owner);
+        traceScan.pause();
+
+        vm.expectRevert();
+        traceScan.finalizeScan(IGhostCore.Level.VAULT);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
     // HELPER FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 

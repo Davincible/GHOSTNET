@@ -6,6 +6,7 @@
 	import { NetworkVitalsPanel } from '$lib/features/network';
 	import { QuickActionsPanel } from '$lib/features/actions';
 	import { NavigationBar } from '$lib/features/nav';
+	import { WelcomePanel } from '$lib/features/welcome';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
@@ -45,6 +46,14 @@
 
 	function handleDeadPool() {
 		toast.info('Dead Pool coming soon...');
+	}
+
+	function handleWatchFeed() {
+		// Scroll to the feed panel smoothly
+		const feedElement = document.querySelector('.column-left');
+		if (feedElement) {
+			feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	}
 
 	function handleNavigate(id: string) {
@@ -126,9 +135,13 @@
 
 	<main class="main-content">
 		<div class="content-grid">
-			<!-- Left Column: Feed & Visualization -->
+			<!-- Left Column: Feed, Welcome & Visualization -->
 			<div class="column column-left">
 				<FeedPanel maxHeight="300px" maxEvents={12} />
+				<WelcomePanel 
+					onJackIn={handleJackIn}
+					onWatchFeed={handleWatchFeed}
+				/>
 				<NetworkVisualizationPanel 
 					operatorCount={provider.networkState.operatorsOnline}
 				/>
@@ -171,15 +184,15 @@
 
 	.main-content {
 		flex: 1;
-		padding: var(--space-4);
-		max-width: var(--container-xl);
-		margin: 0 auto;
+		padding: var(--space-4) var(--space-6);
 		width: 100%;
+		max-width: 1200px;
+		margin: 0 auto;
 	}
 
 	.content-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 		gap: var(--space-4);
 		height: 100%;
 	}
@@ -188,6 +201,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		min-width: 0; /* Allow column to shrink below content size */
 	}
 
 
@@ -195,7 +209,7 @@
 	/* Responsive Layout */
 	@media (max-width: 1024px) {
 		.content-grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 
 		.column-left {

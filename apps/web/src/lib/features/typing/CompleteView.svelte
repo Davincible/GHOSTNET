@@ -47,12 +47,12 @@
 
 	// Result tier - Badge variants: default, success, warning, danger, info, hotkey
 	let resultTier = $derived.by(() => {
-		if (result.accuracy >= 1.0) return { label: 'PERFECT', variant: 'success' as const, isPerfect: true };
-		if (result.accuracy >= 0.95) return { label: 'EXCELLENT', variant: 'success' as const, isPerfect: false };
-		if (result.accuracy >= 0.85) return { label: 'GREAT', variant: 'success' as const, isPerfect: false };
-		if (result.accuracy >= 0.70) return { label: 'GOOD', variant: 'info' as const, isPerfect: false };
-		if (result.accuracy >= 0.50) return { label: 'OKAY', variant: 'warning' as const, isPerfect: false };
-		return { label: 'FAILED', variant: 'danger' as const, isPerfect: false };
+		if (result.accuracy >= 1.0) return { label: 'PERFECT', variant: 'success' as const, isPerfect: true, colorClass: 'tier-perfect' };
+		if (result.accuracy >= 0.95) return { label: 'EXCELLENT', variant: 'success' as const, isPerfect: false, colorClass: 'tier-success' };
+		if (result.accuracy >= 0.85) return { label: 'GREAT', variant: 'success' as const, isPerfect: false, colorClass: 'tier-success' };
+		if (result.accuracy >= 0.70) return { label: 'GOOD', variant: 'info' as const, isPerfect: false, colorClass: 'tier-info' };
+		if (result.accuracy >= 0.50) return { label: 'OKAY', variant: 'warning' as const, isPerfect: false, colorClass: 'tier-warning' };
+		return { label: 'FAILED', variant: 'danger' as const, isPerfect: false, colorClass: 'tier-danger' };
 	});
 </script>
 
@@ -79,7 +79,7 @@
 			</div>
 
 			<!-- Stats Grid -->
-			<div class="stats-grid">
+			<div class="stats-grid {resultTier.colorClass}">
 				<div class="stat-box">
 					<span class="stat-value">{result.wpm}</span>
 					<span class="stat-label">AVG WPM</span>
@@ -258,7 +258,6 @@
 
 	.stat-value {
 		display: block;
-		color: var(--color-green-bright);
 		font-size: var(--text-xl);
 		font-weight: var(--font-bold);
 		font-variant-numeric: tabular-nums;
@@ -266,10 +265,50 @@
 
 	.stat-label {
 		display: block;
-		color: var(--color-green-dim);
 		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-wide);
 		margin-top: var(--space-1);
+	}
+
+	/* Tier-based stat colors */
+	.tier-perfect .stat-value {
+		color: var(--color-gold);
+	}
+	.tier-perfect .stat-label {
+		color: var(--color-gold);
+		opacity: 0.7;
+	}
+
+	.tier-success .stat-value {
+		color: var(--color-profit);
+	}
+	.tier-success .stat-label {
+		color: var(--color-profit);
+		opacity: 0.6;
+	}
+
+	.tier-info .stat-value {
+		color: var(--color-cyan);
+	}
+	.tier-info .stat-label {
+		color: var(--color-cyan);
+		opacity: 0.6;
+	}
+
+	.tier-warning .stat-value {
+		color: var(--color-amber);
+	}
+	.tier-warning .stat-label {
+		color: var(--color-amber);
+		opacity: 0.6;
+	}
+
+	.tier-danger .stat-value {
+		color: var(--color-red);
+	}
+	.tier-danger .stat-label {
+		color: var(--color-red);
+		opacity: 0.6;
 	}
 
 	.divider {

@@ -473,6 +473,190 @@ contract DeadPoolTest is Test {
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
+    // EDGE CASE TESTS
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_PlaceBet_RevertWhen_SwitchingSides() public {
+        _createRound();
+
+        // First bet on OVER
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        // Try to switch to UNDER
+        vm.prank(alice);
+        vm.expectRevert(IDeadPool.InvalidAmount.selector);
+        deadPool.placeBet(1, false, 50 * 1e18);
+    }
+
+    function test_PlaceBet_RevertWhen_Paused() public {
+        _createRound();
+
+        vm.prank(owner);
+        deadPool.pause();
+
+        vm.prank(alice);
+        vm.expectRevert();
+        deadPool.placeBet(1, true, 100 * 1e18);
+    }
+
+    function test_ClaimWinnings_RevertWhen_Paused() public {
+        _createRound();
+
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        vm.prank(resolver);
+        deadPool.resolveRound(1, true);
+
+        vm.prank(owner);
+        deadPool.pause();
+
+        vm.prank(alice);
+        vm.expectRevert();
+        deadPool.claimWinnings(1);
+    }
+
+    function test_ResolveRound_RevertWhen_RoundNotFound() public {
+        vm.prank(resolver);
+        vm.expectRevert(IDeadPool.RoundNotFound.selector);
+        deadPool.resolveRound(999, true);
+    }
+
+    function test_ResolveRound_ZeroRake() public {
+        // Create round but don't place any bets
+        _createRound();
+
+        vm.warp(block.timestamp + 2 hours);
+
+        uint256 deadBefore = token.balanceOf(token.DEAD_ADDRESS());
+
+        vm.prank(resolver);
+        deadPool.resolveRound(1, true);
+
+        // No rake burned since no bets
+        assertEq(token.balanceOf(token.DEAD_ADDRESS()), deadBefore);
+    }
+
+    function test_CalculateWinnings_ZeroWinningPool() public {
+        _createRound();
+
+        // Only bet on UNDER
+        vm.prank(bob);
+        deadPool.placeBet(1, false, 100 * 1e18);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        // Resolve with OVER winning (but no OVER bets)
+        vm.prank(resolver);
+        deadPool.resolveRound(1, true);
+
+        // calculateWinnings for non-existent winner should return 0
+        uint256 winnings = deadPool.calculateWinnings(1, alice);
+        assertEq(winnings, 0);
+    }
+
+    function test_GetOverOdds_ZeroPool() public {
+        _createRound();
+
+        // No bets yet, overPool is 0
+        uint16 odds = deadPool.getOverOdds(1);
+        assertEq(odds, 0);
+    }
+
+    function test_GetUnderOdds_ZeroPool() public {
+        _createRound();
+
+        // Only bet on OVER
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        // underPool is 0
+        uint16 odds = deadPool.getUnderOdds(1);
+        assertEq(odds, 0);
+    }
+
+    function test_Pause_Success() public {
+        vm.prank(owner);
+        deadPool.pause();
+
+        assertTrue(deadPool.paused());
+    }
+
+    function test_Unpause_Success() public {
+        vm.prank(owner);
+        deadPool.pause();
+
+        vm.prank(owner);
+        deadPool.unpause();
+
+        assertFalse(deadPool.paused());
+    }
+
+    function test_Pause_RevertWhen_NotPauser() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        deadPool.pause();
+    }
+
+    function test_Unpause_RevertWhen_NotPauser() public {
+        vm.prank(owner);
+        deadPool.pause();
+
+        vm.prank(alice);
+        vm.expectRevert();
+        deadPool.unpause();
+    }
+
+    function test_CalculateWinnings_NotResolved() public {
+        _createRound();
+
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        // Not resolved yet
+        uint256 winnings = deadPool.calculateWinnings(1, alice);
+        assertEq(winnings, 0);
+    }
+
+    function test_CalculateWinnings_NoBet() public {
+        _createRound();
+
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        vm.prank(resolver);
+        deadPool.resolveRound(1, true);
+
+        // Bob has no bet
+        uint256 winnings = deadPool.calculateWinnings(1, bob);
+        assertEq(winnings, 0);
+    }
+
+    function test_CalculateWinnings_WrongSide() public {
+        _createRound();
+
+        vm.prank(alice);
+        deadPool.placeBet(1, true, 100 * 1e18);
+
+        vm.prank(bob);
+        deadPool.placeBet(1, false, 100 * 1e18);
+
+        vm.warp(block.timestamp + 2 hours);
+
+        vm.prank(resolver);
+        deadPool.resolveRound(1, true); // OVER wins
+
+        // Bob bet UNDER
+        uint256 winnings = deadPool.calculateWinnings(1, bob);
+        assertEq(winnings, 0);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
     // HELPER FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
