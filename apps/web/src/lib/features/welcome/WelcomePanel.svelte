@@ -108,14 +108,14 @@
 
 	function handleLogoTypingComplete() {
 		logoTypingComplete = true;
-		// Brief pause to let user absorb the logo, then begin the slide
+		// Quick beat, then slide up
 		setTimeout(() => {
 			logoSlidUp = true;
-			// Wait for slide animation to complete before starting tagline
+			// Start tagline after slide completes
 			setTimeout(() => {
 				showTagline = true;
-			}, 700); // Slightly less than 0.8s slide duration for smooth overlap
-		}, 600);
+			}, 500);
+		}, 250);
 	}
 
 	function handleTaglineComplete() {
@@ -597,39 +597,36 @@
 
 	/* Slide hook - cinematic reveal sequence */
 	.slide-hook {
-		justify-content: center;
+		justify-content: flex-start;
+		padding-top: var(--space-4);
 		min-height: 260px;
 		position: relative;
 	}
 
 	.logo-container {
-		transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
-		transform: translateY(18px); /* Start slightly lower to center visually */
+		transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+		transform: translateY(35px); /* Start centered vertically */
 	}
 
 	.logo-container.slid-up {
-		transform: translateY(-12px); /* Gentle lift to final position */
+		transform: translateY(0); /* Slide to top position */
 	}
 
 	.hook-content {
 		opacity: 0;
-		max-height: 0;
-		overflow: hidden;
-		transform: translateY(-10px);
-		transition: 
-			opacity 0.6s ease-out 0.1s,
-			transform 0.6s ease-out 0.1s,
-			max-height 0.6s ease-out;
+		transform: translateY(10px);
+		transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
+		pointer-events: none;
 	}
 
 	.hook-content.visible {
 		opacity: 1;
-		max-height: 120px;
 		transform: translateY(0);
+		pointer-events: auto;
 	}
 
 	.tagline {
