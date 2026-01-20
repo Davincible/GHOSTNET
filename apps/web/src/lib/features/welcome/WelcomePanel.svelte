@@ -3,6 +3,7 @@
 	import { Box } from '$lib/ui/terminal';
 	import GlitchText from './GlitchText.svelte';
 	import MatrixRain from './MatrixRain.svelte';
+	import AsciiTypewriter from './AsciiTypewriter.svelte';
 
 	// Props
 	interface Props {
@@ -149,13 +150,17 @@
 					{#if currentSlide === 0}
 						<div class="slide slide-hook">
 							<div class="logo-container">
-								<pre class="ascii-logo">{`
- ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
+								<AsciiTypewriter 
+									text={` ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
 ██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
 ██║  ███╗███████║██║   ██║███████╗   ██║   ██╔██╗ ██║█████╗     ██║   
 ██║   ██║██╔══██║██║   ██║╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
 ╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   ██║ ╚████║███████╗   ██║   
- ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝`}</pre>
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝`}
+									charDelay={3}
+									lineDelay={30}
+									glitchChance={0.02}
+								/>
 							</div>
 							<h2 class="tagline">
 								<GlitchText 
