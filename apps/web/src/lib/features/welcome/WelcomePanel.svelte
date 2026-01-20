@@ -178,25 +178,25 @@
 							<h2 class="slide-title">HOW IT WORKS</h2>
 							<div class="flow-diagram">
 								<div class="flow-step" style="--delay: 0">
-									<span class="step-icon">⚡</span>
+									<span class="step-icon bracket">[&gt;&gt;]</span>
 									<span class="step-name">JACK IN</span>
 									<span class="step-desc">Stake $DATA</span>
 								</div>
 								<div class="flow-arrow" style="--delay: 1">▼</div>
 								<div class="flow-step" style="--delay: 2">
-									<span class="step-icon">📈</span>
+									<span class="step-icon bracket">[++]</span>
 									<span class="step-name">EARN</span>
 									<span class="step-desc">Yield accumulates</span>
 								</div>
 								<div class="flow-arrow" style="--delay: 3">▼</div>
 								<div class="flow-step" style="--delay: 4">
-									<span class="step-icon">👻</span>
+									<span class="step-icon bracket">[??]</span>
 									<span class="step-name">SURVIVE</span>
 									<span class="step-desc">The trace scan</span>
 								</div>
 								<div class="flow-arrow" style="--delay: 5">▼</div>
 								<div class="flow-step" style="--delay: 6">
-									<span class="step-icon">💰</span>
+									<span class="step-icon bracket">[&lt;&lt;]</span>
 									<span class="step-name">EXTRACT</span>
 									<span class="step-desc">Take your gains</span>
 								</div>
@@ -695,6 +695,15 @@
 
 	.step-icon {
 		font-size: var(--text-lg);
+	}
+
+	.step-icon.bracket {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		color: var(--color-accent);
+		font-weight: var(--font-bold);
+		letter-spacing: -0.5px;
+		text-shadow: 0 0 8px var(--color-accent-glow);
 	}
 
 	.step-name {
