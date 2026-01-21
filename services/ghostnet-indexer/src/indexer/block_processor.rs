@@ -1,4 +1,3 @@
-//! Block processor for indexing GHOSTNET events.
 //! Block processor for fetching and dispatching blockchain events.
 //!
 //! The block processor is responsible for:
@@ -24,7 +23,13 @@
 //! └──────────────────────────────────────────────────────────────────────────┘
 //! ```
 //!
-//! # Modes
+//! # Backfill Modes
+//!
+//! - **Standard**: Uses `eth_getLogs` with batched block ranges (works everywhere)
+//! - **MegaETH Optimized**: Uses `eth_getLogsWithCursor` for efficient pagination
+//!   on high-throughput chains where standard queries would timeout
+//!
+//! # Real-time Modes
 //!
 //! - **HTTP Polling**: Used for backfill and when WebSocket is unavailable
 //! - **WebSocket Subscription**: Real-time block streaming (Phase 4)
@@ -42,6 +47,7 @@ use tokio::sync::mpsc;
 use tokio::time::sleep;
 use tracing::{debug, error, info, instrument, warn};
 
+use super::megaeth_rpc::MegaEthRpcClient;
 use crate::config::ContractAddresses;
 use crate::error::{InfraError, Result};
 use crate::types::events::EventMetadata;
@@ -68,10 +74,19 @@ const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 /// # Type Parameters
 ///
 /// * `P` - The provider type (must implement `Provider`)
+///
+/// # Backfill Optimization
+///
+/// When a `MegaEthRpcClient` is configured via [`Self::with_megaeth_client`],
+/// the processor uses cursor-based pagination (`eth_getLogsWithCursor`) for
+/// efficient backfill on high-throughput chains. This is critical for MegaETH
+/// where standard `eth_getLogs` would timeout on large ranges.
 #[derive(Debug)]
 pub struct BlockProcessor<P> {
-    /// RPC provider for blockchain access.
+    /// RPC provider for blockchain access (Alloy).
     provider: Arc<P>,
+    /// Optional MegaETH-specific client for cursor-based pagination.
+    megaeth_client: Option<Arc<MegaEthRpcClient>>,
     /// Parsed contract addresses to monitor.
     contract_addresses: Vec<Address>,
     /// Channel for sending logs to the event router.
@@ -108,10 +123,38 @@ where
 
         Ok(Self {
             provider,
+            megaeth_client: None,
             contract_addresses,
             log_sender,
             poll_interval: poll_interval.unwrap_or(DEFAULT_POLL_INTERVAL),
         })
+    }
+
+    /// Add a MegaETH-specific RPC client for cursor-based pagination.
+    ///
+    /// When configured, the processor will use `eth_getLogsWithCursor` for
+    /// backfill operations, which is much more efficient for MegaETH's
+    /// high-throughput environment.
+    ///
+    /// # Arguments
+    ///
+    /// * `client` - MegaETH RPC client instance
+    #[must_use]
+    pub fn with_megaeth_client(mut self, client: Arc<MegaEthRpcClient>) -> Self {
+        self.megaeth_client = Some(client);
+        self
+    }
+
+    /// Check if cursor-based pagination is available.
+    ///
+    /// Returns `true` if a MegaETH client is configured and the endpoint
+    /// supports `eth_getLogsWithCursor`.
+    pub async fn supports_cursor_backfill(&self) -> bool {
+        if let Some(client) = &self.megaeth_client {
+            client.supports_cursor_pagination().await
+        } else {
+            false
+        }
     }
 
     /// Start polling for new blocks from a given starting block.
@@ -179,6 +222,9 @@ where
     /// Uses batched fetching for optimal throughput. Each batch processes
     /// up to `BACKFILL_BATCH_SIZE` blocks.
     ///
+    /// If a MegaETH client is configured and supports cursor pagination,
+    /// use [`Self::backfill_with_cursor`] instead for better efficiency.
+    ///
     /// # Arguments
     ///
     /// * `from_block` - Starting block number (inclusive)
@@ -218,6 +264,113 @@ where
 
         info!(total_blocks, "Backfill complete");
         Ok(())
+    }
+
+    /// Backfill historical blocks using MegaETH's cursor-based pagination.
+    ///
+    /// This method is optimized for MegaETH's high-throughput environment where
+    /// standard `eth_getLogs` would timeout on large ranges. It uses
+    /// `eth_getLogsWithCursor` to efficiently paginate through results.
+    ///
+    /// # Arguments
+    ///
+    /// * `from_block` - Starting block number (inclusive)
+    /// * `to_block` - Ending block number (inclusive)
+    ///
+    /// # Errors
+    ///
+    /// - Returns an error if no MegaETH client is configured
+    /// - Returns an error if `eth_getLogsWithCursor` is not supported
+    /// - Returns an error if RPC calls fail or the log channel is closed
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use ghostnet_indexer::indexer::{BlockProcessor, MegaEthRpcClient};
+    ///
+    /// let megaeth = MegaEthRpcClient::new("https://6343.rpc.thirdweb.com")?;
+    /// let processor = BlockProcessor::new(provider, contracts, tx)?
+    ///     .with_megaeth_client(Arc::new(megaeth));
+    ///
+    /// // Use cursor-based pagination for efficient backfill
+    /// processor.backfill_with_cursor(1_000_000, 2_000_000).await?;
+    /// ```
+    #[instrument(skip(self))]
+    pub async fn backfill_with_cursor(&self, from_block: u64, to_block: u64) -> Result<()> {
+        let client = self.megaeth_client.as_ref().ok_or_else(|| {
+            InfraError::Internal("MegaETH client not configured for cursor backfill".into())
+        })?;
+
+        info!(
+            from_block,
+            to_block,
+            contracts = self.contract_addresses.len(),
+            "Starting cursor-based backfill"
+        );
+
+        // Fetch logs using cursor pagination
+        let (logs, stats) = client
+            .get_logs_with_cursor(from_block, to_block, Some(self.contract_addresses.clone()))
+            .await?;
+
+        info!(
+            total_logs = stats.total_logs,
+            batches = stats.batches,
+            complete = stats.complete,
+            "Cursor fetch complete, processing logs"
+        );
+
+        // Sort logs by (block_number, log_index) for deterministic ordering
+        let mut sorted_logs = logs;
+        sorted_logs.sort_by_key(|log| (log.block_number, log.log_index));
+
+        // Dispatch each log
+        let mut dispatched = 0usize;
+        for log in sorted_logs {
+            self.dispatch_log(log).await?;
+            dispatched += 1;
+
+            if dispatched % 10_000 == 0 {
+                debug!(dispatched, "Dispatched logs");
+            }
+        }
+
+        info!(
+            dispatched,
+            from_block,
+            to_block,
+            batches = stats.batches,
+            "Cursor-based backfill complete"
+        );
+
+        Ok(())
+    }
+
+    /// Backfill using the best available method.
+    ///
+    /// Automatically selects the optimal backfill strategy:
+    /// 1. If MegaETH client is configured and supports cursor pagination,
+    ///    uses [`Self::backfill_with_cursor`]
+    /// 2. Otherwise, falls back to standard batched [`Self::backfill`]
+    ///
+    /// # Arguments
+    ///
+    /// * `from_block` - Starting block number (inclusive)
+    /// * `to_block` - Ending block number (inclusive)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if RPC calls fail or the log channel is closed.
+    #[instrument(skip(self))]
+    pub async fn backfill_auto(&self, from_block: u64, to_block: u64) -> Result<()> {
+        // Check if cursor-based backfill is available
+        if self.supports_cursor_backfill().await {
+            info!("Using cursor-based pagination for backfill");
+            self.backfill_with_cursor(from_block, to_block).await
+        } else {
+            info!("Using standard batched backfill");
+            self.backfill(from_block, to_block).await
+        }
     }
 
     /// Process a range of blocks, fetching logs and dispatching them.

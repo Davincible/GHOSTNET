@@ -132,6 +132,11 @@ bigdecimal = { version = "0.4", features = ["serde"] }
 hex = "0.4"
 parking_lot = "0.12"
 
+# ───────────────────────────────────────────────────────────────────────────────
+# MEGAETH-SPECIFIC (cursor-based pagination requires raw HTTP client)
+# ───────────────────────────────────────────────────────────────────────────────
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEV DEPENDENCIES
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -146,6 +151,8 @@ proptest = "1"
 rstest = "0.24"
 # TLS crypto provider for WebSocket connections in tests
 rustls = { version = "0.23", features = ["ring"] }
+# Raw WebSocket client for MegaETH-specific subscriptions (miniBlocks, stateChanges)
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FEATURES
