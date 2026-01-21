@@ -124,11 +124,12 @@ where
     S: PositionStore + Send + Sync,
     C: Cache + Send + Sync,
 {
-    /// Handle a new position entry (JackedIn event).
+    /// Handle a new position entry (`JackedIn` event).
     ///
     /// Creates a new position record for the user. If the user already has
-    /// an active position, this is logged as a warning but still creates
-    /// the new position (the contract should prevent this).
+    /// an active position, it is closed with `ExitReason::Superseded` to
+    /// maintain data consistency (the contract should prevent this, but we
+    /// handle it gracefully).
     #[instrument(skip(self, event, meta), fields(user = %event.user, level = event.level))]
     async fn handle_jacked_in(
         &self,
@@ -139,12 +140,32 @@ where
         let level = Self::to_level(event.level)?;
         let amount = Self::to_token_amount(&event.amount);
 
-        // Check for existing position (shouldn't happen, but log if it does)
-        if let Some(existing) = self.store.get_active_position(&user_address).await? {
+        // Check for existing position and close it if found
+        // This shouldn't happen in normal operation, but we handle it gracefully
+        if let Some(mut existing) = self.store.get_active_position(&user_address).await? {
             warn!(
                 existing_id = %existing.id,
-                "User already has active position, creating new one anyway"
+                existing_level = ?existing.level,
+                existing_amount = %existing.amount,
+                "Closing existing position due to new JackedIn event"
             );
+
+            // Close the existing position
+            existing.is_alive = false;
+            existing.exit_reason = Some(ExitReason::Superseded);
+            existing.exit_timestamp = Some(meta.timestamp);
+            existing.updated_at = meta.timestamp;
+
+            self.store.save_position(&existing).await?;
+
+            // Record history for the closed position
+            self.record_history(
+                &existing,
+                PositionAction::JackedIn, // Using JackedIn to indicate superseded by new entry
+                TokenAmount::zero(),       // No amount change, just closure
+                &meta,
+            )
+            .await?;
         }
 
         // Create new position
@@ -376,73 +397,327 @@ where
 // ═══════════════════════════════════════════════════════════════════════════════
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
-    // Tests will be added when we have mock implementations of PositionStore
-    // For now, this handler is tested via integration tests with real stores
+    use std::collections::HashMap;
+    use std::sync::{Arc, RwLock};
+
+    use alloy::primitives::{Address, U256};
+    use chrono::Utc;
+
+    use super::*;
+    use crate::abi::ghost_core;
+    use crate::ports::MockCache;
+    use crate::types::entities::PositionHistoryEntry;
+    use crate::types::enums::Level;
+    use crate::types::primitives::EthAddress;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MOCK POSITION STORE
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /// Stateful mock store for testing.
+    #[derive(Debug, Default)]
+    struct MockPositionStore {
+        positions: RwLock<HashMap<EthAddress, Position>>,
+        history: RwLock<Vec<PositionHistoryEntry>>,
+    }
+
+    impl MockPositionStore {
+        fn new() -> Self {
+            Self::default()
+        }
+
+        /// Get the number of saved positions.
+        fn position_count(&self) -> usize {
+            self.positions.read().unwrap().len()
+        }
+
+        /// Get the number of history entries.
+        fn history_count(&self) -> usize {
+            self.history.read().unwrap().len()
+        }
+
+        /// Get a position by address (for test assertions).
+        fn get_position(&self, address: &EthAddress) -> Option<Position> {
+            self.positions.read().unwrap().get(address).cloned()
+        }
+    }
+
+    #[async_trait]
+    impl PositionStore for MockPositionStore {
+        async fn get_active_position(
+            &self,
+            address: &EthAddress,
+        ) -> Result<Option<Position>> {
+            let positions = self.positions.read().unwrap();
+            Ok(positions
+                .get(address)
+                .filter(|p| p.is_alive && !p.is_extracted)
+                .cloned())
+        }
+
+        async fn save_position(&self, position: &Position) -> Result<()> {
+            let mut positions = self.positions.write().unwrap();
+            positions.insert(position.user_address, position.clone());
+            Ok(())
+        }
+
+        async fn get_at_risk_positions(
+            &self,
+            _level: Level,
+            _limit: u32,
+        ) -> Result<Vec<Position>> {
+            Ok(vec![])
+        }
+
+        async fn record_history(&self, entry: &PositionHistoryEntry) -> Result<()> {
+            let mut history = self.history.write().unwrap();
+            history.push(entry.clone());
+            Ok(())
+        }
+
+        async fn get_position_by_id(&self, _id: &Uuid) -> Result<Option<Position>> {
+            Ok(None)
+        }
+
+        async fn get_positions_by_level(&self, _level: Level) -> Result<Vec<Position>> {
+            Ok(vec![])
+        }
+
+        async fn count_positions_by_level(&self, _level: Level) -> Result<u32> {
+            Ok(0)
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TEST HELPERS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    fn test_address() -> Address {
+        "0x1234567890123456789012345678901234567890"
+            .parse()
+            .unwrap()
+    }
+
+    fn test_metadata() -> EventMetadata {
+        EventMetadata {
+            block_number: 1000,
+            block_hash: [1u8; 32].into(),
+            tx_hash: [2u8; 32].into(),
+            tx_index: 0,
+            log_index: 0,
+            timestamp: Utc::now(),
+            contract: test_address(),
+        }
+    }
+
+    fn create_handler() -> (
+        PositionHandler<MockPositionStore, MockCache>,
+        Arc<MockPositionStore>,
+        Arc<MockCache>,
+    ) {
+        let store = Arc::new(MockPositionStore::new());
+        let cache = Arc::new(MockCache::new());
+        let handler = PositionHandler::new(Arc::clone(&store), Arc::clone(&cache));
+        (handler, store, cache)
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TESTS
+    // ═══════════════════════════════════════════════════════════════════════════
 
     #[test]
     fn handler_is_send_sync() {
-        // Compile-time check
         fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<PositionHandler<MockPositionStore, MockCache>>();
+    }
 
-        use crate::ports::MockCache;
+    #[tokio::test]
+    async fn handle_jacked_in_creates_position() {
+        let (handler, store, _cache) = create_handler();
 
-        // Create a mock store type for testing
-        struct MockPositionStore;
+        let event = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)), // 1000 tokens
+            level: 3, // Subnet
+            newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
 
-        #[async_trait::async_trait]
-        impl crate::ports::PositionStore for MockPositionStore {
-            async fn get_active_position(
-                &self,
-                _: &crate::types::primitives::EthAddress,
-            ) -> crate::error::Result<Option<crate::types::entities::Position>> {
-                Ok(None)
-            }
+        let result = handler.handle_jacked_in(event, test_metadata()).await;
+        assert!(result.is_ok());
 
-            async fn save_position(
-                &self,
-                _: &crate::types::entities::Position,
-            ) -> crate::error::Result<()> {
-                Ok(())
-            }
+        // Verify position was created
+        assert_eq!(store.position_count(), 1);
+        assert_eq!(store.history_count(), 1);
 
-            async fn get_at_risk_positions(
-                &self,
-                _: crate::types::enums::Level,
-                _: u32,
-            ) -> crate::error::Result<Vec<crate::types::entities::Position>> {
-                Ok(vec![])
-            }
+        let user_address = EthAddress::new(test_address().0 .0);
+        let position = store.get_position(&user_address).unwrap();
+        assert!(position.is_alive);
+        assert!(!position.is_extracted);
+        assert_eq!(position.level, Level::Subnet);
+    }
 
-            async fn record_history(
-                &self,
-                _: &crate::types::entities::PositionHistoryEntry,
-            ) -> crate::error::Result<()> {
-                Ok(())
-            }
+    #[tokio::test]
+    async fn handle_jacked_in_closes_existing_position() {
+        let (handler, store, _cache) = create_handler();
+        let user_address = EthAddress::new(test_address().0 .0);
 
-            async fn get_position_by_id(
-                &self,
-                _: &uuid::Uuid,
-            ) -> crate::error::Result<Option<crate::types::entities::Position>> {
-                Ok(None)
-            }
+        // Create initial position via JackedIn
+        let event1 = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            level: 2, // Mainframe
+            newTotal: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_jacked_in(event1, test_metadata()).await.unwrap();
 
-            async fn get_positions_by_level(
-                &self,
-                _: crate::types::enums::Level,
-            ) -> crate::error::Result<Vec<crate::types::entities::Position>> {
-                Ok(vec![])
-            }
+        let first_position = store.get_position(&user_address).unwrap();
+        let first_id = first_position.id;
+        assert!(first_position.is_alive);
 
-            async fn count_positions_by_level(
-                &self,
-                _: crate::types::enums::Level,
-            ) -> crate::error::Result<u32> {
-                Ok(0)
-            }
-        }
+        // Second JackedIn should close the first and create new
+        let event2 = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            level: 4, // Darknet
+            newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_jacked_in(event2, test_metadata()).await.unwrap();
 
-        assert_send_sync::<super::PositionHandler<MockPositionStore, MockCache>>();
+        // There should still be 1 position (the latest one overwrites)
+        // But the old one was closed first
+        let final_position = store.get_position(&user_address).unwrap();
+        assert!(final_position.is_alive);
+        assert_eq!(final_position.level, Level::Darknet);
+        assert_ne!(final_position.id, first_id);
+
+        // History should have entries for both operations
+        assert!(store.history_count() >= 2);
+    }
+
+    #[tokio::test]
+    async fn handle_stake_added_updates_amount() {
+        let (handler, store, _cache) = create_handler();
+        let user_address = EthAddress::new(test_address().0 .0);
+
+        // First create a position
+        let jacked_in = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            level: 3,
+            newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+
+        // Now add stake
+        let stake_added = ghost_core::StakeAdded {
+            user: test_address(),
+            amount: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            newTotal: U256::from(1500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        let result = handler.handle_stake_added(stake_added, test_metadata()).await;
+        assert!(result.is_ok());
+
+        // Verify amount was updated
+        let position = store.get_position(&user_address).unwrap();
+        assert!(position.last_add_timestamp.is_some());
+        // The amount should reflect newTotal (1500 tokens)
+        assert_eq!(position.amount.to_string(), "1500");
+    }
+
+    #[tokio::test]
+    async fn handle_stake_added_fails_for_unknown_user() {
+        let (handler, _store, _cache) = create_handler();
+
+        // Try to add stake without existing position
+        let stake_added = ghost_core::StakeAdded {
+            user: test_address(),
+            amount: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            newTotal: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        let result = handler.handle_stake_added(stake_added, test_metadata()).await;
+
+        assert!(result.is_err());
+        // Should be PositionNotFound error
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("position not found"));
+    }
+
+    #[tokio::test]
+    async fn handle_extracted_marks_position_closed() {
+        let (handler, store, _cache) = create_handler();
+        let user_address = EthAddress::new(test_address().0 .0);
+
+        // First create a position
+        let jacked_in = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            level: 3,
+            newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+
+        // Extract
+        let extracted = ghost_core::Extracted {
+            user: test_address(),
+            amount: U256::from(900_u64) * U256::from(10_u64).pow(U256::from(18_u64)), // principal
+            rewards: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        let result = handler.handle_extracted(extracted, test_metadata()).await;
+        assert!(result.is_ok());
+
+        // Verify position is closed
+        let position = store.get_position(&user_address).unwrap();
+        assert!(!position.is_alive);
+        assert!(position.is_extracted);
+        assert_eq!(position.exit_reason, Some(ExitReason::Extracted));
+        assert!(position.extracted_amount.is_some());
+        assert!(position.extracted_rewards.is_some());
+    }
+
+    #[tokio::test]
+    async fn handle_position_culled_marks_dead() {
+        let (handler, store, _cache) = create_handler();
+        let user_address = EthAddress::new(test_address().0 .0);
+
+        // First create a position
+        let jacked_in = ghost_core::JackedIn {
+            user: test_address(),
+            amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            level: 5, // BlackIce
+            newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+
+        // Cull the position
+        let culled = ghost_core::PositionCulled {
+            victim: test_address(),
+            penaltyAmount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            returnedAmount: U256::from(900_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            newEntrant: "0xabcdef0123456789abcdef0123456789abcdef01"
+                .parse()
+                .unwrap(),
+        };
+        let result = handler.handle_position_culled(culled, test_metadata()).await;
+        assert!(result.is_ok());
+
+        // Verify position is dead
+        let position = store.get_position(&user_address).unwrap();
+        assert!(!position.is_alive);
+        assert_eq!(position.exit_reason, Some(ExitReason::Culled));
+    }
+
+    #[test]
+    fn to_level_valid_values() {
+        assert!(PositionHandler::<MockPositionStore, MockCache>::to_level(0).is_ok());
+        assert!(PositionHandler::<MockPositionStore, MockCache>::to_level(1).is_ok());
+        assert!(PositionHandler::<MockPositionStore, MockCache>::to_level(5).is_ok());
+    }
+
+    #[test]
+    fn to_level_invalid_value() {
+        assert!(PositionHandler::<MockPositionStore, MockCache>::to_level(6).is_err());
+        assert!(PositionHandler::<MockPositionStore, MockCache>::to_level(255).is_err());
     }
 }

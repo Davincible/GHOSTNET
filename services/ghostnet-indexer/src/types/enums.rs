@@ -305,6 +305,12 @@ pub enum ExitReason {
     Culled,
     /// Position was closed during system reset
     SystemReset,
+    /// Position was superseded by a new JackedIn event
+    ///
+    /// This should rarely happen - it indicates the contract allowed
+    /// a user to jack in while already having an active position.
+    /// The old position is closed to maintain data consistency.
+    Superseded,
 }
 
 impl ExitReason {
@@ -316,12 +322,14 @@ impl ExitReason {
             Self::Traced => "Traced",
             Self::Culled => "Culled",
             Self::SystemReset => "System Reset",
+            Self::Superseded => "Superseded",
         }
     }
 
     /// Whether this exit reason involves losing funds (vs voluntary exit).
     #[must_use]
     pub const fn is_loss(&self) -> bool {
+        // Superseded is not a loss - the funds moved to the new position
         matches!(self, Self::Traced | Self::Culled | Self::SystemReset)
     }
 }
