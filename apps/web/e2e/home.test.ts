@@ -83,26 +83,14 @@ test.describe('GHOSTNET Home Page', () => {
 	// ════════════════════════════════════════════════════════════════
 
 	test('settings modal opens from header', async ({ page }) => {
-		// Find and click settings button
-		const settingsButton = page.getByRole('button', { name: /settings|gear|cog/i });
-		
-		// Settings might be an icon button, so also try aria-label
-		if (await settingsButton.count() === 0) {
-			// Try finding by test id or other means
-			const settingsIcon = page.locator('button:has-text("⚙"), [aria-label*="settings" i]').first();
-			if (await settingsIcon.count() > 0) {
-				await settingsIcon.click();
-			}
-		} else {
-			await settingsButton.click();
-		}
+		// Find and click settings button using stable test ID
+		const settingsButton = page.getByTestId('settings-button');
+		await expect(settingsButton).toBeVisible();
+		await settingsButton.click();
 
-		// Modal should be visible with settings title
+		// Modal should be visible with settings content
 		const modal = page.locator('[role="dialog"], .modal');
-		// Only check if modal appeared (button might not exist in all builds)
-		if (await modal.count() > 0) {
-			await expect(modal).toBeVisible();
-		}
+		await expect(modal).toBeVisible();
 	});
 
 	// ════════════════════════════════════════════════════════════════

@@ -190,8 +190,7 @@ export async function approveData(amount: bigint): Promise<`0x${string}`> {
 		args: [ghostCoreAddress, amount]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -330,8 +329,7 @@ export async function jackIn(level: number, amount: bigint): Promise<`0x${string
 		args: [level, amount]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -350,8 +348,7 @@ export async function extract(): Promise<`0x${string}`> {
 		functionName: 'extract'
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -370,8 +367,7 @@ export async function claimRewards(): Promise<`0x${string}`> {
 		functionName: 'claimRewards'
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -391,8 +387,7 @@ export async function upgradeLevel(newLevel: number): Promise<`0x${string}`> {
 		args: [newLevel]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -421,8 +416,7 @@ export async function increaseStake(additionalAmount: bigint): Promise<`0x${stri
 		args: [additionalAmount]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -506,8 +500,7 @@ export async function placeBet(isOver: boolean, amount: bigint): Promise<`0x${st
 			functionName: 'approve',
 			args: [deadPoolAddress, amount]
 		});
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const approveHash = await writeContract(config, approveRequest as any);
+		const approveHash = await writeContract(config, approveRequest);
 		await waitForTransactionReceipt(config, { hash: approveHash });
 	}
 
@@ -518,8 +511,7 @@ export async function placeBet(isOver: boolean, amount: bigint): Promise<`0x${st
 		args: [isOver, amount]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }
@@ -539,8 +531,7 @@ export async function claimWinnings(roundNumber: bigint): Promise<`0x${string}`>
 		args: [roundNumber]
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const hash = await writeContract(config, request as any);
+	const hash = await writeContract(config, request);
 	await waitForTransactionReceipt(config, { hash });
 	return hash;
 }

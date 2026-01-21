@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { FeedEventType } from '$lib/core/types';
 	import { onMount, onDestroy } from 'svelte';
 	import '../app.css';
 	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
@@ -48,29 +49,18 @@
 			}
 			
 			// Audio effects
-			switch (event.type) {
-				case 'JACK_IN':
-					audio.jackIn();
-					break;
-				case 'EXTRACT':
-					audio.extract();
-					break;
-				case 'TRACED':
-					audio.traced();
-					break;
-				case 'SURVIVED':
-					audio.survived();
-					break;
-				case 'JACKPOT':
-					audio.jackpot();
-					break;
-				case 'TRACE_SCAN_WARNING':
-					audio.scanWarning();
-					break;
-				case 'TRACE_SCAN_START':
-					audio.scanStart();
-					break;
-			}
+			const audioHandlers: Partial<Record<FeedEventType, () => void>> = {
+				JACK_IN: () => audio.jackIn(),
+				EXTRACT: () => audio.extract(),
+				TRACED: () => audio.traced(),
+				SURVIVED: () => audio.survived(),
+				JACKPOT: () => audio.jackpot(),
+				TRACE_SCAN_WARNING: () => audio.scanWarning(),
+				TRACE_SCAN_START: () => audio.scanStart(),
+			};
+
+			const handler = audioHandlers[event.type];
+			if (handler) handler();
 		});
 
 		return () => {

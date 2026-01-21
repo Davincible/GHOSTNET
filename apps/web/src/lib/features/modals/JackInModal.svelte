@@ -5,7 +5,13 @@
 	import { Stack, Row } from '$lib/ui/layout';
 	import { LevelBadge, AmountDisplay, PercentDisplay } from '$lib/ui/data-display';
 	import { getProvider } from '$lib/core/stores/index.svelte';
+	import { getToasts } from '$lib/ui/toast';
 	import { LEVELS, LEVEL_CONFIG, type Level } from '$lib/core/types';
+	import { parseUnits } from 'viem';
+	import {
+		UserRejectedRequestError,
+		ContractFunctionExecutionError
+	} from 'viem';
 
 	interface Props {
 		/** Whether the modal is open */
@@ -17,6 +23,7 @@
 	let { open, onclose }: Props = $props();
 
 	const provider = getProvider();
+	const toast = getToasts();
 
 	// Modal state
 	type Step = 'level' | 'amount' | 'confirm';
@@ -32,9 +39,13 @@
 	let userBalanceFormatted = $derived(Number(userBalance / 10n ** 18n));
 
 	let parsedAmount = $derived.by(() => {
-		const num = parseFloat(amountInput);
-		if (isNaN(num) || num <= 0) return 0n;
-		return BigInt(Math.floor(num * 1e18));
+		const trimmed = amountInput.trim();
+		if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) return 0n;
+		try {
+			return parseUnits(trimmed, 18);
+		} catch {
+			return 0n;
+		}
 	});
 
 	let amountValid = $derived(
@@ -89,10 +100,21 @@
 
 		try {
 			await provider.jackIn(selectedLevel, parsedAmount);
+			toast.success('Successfully jacked in');
 			onclose();
-		} catch (error) {
-			console.error('Jack In failed:', error);
-			// Could show error toast here
+		} catch (err) {
+			console.error('Jack In failed:', err);
+
+			// Provide user-friendly error messages
+			if (err instanceof UserRejectedRequestError) {
+				toast.error('Transaction cancelled');
+			} else if (err instanceof ContractFunctionExecutionError) {
+				toast.error(err.shortMessage || 'Transaction reverted');
+			} else if (err instanceof Error) {
+				toast.error(err.message);
+			} else {
+				toast.error('Jack In failed. Please try again.');
+			}
 		} finally {
 			isSubmitting = false;
 		}

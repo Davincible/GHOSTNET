@@ -5,6 +5,11 @@
 	import { Stack, Row } from '$lib/ui/layout';
 	import { LevelBadge, AmountDisplay } from '$lib/ui/data-display';
 	import { getProvider } from '$lib/core/stores/index.svelte';
+	import { getToasts } from '$lib/ui/toast';
+	import {
+		UserRejectedRequestError,
+		ContractFunctionExecutionError
+	} from 'viem';
 
 	interface Props {
 		/** Whether the modal is open */
@@ -16,6 +21,7 @@
 	let { open, onclose }: Props = $props();
 
 	const provider = getProvider();
+	const toast = getToasts();
 
 	let isSubmitting = $state(false);
 
@@ -51,9 +57,21 @@
 
 		try {
 			await provider.extract();
+			toast.success('Successfully extracted');
 			onclose();
-		} catch (error) {
-			console.error('Extract failed:', error);
+		} catch (err) {
+			console.error('Extract failed:', err);
+
+			// Provide user-friendly error messages
+			if (err instanceof UserRejectedRequestError) {
+				toast.error('Transaction cancelled');
+			} else if (err instanceof ContractFunctionExecutionError) {
+				toast.error(err.shortMessage || 'Transaction reverted');
+			} else if (err instanceof Error) {
+				toast.error(err.message);
+			} else {
+				toast.error('Extract failed. Please try again.');
+			}
 		} finally {
 			isSubmitting = false;
 		}

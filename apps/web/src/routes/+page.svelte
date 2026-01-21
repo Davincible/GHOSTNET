@@ -71,7 +71,7 @@
 
 	function handleWatchFeed() {
 		// Scroll to the feed panel smoothly
-		const feedElement = document.querySelector('.column-left');
+		const feedElement = document.querySelector('[data-feed-column]');
 		if (feedElement) {
 			feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
@@ -167,7 +167,7 @@
 	<main class="main-content">
 		<div class="content-grid">
 			<!-- Left Column: Welcome, Feed & Visualization -->
-			<div class="column column-left">
+			<div class="column column-left" data-feed-column>
 				<!-- Welcome panel (network initialization): hidden on mobile -->
 				<div class="hide-mobile">
 					<WelcomePanel onJackIn={handleJackIn} onWatchFeed={handleWatchFeed} />

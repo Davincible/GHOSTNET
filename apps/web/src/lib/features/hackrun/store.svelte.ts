@@ -81,7 +81,30 @@ export interface HackRunStore {
 // ════════════════════════════════════════════════════════════════
 
 /**
- * Create a hack run game store instance
+ * Create a hack run game store instance.
+ *
+ * This store manages internal timers for countdown, game timer, and result delays.
+ * When creating a non-singleton instance, you MUST call `cleanup()` when the
+ * component is destroyed to prevent memory leaks from lingering timers.
+ *
+ * For most use cases, prefer `getHackRunStore()` which returns a singleton instance
+ * that persists across navigations.
+ *
+ * @example
+ * ```svelte
+ * <script lang="ts">
+ *   import { createHackRunStore } from '$lib/features/hackrun';
+ *
+ *   const store = createHackRunStore();
+ *
+ *   // IMPORTANT: Clean up timers on component destroy
+ *   $effect(() => {
+ *     return () => store.cleanup();
+ *   });
+ * </script>
+ * ```
+ *
+ * @returns A new HackRunStore instance
  */
 export function createHackRunStore(): HackRunStore {
 	// ─────────────────────────────────────────────────────────────
@@ -510,7 +533,21 @@ export function createHackRunStore(): HackRunStore {
 	}
 
 	/**
-	 * Cleanup on destroy
+	 * Cleanup all active timers and intervals.
+	 *
+	 * **IMPORTANT:** When using `createHackRunStore()` directly (not the singleton),
+	 * this MUST be called when the component is destroyed to prevent memory leaks
+	 * from lingering timers (countdown, game timer, result delay).
+	 *
+	 * When using `getHackRunStore()` (singleton), cleanup is handled by `resetHackRunStore()`.
+	 *
+	 * @example
+	 * In Svelte 5, use $effect cleanup:
+	 * ```typescript
+	 * $effect(() => {
+	 *   return () => store.cleanup();
+	 * });
+	 * ```
 	 */
 	function cleanup(): void {
 		clearTimers();
@@ -552,7 +589,27 @@ export function createHackRunStore(): HackRunStore {
 let store: ReturnType<typeof createHackRunStore> | null = null;
 
 /**
- * Get or create the singleton hack run store
+ * Get or create the singleton hack run store.
+ *
+ * This is the recommended way to access the store in components. The singleton
+ * instance persists across navigations, allowing users to navigate away and
+ * return without losing game state.
+ *
+ * **Timer Management:** Since the singleton persists, do NOT call `cleanup()`
+ * on component destroy. Instead, the store's `reset()` method should be called
+ * when the game ends, or use `resetHackRunStore()` to fully dispose of the singleton.
+ *
+ * @example
+ * ```svelte
+ * <script lang="ts">
+ *   import { getHackRunStore } from '$lib/features/hackrun';
+ *
+ *   const store = getHackRunStore();
+ *   // No cleanup needed - singleton persists across navigations
+ * </script>
+ * ```
+ *
+ * @returns The singleton HackRunStore instance
  */
 export function getHackRunStore(): HackRunStore {
 	if (!store) {
@@ -562,7 +619,22 @@ export function getHackRunStore(): HackRunStore {
 }
 
 /**
- * Reset the singleton (useful for testing)
+ * Reset and dispose of the singleton store instance.
+ *
+ * This cleans up all timers and nullifies the singleton reference.
+ * The next call to `getHackRunStore()` will create a fresh instance.
+ *
+ * Useful for:
+ * - Testing (ensuring clean state between tests)
+ * - App-level cleanup when leaving the game section entirely
+ *
+ * @example
+ * ```typescript
+ * // In tests
+ * afterEach(() => {
+ *   resetHackRunStore();
+ * });
+ * ```
  */
 export function resetHackRunStore(): void {
 	if (store) {

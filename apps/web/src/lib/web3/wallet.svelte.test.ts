@@ -225,26 +225,159 @@ describe('wallet operations', () => {
 	});
 
 	describe('connect', () => {
-		it('exists as a function', () => {
-			expect(typeof store.connect).toBe('function');
+		it('sets status to connecting when called', async () => {
+			// Mock connect to be slow so we can observe the connecting state
+			const { connect: mockConnect } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve({
+					accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+					chainId: 1
+				}), 100))
+			);
+
+			const connectPromise = store.connect();
+			// Status should transition to 'connecting'
+			expect(store.status).toBe('connecting');
+
+			await connectPromise;
+		});
+
+		it('sets error state when connection fails', async () => {
+			const { connect: mockConnect } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockRejectedValueOnce(new Error('No connector found'));
+
+			await store.connect();
+
+			expect(store.status).toBe('disconnected');
+			expect(store.error).toBe('No wallet detected. Please install MetaMask.');
+		});
+
+		it('sets user-friendly error on rejection', async () => {
+			const { connect: mockConnect } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockRejectedValueOnce(new Error('User rejected the request'));
+
+			await store.connect();
+
+			expect(store.status).toBe('disconnected');
+			expect(store.error).toBe('Transaction cancelled by user');
+		});
+
+		it('clears previous error before connecting', async () => {
+			const { connect: mockConnect } = await import('@wagmi/core');
+			// First call fails
+			vi.mocked(mockConnect).mockRejectedValueOnce(new Error('Failed'));
+			await store.connect();
+			expect(store.error).not.toBeNull();
+
+			// Second call starts - error should clear
+			vi.mocked(mockConnect).mockImplementation(
+				() => new Promise((resolve) => setTimeout(() => resolve({
+					accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+					chainId: 1
+				}), 50))
+			);
+
+			const connectPromise = store.connect();
+			expect(store.error).toBeNull();
+			await connectPromise;
 		});
 	});
 
 	describe('disconnect', () => {
-		it('exists as a function', () => {
-			expect(typeof store.disconnect).toBe('function');
+		it('resets all state after disconnect', async () => {
+			const { disconnect: mockDisconnect } = await import('@wagmi/core');
+			vi.mocked(mockDisconnect).mockResolvedValueOnce(undefined);
+
+			await store.disconnect();
+
+			expect(store.status).toBe('disconnected');
+			expect(store.address).toBeNull();
+			expect(store.chainId).toBeNull();
+			expect(store.ethBalance).toBe(0n);
+			expect(store.error).toBeNull();
+		});
+
+		it('handles disconnect errors gracefully', async () => {
+			const { disconnect: mockDisconnect } = await import('@wagmi/core');
+			vi.mocked(mockDisconnect).mockRejectedValueOnce(new Error('Disconnect failed'));
+
+			// Should not throw
+			await expect(store.disconnect()).resolves.not.toThrow();
 		});
 	});
 
 	describe('switchChain', () => {
-		it('exists as a function', () => {
-			expect(typeof store.switchChain).toBe('function');
+		it('calls wagmi switchChain with default chain id', async () => {
+			const { switchChain: mockSwitchChain } = await import('@wagmi/core');
+			vi.mocked(mockSwitchChain).mockResolvedValueOnce({} as any);
+
+			await store.switchChain();
+
+			expect(mockSwitchChain).toHaveBeenCalledWith(
+				expect.anything(),
+				{ chainId: 1 } // defaultChain.id from mock
+			);
+		});
+
+		it('sets error state when chain switch fails', async () => {
+			const { switchChain: mockSwitchChain } = await import('@wagmi/core');
+			vi.mocked(mockSwitchChain).mockRejectedValueOnce(new Error('User rejected the request'));
+
+			await store.switchChain();
+
+			expect(store.error).toBe('Transaction cancelled by user');
+		});
+
+		it('clears error before attempting switch', async () => {
+			const { switchChain: mockSwitchChain } = await import('@wagmi/core');
+			// First call fails to set error
+			vi.mocked(mockSwitchChain).mockRejectedValueOnce(new Error('Failed'));
+			await store.switchChain();
+			expect(store.error).not.toBeNull();
+
+			// Second call should clear error first
+			vi.mocked(mockSwitchChain).mockResolvedValueOnce({} as any);
+			await store.switchChain();
+			expect(store.error).toBeNull();
 		});
 	});
 
 	describe('refreshBalance', () => {
-		it('exists as a function', () => {
-			expect(typeof store.refreshBalance).toBe('function');
+		it('does nothing when address is null', async () => {
+			const { getBalance: mockGetBalance } = await import('@wagmi/core');
+			vi.mocked(mockGetBalance).mockClear();
+
+			await store.refreshBalance();
+
+			expect(mockGetBalance).not.toHaveBeenCalled();
+		});
+
+		it('fetches balance when address is set', async () => {
+			// First connect to set an address
+			const { connect: mockConnect, getBalance: mockGetBalance } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockResolvedValueOnce({
+				accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+				chainId: 1
+			});
+			vi.mocked(mockGetBalance).mockResolvedValue({ value: 1000000000000000000n } as any);
+
+			await store.connect();
+
+			// getBalance should have been called during connect
+			expect(mockGetBalance).toHaveBeenCalled();
+		});
+
+		it('handles balance fetch errors gracefully', async () => {
+			// Connect first
+			const { connect: mockConnect, getBalance: mockGetBalance } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockResolvedValueOnce({
+				accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+				chainId: 1
+			});
+			vi.mocked(mockGetBalance).mockRejectedValueOnce(new Error('RPC error'));
+
+			// Should not throw
+			await expect(store.connect()).resolves.not.toThrow();
 		});
 	});
 });

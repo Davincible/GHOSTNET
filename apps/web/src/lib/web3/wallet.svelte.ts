@@ -155,12 +155,17 @@ export function createWalletStore() {
 	 * Returns cleanup function for use with $effect or onMount.
 	 */
 	function init(): () => void {
+		// SSR guard - expected during server-side rendering
 		if (!browser) return () => {};
 
 		const config = getConfig();
-		if (!config) return () => {};
+		if (!config) {
+			error = 'Wallet configuration not available';
+			console.error('[Wallet] Config not available during init - possible SSR leak or initialization race');
+			return () => {};
+		}
 
-		// Already initialized
+		// Already initialized - not an error
 		if (initialized) return () => {};
 		initialized = true;
 
@@ -191,10 +196,18 @@ export function createWalletStore() {
 	 * @param target - Optional target wallet: 'metaMask', 'coinbaseWallet', or undefined for any
 	 */
 	async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
-		if (!browser) return;
+		// SSR guard - should not be called during SSR
+		if (!browser) {
+			console.error('[Wallet] connectWallet called in non-browser environment');
+			return;
+		}
 
 		const config = getConfig();
-		if (!config) return;
+		if (!config) {
+			error = 'Wallet configuration not available';
+			console.error('[Wallet] Config not available during connect - possible SSR leak or initialization race');
+			return;
+		}
 
 		try {
 			error = null;
@@ -229,10 +242,18 @@ export function createWalletStore() {
 	 * Connect using WalletConnect
 	 */
 	async function connectWalletConnect() {
-		if (!browser) return;
+		// SSR guard - should not be called during SSR
+		if (!browser) {
+			console.error('[Wallet] connectWalletConnect called in non-browser environment');
+			return;
+		}
 
 		const config = getConfig();
-		if (!config) return;
+		if (!config) {
+			error = 'Wallet configuration not available';
+			console.error('[Wallet] Config not available during WalletConnect - possible SSR leak or initialization race');
+			return;
+		}
 
 		try {
 			error = null;
@@ -265,10 +286,18 @@ export function createWalletStore() {
 	 * Disconnect wallet
 	 */
 	async function disconnectWallet() {
-		if (!browser) return;
+		// SSR guard - should not be called during SSR
+		if (!browser) {
+			console.error('[Wallet] disconnectWallet called in non-browser environment');
+			return;
+		}
 
 		const config = getConfig();
-		if (!config) return;
+		if (!config) {
+			error = 'Wallet configuration not available';
+			console.error('[Wallet] Config not available during disconnect - possible SSR leak or initialization race');
+			return;
+		}
 
 		try {
 			await disconnect(config);
@@ -287,10 +316,18 @@ export function createWalletStore() {
 	 * Switch to the correct chain
 	 */
 	async function switchToCorrectChain() {
-		if (!browser) return;
+		// SSR guard - should not be called during SSR
+		if (!browser) {
+			console.error('[Wallet] switchToCorrectChain called in non-browser environment');
+			return;
+		}
 
 		const config = getConfig();
-		if (!config) return;
+		if (!config) {
+			error = 'Wallet configuration not available';
+			console.error('[Wallet] Config not available during chain switch - possible SSR leak or initialization race');
+			return;
+		}
 
 		try {
 			error = null;
@@ -305,10 +342,17 @@ export function createWalletStore() {
 	 * Refresh ETH balance
 	 */
 	async function refreshBalance() {
+		// SSR guard and address check - silent return is OK here since this is
+		// a background refresh that may be called before connection
 		if (!browser || !address) return;
 
 		const config = getConfig();
-		if (!config) return;
+		if (!config) {
+			// Don't set error state for balance refresh - it's a background operation
+			// and will retry on next refresh cycle
+			console.warn('[Wallet] Config not available during balance refresh - will retry');
+			return;
+		}
 
 		try {
 			const balance = await getBalance(config, { address });

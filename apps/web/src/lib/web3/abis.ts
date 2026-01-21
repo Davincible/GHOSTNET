@@ -70,6 +70,12 @@ export type ChainId = keyof typeof CONTRACT_ADDRESSES;
 export type ContractName = keyof (typeof CONTRACT_ADDRESSES)[ChainId];
 
 /**
+ * Track which missing contracts have already been warned about
+ * to avoid spamming the console in development.
+ */
+const warnedMissing = new Set<string>();
+
+/**
  * Get contract address for a chain
  */
 export function getContractAddress(chainId: number, contract: ContractName): `0x${string}` | null {
@@ -77,6 +83,15 @@ export function getContractAddress(chainId: number, contract: ContractName): `0x
 	if (!addresses) return null;
 	const addr = addresses[contract];
 	// Check if address is set (not empty string)
-	if (!addr || addr.length < 3) return null;
+	if (!addr || addr.length < 3) {
+		const key = `${chainId}-${contract}`;
+		if (import.meta.env.DEV && !warnedMissing.has(key)) {
+			warnedMissing.add(key);
+			console.warn(
+				`[Contracts] ${contract} not deployed on chain ${chainId}. Run 'just contracts-deploy-local' to deploy.`
+			);
+		}
+		return null;
+	}
 	return addr;
 }
