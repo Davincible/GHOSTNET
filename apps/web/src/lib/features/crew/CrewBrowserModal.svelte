@@ -18,7 +18,8 @@
 	let { open, onclose, onJoinRequest }: Props = $props();
 
 	// Mock data - in production this would come from an API
-	let rankings = $state(generateCrewRankings(20));
+	// Use $state.raw since rankings are read-only and replaced entirely on refresh
+	let rankings = $state.raw(generateCrewRankings(20));
 	let searchQuery = $state('');
 	let sortBy = $state<'rank' | 'members' | 'tvl'>('rank');
 

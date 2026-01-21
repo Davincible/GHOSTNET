@@ -25,7 +25,7 @@
 	<span class="hints-label">HOTKEYS:</span>
 	
 	<div class="hints-group">
-		{#each actionShortcuts as shortcut}
+		{#each actionShortcuts as shortcut (shortcut.key)}
 			<span class="hint">
 				<span class="hint-keys">
 					{#if shortcut.modifier}
@@ -42,7 +42,7 @@
 	<span class="hints-divider">|</span>
 
 	<div class="hints-group">
-		{#each gameShortcuts as shortcut}
+		{#each gameShortcuts as shortcut (shortcut.key)}
 			<span class="hint">
 				<span class="hint-keys">
 					{#if shortcut.modifier}
@@ -59,7 +59,7 @@
 	<span class="hints-divider">|</span>
 
 	<div class="hints-group">
-		{#each socialShortcuts as shortcut}
+		{#each socialShortcuts as shortcut (shortcut.key)}
 			<span class="hint">
 				<span class="hint-keys">
 					{#if shortcut.modifier}

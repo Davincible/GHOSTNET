@@ -3,6 +3,16 @@
 	import { Panel } from '$lib/ui/terminal';
 	import { Button } from '$lib/ui/primitives';
 
+	// SSR-safe timestamp: initialize with placeholder, update on client
+	// Using $state + $effect (not $derived) because $derived runs during SSR,
+	// causing hydration mismatch when server/client times differ
+	// eslint-disable-next-line svelte/prefer-writable-derived
+	let timestamp = $state('...');
+
+	$effect(() => {
+		timestamp = new Date().toISOString();
+	});
+
 	// ASCII art for different error types
 	const errorArt: Record<string, string> = {
 		'404': `
@@ -77,7 +87,7 @@
 
 			<div class="error-log">
 				<span class="log-prefix">&gt;</span>
-				<span class="log-text">Timestamp: {new Date().toISOString()}</span>
+				<span class="log-text">Timestamp: {timestamp}</span>
 			</div>
 			<div class="error-log">
 				<span class="log-prefix">&gt;</span>

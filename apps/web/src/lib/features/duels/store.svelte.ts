@@ -100,7 +100,8 @@ export function createDuelStore(): DuelStore {
 	let state = $state<DuelGameState>({ status: 'idle' });
 	let openChallenges = $state<Duel[]>([]);
 	let yourChallenges = $state<Duel[]>([]);
-	let history = $state<DuelHistoryEntry[]>([]);
+	// Use $state.raw since history is replaced entirely, not mutated
+	let history = $state.raw<DuelHistoryEntry[]>([]);
 	let stats = $state<DuelStats>(generateDuelStats());
 
 	// Timers

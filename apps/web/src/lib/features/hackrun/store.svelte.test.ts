@@ -9,6 +9,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
 	createHackRunStore,
+	getHackRunStore,
 	resetHackRunStore,
 	type HackRunStore,
 } from './store.svelte';
@@ -534,10 +535,17 @@ describe('singleton pattern', () => {
 		resetHackRunStore();
 	});
 
-	it('resetHackRunStore clears singleton', () => {
-		// This test verifies the singleton can be reset for testing
+	it('resetHackRunStore clears singleton and allows fresh creation', () => {
+		// Get the singleton and make a state change
+		const store1 = getHackRunStore();
+		store1.selectDifficulty();
+		expect(store1.state.status).toBe('selecting');
+
+		// Reset the singleton
 		resetHackRunStore();
-		// If we get here without error, the reset worked
-		expect(true).toBe(true);
+
+		// Create a new singleton - should be in fresh idle state
+		const store2 = getHackRunStore();
+		expect(store2.state.status).toBe('idle');
 	});
 });

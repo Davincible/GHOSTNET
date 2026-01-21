@@ -70,11 +70,9 @@ test.describe('GHOSTNET Home Page', () => {
 	// ════════════════════════════════════════════════════════════════
 
 	test('feed loads with events after connection', async ({ page }) => {
-		// Wait for mock provider to connect and generate events
-		await page.waitForTimeout(1000);
-		
-		// Feed should have some event items
-		const feedItems = page.locator('[class*="feed-item"], [class*="FeedItem"]');
+		// Feed should have some event items (wait for mock provider to generate events)
+		// Using data-testid for stable selection
+		const feedItems = page.getByTestId('feed-item');
 		await expect(feedItems.first()).toBeVisible({ timeout: 5000 });
 	});
 
@@ -88,8 +86,8 @@ test.describe('GHOSTNET Home Page', () => {
 		await expect(settingsButton).toBeVisible();
 		await settingsButton.click();
 
-		// Modal should be visible with settings content
-		const modal = page.locator('[role="dialog"], .modal');
+		// Modal should be visible - prefer role-based selector for accessibility
+		const modal = page.getByRole('dialog');
 		await expect(modal).toBeVisible();
 	});
 
@@ -97,13 +95,13 @@ test.describe('GHOSTNET Home Page', () => {
 	// VISUAL EFFECTS
 	// ════════════════════════════════════════════════════════════════
 
-	test('scanlines overlay is present', async ({ page }) => {
+	test('scanlines overlay is present when enabled', async ({ page }) => {
 		// GHOSTNET uses CRT-style scanlines effect
-		const scanlines = page.locator('[class*="scanline"], [class*="Scanline"]');
-		// Scanlines should be in the DOM (may be disabled by default)
-		const count = await scanlines.count();
-		// Either scanlines exist or they're disabled - both are valid states
-		expect(count).toBeGreaterThanOrEqual(0);
+		// Using data-testid for stable selection
+		const scanlines = page.getByTestId('scanlines-overlay');
+		
+		// Scanlines are enabled by default, so should be visible
+		await expect(scanlines).toBeVisible();
 	});
 
 	// ════════════════════════════════════════════════════════════════

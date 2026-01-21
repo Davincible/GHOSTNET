@@ -7,11 +7,14 @@
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { getToasts } from '$lib/ui/toast';
 	import { LEVELS, LEVEL_CONFIG, type Level } from '$lib/core/types';
-	import { parseUnits } from 'viem';
+	import { parseUnits, formatUnits } from 'viem';
 	import {
 		UserRejectedRequestError,
-		ContractFunctionExecutionError
+		ContractFunctionExecutionError,
+		InsufficientFundsError
 	} from 'viem';
+	import { wallet } from '$lib/web3/wallet.svelte';
+	import { defaultChain } from '$lib/web3/chains';
 
 	interface Props {
 		/** Whether the modal is open */
@@ -32,11 +35,33 @@
 	let amountInput = $state('');
 	let isSubmitting = $state(false);
 
+	// Transaction state for better UX
+	type TxState = 'idle' | 'approving' | 'pending' | 'confirming' | 'success' | 'error';
+	let txState = $state<TxState>('idle');
+	let txHash = $state<`0x${string}` | null>(null);
+	let txError = $state<string | null>(null);
+
 	// Computed values
 	let levelConfig = $derived(LEVEL_CONFIG[selectedLevel]);
-	let minStakeFormatted = $derived(Number(levelConfig.minStake / 10n ** 18n));
+	// CRITICAL FIX: Use formatUnits to preserve decimal precision
+	// Integer division (/ 10n ** 18n) loses fractional part (e.g., 1.5 becomes 1)
+	let minStakeFormatted = $derived(Number(formatUnits(levelConfig.minStake, 18)));
 	let userBalance = $derived(provider.currentUser?.tokenBalance ?? 0n);
-	let userBalanceFormatted = $derived(Number(userBalance / 10n ** 18n));
+	let userBalanceFormatted = $derived(Number(formatUnits(userBalance, 18)));
+
+	// Block explorer URL for transaction hash display
+	let explorerUrl = $derived.by(() => {
+		if (!txHash) return null;
+		// Use connected chain's explorer or fallback to default
+		const chainId = wallet.chainId ?? defaultChain.id;
+		// MegaETH testnet explorer
+		if (chainId === 6343) return `https://megaeth-testnet-v2.blockscout.com/tx/${txHash}`;
+		// MegaETH mainnet explorer
+		if (chainId === 4326) return `https://megaeth.blockscout.com/tx/${txHash}`;
+		// Localhost - no explorer
+		if (chainId === 31337) return null;
+		return null;
+	});
 
 	let parsedAmount = $derived.by(() => {
 		const trimmed = amountInput.trim();
@@ -70,6 +95,10 @@
 			selectedLevel = 'SUBNET';
 			amountInput = '';
 			isSubmitting = false;
+			// Reset transaction state
+			txState = 'idle';
+			txHash = null;
+			txError = null;
 		}
 	});
 
@@ -97,22 +126,55 @@
 	async function handleJackIn() {
 		if (isSubmitting) return;
 		isSubmitting = true;
+		txState = 'pending';
+		txHash = null;
+		txError = null;
 
 		try {
-			await provider.jackIn(selectedLevel, parsedAmount);
+			// The provider.jackIn handles approval internally, but we should inform the user
+			// We'll update the state as we go through the flow
+			const hash = await provider.jackIn(selectedLevel, parsedAmount);
+			
+			// Store hash for display (provider returns string, cast to hex type for display)
+			txHash = hash as `0x${string}`;
+			txState = 'confirming';
+			
+			// Wait a moment for the UI to show the hash before closing
+			await new Promise(resolve => setTimeout(resolve, 1500));
+			
+			txState = 'success';
 			toast.success('Successfully jacked in');
 			onclose();
 		} catch (err) {
 			console.error('Jack In failed:', err);
+			txState = 'error';
 
 			// Provide user-friendly error messages
+			// HIGH FIX: Handle InsufficientFundsError for gas issues
 			if (err instanceof UserRejectedRequestError) {
+				txError = 'Transaction cancelled';
 				toast.error('Transaction cancelled');
+			} else if (err instanceof InsufficientFundsError) {
+				txError = 'Insufficient ETH for gas fees';
+				toast.error('Insufficient ETH for gas fees. Please add ETH to your wallet.');
 			} else if (err instanceof ContractFunctionExecutionError) {
-				toast.error(err.shortMessage || 'Transaction reverted');
+				const msg = err.shortMessage || 'Transaction reverted';
+				txError = msg;
+				toast.error(msg);
 			} else if (err instanceof Error) {
-				toast.error(err.message);
+				// Check for network-related errors
+				if (err.message.includes('network') || err.message.includes('disconnect')) {
+					txError = 'Network connection lost';
+					toast.error('Network connection lost. Please check your connection.');
+				} else if (err.message.includes('timeout')) {
+					txError = 'Request timed out';
+					toast.error('Request timed out. Please try again.');
+				} else {
+					txError = err.message;
+					toast.error(err.message);
+				}
 			} else {
+				txError = 'Jack In failed';
 				toast.error('Jack In failed. Please try again.');
 			}
 		} finally {
@@ -163,7 +225,7 @@
 			</p>
 
 			<div class="level-grid">
-				{#each LEVELS as level}
+				{#each LEVELS as level (level)}
 					{@const config = LEVEL_CONFIG[level]}
 					{@const desc = levelDescriptions[level]}
 					{@const isSelected = selectedLevel === level}
@@ -292,22 +354,69 @@
 				</Stack>
 			</Box>
 
-			<div class="warning-text">
-				<Badge variant="warning">WARNING</Badge>
-				<p>
-					Once jacked in, you may lose your stake if traced during a scan. 
-					Make sure you understand the risks.
-				</p>
-			</div>
+			<!-- Transaction Status Display -->
+			{#if txState !== 'idle'}
+				<Box variant="single" borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'} padding={3}>
+					<Stack gap={2}>
+						{#if txState === 'approving'}
+							<Row align="center" gap={2}>
+								<span class="tx-spinner"></span>
+								<span class="tx-status">Step 1/2: Approving token spending...</span>
+							</Row>
+						{:else if txState === 'pending'}
+							<Row align="center" gap={2}>
+								<span class="tx-spinner"></span>
+								<span class="tx-status">Waiting for wallet confirmation...</span>
+							</Row>
+						{:else if txState === 'confirming' && txHash}
+							<Row align="center" gap={2}>
+								<span class="tx-spinner"></span>
+								<span class="tx-status">Confirming transaction...</span>
+							</Row>
+							<div class="tx-hash">
+								<span class="tx-hash-label">TX:</span>
+								<span class="tx-hash-value">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
+								{#if explorerUrl}
+									<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-explorer-link">
+										View on Explorer
+									</a>
+								{/if}
+							</div>
+						{:else if txState === 'error' && txError}
+							<Row align="center" gap={2}>
+								<span class="tx-error-icon">!</span>
+								<span class="tx-error">{txError}</span>
+							</Row>
+						{/if}
+					</Stack>
+				</Box>
+			{:else}
+				<div class="warning-text">
+					<Badge variant="warning">WARNING</Badge>
+					<p>
+						Once jacked in, you may lose your stake if traced during a scan. 
+						Make sure you understand the risks.
+					</p>
+				</div>
+			{/if}
 
 			<Row justify="end" gap={2}>
-				<Button variant="ghost" onclick={goBack}>Back</Button>
+				<Button variant="ghost" onclick={goBack} disabled={isSubmitting}>Back</Button>
 				<Button 
 					variant="primary" 
 					onclick={handleJackIn}
 					loading={isSubmitting}
+					disabled={isSubmitting}
 				>
-					JACK IN
+					{#if txState === 'approving'}
+						APPROVING...
+					{:else if txState === 'pending'}
+						CONFIRM IN WALLET
+					{:else if txState === 'confirming'}
+						CONFIRMING...
+					{:else}
+						JACK IN
+					{/if}
 				</Button>
 			</Row>
 		</Stack>
@@ -517,5 +626,71 @@
 		color: var(--color-amber);
 		font-size: var(--text-sm);
 		line-height: var(--leading-relaxed);
+	}
+
+	/* Transaction Status */
+	.tx-spinner {
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--color-cyan);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.tx-status {
+		color: var(--color-cyan);
+		font-size: var(--text-sm);
+	}
+
+	.tx-hash {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-xs);
+		flex-wrap: wrap;
+	}
+
+	.tx-hash-label {
+		color: var(--color-green-dim);
+	}
+
+	.tx-hash-value {
+		color: var(--color-green-bright);
+		font-family: var(--font-mono);
+	}
+
+	.tx-explorer-link {
+		color: var(--color-cyan);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+	}
+
+	.tx-explorer-link:hover {
+		border-bottom-color: var(--color-cyan);
+	}
+
+	.tx-error-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		background: var(--color-red);
+		color: var(--color-bg-primary);
+		font-weight: var(--font-bold);
+		font-size: var(--text-xs);
+	}
+
+	.tx-error {
+		color: var(--color-red);
+		font-size: var(--text-sm);
 	}
 </style>

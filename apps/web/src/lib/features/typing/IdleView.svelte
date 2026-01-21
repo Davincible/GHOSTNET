@@ -108,7 +108,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each rewardTiers as tier}
+						{#each rewardTiers as tier, i (i)}
 							<tr class:highlight={tier.highlight}>
 								<td>{tier.accuracy}</td>
 								<td class="reduction">{tier.reduction}</td>
@@ -130,7 +130,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each speedBonuses as bonus}
+						{#each speedBonuses as bonus, i (i)}
 							<tr>
 								<td>{bonus.wpm}</td>
 								<td>{bonus.accuracy}</td>

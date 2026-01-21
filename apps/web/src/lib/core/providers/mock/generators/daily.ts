@@ -82,17 +82,16 @@ export function generateMockDailyProgress(options?: {
 	// Determine if checked in today
 	const todayCheckedIn = options?.todayCheckedIn ?? Math.random() < 0.4;
 
-	// Build week progress array
-	const weekProgress: boolean[] = [];
-	for (let i = 0; i < 7; i++) {
+	// Build week progress array as fixed-length tuple
+	const weekProgress = Array.from({ length: 7 }, (_, i) => {
 		if (i < currentStreak - 1) {
-			weekProgress.push(true); // Previous days completed
+			return true; // Previous days completed
 		} else if (i === currentStreak - 1) {
-			weekProgress.push(todayCheckedIn); // Today
+			return todayCheckedIn; // Today
 		} else {
-			weekProgress.push(false); // Future days
+			return false; // Future days
 		}
-	}
+	}) as [boolean, boolean, boolean, boolean, boolean, boolean, boolean];
 
 	// Calculate last check-in time
 	let lastCheckIn: number | null = null;

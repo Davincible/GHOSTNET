@@ -22,7 +22,7 @@
 </script>
 
 <div class="category-tabs" role="tablist" aria-label="Leaderboard categories">
-	{#each categories as category}
+	{#each categories as category (category)}
 		{@const config = LEADERBOARD_CATEGORIES[category]}
 		{@const isActive = selected === category}
 		<button

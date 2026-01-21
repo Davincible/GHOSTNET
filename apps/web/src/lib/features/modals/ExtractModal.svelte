@@ -8,8 +8,11 @@
 	import { getToasts } from '$lib/ui/toast';
 	import {
 		UserRejectedRequestError,
-		ContractFunctionExecutionError
+		ContractFunctionExecutionError,
+		InsufficientFundsError
 	} from 'viem';
+	import { wallet } from '$lib/web3/wallet.svelte';
+	import { defaultChain } from '$lib/web3/chains';
 
 	interface Props {
 		/** Whether the modal is open */
@@ -24,6 +27,22 @@
 	const toast = getToasts();
 
 	let isSubmitting = $state(false);
+
+	// Transaction state for better UX
+	type TxState = 'idle' | 'pending' | 'confirming' | 'success' | 'error';
+	let txState = $state<TxState>('idle');
+	let txHash = $state<`0x${string}` | null>(null);
+	let txError = $state<string | null>(null);
+
+	// Block explorer URL for transaction hash display
+	let explorerUrl = $derived.by(() => {
+		if (!txHash) return null;
+		const chainId = wallet.chainId ?? defaultChain.id;
+		if (chainId === 6343) return `https://megaeth-testnet-v2.blockscout.com/tx/${txHash}`;
+		if (chainId === 4326) return `https://megaeth.blockscout.com/tx/${txHash}`;
+		if (chainId === 31337) return null;
+		return null;
+	});
 
 	// Computed values from position
 	let position = $derived(provider.position);
@@ -51,25 +70,61 @@
 		return `${hours}h ${minutes}m`;
 	});
 
+	// Reset transaction state when modal opens
+	$effect(() => {
+		if (open) {
+			txState = 'idle';
+			txHash = null;
+			txError = null;
+		}
+	});
+
 	async function handleExtract() {
 		if (isSubmitting || !position) return;
 		isSubmitting = true;
+		txState = 'pending';
+		txHash = null;
+		txError = null;
 
 		try {
-			await provider.extract();
+			const hash = await provider.extract();
+			
+			// Store hash for display
+			txHash = hash as `0x${string}`;
+			txState = 'confirming';
+			
+			// Wait a moment for the UI to show the hash before closing
+			await new Promise(resolve => setTimeout(resolve, 1500));
+			
+			txState = 'success';
 			toast.success('Successfully extracted');
 			onclose();
 		} catch (err) {
 			console.error('Extract failed:', err);
+			txState = 'error';
 
 			// Provide user-friendly error messages
+			// HIGH FIX: Handle InsufficientFundsError for gas issues
 			if (err instanceof UserRejectedRequestError) {
+				txError = 'Transaction cancelled';
 				toast.error('Transaction cancelled');
+			} else if (err instanceof InsufficientFundsError) {
+				txError = 'Insufficient ETH for gas fees';
+				toast.error('Insufficient ETH for gas fees. Please add ETH to your wallet.');
 			} else if (err instanceof ContractFunctionExecutionError) {
-				toast.error(err.shortMessage || 'Transaction reverted');
+				const msg = err.shortMessage || 'Transaction reverted';
+				txError = msg;
+				toast.error(msg);
 			} else if (err instanceof Error) {
-				toast.error(err.message);
+				if (err.message.includes('network') || err.message.includes('disconnect')) {
+					txError = 'Network connection lost';
+					toast.error('Network connection lost. Please check your connection.');
+				} else {
+					txError = err.message;
+					toast.error(err.message);
+				}
 			} else {
+				txError = 'Extract failed';
 				toast.error('Extract failed. Please try again.');
 			}
 		} finally {
@@ -134,14 +189,54 @@
 				</div>
 			{/if}
 
+			<!-- Transaction Status Display -->
+			{#if txState !== 'idle'}
+				<Box variant="single" borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'} padding={3}>
+					<Stack gap={2}>
+						{#if txState === 'pending'}
+							<Row align="center" gap={2}>
+								<span class="tx-spinner"></span>
+								<span class="tx-status">Waiting for wallet confirmation...</span>
+							</Row>
+						{:else if txState === 'confirming' && txHash}
+							<Row align="center" gap={2}>
+								<span class="tx-spinner"></span>
+								<span class="tx-status">Confirming transaction...</span>
+							</Row>
+							<div class="tx-hash">
+								<span class="tx-hash-label">TX:</span>
+								<span class="tx-hash-value">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
+								{#if explorerUrl}
+									<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-explorer-link">
+										View on Explorer
+									</a>
+								{/if}
+							</div>
+						{:else if txState === 'error' && txError}
+							<Row align="center" gap={2}>
+								<span class="tx-error-icon">!</span>
+								<span class="tx-error">{txError}</span>
+							</Row>
+						{/if}
+					</Stack>
+				</Box>
+			{/if}
+
 			<Row justify="end" gap={2}>
-				<Button variant="ghost" onclick={onclose}>Cancel</Button>
+				<Button variant="ghost" onclick={onclose} disabled={isSubmitting}>Cancel</Button>
 				<Button 
 					variant="primary" 
 					onclick={handleExtract}
 					loading={isSubmitting}
+					disabled={isSubmitting}
 				>
-					CONFIRM EXTRACT
+					{#if txState === 'pending'}
+						CONFIRM IN WALLET
+					{:else if txState === 'confirming'}
+						CONFIRMING...
+					{:else}
+						CONFIRM EXTRACT
+					{/if}
 				</Button>
 			</Row>
 		</Stack>
@@ -224,5 +319,71 @@
 		color: var(--color-green-dim);
 		text-align: center;
 		padding: var(--space-4);
+	}
+
+	/* Transaction Status */
+	.tx-spinner {
+		display: inline-block;
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--color-cyan);
+		border-top-color: transparent;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.tx-status {
+		color: var(--color-cyan);
+		font-size: var(--text-sm);
+	}
+
+	.tx-hash {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-xs);
+		flex-wrap: wrap;
+	}
+
+	.tx-hash-label {
+		color: var(--color-green-dim);
+	}
+
+	.tx-hash-value {
+		color: var(--color-green-bright);
+		font-family: var(--font-mono);
+	}
+
+	.tx-explorer-link {
+		color: var(--color-cyan);
+		text-decoration: none;
+		border-bottom: 1px solid transparent;
+	}
+
+	.tx-explorer-link:hover {
+		border-bottom-color: var(--color-cyan);
+	}
+
+	.tx-error-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 18px;
+		height: 18px;
+		background: var(--color-red);
+		color: var(--color-bg-primary);
+		font-weight: var(--font-bold);
+		font-size: var(--text-xs);
+	}
+
+	.tx-error {
+		color: var(--color-red);
+		font-size: var(--text-sm);
 	}
 </style>

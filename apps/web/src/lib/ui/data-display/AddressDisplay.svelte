@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+
 	interface Props {
 		/** Ethereum address */
 		address: `0x${string}`;
@@ -24,13 +26,12 @@
 
 	// Format the display address
 	let displayAddress = $derived(
-		truncate
-			? `${address.slice(0, chars + 2)}...${address.slice(-chars)}`
-			: address
+		truncate ? `${address.slice(0, chars + 2)}...${address.slice(-chars)}` : address
 	);
 
 	async function copyToClipboard() {
-		if (!copyable) return;
+		// Guard: only execute in browser environment
+		if (!copyable || !browser) return;
 
 		try {
 			await navigator.clipboard.writeText(address);
@@ -42,7 +43,6 @@
 			console.error('Failed to copy address:', err);
 		}
 	}
-
 </script>
 
 {#if copyable}

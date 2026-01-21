@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { Modal } from '$lib/ui/modal';
 	import { Button } from '$lib/ui/primitives';
 	import { Stack } from '$lib/ui/layout';
@@ -15,52 +16,70 @@
 	let error = $state<string | null>(null);
 
 	// Check if WalletConnect is configured
-	const hasWalletConnect = typeof import.meta.env.VITE_WALLETCONNECT_PROJECT_ID === 'string' 
-		&& import.meta.env.VITE_WALLETCONNECT_PROJECT_ID.length > 0;
+	const hasWalletConnect =
+		typeof import.meta.env.VITE_WALLETCONNECT_PROJECT_ID === 'string' &&
+		import.meta.env.VITE_WALLETCONNECT_PROJECT_ID.length > 0;
 
-	// Wallet options with icons (ASCII art style)
-	const wallets = [
+	// Wallet definitions (static data, no detection functions)
+	interface WalletOption {
+		id: string;
+		name: string;
+		icon: string;
+		description: string;
+	}
+
+	const walletDefinitions: WalletOption[] = [
 		{
 			id: 'metamask',
 			name: 'MetaMask',
 			icon: '🦊',
-			description: 'Connect using MetaMask browser extension',
-			detect: () => typeof window !== 'undefined' && window.ethereum?.isMetaMask === true
+			description: 'Connect using MetaMask browser extension'
 		},
 		{
 			id: 'coinbase',
 			name: 'Coinbase Wallet',
 			icon: '🔵',
-			description: 'Connect using Coinbase Wallet',
-			detect: () => typeof window !== 'undefined' && window.ethereum?.isCoinbaseWallet === true
+			description: 'Connect using Coinbase Wallet'
 		},
 		{
 			id: 'walletconnect',
 			name: 'WalletConnect',
 			icon: '🔗',
-			description: 'Scan QR code with mobile wallet',
-			detect: () => hasWalletConnect
+			description: 'Scan QR code with mobile wallet'
 		},
 		{
 			id: 'injected',
 			name: 'Browser Wallet',
 			icon: '🌐',
-			description: 'Connect using detected browser wallet',
-			detect: () => typeof window !== 'undefined' && window.ethereum !== undefined
+			description: 'Connect using detected browser wallet'
 		}
 	];
 
-	// Filter to detected wallets, avoiding duplicates
-	let availableWallets = $derived.by(() => {
-		const detected = wallets.filter((w) => w.detect());
-		
-		// If MetaMask or Coinbase is detected, hide generic "Browser Wallet"
+	// SSR-safe: detect wallets only on client, empty during SSR for consistent hydration
+	let availableWallets = $state<WalletOption[]>([]);
+
+	$effect(() => {
+		if (!browser) return;
+
+		// Detect which wallets are available in the browser
+		const detected = walletDefinitions.filter((w) => {
+			switch (w.id) {
+				case 'metamask':
+					return window.ethereum?.isMetaMask === true;
+				case 'coinbase':
+					return window.ethereum?.isCoinbaseWallet === true;
+				case 'walletconnect':
+					return hasWalletConnect;
+				case 'injected':
+					return window.ethereum !== undefined;
+				default:
+					return false;
+			}
+		});
+
+		// If MetaMask or Coinbase is detected, hide generic "Browser Wallet" to avoid duplicates
 		const hasSpecificWallet = detected.some((w) => w.id === 'metamask' || w.id === 'coinbase');
-		if (hasSpecificWallet) {
-			return detected.filter((w) => w.id !== 'injected');
-		}
-		
-		return detected;
+		availableWallets = hasSpecificWallet ? detected.filter((w) => w.id !== 'injected') : detected;
 	});
 
 	async function connectWallet(walletId: string) {

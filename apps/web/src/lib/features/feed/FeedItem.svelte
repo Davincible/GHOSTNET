@@ -197,6 +197,7 @@
 	class:feed-item-jackpot={'jackpot' in display && display.jackpot}
 	class:feed-item-warning={'warning' in display && display.warning}
 	class:feed-item-critical={'critical' in display && display.critical}
+	data-testid="feed-item"
 >
 	<span class="feed-prefix">{display.prefix}</span>
 

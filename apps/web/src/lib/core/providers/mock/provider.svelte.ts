@@ -43,7 +43,7 @@ export function createMockProvider(): DataProvider {
 	let position = $state<Position | null>(null);
 	let modifiers = $state<Modifier[]>([]);
 	let networkState = $state<NetworkState>(generateMockNetworkState());
-	let feedEvents = $state<FeedEvent[]>([]);
+	let feedEvents = $state.raw<FeedEvent[]>([]);
 	let crew = $state<Crew | null>(null);
 	let activeRounds = $state<DeadPoolRound[]>([]);
 	let ownedConsumables = $state<OwnedConsumable[]>([]);

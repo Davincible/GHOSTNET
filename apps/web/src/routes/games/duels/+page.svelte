@@ -93,26 +93,26 @@
 	// COMPUTED
 	// ════════════════════════════════════════════════════════════════
 
-	const wagerAmount = $derived(() => {
+	const wagerAmount = $derived.by(() => {
 		if (customWager) {
 			return BigInt(Math.floor(parseFloat(customWager) || 0)) * 10n ** 18n;
 		}
 		return DUEL_TIERS[selectedTier].minWager;
 	});
 
-	const potentialPayout = $derived(() => {
-		const { payout } = calculateDuelWinnings(wagerAmount());
+	const potentialPayout = $derived.by(() => {
+		const { payout } = calculateDuelWinnings(wagerAmount);
 		return payout;
 	});
 
 	// Progress for active duel
-	const userProgressPercent = $derived(() => {
+	const userProgressPercent = $derived.by(() => {
 		if (store.state.status !== 'active') return 0;
 		const { yourProgress, duel } = store.state;
 		return Math.min(100, (yourProgress.correctChars / duel.challenge.command.length) * 100);
 	});
 
-	const userWpm = $derived(() => {
+	const userWpm = $derived.by(() => {
 		if (store.state.status !== 'active') return 0;
 		const { yourProgress } = store.state;
 		const elapsed = yourProgress.currentTime - yourProgress.startTime;
@@ -120,7 +120,7 @@
 		return Math.round((yourProgress.correctChars / 5 / elapsed) * 60000);
 	});
 
-	const timeRemaining = $derived(() => {
+	const timeRemaining = $derived.by(() => {
 		if (store.state.status !== 'active') return 0;
 		const { yourProgress, duel } = store.state;
 		const elapsed = yourProgress.currentTime - yourProgress.startTime;
@@ -132,7 +132,7 @@
 	<title>PvP Duels | GHOSTNET</title>
 </svelte:head>
 
-<Shell title="GHOSTNET://games/duels">
+<Shell>
 	<div class="duels-page">
 		<!-- IDLE / LOBBY STATE -->
 		{#if store.state.status === 'idle'}
@@ -291,16 +291,17 @@
 
 			<!-- WAITING STATE -->
 		{:else if store.state.status === 'waiting'}
+			{@const waitingDuel = store.state.duel}
 			<div class="centered-container">
 				<Box title="WAITING FOR OPPONENT">
 					<div class="waiting-state">
 						<div class="pulse-ring"></div>
 						<div class="wager-display">
 							<span class="label">WAGER</span>
-							<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" decimals={0} />
+							<AmountDisplay amount={waitingDuel.wagerAmount} symbol="DATA" decimals={0} />
 						</div>
 						<p class="waiting-text">Searching for an opponent...</p>
-						<Button variant="ghost" onclick={() => handleCancelDuel(store.state.duel.id)}>
+						<Button variant="ghost" onclick={() => handleCancelDuel(waitingDuel.id)}>
 							CANCEL
 						</Button>
 					</div>
@@ -329,11 +330,11 @@
 				<div class="duel-header">
 					<div class="player-progress you">
 						<span class="player-label">YOU</span>
-						<ProgressBar value={userProgressPercent()} variant="cyan" />
-						<span class="wpm">{userWpm()} WPM</span>
+						<ProgressBar value={userProgressPercent} variant="cyan" />
+						<span class="wpm">{userWpm} WPM</span>
 					</div>
 					<div class="vs-divider">
-						<span class="time-remaining">{Math.ceil(timeRemaining() / 1000)}s</span>
+						<span class="time-remaining">{Math.ceil(timeRemaining / 1000)}s</span>
 					</div>
 					<div class="player-progress opponent">
 						<span class="player-label">{store.state.duel.opponentName}</span>
@@ -473,7 +474,7 @@
 
 			<div class="payout-preview">
 				<span class="label">POTENTIAL WIN:</span>
-				<AmountDisplay amount={potentialPayout()} symbol="DATA" decimals={0} />
+				<AmountDisplay amount={potentialPayout} symbol="DATA" decimals={0} />
 				<span class="rake-note">(5% rake burned)</span>
 			</div>
 		</Stack>

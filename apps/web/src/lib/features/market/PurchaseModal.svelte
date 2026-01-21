@@ -101,7 +101,7 @@
 				</Row>
 
 				<div class="presets">
-					{#each presets as preset}
+					{#each presets as preset (preset)}
 						{#if preset <= maxQuantity}
 							<button
 								type="button"

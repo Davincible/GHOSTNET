@@ -17,7 +17,9 @@ import {
 	formatUnits,
 	parseUnits,
 	UserRejectedRequestError,
-	ContractFunctionExecutionError
+	ContractFunctionExecutionError,
+	InsufficientFundsError,
+	EstimateGasExecutionError
 } from 'viem';
 import { requireConfig } from './config';
 import { ghostCoreAbi, dataTokenAbi, deadPoolAbi, getContractAddress } from './abis';
@@ -59,11 +61,27 @@ export interface TransactionResult {
 
 /**
  * Parse contract errors into user-friendly messages
+ * 
+ * HIGH FIX: Added InsufficientFundsError and EstimateGasExecutionError handling
+ * to provide better feedback when users don't have enough ETH for gas.
  */
 export function parseContractError(err: unknown): string {
+	// User cancelled the transaction
 	if (err instanceof UserRejectedRequestError) {
 		return 'Transaction cancelled by user';
 	}
+	
+	// HIGH FIX: User doesn't have enough ETH for gas fees
+	if (err instanceof InsufficientFundsError) {
+		return 'Insufficient ETH for gas fees. Please add ETH to your wallet.';
+	}
+	
+	// HIGH FIX: Gas estimation failed (transaction would revert)
+	if (err instanceof EstimateGasExecutionError) {
+		return 'Transaction would fail. Please check your inputs and try again.';
+	}
+	
+	// Contract execution error with revert reason
 	if (err instanceof ContractFunctionExecutionError) {
 		// Try to extract revert reason
 		const reason = err.shortMessage || err.message;
@@ -76,9 +94,23 @@ export function parseContractError(err: unknown): string {
 		if (reason.includes('ExceedsCapacity')) return 'Level capacity exceeded';
 		return reason;
 	}
+	
+	// Generic Error with message parsing
 	if (err instanceof Error) {
+		// Check for network-related errors
+		if (err.message.includes('network') || err.message.includes('disconnect')) {
+			return 'Network connection lost. Please check your connection.';
+		}
+		if (err.message.includes('timeout')) {
+			return 'Request timed out. Please try again.';
+		}
+		// Check for gas-related errors in message
+		if (err.message.includes('gas') || err.message.includes('insufficient funds')) {
+			return 'Insufficient ETH for gas fees. Please add ETH to your wallet.';
+		}
 		return err.message;
 	}
+	
 	return 'Transaction failed';
 }
 

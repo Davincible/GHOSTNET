@@ -383,7 +383,7 @@
 			<!-- Navigation -->
 			<div class="slide-nav">
 				<div class="nav-dots">
-					{#each Array(totalSlides) as _, i}
+					{#each Array(totalSlides) as _, i (i)}
 						<button 
 							class="nav-dot" 
 							class:active={currentSlide === i}

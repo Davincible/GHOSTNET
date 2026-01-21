@@ -49,7 +49,7 @@
       >
         ALL
       </button>
-      {#each rabbits as rabbit}
+      {#each rabbits as rabbit (rabbit.id)}
         <button 
           class="toggle-btn"
           class:active={activeRabbit === rabbit.id}
@@ -62,7 +62,7 @@
     
     <div class="color-picker">
       <span class="label">RABBIT:</span>
-      {#each colors as c}
+      {#each colors as c (c.value)}
         <button 
           class="color-btn"
           class:active={color === c.value}
@@ -75,7 +75,7 @@
     
     <div class="color-picker">
       <span class="label">BACKGROUND:</span>
-      {#each colors as c}
+      {#each colors as c (c.value)}
         <button 
           class="color-btn"
           class:active={bgColor === c.value}
@@ -89,7 +89,7 @@
 
   {#if activeRabbit === 'all'}
     <div class="grid">
-      {#each rabbits as rabbit}
+      {#each rabbits as rabbit (rabbit.id)}
         <Panel title={rabbit.name} borderColor="cyan" glow>
           <div class="rabbit-container">
             {#if rabbit.id === 'particles'}

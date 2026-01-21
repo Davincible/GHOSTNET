@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import type { HackRunHistoryEntry, HackRunDifficulty } from '$lib/core/types/hackrun';
 	import { Box } from '$lib/ui/terminal';
 	import { Stack, Row } from '$lib/ui/layout';
-	import { AmountDisplay } from '$lib/ui/data-display';
 
 	interface Props {
 		/** Recent run history */
@@ -22,17 +22,32 @@
 		hard: 'var(--color-loss)'
 	};
 
-	// Format timestamp
+	// SSR-safe timestamp for triggering re-renders
+	let currentTime = $state(0);
+
+	$effect(() => {
+		// Update current time on client for relative time calculations
+		currentTime = Date.now();
+		// Update every minute for "Xm ago" accuracy
+		const interval = setInterval(() => {
+			currentTime = Date.now();
+		}, 60000);
+		return () => clearInterval(interval);
+	});
+
+	// Format timestamp - SSR-safe with consistent placeholder during SSR
 	function formatTime(timestamp: number): string {
-		const date = new Date(timestamp);
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
+		// During SSR, return consistent placeholder to avoid hydration mismatch
+		if (!browser) return '...';
+
+		const diffMs = currentTime - timestamp;
 		const diffMins = Math.floor(diffMs / 60000);
 		const diffHours = Math.floor(diffMins / 60);
 
+		if (diffMins < 1) return 'now';
 		if (diffMins < 60) return `${diffMins}m ago`;
 		if (diffHours < 24) return `${diffHours}h ago`;
-		return date.toLocaleDateString();
+		return new Date(timestamp).toLocaleDateString();
 	}
 </script>
 

@@ -17,6 +17,7 @@
 		class="scanlines"
 		style:--scanline-opacity={opacity}
 		aria-hidden="true"
+		data-testid="scanlines-overlay"
 	></div>
 {/if}
 

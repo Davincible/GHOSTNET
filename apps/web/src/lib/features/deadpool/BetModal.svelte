@@ -37,11 +37,16 @@
 	// Selected side - reset when modal opens with new round
 	let selectedSide = $state<DeadPoolSide | null>(null);
 
-	// Sync initialSide when modal opens
+	// Set initial side when opening with a pre-selection
 	$effect(() => {
 		if (open && initialSide) {
 			selectedSide = initialSide;
-		} else if (!open) {
+		}
+	});
+
+	// Reset state when modal closes
+	$effect(() => {
+		if (!open) {
 			selectedSide = null;
 			amountInput = '100';
 		}
@@ -209,9 +214,9 @@
 							/>
 							<span class="amount-suffix">$DATA</span>
 						</div>
-						<div class="presets">
-							{#each presets as preset}
-								<button class="preset-btn" onclick={() => (amountInput = preset)}>
+					<div class="presets">
+						{#each presets as preset (preset)}
+							<button class="preset-btn" onclick={() => (amountInput = preset)}>
 									{preset}
 								</button>
 							{/each}

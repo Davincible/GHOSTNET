@@ -49,7 +49,7 @@
 	</header>
 
 	<div class="days-track">
-		{#each Array(7) as _, i}
+		{#each Array(7) as _, i (i)}
 			{@const state = getDayState(i)}
 			{@const isToday = i + 1 === progress.currentStreak && !progress.todayCheckedIn}
 			<div class="day-wrapper">
