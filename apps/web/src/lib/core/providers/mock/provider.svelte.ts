@@ -18,13 +18,16 @@ import type {
 	DeadPoolRound,
 	TypingChallenge,
 	TypingResult,
-	ConnectionStatus
+	ConnectionStatus,
+	OwnedConsumable,
+	UseConsumableResult
 } from '../../types';
-import { LEVEL_CONFIG } from '../../types';
+import { LEVEL_CONFIG, getConsumable } from '../../types';
 import { generateMockFeedEvents, generateRandomFeedEvent } from './generators/feed';
 import { generateMockNetworkState, updateNetworkState } from './generators/network';
 import { generateMockPosition, updatePositionYield, createPosition } from './generators/position';
 import { getRandomCommand, getCommandDifficulty, getDifficultyReward } from './data/commands';
+import { generateMockInventory, simulatePurchase, simulateUseConsumable, calculateBulkPrice } from './generators/market';
 
 // ════════════════════════════════════════════════════════════════
 // MOCK PROVIDER FACTORY
@@ -43,6 +46,7 @@ export function createMockProvider(): DataProvider {
 	let feedEvents = $state<FeedEvent[]>([]);
 	let crew = $state<Crew | null>(null);
 	let activeRounds = $state<DeadPoolRound[]>([]);
+	let ownedConsumables = $state<OwnedConsumable[]>([]);
 
 	// Feed subscribers
 	const feedSubscribers = new Set<(event: FeedEvent) => void>();
@@ -110,6 +114,9 @@ export function createMockProvider(): DataProvider {
 			}
 		];
 
+		// Initialize inventory with starter items
+		ownedConsumables = generateMockInventory();
+
 		// Start position yield simulation
 		startPositionSimulation();
 	}
@@ -118,6 +125,7 @@ export function createMockProvider(): DataProvider {
 		currentUser = null;
 		position = null;
 		modifiers = [];
+		ownedConsumables = [];
 		stopPositionSimulation();
 	}
 
@@ -266,6 +274,78 @@ export function createMockProvider(): DataProvider {
 	}
 
 	// ─────────────────────────────────────────────────────────────
+	// CONSUMABLES (Black Market)
+	// ─────────────────────────────────────────────────────────────
+
+	async function purchaseConsumable(consumableId: string, quantity = 1): Promise<string> {
+		if (!currentUser) throw new Error('Wallet not connected');
+
+		const consumable = getConsumable(consumableId);
+		if (!consumable) throw new Error('Item not found');
+
+		// Calculate price (with bulk discount)
+		const totalCost = calculateBulkPrice(consumable, quantity);
+
+		// Simulate purchase
+		const result = simulatePurchase(
+			ownedConsumables,
+			consumableId,
+			quantity,
+			currentUser.tokenBalance
+		);
+
+		if (!result.success) {
+			throw new Error(result.error ?? 'Purchase failed');
+		}
+
+		await sleep(800); // Simulate tx delay
+
+		// Update state
+		ownedConsumables = result.inventory;
+		currentUser = {
+			...currentUser,
+			tokenBalance: currentUser.tokenBalance - totalCost
+		};
+
+		const txHash = `0x${Math.random().toString(16).slice(2)}`;
+		return txHash;
+	}
+
+	async function useConsumable(consumableId: string): Promise<UseConsumableResult> {
+		if (!currentUser) {
+			return { success: false, error: 'Wallet not connected' };
+		}
+
+		if (!position) {
+			return { success: false, error: 'Must be jacked in to use items' };
+		}
+
+		const result = simulateUseConsumable(ownedConsumables, consumableId);
+
+		if (!result.result.success) {
+			return result.result;
+		}
+
+		await sleep(500); // Simulate effect application
+
+		// Update inventory
+		ownedConsumables = result.inventory;
+
+		// Apply modifier if one was created
+		if (result.modifier) {
+			// Remove any existing modifier from same consumable
+			modifiers = modifiers.filter(
+				(m) => !(m.source === 'consumable' && m.label.includes(getConsumable(consumableId)?.name ?? ''))
+			);
+
+			// Add new modifier
+			modifiers = [...modifiers, result.modifier];
+		}
+
+		return result.result;
+	}
+
+	// ─────────────────────────────────────────────────────────────
 	// SIMULATIONS
 	// ─────────────────────────────────────────────────────────────
 
@@ -371,7 +451,14 @@ export function createMockProvider(): DataProvider {
 		get activeRounds() {
 			return activeRounds;
 		},
-		placeBet
+		placeBet,
+
+		// Consumables
+		get ownedConsumables() {
+			return ownedConsumables;
+		},
+		purchaseConsumable,
+		useConsumable
 	};
 }
 

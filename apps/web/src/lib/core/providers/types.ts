@@ -16,7 +16,9 @@ import type {
 	DeadPoolRound,
 	TypingChallenge,
 	TypingResult,
-	ConnectionStatus
+	ConnectionStatus,
+	OwnedConsumable,
+	UseConsumableResult
 } from '../types';
 
 // ════════════════════════════════════════════════════════════════
@@ -125,6 +127,29 @@ export interface DataProvider {
 	
 	/** Place a bet on a round */
 	placeBet(roundId: string, side: 'under' | 'over', amount: bigint): Promise<string>;
+
+	// ─────────────────────────────────────────────────────────────
+	// Black Market / Consumables
+	// ─────────────────────────────────────────────────────────────
+	
+	/** User's owned consumables */
+	readonly ownedConsumables: OwnedConsumable[];
+	
+	/**
+	 * Purchase a consumable from the Black Market.
+	 * All purchases are burned (deflationary).
+	 * @param consumableId - ID of consumable to purchase
+	 * @param quantity - Quantity to purchase (default 1)
+	 * @returns Transaction hash
+	 */
+	purchaseConsumable(consumableId: string, quantity?: number): Promise<string>;
+	
+	/**
+	 * Use a consumable from inventory.
+	 * @param consumableId - ID of consumable to use
+	 * @returns Result including success status and applied modifier
+	 */
+	useConsumable(consumableId: string): Promise<UseConsumableResult>;
 }
 
 // ════════════════════════════════════════════════════════════════

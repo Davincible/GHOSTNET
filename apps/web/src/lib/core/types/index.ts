@@ -10,6 +10,9 @@ export * from './errors';
 // Re-export daily operations types
 export * from './daily';
 
+// Re-export market/consumables types
+export * from './market';
+
 // ════════════════════════════════════════════════════════════════
 // ENUMS & CONSTANTS
 // ════════════════════════════════════════════════════════════════
