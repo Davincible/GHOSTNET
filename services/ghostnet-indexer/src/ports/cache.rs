@@ -4,6 +4,7 @@
 //! to reduce database load and improve response times.
 
 use crate::types::entities::{GlobalStats, Position};
+use crate::types::enums::Level;
 use crate::types::primitives::EthAddress;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -50,6 +51,16 @@ pub trait Cache: Send + Sync {
     ///
     /// Call after bulk updates or reorg rollback.
     fn invalidate_all_positions(&self);
+
+    /// Invalidate cached positions for a specific level.
+    ///
+    /// Call when level-wide changes occur (e.g., after scans, deaths).
+    /// This is more efficient than `invalidate_all_positions` when
+    /// only one level is affected.
+    ///
+    /// Note: Current implementations may just delegate to `invalidate_all_positions`
+    /// until level-indexed caching is implemented.
+    fn invalidate_level(&self, level: &Level);
 
     /// Get cached global stats.
     ///
@@ -131,6 +142,7 @@ pub mod mocks {
     use std::sync::RwLock;
 
     use super::*;
+    use crate::types::enums::Level;
 
     /// Simple in-memory cache for testing.
     #[derive(Debug, Default)]
@@ -183,6 +195,12 @@ pub mod mocks {
         fn invalidate_all_positions(&self) {
             let mut positions = self.positions.write().expect("lock poisoned");
             positions.clear();
+        }
+
+        fn invalidate_level(&self, _level: &Level) {
+            // For the mock, just invalidate all positions
+            // A real implementation would track positions by level
+            self.invalidate_all_positions();
         }
 
         fn get_global_stats(&self) -> Option<GlobalStats> {
