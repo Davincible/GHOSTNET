@@ -483,8 +483,30 @@ mod tests {
             self
         }
 
+        fn with_positions(self, positions: Vec<Position>) -> Self {
+            let mut store = self.positions.write().unwrap();
+            for position in positions {
+                store.insert(position.user_address, position);
+            }
+            drop(store);
+            self
+        }
+
         fn get_position(&self, address: &EthAddress) -> Option<Position> {
             self.positions.read().unwrap().get(address).cloned()
+        }
+
+        fn position_count(&self) -> usize {
+            self.positions.read().unwrap().len()
+        }
+
+        fn alive_position_count(&self) -> usize {
+            self.positions
+                .read()
+                .unwrap()
+                .values()
+                .filter(|p| p.is_alive)
+                .count()
         }
 
         fn history_count(&self) -> usize {
@@ -567,9 +589,13 @@ mod tests {
     }
 
     fn create_test_position(level: Level) -> Position {
+        create_test_position_for_user(level, test_eth_address())
+    }
+
+    fn create_test_position_for_user(level: Level, user_address: EthAddress) -> Position {
         Position {
             id: Uuid::new_v4(),
-            user_address: test_eth_address(),
+            user_address,
             level,
             amount: TokenAmount::parse("1000").unwrap(),
             reward_debt: TokenAmount::zero(),
@@ -585,6 +611,12 @@ mod tests {
             created_at_block: BlockNumber::new(900),
             updated_at: Utc::now(),
         }
+    }
+
+    fn eth_address_from_byte(byte: u8) -> EthAddress {
+        let mut bytes = [0u8; 20];
+        bytes[19] = byte;
+        EthAddress::new(bytes)
     }
 
     fn create_handler() -> (
@@ -741,6 +773,57 @@ mod tests {
         // No deaths or history since there were no positions
         assert_eq!(death_store.death_count(), 0);
         assert_eq!(position_store.history_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn handle_system_reset_closes_multiple_positions_across_levels() {
+        // Create positions across different levels with different users
+        let positions = vec![
+            create_test_position_for_user(Level::Vault, eth_address_from_byte(1)),
+            create_test_position_for_user(Level::Mainframe, eth_address_from_byte(2)),
+            create_test_position_for_user(Level::Subnet, eth_address_from_byte(3)),
+            create_test_position_for_user(Level::Darknet, eth_address_from_byte(4)),
+            create_test_position_for_user(Level::BlackIce, eth_address_from_byte(5)),
+        ];
+
+        let death_store = Arc::new(MockDeathStore::new());
+        let position_store = Arc::new(MockPositionStore::new().with_positions(positions));
+        let cache = Arc::new(MockCache::new());
+        let handler = DeathHandler::new(
+            Arc::clone(&death_store),
+            Arc::clone(&position_store),
+            Arc::clone(&cache),
+        );
+
+        // Verify initial state
+        assert_eq!(position_store.position_count(), 5);
+        assert_eq!(position_store.alive_position_count(), 5);
+
+        let event = ghost_core::SystemResetTriggered {
+            totalPenalty: U256::from(50000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            jackpotWinner: test_address(),
+            jackpotAmount: U256::from(25000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+
+        let result = handler.handle_system_reset(event, test_metadata()).await;
+        assert!(result.is_ok());
+
+        // Verify all positions were closed
+        assert_eq!(position_store.alive_position_count(), 0);
+
+        // Verify deaths were recorded for all positions
+        assert_eq!(death_store.death_count(), 5);
+
+        // Verify history was recorded for all positions
+        assert_eq!(position_store.history_count(), 5);
+
+        // Verify each position has correct exit reason
+        for byte in 1..=5 {
+            let addr = eth_address_from_byte(byte);
+            let position = position_store.get_position(&addr).unwrap();
+            assert!(!position.is_alive);
+            assert_eq!(position.exit_reason, Some(ExitReason::SystemReset));
+        }
     }
 
     #[test]

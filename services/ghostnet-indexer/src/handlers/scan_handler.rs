@@ -206,53 +206,49 @@ where
         let scan_id = event.scanId.to_string();
         let finalized_at = Self::to_datetime(event.finalizedAt);
 
-        // Get existing scan
-        let existing = self.store.get_scan_by_id(&scan_id).await?;
-        if existing.is_none() {
-            // Scan not found - this could happen if we missed the ScanExecuted event
-            // Create a new scan record with what we know
-            warn!(
-                scan_id = %scan_id,
-                "ScanFinalized received but no ScanExecuted found, creating incomplete record"
-            );
+        // Get existing scan, or create incomplete record if missing
+        let existing = match self.store.get_scan_by_id(&scan_id).await? {
+            Some(scan) => scan,
+            None => {
+                // Scan not found - this could happen if we missed the ScanExecuted event
+                // Create a new scan record with what we know
+                warn!(
+                    scan_id = %scan_id,
+                    "ScanFinalized received but no ScanExecuted found, creating incomplete record"
+                );
 
-            let scan = Scan {
-                id: Uuid::new_v4(),
-                scan_id: scan_id.clone(),
-                level,
-                seed: "unknown".to_string(), // We don't have the seed
-                executed_at: finalized_at,   // Use finalized time as executed
-                finalized_at: Some(finalized_at),
-                death_count: Some(
-                    event
-                        .deathCount
-                        .try_into()
-                        .unwrap_or(u32::MAX),
-                ),
-                total_dead: Some(Self::to_token_amount(&event.totalDead)),
-                burned: None,
-                distributed_same_level: None,
-                distributed_upstream: None,
-                protocol_fee: None,
-                survivor_count: None,
-            };
+                let scan = Scan {
+                    id: Uuid::new_v4(),
+                    scan_id: scan_id.clone(),
+                    level,
+                    seed: "unknown".to_string(), // We don't have the seed
+                    executed_at: finalized_at,   // Use finalized time as executed
+                    finalized_at: Some(finalized_at),
+                    death_count: Some(
+                        event
+                            .deathCount
+                            .try_into()
+                            .unwrap_or(u32::MAX),
+                    ),
+                    total_dead: Some(Self::to_token_amount(&event.totalDead)),
+                    burned: None,
+                    distributed_same_level: None,
+                    distributed_upstream: None,
+                    protocol_fee: None,
+                    survivor_count: None,
+                };
 
-            self.store.save_scan(&scan).await?;
+                self.store.save_scan(&scan).await?;
 
-            info!(
-                scan_uuid = %scan.id,
-                level = ?level,
-                death_count = ?scan.death_count,
-                "Incomplete scan created from finalization"
-            );
+                info!(
+                    scan_uuid = %scan.id,
+                    level = ?level,
+                    death_count = ?scan.death_count,
+                    "Incomplete scan created from finalization"
+                );
 
-            return Ok(());
-        }
-
-        // SAFETY: We just checked `existing.is_none()` above and returned early
-        let Some(existing) = existing else {
-            // This branch is unreachable, but satisfies the borrow checker
-            return Ok(());
+                return Ok(());
+            }
         };
 
         // Check if already finalized (idempotency)

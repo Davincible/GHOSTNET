@@ -112,9 +112,13 @@ where
     }
 
     /// Validate that weights sum to 100% (10000 bps).
+    ///
+    /// Uses checked arithmetic to handle potential overflow from malicious input.
     fn validate_weights(weights: &[u16; 5]) -> bool {
-        let sum: u16 = weights.iter().sum();
-        sum == BASIS_POINTS_DENOMINATOR
+        weights
+            .iter()
+            .try_fold(0u16, |acc, &w| acc.checked_add(w))
+            .map_or(false, |sum| sum == BASIS_POINTS_DENOMINATOR)
     }
 }
 
@@ -354,6 +358,14 @@ mod tests {
     #[test]
     fn validate_weights_invalid_over() {
         let weights = [500, 1000, 2000, 3000, 4000]; // 10500
+        assert!(!EmissionsHandler::<MockCache>::validate_weights(&weights));
+    }
+
+    #[test]
+    fn validate_weights_handles_overflow() {
+        // Malicious input that would overflow u16 (max 65535)
+        let weights = [u16::MAX, u16::MAX, u16::MAX, u16::MAX, u16::MAX];
+        // Should return false (invalid) rather than panic or wrap
         assert!(!EmissionsHandler::<MockCache>::validate_weights(&weights));
     }
 

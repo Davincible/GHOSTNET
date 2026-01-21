@@ -91,13 +91,25 @@ where
         Ok(RoundType::try_from(round_type)?)
     }
 
-    /// Convert a u8 level to our `Level` enum.
+    /// Convert a u8 level to our `Level` enum for market rounds.
     ///
-    /// Returns `None` for level 0 (global rounds).
+    /// In the `DeadPool` contract, `targetLevel` uses these semantics:
+    /// - `0` = Global round (not tied to any specific level)
+    /// - `1-5` = Level-specific round (Vault, Mainframe, Subnet, Darknet, BlackIce)
+    ///
+    /// Note: This differs from `Level::None` which represents "no position".
+    /// Here, `None` means "global/all levels" for market targeting purposes.
+    ///
+    /// # Returns
+    /// - `Ok(None)` for level 0 (global round)
+    /// - `Ok(Some(Level))` for levels 1-5
+    /// - `Err` for invalid level values (6+)
     fn to_optional_level(level: u8) -> Result<Option<Level>> {
         if level == 0 {
+            // Global round - not targeting any specific level
             Ok(None)
         } else {
+            // Level-specific round
             Ok(Some(Level::try_from(level)?))
         }
     }
@@ -733,6 +745,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn handle_bet_placed_ignores_resolved_round() {
+        let (handler, store, _cache) = create_handler();
+
+        // Create round
+        let round_event = dead_pool::RoundCreated {
+            roundId: U256::from(1),
+            roundType: 0,
+            targetLevel: 4,
+            line: U256::from(10_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            deadline: 1_700_000_000,
+        };
+        handler
+            .handle_round_created(round_event, test_metadata())
+            .await
+            .unwrap();
+
+        // Resolve the round
+        let resolve_event = dead_pool::RoundResolved {
+            roundId: U256::from(1),
+            outcome: true,
+            totalPot: U256::from(0),
+            burned: U256::from(0),
+        };
+        handler
+            .handle_round_resolved(resolve_event, test_metadata())
+            .await
+            .unwrap();
+
+        // Try to place bet on already-resolved round
+        let bet_event = dead_pool::BetPlaced {
+            roundId: U256::from(1),
+            user: test_address(),
+            isOver: true,
+            amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+
+        let result = handler.handle_bet_placed(bet_event, test_metadata()).await;
+        assert!(result.is_ok()); // Should not error, just log warning
+
+        // No bet should be recorded (round was already resolved)
+        assert_eq!(store.bet_count(), 0);
+    }
+
+    #[tokio::test]
     async fn handle_round_resolved_marks_resolved() {
         let (handler, store, _cache) = create_handler();
 
@@ -891,6 +947,74 @@ mod tests {
         assert!(bet.is_claimed);
         assert_eq!(bet.winnings.as_ref().unwrap().to_string(), "190");
         assert!(bet.claimed_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn handle_winnings_claimed_fails_for_unknown_round() {
+        let (handler, _store, _cache) = create_handler();
+
+        // Try to claim winnings for a round that doesn't exist
+        let claim_event = dead_pool::WinningsClaimed {
+            roundId: U256::from(999),
+            user: test_address(),
+            amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+
+        // This should fail because the round doesn't exist
+        let result = handler
+            .handle_winnings_claimed(claim_event, test_metadata())
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn handle_winnings_claimed_fails_for_unknown_user() {
+        let (handler, _store, _cache) = create_handler();
+
+        // Setup: create round, place bet by user1, resolve
+        let round_event = dead_pool::RoundCreated {
+            roundId: U256::from(1),
+            roundType: 0,
+            targetLevel: 4,
+            line: U256::from(10_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            deadline: 1_700_000_000,
+        };
+        handler
+            .handle_round_created(round_event, test_metadata())
+            .await
+            .unwrap();
+
+        let bet_event = dead_pool::BetPlaced {
+            roundId: U256::from(1),
+            user: test_address(),
+            isOver: true,
+            amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler.handle_bet_placed(bet_event, test_metadata()).await.unwrap();
+
+        let resolve_event = dead_pool::RoundResolved {
+            roundId: U256::from(1),
+            outcome: true,
+            totalPot: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+            burned: U256::from(5_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+        handler
+            .handle_round_resolved(resolve_event, test_metadata())
+            .await
+            .unwrap();
+
+        // Try to claim winnings as a different user who didn't bet
+        let claim_event = dead_pool::WinningsClaimed {
+            roundId: U256::from(1),
+            user: test_address_2(), // Different user
+            amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
+        };
+
+        // This should fail because the user didn't place a bet
+        let result = handler
+            .handle_winnings_claimed(claim_event, test_metadata())
+            .await;
+        assert!(result.is_err());
     }
 
     #[test]
