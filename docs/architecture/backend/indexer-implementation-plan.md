@@ -1,9 +1,9 @@
 # GHOSTNET Event Indexer: Implementation Plan
 
-> **Version**: 1.0.0  
+> **Version**: 1.1.0  
 > **Created**: 2026-01-21  
 > **Last Updated**: 2026-01-21  
-> **Status**: Planning  
+> **Status**: In Progress (Phase 3 ~90% Complete)  
 > **Reference**: See `indexer-architecture.md` for full specification
 
 This document tracks the implementation progress of the GHOSTNET Event Indexer. Use this as the single source of truth for what's done, what's in progress, and what's next.
@@ -88,11 +88,11 @@ Every phase must pass before moving to the next:
 | 0 | Project Scaffolding | 1 day | Complete | 2026-01-21 | 2026-01-21 |
 | 1 | Type Foundation | 2 days | Complete | 2026-01-21 | 2026-01-21 |
 | 2 | ABI Bindings | 2 days | Complete | 2026-01-21 | 2026-01-21 |
-| 3 | Vertical Slice (Positions) | 5 days | In Progress | 2026-01-21 | - |
-| 4 | WebSocket + Reorg Handling | 3 days | Not Started | - | - |
+| 3 | Vertical Slice (Positions) | 5 days | ~90% Complete | 2026-01-21 | - |
+| 4 | WebSocket + Reorg Handling | 3 days | Partial (WS done) | 2026-01-21 | - |
 | 5 | Complete Event Handlers | 5 days | Not Started | - | - |
 | 6 | Apache Iggy Streaming | 4 days | Not Started | - | - |
-| 7 | In-Memory Caching | 2 days | Not Started | - | - |
+| 7 | In-Memory Caching | 2 days | Partial (block cache) | 2026-01-21 | - |
 | 8 | REST API | 6 days | Not Started | - | - |
 | 9 | WebSocket Gateway | 3 days | Not Started | - | - |
 | 10 | Continuous Aggregates | 3 days | Not Started | - | - |
@@ -193,7 +193,7 @@ services/ghostnet-indexer/
 #### Acceptance Criteria
 
 - [x] All types compile
-- [x] All unit tests pass (106 tests)
+- [x] All unit tests pass (125 tests as of Session 3)
 - [ ] Property tests pass (deferred)
 - [x] No `unwrap()` in non-test code
 
@@ -248,7 +248,7 @@ services/ghostnet-indexer/
 
 **Duration**: 5 days
 
-**Status**: 🟡 In Progress (started 2026-01-21)
+**Status**: 🟢 ~90% Complete (started 2026-01-21) - Only integration tests remaining
 
 **This is the highest-risk phase** - it proves the architecture works.
 
@@ -262,14 +262,17 @@ services/ghostnet-indexer/
 | 3.4 | Create `src/handlers/mod.rs` | [x] | Module structure |
 | 3.5 | Create `src/handlers/traits.rs` | [x] | Handler port traits (EventHandler) |
 | 3.6 | Implement `src/handlers/position_handler.rs` | [x] | JackedIn, StakeAdded, Extracted, BoostApplied, PositionCulled |
-| 3.7 | Create `src/store/mod.rs` | [ ] | Store module (adapters) |
-| 3.8 | Implement `src/store/postgres.rs` | [ ] | SQLx implementation |
-| 3.9 | Create `migrations/00001_enable_timescaledb.sql` | [ ] | |
-| 3.10 | Create `migrations/00002_indexer_state.sql` | [ ] | |
-| 3.11 | Create `migrations/00003_positions.sql` | [ ] | |
-| 3.12 | Write mock store for unit tests | [x] | MockCache in ports/cache.rs |
-| 3.13 | Write integration tests with testcontainers | [ ] | |
-| 3.14 | Test full flow: RPC → Handler → DB | [ ] | |
+| 3.7 | Create `src/store/mod.rs` | [x] | Store module with PostgresStore |
+| 3.8 | Implement `src/store/postgres.rs` | [x] | SQLx implementation (Position, Scan, Death, IndexerState stores) |
+| 3.9 | Create `migrations/00001_enable_timescaledb.sql` | [x] | Extension setup |
+| 3.10 | Create `migrations/00002_indexer_state.sql` | [x] | indexer_state, block_hashes tables |
+| 3.11 | Create `migrations/00003_positions.sql` | [x] | positions, position_history hypertables |
+| 3.12 | Write mock store for unit tests | [x] | MockCache in ports/cache.rs, MockPositionStore in handlers |
+| 3.13 | Write integration tests with testcontainers | [ ] | Pending |
+| 3.14 | Test full flow: RPC → Handler → DB | [ ] | Pending |
+| 3.15 | Create `migrations/00004_scans_deaths.sql` | [x] | scans, deaths, level_stats, global_stats |
+| 3.16 | Implement `src/indexer/realtime_processor.rs` | [x] | MegaETH WebSocket Realtime API (~10ms latency) |
+| 3.17 | Add block timestamp caching | [x] | moka::future::Cache with 1hr TTL |
 
 #### Files Created
 
@@ -280,22 +283,24 @@ services/ghostnet-indexer/
 - [x] `src/ports/streaming.rs` (EventPublisher trait + MockEventPublisher)
 - [x] `src/indexer/block_processor.rs`
 - [x] `src/indexer/event_router.rs`
+- [x] `src/indexer/realtime_processor.rs` (MegaETH Realtime API)
 - [x] `src/handlers/mod.rs`
 - [x] `src/handlers/traits.rs`
 - [x] `src/handlers/position_handler.rs`
-- [ ] `src/store/mod.rs` (adapters)
-- [ ] `src/store/postgres.rs`
-- [ ] `migrations/00001_enable_timescaledb.sql`
-- [ ] `migrations/00002_indexer_state.sql`
-- [ ] `migrations/00003_positions.sql`
-- [ ] `tests/common/mocks.rs`
+- [x] `src/store/mod.rs` (adapters)
+- [x] `src/store/postgres.rs` (PositionStore, ScanStore, DeathStore, IndexerStateStore)
+- [x] `migrations/20260121000001_enable_timescaledb.sql`
+- [x] `migrations/20260121000002_indexer_state.sql`
+- [x] `migrations/20260121000003_positions.sql`
+- [x] `migrations/20260121000004_scans_deaths.sql`
+- [ ] `tests/store_integration.rs` (pending)
 
 #### Acceptance Criteria
 
-- [ ] Can connect to MegaETH RPC
-- [ ] Can decode JackedIn events
-- [ ] Can persist positions to TimescaleDB
-- [ ] Integration tests pass with real TimescaleDB
+- [x] Can connect to MegaETH RPC (block_processor.rs with HTTP, realtime_processor.rs with WebSocket)
+- [x] Can decode JackedIn events (via ABI bindings and EventRouter)
+- [x] Can persist positions to TimescaleDB (PostgresStore implementation complete)
+- [ ] Integration tests pass with real TimescaleDB (pending testcontainers setup)
 
 ---
 
@@ -305,17 +310,17 @@ services/ghostnet-indexer/
 
 **Duration**: 3 days
 
-**Status**: Not Started
+**Status**: 🟡 Partial (WebSocket done, reorg handling in store)
 
 #### Tasks
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 4.1 | Add WebSocket subscription to `block_processor.rs` | [ ] | Alloy 1.4+ pattern |
-| 4.2 | Implement `src/indexer/reorg_handler.rs` | [ ] | |
-| 4.3 | Implement `src/indexer/checkpoint.rs` | [ ] | Progress tracking |
-| 4.4 | Add block_history table migration | [ ] | For reorg detection |
-| 4.5 | Implement reorg rollback SQL function | [ ] | |
+| 4.1 | Add WebSocket subscription to `block_processor.rs` | [x] | Done via `realtime_processor.rs` using MegaETH Realtime API |
+| 4.2 | Implement `src/indexer/reorg_handler.rs` | [ ] | Logic exists in IndexerStateStore |
+| 4.3 | Implement `src/indexer/checkpoint.rs` | [ ] | Via IndexerStateStore.set_last_block() |
+| 4.4 | Add block_history table migration | [x] | `block_hashes` table in migration 00002 |
+| 4.5 | Implement reorg rollback SQL function | [x] | IndexerStateStore.execute_reorg_rollback() |
 | 4.6 | Write reorg simulation tests | [ ] | |
 | 4.7 | Test checkpoint recovery | [ ] | |
 
@@ -676,7 +681,10 @@ Record significant architectural decisions here.
 | Date | Decision | Rationale | Alternatives Considered |
 |------|----------|-----------|------------------------|
 | 2026-01-21 | Start with HTTP polling, add WS later | Simpler to debug, proves architecture | WS from start |
-| | | | |
+| 2026-01-21 | Use MegaETH Realtime API for WebSocket | ~10ms latency vs 1s+ for standard Ethereum | Standard eth_subscribe |
+| 2026-01-21 | Use composite PKs for TimescaleDB hypertables | TimescaleDB requires partitioning column in PK | Regular tables, drop PK constraint |
+| 2026-01-21 | No foreign keys on hypertables | TimescaleDB doesn't support FKs FROM hypertables | Application-level enforcement |
+| 2026-01-21 | moka::future::Cache for block timestamps | Async cache matches async context, 1hr TTL since timestamps immutable | DashMap, sync Cache |
 
 ---
 
@@ -728,6 +736,54 @@ Record significant architectural decisions here.
 - 3.6: Implement `position_handler.rs` 
 - 3.7-3.8: Store adapters (PostgreSQL with SQLx)
 - 3.9-3.11: Database migrations
+
+**Blockers**: None
+
+---
+
+### Session 3: 2026-01-21 (Phase 3 Store & Migrations)
+
+**What was done**:
+- Implemented `src/store/mod.rs` and `src/store/postgres.rs` with full SQLx implementation
+- Created 4 TimescaleDB migrations: enable_timescaledb, indexer_state, positions, scans_deaths
+- Implemented `src/indexer/realtime_processor.rs` for MegaETH Realtime API (WebSocket with ~10ms latency)
+- Added block timestamp caching with moka::future::Cache (10K entries, 1hr TTL)
+- Added `SubscriptionResult` enum for smarter reconnection logic
+- Fixed critical TimescaleDB hypertable bug (composite primary keys required)
+- Added `ExitReason::Superseded` for handling duplicate JackedIn events
+- Code review performed and all critical findings addressed
+
+**Store implementations complete**:
+- PositionStore: 6 methods (get_active_position, save_position, get_at_risk_positions, etc.)
+- ScanStore: 5 methods (save_scan, finalize_scan, get_recent_scans, etc.)
+- DeathStore: 5 methods (record_deaths, get_deaths_for_scan, etc.)
+- IndexerStateStore: 6 methods (reorg handling, block hash tracking, pruning)
+- MarketStore/StatsStore: placeholder implementations
+
+**Database schema complete**:
+- `indexer_state`: track last indexed block
+- `block_hashes`: reorg detection (256-block window)
+- `positions`: hypertable partitioned by entry_timestamp
+- `position_history`: audit trail hypertable
+- `scans`: scan events hypertable
+- `deaths`: death records hypertable
+- `level_stats`: pre-computed per-level statistics
+- `global_stats`: protocol-wide statistics
+
+**Test coverage**:
+- 125 unit tests passing
+- MockPositionStore with RwLock for handler tests
+- Block cache behavior tests
+
+**Commits**:
+- `c039546` feat(indexer): add block timestamp caching and complete position handler
+- `71db063` feat(indexer): add PostgreSQL store adapter and TimescaleDB migrations
+- `0176999` fix(indexer): address code review findings
+
+**Next steps**:
+- 3.13-3.14: Integration tests with testcontainers-postgres
+- Phase 4: WebSocket subscriptions (partially complete via realtime_processor)
+- Phase 5: Complete remaining event handlers (scan_handler, death_handler, etc.)
 
 **Blockers**: None
 
