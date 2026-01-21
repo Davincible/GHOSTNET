@@ -180,7 +180,7 @@ impl Clone for FakeClock {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Duration, TimeZone};
+    use chrono::{Datelike, Duration, TimeZone, Timelike};
 
     use super::*;
 
