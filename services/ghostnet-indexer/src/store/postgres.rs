@@ -168,18 +168,19 @@ impl PositionStore for PostgresStore {
 
     #[instrument(skip(self, position), fields(id = %position.id, user = %position.user_address))]
     async fn save_position(&self, position: &Position) -> Result<()> {
-        // Note: TimescaleDB hypertables require the partitioning column in ON CONFLICT.
-        // The primary key is (id, entry_timestamp), so we use that for upsert.
+        // Positions are now a regular table with simple UUID primary key.
+        // This simplifies upserts since we don't need composite keys.
+        // Note: updated_at_block uses created_at_block for now (entity doesn't track it separately)
         sqlx::query(
             r#"
             INSERT INTO positions (
                 id, user_address, level, amount, reward_debt, entry_timestamp,
                 last_add_timestamp, ghost_streak, is_alive, is_extracted,
                 exit_reason, exit_timestamp, extracted_amount, extracted_rewards,
-                created_at_block, updated_at
+                created_at_block, updated_at_block, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-            ON CONFLICT (id, entry_timestamp) DO UPDATE SET
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15, $16)
+            ON CONFLICT (id) DO UPDATE SET
                 amount = EXCLUDED.amount,
                 reward_debt = EXCLUDED.reward_debt,
                 last_add_timestamp = EXCLUDED.last_add_timestamp,
@@ -190,6 +191,7 @@ impl PositionStore for PostgresStore {
                 exit_timestamp = EXCLUDED.exit_timestamp,
                 extracted_amount = EXCLUDED.extracted_amount,
                 extracted_rewards = EXCLUDED.extracted_rewards,
+                updated_at_block = $15,
                 updated_at = EXCLUDED.updated_at
             "#,
         )
@@ -764,13 +766,18 @@ impl MarketStore for PostgresStore {
 // INDEXER STATE STORE IMPLEMENTATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/// MegaETH chain ID for indexer state
+const MEGAETH_CHAIN_ID: i64 = 6342;
+
 #[async_trait]
 impl IndexerStateStore for PostgresStore {
     #[instrument(skip(self))]
     async fn get_last_block(&self) -> Result<BlockNumber> {
+        // indexer_state is now keyed by chain_id (single row per chain)
         let row: Option<i64> = sqlx::query_scalar(
-            "SELECT block_number FROM indexer_state ORDER BY block_number DESC LIMIT 1",
+            "SELECT last_block FROM indexer_state WHERE chain_id = $1",
         )
+        .bind(MEGAETH_CHAIN_ID)
         .fetch_optional(&self.pool)
         .await
         .map_err(InfraError::Database)?;
@@ -780,15 +787,18 @@ impl IndexerStateStore for PostgresStore {
 
     #[instrument(skip(self), fields(block = %block.value()))]
     async fn set_last_block(&self, block: BlockNumber, hash: B256) -> Result<()> {
+        // Upsert the indexer state for MegaETH chain
         sqlx::query(
             r#"
-            INSERT INTO indexer_state (block_number, block_hash, updated_at)
-            VALUES ($1, $2, NOW())
-            ON CONFLICT (block_number) DO UPDATE SET
-                block_hash = EXCLUDED.block_hash,
+            INSERT INTO indexer_state (chain_id, last_block, last_block_hash, updated_at)
+            VALUES ($1, $2, $3, NOW())
+            ON CONFLICT (chain_id) DO UPDATE SET
+                last_block = EXCLUDED.last_block,
+                last_block_hash = EXCLUDED.last_block_hash,
                 updated_at = NOW()
             "#,
         )
+        .bind(MEGAETH_CHAIN_ID)
         .bind(block.value() as i64)
         .bind(hash.as_slice())
         .execute(&self.pool)
@@ -807,20 +817,19 @@ impl IndexerStateStore for PostgresStore {
         parent: B256,
         timestamp: u64,
     ) -> Result<()> {
+        // block_history is a hypertable - insert new rows, let retention policy handle cleanup.
+        // Convert Unix timestamp to TIMESTAMPTZ using to_timestamp().
         sqlx::query(
             r#"
-            INSERT INTO block_hashes (block_number, block_hash, parent_hash, timestamp)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (block_number) DO UPDATE SET
-                block_hash = EXCLUDED.block_hash,
-                parent_hash = EXCLUDED.parent_hash,
-                timestamp = EXCLUDED.timestamp
+            INSERT INTO block_history (block_number, block_hash, parent_hash, timestamp)
+            VALUES ($1, $2, $3, to_timestamp($4))
+            ON CONFLICT DO NOTHING
             "#,
         )
         .bind(block.value() as i64)
         .bind(hash.as_slice())
         .bind(parent.as_slice())
-        .bind(timestamp as i64)
+        .bind(timestamp as f64)
         .execute(&self.pool)
         .await
         .map_err(InfraError::Database)?;
@@ -831,7 +840,7 @@ impl IndexerStateStore for PostgresStore {
     #[instrument(skip(self), fields(block = %block.value()))]
     async fn get_block_hash(&self, block: BlockNumber) -> Result<Option<B256>> {
         let row: Option<Vec<u8>> =
-            sqlx::query_scalar("SELECT block_hash FROM block_hashes WHERE block_number = $1")
+            sqlx::query_scalar("SELECT block_hash FROM block_history WHERE block_number = $1")
                 .bind(block.value() as i64)
                 .fetch_optional(&self.pool)
                 .await
@@ -852,15 +861,16 @@ impl IndexerStateStore for PostgresStore {
     async fn execute_reorg_rollback(&self, fork_point: BlockNumber) -> Result<()> {
         let mut tx = self.pool.begin().await.map_err(InfraError::Database)?;
 
-        // Delete block hashes after fork point
-        sqlx::query("DELETE FROM block_hashes WHERE block_number > $1")
+        // Delete block history after fork point
+        sqlx::query("DELETE FROM block_history WHERE block_number > $1")
             .bind(fork_point.value() as i64)
             .execute(&mut *tx)
             .await
             .map_err(InfraError::Database)?;
 
-        // Delete indexer state after fork point
-        sqlx::query("DELETE FROM indexer_state WHERE block_number > $1")
+        // Note: indexer_state is now keyed by chain_id, not block_number
+        // Update the last_block instead of deleting
+        sqlx::query("UPDATE indexer_state SET last_block = $1, updated_at = NOW() WHERE chain_id = 6342")
             .bind(fork_point.value() as i64)
             .execute(&mut *tx)
             .await
@@ -881,9 +891,10 @@ impl IndexerStateStore for PostgresStore {
 
     #[instrument(skip(self), fields(keep_blocks = keep_blocks))]
     async fn prune_old_blocks(&self, keep_blocks: u64) -> Result<u64> {
-        // Get current max block
+        // block_history has a retention policy - this is now mostly a no-op
+        // but we can still manually prune if needed
         let max_block: Option<i64> =
-            sqlx::query_scalar("SELECT MAX(block_number) FROM block_hashes")
+            sqlx::query_scalar("SELECT MAX(block_number) FROM block_history")
                 .fetch_optional(&self.pool)
                 .await
                 .map_err(InfraError::Database)?;
@@ -897,7 +908,7 @@ impl IndexerStateStore for PostgresStore {
             return Ok(0);
         }
 
-        let result = sqlx::query("DELETE FROM block_hashes WHERE block_number < $1")
+        let result = sqlx::query("DELETE FROM block_history WHERE block_number < $1")
             .bind(cutoff)
             .execute(&self.pool)
             .await

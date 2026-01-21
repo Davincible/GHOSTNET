@@ -484,7 +484,8 @@ async fn test_timescaledb_extension_loaded() {
 async fn test_hypertables_created() {
     let db = TestDb::new().await;
 
-    // Check that positions table is a hypertable
+    // positions is now a REGULAR TABLE (not a hypertable)
+    // Reason: Entity with frequent updates - hypertables with compression are slow for updates
     let result: Option<(String,)> = sqlx::query_as(
         "SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = 'positions'"
     )
@@ -492,9 +493,9 @@ async fn test_hypertables_created() {
     .await
     .unwrap();
 
-    assert!(result.is_some(), "positions should be a hypertable");
+    assert!(result.is_none(), "positions should NOT be a hypertable (has updates)");
 
-    // Check position_history hypertable
+    // Check position_history hypertable (append-only audit trail)
     let result: Option<(String,)> = sqlx::query_as(
         "SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = 'position_history'"
     )
@@ -504,12 +505,28 @@ async fn test_hypertables_created() {
 
     assert!(result.is_some(), "position_history should be a hypertable");
 
-    // Note: scans and deaths are NOT hypertables because they need:
-    // - Unique constraints on natural keys (scan_id for on-chain deduplication)
-    // - Foreign key relationships (deaths -> scans)
-    // These are discrete events, not continuous time-series data.
+    // Check deaths hypertable (append-only events)
+    let result: Option<(String,)> = sqlx::query_as(
+        "SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = 'deaths'"
+    )
+    .fetch_optional(&db.pool)
+    .await
+    .unwrap();
+
+    assert!(result.is_some(), "deaths should be a hypertable");
+
+    // Check block_history hypertable (auto-pruned)
+    let result: Option<(String,)> = sqlx::query_as(
+        "SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = 'block_history'"
+    )
+    .fetch_optional(&db.pool)
+    .await
+    .unwrap();
+
+    assert!(result.is_some(), "block_history should be a hypertable");
 
     // Verify scans is a regular table (not a hypertable)
+    // Reason: Low volume, needs unique constraint on scan_id
     let result: Option<(String,)> = sqlx::query_as(
         "SELECT hypertable_name FROM timescaledb_information.hypertables WHERE hypertable_name = 'scans'"
     )

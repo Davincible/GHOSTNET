@@ -246,19 +246,34 @@ impl TokenAmount {
     }
 
     /// Convert to `sqlx::types::BigDecimal` for database storage.
+    ///
+    /// Stores value as wei (18 decimal places) since DB uses NUMERIC(78, 0).
+    /// This avoids precision loss from storing decimal values in integer columns.
     #[must_use]
     pub fn to_bigdecimal(&self) -> sqlx::types::BigDecimal {
-        // SQLx BigDecimal and bigdecimal::BigDecimal are compatible
-        // via string conversion (they may be different versions)
-        self.0.to_string().parse().unwrap_or_default()
+        // Scale by 10^18 to convert human units to wei
+        // This ensures we store integers in the NUMERIC(78, 0) columns
+        let wei = &self.0 * BigDecimal::from(10_u64.pow(18));
+        // Truncate any remaining decimal places (should be none after scaling)
+        let wei_str = wei
+            .to_string()
+            .split('.')
+            .next()
+            .unwrap_or("0")
+            .to_string();
+        wei_str.parse().unwrap_or_default()
     }
 
     /// Create from `sqlx::types::BigDecimal`.
+    ///
+    /// Reads wei value (stored as NUMERIC(78, 0)) and converts to human units.
     #[must_use]
     pub fn from_bigdecimal(value: &sqlx::types::BigDecimal) -> Self {
-        // Parse via string to handle version compatibility
-        let s = value.to_string();
-        Self::parse(&s).unwrap_or_else(|_| Self::zero())
+        // Value from DB is in wei, divide by 10^18 to get human units
+        let value_str = value.to_string();
+        let wei = BigDecimal::from_str(&value_str).unwrap_or_default();
+        let human = wei / BigDecimal::from(10_u64.pow(18));
+        Self(human)
     }
 }
 
