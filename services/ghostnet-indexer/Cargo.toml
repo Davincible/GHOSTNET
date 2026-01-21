@@ -144,6 +144,8 @@ testcontainers-modules = { version = "0.11", features = ["postgres"] }
 criterion = { version = "0.5", features = ["async_tokio"] }
 proptest = "1"
 rstest = "0.24"
+# TLS crypto provider for WebSocket connections in tests
+rustls = { version = "0.23", features = ["ring"] }
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FEATURES
