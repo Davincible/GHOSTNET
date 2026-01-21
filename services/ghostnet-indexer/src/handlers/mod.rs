@@ -37,8 +37,10 @@
 //! }
 //! ```
 
+mod position_handler;
 mod traits;
 
+pub use position_handler::PositionHandler;
 pub use traits::{
     DeathPort, EmissionsPort, FeePort, MarketPort, PositionPort, ScanPort, TokenPort,
 };

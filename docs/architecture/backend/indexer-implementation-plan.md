@@ -257,11 +257,11 @@ services/ghostnet-indexer/
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 3.1 | Create `src/ports/` module | [x] | Split into clock, cache, store, streaming |
-| 3.2 | Implement `src/indexer/block_processor.rs` | [ ] | HTTP polling only (WS later) |
+| 3.2 | Implement `src/indexer/block_processor.rs` | [x] | HTTP polling only (WS later) |
 | 3.3 | Implement `src/indexer/event_router.rs` | [x] | Route to handlers |
 | 3.4 | Create `src/handlers/mod.rs` | [x] | Module structure |
 | 3.5 | Create `src/handlers/traits.rs` | [x] | Handler port traits (EventHandler) |
-| 3.6 | Implement `src/handlers/position_handler.rs` | [ ] | JackedIn, StakeAdded, Extracted |
+| 3.6 | Implement `src/handlers/position_handler.rs` | [x] | JackedIn, StakeAdded, Extracted, BoostApplied, PositionCulled |
 | 3.7 | Create `src/store/mod.rs` | [ ] | Store module (adapters) |
 | 3.8 | Implement `src/store/postgres.rs` | [ ] | SQLx implementation |
 | 3.9 | Create `migrations/00001_enable_timescaledb.sql` | [ ] | |
@@ -278,11 +278,11 @@ services/ghostnet-indexer/
 - [x] `src/ports/cache.rs` (Cache trait + MockCache)
 - [x] `src/ports/store.rs` (Store traits for all entities)
 - [x] `src/ports/streaming.rs` (EventPublisher trait + MockEventPublisher)
-- [ ] `src/indexer/block_processor.rs`
+- [x] `src/indexer/block_processor.rs`
 - [x] `src/indexer/event_router.rs`
 - [x] `src/handlers/mod.rs`
 - [x] `src/handlers/traits.rs`
-- [ ] `src/handlers/position_handler.rs`
+- [x] `src/handlers/position_handler.rs`
 - [ ] `src/store/mod.rs` (adapters)
 - [ ] `src/store/postgres.rs`
 - [ ] `migrations/00001_enable_timescaledb.sql`

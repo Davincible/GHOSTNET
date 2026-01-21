@@ -82,6 +82,8 @@ pub use streaming::EventPublisher;
 
 // Re-export test utilities for tests and downstream crates using test-utils feature
 #[cfg(any(test, feature = "test-utils"))]
+pub use cache::mocks::MockCache;
+#[cfg(any(test, feature = "test-utils"))]
 pub use clock::FakeClock;
 
 #[cfg(test)]
