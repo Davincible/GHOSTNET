@@ -48,7 +48,7 @@ const megaethMainnet = {
 // TESTNET - Public, permissionless
 const megaethTestnet = {
   chainId: 6343,
-  rpcUrl: "https://timothy.megaeth.com/rpc",
+  rpcUrl: "https://carrot.megaeth.com/rpc",
   blockExplorer: "https://megaeth-testnet-v2.blockscout.com/",
   nativeCurrency: {
     name: "Ether",
@@ -92,7 +92,7 @@ solc_version = "0.8.24"
 
 [rpc_endpoints]
 megaeth = "https://mainnet.megaeth.com/rpc"
-megaeth_testnet = "https://timothy.megaeth.com/rpc"
+megaeth_testnet = "https://carrot.megaeth.com/rpc"
 ```
 
 ```bash
@@ -664,7 +664,7 @@ MegaETH supports EIP-7702 natively.
 | Parameter | Testnet | Mainnet (Frontier) |
 |-----------|---------|-------------------|
 | Chain ID | 6343 | 4326 |
-| RPC | https://timothy.megaeth.com/rpc | https://mainnet.megaeth.com/rpc |
+| RPC | https://carrot.megaeth.com/rpc | https://mainnet.megaeth.com/rpc |
 | Explorer | https://megaeth-testnet-v2.blockscout.com/ | https://megaeth.blockscout.com/ |
 | Explorer (alt) | — | https://mega.etherscan.com |
 | Block Time | Mini: 10ms, EVM: 1s | Mini: 10ms, EVM: 1s |
@@ -703,7 +703,8 @@ MegaETH supports EIP-7702 natively.
 | Network | Provider | URL |
 |---------|----------|-----|
 | Mainnet | MegaETH | https://mainnet.megaeth.com/rpc |
-| Testnet | MegaETH | https://timothy.megaeth.com/rpc |
+| Testnet | MegaETH | https://carrot.megaeth.com/rpc |
+| Testnet | Thirdweb | https://6343.rpc.thirdweb.com |
 | Testnet | Alchemy | https://www.alchemy.com/rpc/megaeth-testnet |
 | Testnet | ChainList | https://chainlist.org/chain/6343 |
 
