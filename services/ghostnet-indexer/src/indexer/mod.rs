@@ -59,9 +59,13 @@
 //! ```
 
 mod block_processor;
+mod checkpoint;
 mod event_router;
 mod realtime_processor;
+mod reorg_handler;
 
 pub use block_processor::BlockProcessor;
+pub use checkpoint::{CheckpointManager, CheckpointState, RecoveryMode};
 pub use event_router::EventRouter;
 pub use realtime_processor::RealtimeProcessor;
+pub use reorg_handler::{ReorgCheckResult, ReorgHandler, ReorgStats};

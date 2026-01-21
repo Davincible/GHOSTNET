@@ -86,6 +86,15 @@ pub enum DomainError {
     /// Invalid amount (negative or malformed).
     #[error("invalid amount: {0}")]
     InvalidAmount(String),
+
+    /// Chain reorganization too deep.
+    #[error("reorg too deep: depth {depth} exceeds maximum {max}")]
+    ReorgTooDeep {
+        /// Detected reorg depth.
+        depth: u64,
+        /// Maximum allowed depth.
+        max: u64,
+    },
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -239,6 +248,16 @@ impl IntoResponse for ApiError {
             Self::App(AppError::Domain(
                 DomainError::PositionAlreadyExists(_) | DomainError::RoundAlreadyResolved(_),
             )) => (StatusCode::CONFLICT, "CONFLICT", self.to_string()),
+
+            // Reorg errors indicate temporary unavailability
+            Self::App(AppError::Domain(DomainError::ReorgTooDeep { .. })) => {
+                tracing::error!(error = ?self, "Chain reorg too deep");
+                (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "REORG_IN_PROGRESS",
+                    "Chain reorganization in progress, please retry later".into(),
+                )
+            }
 
             Self::RateLimited { retry_after_secs } => {
                 return (
