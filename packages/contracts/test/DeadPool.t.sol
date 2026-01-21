@@ -431,7 +431,7 @@ contract DeadPoolTest is Test {
         // OVER pool = 100
         // Odds = 190 / 100 = 1.9x = 19000 bps
         uint16 odds = deadPool.getOverOdds(1);
-        assertEq(odds, 19000);
+        assertEq(odds, 19_000);
     }
 
     function test_GetUnderOdds() public {
@@ -447,7 +447,7 @@ contract DeadPoolTest is Test {
         // UNDER pool = 150
         // Odds = 190 / 150 = 1.267x = 12666 bps
         uint16 odds = deadPool.getUnderOdds(1);
-        assertEq(odds, 12666);
+        assertEq(odds, 12_666);
     }
 
     function test_CalculateWinnings_View() public {

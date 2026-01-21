@@ -112,7 +112,9 @@ contract DeployAll is Script {
         });
     }
 
-    function _deployAll(DeployConfig memory cfg) internal returns (DeployedAddresses memory d) {
+    function _deployAll(
+        DeployConfig memory cfg
+    ) internal returns (DeployedAddresses memory d) {
         // Phase 1: DataToken
         d.dataToken = _deployDataToken(cfg);
 
@@ -141,7 +143,9 @@ contract DeployAll is Script {
         _setTaxExclusions(d);
     }
 
-    function _deployDataToken(DeployConfig memory cfg) internal returns (address) {
+    function _deployDataToken(
+        DeployConfig memory cfg
+    ) internal returns (address) {
         console2.log("Phase 1: Deploying DataToken...");
 
         address[] memory recipients = new address[](5);
@@ -195,8 +199,7 @@ contract DeployAll is Script {
         console2.log("GhostCore impl:", address(implementation));
 
         bytes memory initData = abi.encodeCall(
-            GhostCore.initialize,
-            (dataToken, cfg.treasury, cfg.boostSigner, cfg.deployer)
+            GhostCore.initialize, (dataToken, cfg.treasury, cfg.boostSigner, cfg.deployer)
         );
 
         ERC1967Proxy proxyContract = new ERC1967Proxy(address(implementation), initData);
@@ -263,19 +266,17 @@ contract DeployAll is Script {
         console2.log("Phase 7: Deploying FeeRouter...");
 
         FeeRouter router = new FeeRouter(
-            dataToken,
-            cfg.weth,
-            cfg.swapRouter,
-            cfg.treasury,
-            cfg.tollAmount,
-            cfg.deployer
+            dataToken, cfg.weth, cfg.swapRouter, cfg.treasury, cfg.tollAmount, cfg.deployer
         );
         console2.log("FeeRouter deployed:", address(router));
 
         return address(router);
     }
 
-    function _configureRoles(DeployConfig memory, DeployedAddresses memory d) internal {
+    function _configureRoles(
+        DeployConfig memory,
+        DeployedAddresses memory d
+    ) internal {
         console2.log("Phase 8: Configuring roles...");
 
         GhostCore ghostCore = GhostCore(d.ghostCore);
@@ -294,7 +295,9 @@ contract DeployAll is Script {
         console2.log("Granted RESOLVER_ROLE to TraceScan");
     }
 
-    function _setTaxExclusions(DeployedAddresses memory d) internal {
+    function _setTaxExclusions(
+        DeployedAddresses memory d
+    ) internal {
         console2.log("Phase 9: Setting tax exclusions...");
 
         DataToken token = DataToken(d.dataToken);
@@ -308,7 +311,10 @@ contract DeployAll is Script {
         console2.log("Tax exclusions configured");
     }
 
-    function _logDeployment(DeployedAddresses memory d, DeployConfig memory cfg) internal pure {
+    function _logDeployment(
+        DeployedAddresses memory d,
+        DeployConfig memory cfg
+    ) internal pure {
         console2.log("");
         console2.log("=== DEPLOYMENT COMPLETE ===");
         console2.log("");

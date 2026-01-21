@@ -97,7 +97,11 @@ contract RewardsDistributor is Ownable2Step, ReentrancyGuard {
     /// @param _dataToken Address of the DATA token
     /// @param _ghostCore Address of the GhostCore contract
     /// @param _owner Address with admin rights
-    constructor(address _dataToken, address _ghostCore, address _owner) Ownable(_owner) {
+    constructor(
+        address _dataToken,
+        address _ghostCore,
+        address _owner
+    ) Ownable(_owner) {
         if (_dataToken == address(0)) revert InvalidAddress();
 
         dataToken = IERC20(_dataToken);
@@ -147,7 +151,8 @@ contract RewardsDistributor is Ownable2Step, ReentrancyGuard {
         if (block.timestamp <= lastDistributionTime) return 0;
 
         uint256 endTime = block.timestamp > emissionEnd ? emissionEnd : block.timestamp;
-        uint256 startTime = lastDistributionTime > emissionStart ? lastDistributionTime : emissionStart;
+        uint256 startTime =
+            lastDistributionTime > emissionStart ? lastDistributionTime : emissionStart;
 
         if (endTime <= startTime) return 0;
 
@@ -198,7 +203,9 @@ contract RewardsDistributor is Ownable2Step, ReentrancyGuard {
 
     /// @notice Update level weights
     /// @param newWeights Array of 5 weights in basis points [VAULT, MAINFRAME, SUBNET, DARKNET, BLACK_ICE]
-    function setLevelWeights(uint16[5] calldata newWeights) external onlyOwner {
+    function setLevelWeights(
+        uint16[5] calldata newWeights
+    ) external onlyOwner {
         uint256 sum;
         for (uint256 i = 0; i < 5; i++) {
             sum += newWeights[i];
@@ -211,7 +218,9 @@ contract RewardsDistributor is Ownable2Step, ReentrancyGuard {
 
     /// @notice Update GhostCore address
     /// @param newGhostCore New GhostCore contract address
-    function setGhostCore(address newGhostCore) external onlyOwner {
+    function setGhostCore(
+        address newGhostCore
+    ) external onlyOwner {
         if (newGhostCore == address(0)) revert InvalidAddress();
         ghostCore = IGhostCore(newGhostCore);
         emit GhostCoreUpdated(newGhostCore);
@@ -220,7 +229,10 @@ contract RewardsDistributor is Ownable2Step, ReentrancyGuard {
     /// @notice Emergency withdraw (in case of migration)
     /// @param amount Amount to withdraw
     /// @param recipient Recipient address
-    function emergencyWithdraw(uint256 amount, address recipient) external onlyOwner {
+    function emergencyWithdraw(
+        uint256 amount,
+        address recipient
+    ) external onlyOwner {
         if (recipient == address(0)) revert InvalidAddress();
         dataToken.safeTransfer(recipient, amount);
     }

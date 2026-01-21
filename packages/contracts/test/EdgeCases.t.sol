@@ -42,7 +42,8 @@ contract EdgeCasesTest is Test {
 
         // Deploy TraceScan
         TraceScan traceScanImpl = new TraceScan();
-        bytes memory traceScanInit = abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
+        bytes memory traceScanInit =
+            abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
         traceScan = TraceScan(address(new ERC1967Proxy(address(traceScanImpl), traceScanInit)));
 
         // Setup permissions
@@ -216,7 +217,7 @@ contract EdgeCasesTest is Test {
         // First user should receive partial return (20% of their stake)
         // cullingPenaltyBps = 8000 (80% loss), so returnAmount = 20% of minStake
         uint256 firstUserBalanceAfter = token.balanceOf(firstUser);
-        uint256 expectedReturn = (minStake * (10000 - config.cullingPenaltyBps)) / 10000;
+        uint256 expectedReturn = (minStake * (10_000 - config.cullingPenaltyBps)) / 10_000;
         assertEq(
             firstUserBalanceAfter,
             firstUserBalanceBefore + expectedReturn,
@@ -585,7 +586,10 @@ contract EdgeCasesTest is Test {
     // HELPER FUNCTIONS
     // ═══════════════════════════════════════════════════════════════════════════════
 
-    function _fundAndApprove(address user, uint256 amount) internal {
+    function _fundAndApprove(
+        address user,
+        uint256 amount
+    ) internal {
         token.transfer(user, amount);
         vm.prank(user);
         token.approve(address(ghostCore), type(uint256).max);

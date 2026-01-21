@@ -99,9 +99,7 @@ interface IGhostCore {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Emitted when a user enters a position
-    event JackedIn(
-        address indexed user, uint256 amount, Level indexed level, uint256 newTotal
-    );
+    event JackedIn(address indexed user, uint256 amount, Level indexed level, uint256 newTotal);
 
     /// @notice Emitted when a user adds to existing position
     event StakeAdded(address indexed user, uint256 amount, uint256 newTotal);
@@ -139,7 +137,10 @@ interface IGhostCore {
 
     /// @notice Emitted when a position is culled
     event PositionCulled(
-        address indexed victim, uint256 penaltyAmount, uint256 returnedAmount, address indexed newEntrant
+        address indexed victim,
+        uint256 penaltyAmount,
+        uint256 returnedAmount,
+        address indexed newEntrant
     );
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -149,11 +150,16 @@ interface IGhostCore {
     /// @notice Enter a new position or add to existing position at same level
     /// @param amount Amount of DATA to stake
     /// @param level Risk level to enter (ignored if position exists)
-    function jackIn(uint256 amount, Level level) external;
+    function jackIn(
+        uint256 amount,
+        Level level
+    ) external;
 
     /// @notice Add stake to existing position
     /// @param amount Amount of DATA to add
-    function addStake(uint256 amount) external;
+    function addStake(
+        uint256 amount
+    ) external;
 
     /// @notice Exit position and claim rewards
     /// @return amount Principal returned
@@ -173,20 +179,26 @@ interface IGhostCore {
     /// @param level The level being scanned
     /// @param deadUsers Array of users who died in the scan
     /// @return totalDead Total dead capital accumulated
-    function processDeaths(Level level, address[] calldata deadUsers)
-        external
-        returns (uint256 totalDead);
+    function processDeaths(
+        Level level,
+        address[] calldata deadUsers
+    ) external returns (uint256 totalDead);
 
     /// @notice Distribute cascade rewards after scan finalization
     /// @dev Only callable by SCANNER_ROLE
     /// @param level Source level of deaths
     /// @param totalDead Total dead capital to distribute
-    function distributeCascade(Level level, uint256 totalDead) external;
+    function distributeCascade(
+        Level level,
+        uint256 totalDead
+    ) external;
 
     /// @notice Increment ghost streak for survivors
     /// @dev Only callable by SCANNER_ROLE
     /// @param level The level that was scanned
-    function incrementGhostStreak(Level level) external;
+    function incrementGhostStreak(
+        Level level
+    ) external;
 
     // ══════════════════════════════════════════════════════════════════════════════
     // DISTRIBUTOR FUNCTIONS (Called by RewardsDistributor)
@@ -196,7 +208,10 @@ interface IGhostCore {
     /// @dev Only callable by DISTRIBUTOR_ROLE
     /// @param level Level to receive emissions
     /// @param amount Amount of DATA emissions
-    function addEmissionRewards(Level level, uint256 amount) external;
+    function addEmissionRewards(
+        Level level,
+        uint256 amount
+    ) external;
 
     // ══════════════════════════════════════════════════════════════════════════════
     // BOOST FUNCTIONS
@@ -228,41 +243,56 @@ interface IGhostCore {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Get a user's position
-    function getPosition(address user) external view returns (Position memory);
+    function getPosition(
+        address user
+    ) external view returns (Position memory);
 
     /// @notice Get pending rewards for a user
-    function getPendingRewards(address user) external view returns (uint256);
+    function getPendingRewards(
+        address user
+    ) external view returns (uint256);
 
     /// @notice Get effective death rate for a user (after boosts)
-    function getEffectiveDeathRate(address user) external view returns (uint16);
+    function getEffectiveDeathRate(
+        address user
+    ) external view returns (uint16);
 
     /// @notice Get level configuration
-    function getLevelConfig(Level level) external view returns (LevelConfig memory);
+    function getLevelConfig(
+        Level level
+    ) external view returns (LevelConfig memory);
 
     /// @notice Get level runtime state
-    function getLevelState(Level level) external view returns (LevelState memory);
+    function getLevelState(
+        Level level
+    ) external view returns (LevelState memory);
 
     /// @notice Get system reset state
     function getSystemReset() external view returns (SystemReset memory);
 
     /// @notice Check if user is in lock period (cannot extract)
-    function isInLockPeriod(address user) external view returns (bool);
+    function isInLockPeriod(
+        address user
+    ) external view returns (bool);
 
     /// @notice Check if a user's position is alive
-    function isAlive(address user) external view returns (bool);
+    function isAlive(
+        address user
+    ) external view returns (bool);
 
     /// @notice Get total value locked across all levels
     function getTotalValueLocked() external view returns (uint256);
 
     /// @notice Get active boosts for a user
-    function getActiveBoosts(address user) external view returns (Boost[] memory);
+    function getActiveBoosts(
+        address user
+    ) external view returns (Boost[] memory);
 
     /// @notice Get culling risk for a user
     /// @return riskBps Probability of being culled if selection occurs
     /// @return isEligible Whether user is in bottom X%
     /// @return capacityPct Current level capacity percentage
-    function getCullingRisk(address user)
-        external
-        view
-        returns (uint16 riskBps, bool isEligible, uint16 capacityPct);
+    function getCullingRisk(
+        address user
+    ) external view returns (uint16 riskBps, bool isEligible, uint16 capacityPct);
 }

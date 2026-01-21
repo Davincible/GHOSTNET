@@ -60,9 +60,8 @@ contract IntegrationTest is Test {
 
         // Deploy GhostCore
         GhostCore ghostCoreImpl = new GhostCore();
-        bytes memory ghostCoreInit = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory ghostCoreInit =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
         ghostCore = GhostCore(address(new ERC1967Proxy(address(ghostCoreImpl), ghostCoreInit)));
 
         // Deploy TraceScan
@@ -246,7 +245,10 @@ contract IntegrationTest is Test {
         uint64 deadline = uint64(block.timestamp + 1 hours);
         vm.prank(owner);
         uint256 roundId = deadPool.createRound(
-            IDeadPool.RoundType.DEATH_COUNT, IGhostCore.Level.VAULT, 1, deadline // Over/under 1 death
+            IDeadPool.RoundType.DEATH_COUNT,
+            IGhostCore.Level.VAULT,
+            1,
+            deadline // Over/under 1 death
         );
 
         // Players place bets

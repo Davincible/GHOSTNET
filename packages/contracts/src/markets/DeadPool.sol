@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { UUPSUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { PausableUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -88,7 +92,10 @@ contract DeadPool is
     /// @notice Initialize the contract
     /// @param _dataToken Address of the DATA token
     /// @param _admin Address with DEFAULT_ADMIN_ROLE
-    function initialize(address _dataToken, address _admin) external initializer {
+    function initialize(
+        address _dataToken,
+        address _admin
+    ) external initializer {
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __Pausable_init();
@@ -138,7 +145,10 @@ contract DeadPool is
     /// @notice Resolve a round with the outcome
     /// @param roundId Round to resolve
     /// @param outcome True = OVER won, False = UNDER won
-    function resolveRound(uint256 roundId, bool outcome) external onlyRole(RESOLVER_ROLE) {
+    function resolveRound(
+        uint256 roundId,
+        bool outcome
+    ) external onlyRole(RESOLVER_ROLE) {
         Round storage round = _rounds[roundId];
 
         if (round.deadline == 0) revert RoundNotFound();
@@ -165,11 +175,11 @@ contract DeadPool is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDeadPool
-    function placeBet(uint256 roundId, bool isOver, uint256 amount)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function placeBet(
+        uint256 roundId,
+        bool isOver,
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         if (amount == 0) revert InvalidAmount();
 
         Round storage round = _rounds[roundId];
@@ -196,12 +206,9 @@ contract DeadPool is
     }
 
     /// @inheritdoc IDeadPool
-    function claimWinnings(uint256 roundId)
-        external
-        nonReentrant
-        whenNotPaused
-        returns (uint256 winnings)
-    {
+    function claimWinnings(
+        uint256 roundId
+    ) external nonReentrant whenNotPaused returns (uint256 winnings) {
         Round storage round = _rounds[roundId];
         if (!round.resolved) revert RoundNotResolved();
 
@@ -225,17 +232,25 @@ contract DeadPool is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDeadPool
-    function getRound(uint256 roundId) external view returns (Round memory) {
+    function getRound(
+        uint256 roundId
+    ) external view returns (Round memory) {
         return _rounds[roundId];
     }
 
     /// @inheritdoc IDeadPool
-    function getBet(uint256 roundId, address user) external view returns (Bet memory) {
+    function getBet(
+        uint256 roundId,
+        address user
+    ) external view returns (Bet memory) {
         return _bets[roundId][user];
     }
 
     /// @inheritdoc IDeadPool
-    function calculateWinnings(uint256 roundId, address user) external view returns (uint256) {
+    function calculateWinnings(
+        uint256 roundId,
+        address user
+    ) external view returns (uint256) {
         Round storage round = _rounds[roundId];
         Bet storage bet = _bets[roundId][user];
 
@@ -247,7 +262,9 @@ contract DeadPool is
     }
 
     /// @inheritdoc IDeadPool
-    function getOverOdds(uint256 roundId) external view returns (uint16) {
+    function getOverOdds(
+        uint256 roundId
+    ) external view returns (uint16) {
         Round storage round = _rounds[roundId];
         if (round.overPool == 0) return 0;
 
@@ -258,7 +275,9 @@ contract DeadPool is
     }
 
     /// @inheritdoc IDeadPool
-    function getUnderOdds(uint256 roundId) external view returns (uint16) {
+    function getUnderOdds(
+        uint256 roundId
+    ) external view returns (uint16) {
         Round storage round = _rounds[roundId];
         if (round.underPool == 0) return 0;
 
@@ -287,11 +306,10 @@ contract DeadPool is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @dev Calculate winnings for a bet
-    function _calculateWinnings(Round storage round, Bet storage bet)
-        internal
-        view
-        returns (uint256)
-    {
+    function _calculateWinnings(
+        Round storage round,
+        Bet storage bet
+    ) internal view returns (uint256) {
         uint256 totalPool = round.overPool + round.underPool;
         uint256 netPool = totalPool - (totalPool * RAKE_BPS) / BPS;
 
@@ -305,9 +323,7 @@ contract DeadPool is
     // UPGRADE AUTHORIZATION
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    { }
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) { }
 }

@@ -45,9 +45,8 @@ contract GhostCoreTest is Test {
         implementation = new GhostCore();
 
         // Deploy proxy
-        bytes memory initData = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory initData =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
 
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
         ghostCore = GhostCore(address(proxy));
@@ -346,7 +345,9 @@ contract GhostCoreTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_JackIn_ValidAmounts(uint256 amount) public {
+    function testFuzz_JackIn_ValidAmounts(
+        uint256 amount
+    ) public {
         // Bound to valid range (min stake for VAULT to alice's balance)
         amount = bound(amount, 10 * 1e18, ALICE_BALANCE);
 
@@ -656,7 +657,8 @@ contract GhostCoreTest is Test {
 
         // Sign with wrong private key
         (, uint256 wrongPk) = makeAddrAndKey("wrongSigner");
-        bytes memory signature = _signBoostWithKey(alice, boostType, valueBps, expiry, nonce, wrongPk);
+        bytes memory signature =
+            _signBoostWithKey(alice, boostType, valueBps, expiry, nonce, wrongPk);
 
         vm.prank(alice);
         vm.expectRevert(IGhostCore.InvalidSignature.selector);
@@ -696,14 +698,20 @@ contract GhostCoreTest is Test {
         IGhostCore.BoostType boostType = IGhostCore.BoostType.DEATH_REDUCTION;
 
         // Boost 1: expires in 1 hour
-        bytes memory sig1 = _signBoost(alice, boostType, 1000, uint64(block.timestamp + 1 hours), keccak256("n1"));
+        bytes memory sig1 =
+            _signBoost(alice, boostType, 1000, uint64(block.timestamp + 1 hours), keccak256("n1"));
         vm.prank(alice);
-        ghostCore.applyBoost(boostType, 1000, uint64(block.timestamp + 1 hours), keccak256("n1"), sig1);
+        ghostCore.applyBoost(
+            boostType, 1000, uint64(block.timestamp + 1 hours), keccak256("n1"), sig1
+        );
 
         // Boost 2: expires in 2 hours
-        bytes memory sig2 = _signBoost(alice, boostType, 2000, uint64(block.timestamp + 2 hours), keccak256("n2"));
+        bytes memory sig2 =
+            _signBoost(alice, boostType, 2000, uint64(block.timestamp + 2 hours), keccak256("n2"));
         vm.prank(alice);
-        ghostCore.applyBoost(boostType, 2000, uint64(block.timestamp + 2 hours), keccak256("n2"), sig2);
+        ghostCore.applyBoost(
+            boostType, 2000, uint64(block.timestamp + 2 hours), keccak256("n2"), sig2
+        );
 
         // Both should be active
         IGhostCore.Boost[] memory boosts = ghostCore.getActiveBoosts(alice);
@@ -806,7 +814,7 @@ contract GhostCoreTest is Test {
             baseDeathRateBps: 1000, // 10% instead of 5%
             scanInterval: 2 hours,
             minStake: 20 * 1e18,
-            maxPositions: 10000,
+            maxPositions: 10_000,
             cullingBottomPct: 6000,
             cullingPenaltyBps: 9000
         });
@@ -824,7 +832,7 @@ contract GhostCoreTest is Test {
             baseDeathRateBps: 1000,
             scanInterval: 2 hours,
             minStake: 20 * 1e18,
-            maxPositions: 10000,
+            maxPositions: 10_000,
             cullingBottomPct: 6000,
             cullingPenaltyBps: 9000
         });
@@ -895,10 +903,10 @@ contract GhostCoreTest is Test {
     }
 
     function test_EmergencyWithdraw_SkipsAliveCountForDeadPosition() public {
-        // Note: Dead positions cannot emergency withdraw because processDeaths 
+        // Note: Dead positions cannot emergency withdraw because processDeaths
         // already decremented totalStaked. Attempting to do so would cause underflow.
         // This is intentional - dead positions should not get their stake back.
-        
+
         vm.prank(alice);
         ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
 
@@ -975,7 +983,7 @@ contract GhostCoreTest is Test {
         ghostCore.incrementGhostStreak(IGhostCore.Level.VAULT);
 
         IGhostCore.LevelState memory stateAfter = ghostCore.getLevelState(IGhostCore.Level.VAULT);
-        
+
         // nextScanTime should be set to current timestamp + scanInterval
         // Since we warped 1 hour, new nextScanTime should be > old nextScanTime
         assertGt(stateAfter.nextScanTime, stateBefore.nextScanTime);

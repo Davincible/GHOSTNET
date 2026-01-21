@@ -88,27 +88,21 @@ contract UpgradeTest is Test {
         // Deploy GhostCore
         ghostCoreImpl = new GhostCore();
         bytes memory ghostCoreInit = abi.encodeCall(
-            GhostCore.initialize,
-            (address(dataToken), treasury, boostSigner, admin)
+            GhostCore.initialize, (address(dataToken), treasury, boostSigner, admin)
         );
         ERC1967Proxy ghostCoreProxy = new ERC1967Proxy(address(ghostCoreImpl), ghostCoreInit);
         ghostCore = GhostCore(address(ghostCoreProxy));
 
         // Deploy TraceScan
         traceScanImpl = new TraceScan();
-        bytes memory traceScanInit = abi.encodeCall(
-            TraceScan.initialize,
-            (address(ghostCore), admin)
-        );
+        bytes memory traceScanInit =
+            abi.encodeCall(TraceScan.initialize, (address(ghostCore), admin));
         ERC1967Proxy traceScanProxy = new ERC1967Proxy(address(traceScanImpl), traceScanInit);
         traceScan = TraceScan(address(traceScanProxy));
 
         // Deploy DeadPool
         deadPoolImpl = new DeadPool();
-        bytes memory deadPoolInit = abi.encodeCall(
-            DeadPool.initialize,
-            (address(dataToken), admin)
-        );
+        bytes memory deadPoolInit = abi.encodeCall(DeadPool.initialize, (address(dataToken), admin));
         ERC1967Proxy deadPoolProxy = new ERC1967Proxy(address(deadPoolImpl), deadPoolInit);
         deadPool = DeadPool(address(deadPoolProxy));
 
@@ -429,7 +423,10 @@ contract UpgradeTest is Test {
         traceScan.upgradeToAndCall(address(v2Impl), "");
 
         // Core functions should work
-        assertTrue(traceScan.canExecuteScan(IGhostCore.Level.VAULT) || !traceScan.canExecuteScan(IGhostCore.Level.VAULT));
+        assertTrue(
+            traceScan.canExecuteScan(IGhostCore.Level.VAULT)
+                || !traceScan.canExecuteScan(IGhostCore.Level.VAULT)
+        );
 
         // Checker should work
         (bool canExec,) = traceScan.checker();

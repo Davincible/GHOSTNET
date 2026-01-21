@@ -67,7 +67,9 @@ interface IDataToken is IERC20 {
 
     /// @notice Returns whether an address is excluded from transfer tax
     /// @param account The address to check
-    function isExcludedFromTax(address account) external view returns (bool);
+    function isExcludedFromTax(
+        address account
+    ) external view returns (bool);
 
     /// @notice Returns the total amount of tokens burned
     function totalBurned() external view returns (uint256);
@@ -80,7 +82,10 @@ interface IDataToken is IERC20 {
     /// @dev Only callable by owner. Game contracts should be excluded.
     /// @param account The address to update
     /// @param excluded Whether to exclude from tax
-    function setTaxExclusion(address account, bool excluded) external;
+    function setTaxExclusion(
+        address account,
+        bool excluded
+    ) external;
 
     // ══════════════════════════════════════════════════════════════════════════════
     // PUBLIC FUNCTIONS
@@ -88,10 +93,15 @@ interface IDataToken is IERC20 {
 
     /// @notice Burns tokens from the caller's balance
     /// @param amount The amount of tokens to burn
-    function burn(uint256 amount) external;
+    function burn(
+        uint256 amount
+    ) external;
 
     /// @notice Burns tokens from an address with allowance
     /// @param from The address to burn from
     /// @param amount The amount of tokens to burn
-    function burnFrom(address from, uint256 amount) external;
+    function burnFrom(
+        address from,
+        uint256 amount
+    ) external;
 }

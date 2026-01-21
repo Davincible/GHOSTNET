@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { UUPSUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { PausableUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {
+    ReentrancyGuardUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -53,8 +57,9 @@ contract GhostCore is
     // EIP-712 DOMAIN
     // ══════════════════════════════════════════════════════════════════════════════
 
-    bytes32 public constant BOOST_TYPEHASH =
-        keccak256("Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)");
+    bytes32 public constant BOOST_TYPEHASH = keccak256(
+        "Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)"
+    );
 
     bytes32 private _domainSeparator;
 
@@ -121,7 +126,9 @@ contract GhostCore is
     }
 
     /// @dev Initialize default level configurations
-    function _initializeLevels(GhostCoreStorageLayout storage $) private {
+    function _initializeLevels(
+        GhostCoreStorageLayout storage $
+    ) private {
         // VAULT - Safest level
         $.levelConfigs[Level.VAULT] = LevelConfig({
             baseDeathRateBps: 500, // 5%
@@ -186,7 +193,10 @@ contract GhostCore is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IGhostCore
-    function jackIn(uint256 amount, Level level) external nonReentrant whenNotPaused {
+    function jackIn(
+        uint256 amount,
+        Level level
+    ) external nonReentrant whenNotPaused {
         if (level == Level.NONE || level > Level.BLACK_ICE) revert InvalidLevel();
         if (amount == 0) revert InvalidAmount();
 
@@ -237,7 +247,9 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function addStake(uint256 amount) external nonReentrant whenNotPaused {
+    function addStake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         if (amount == 0) revert InvalidAmount();
 
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
@@ -270,7 +282,12 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function extract() external nonReentrant whenNotPaused returns (uint256 amount, uint256 rewards) {
+    function extract()
+        external
+        nonReentrant
+        whenNotPaused
+        returns (uint256 amount, uint256 rewards)
+    {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         Position storage pos = $.positions[msg.sender];
 
@@ -329,11 +346,10 @@ contract GhostCore is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IGhostCore
-    function processDeaths(Level level, address[] calldata deadUsers)
-        external
-        onlyRole(SCANNER_ROLE)
-        returns (uint256 totalDead)
-    {
+    function processDeaths(
+        Level level,
+        address[] calldata deadUsers
+    ) external onlyRole(SCANNER_ROLE) returns (uint256 totalDead) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         LevelState storage state = $.levelStates[level];
 
@@ -357,7 +373,10 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function distributeCascade(Level level, uint256 totalDead) external onlyRole(SCANNER_ROLE) {
+    function distributeCascade(
+        Level level,
+        uint256 totalDead
+    ) external onlyRole(SCANNER_ROLE) {
         if (totalDead == 0) return;
 
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
@@ -371,8 +390,8 @@ contract GhostCore is
         // Distribute to same-level survivors
         LevelState storage sourceState = $.levelStates[level];
         if (sourceState.totalStaked > 0) {
-            sourceState.accRewardsPerShare +=
-                (sameLevelAmount * REWARD_PRECISION) / sourceState.totalStaked;
+            sourceState.accRewardsPerShare += (sameLevelAmount * REWARD_PRECISION)
+                / sourceState.totalStaked;
         } else {
             // No same-level survivors - add to upstream
             upstreamAmount += sameLevelAmount;
@@ -392,7 +411,9 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function incrementGhostStreak(Level level) external onlyRole(SCANNER_ROLE) {
+    function incrementGhostStreak(
+        Level level
+    ) external onlyRole(SCANNER_ROLE) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         address[] storage users = $.levelPositions[level];
 
@@ -417,7 +438,10 @@ contract GhostCore is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IGhostCore
-    function addEmissionRewards(Level level, uint256 amount) external onlyRole(DISTRIBUTOR_ROLE) {
+    function addEmissionRewards(
+        Level level,
+        uint256 amount
+    ) external onlyRole(DISTRIBUTOR_ROLE) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         LevelState storage state = $.levelStates[level];
 
@@ -458,7 +482,9 @@ contract GhostCore is
         $.usedNonces[nonce] = true;
 
         // Add boost
-        $.userBoosts[msg.sender].push(Boost({ boostType: boostType, valueBps: valueBps, expiry: expiry }));
+        $.userBoosts[msg.sender].push(
+            Boost({ boostType: boostType, valueBps: valueBps, expiry: expiry })
+        );
 
         emit BoostApplied(msg.sender, boostType, valueBps, expiry);
     }
@@ -517,27 +543,37 @@ contract GhostCore is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IGhostCore
-    function getPosition(address user) external view returns (Position memory) {
+    function getPosition(
+        address user
+    ) external view returns (Position memory) {
         return _getGhostCoreStorage().positions[user];
     }
 
     /// @inheritdoc IGhostCore
-    function getPendingRewards(address user) external view returns (uint256) {
+    function getPendingRewards(
+        address user
+    ) external view returns (uint256) {
         return _calculatePendingRewards(_getGhostCoreStorage(), user);
     }
 
     /// @inheritdoc IGhostCore
-    function getEffectiveDeathRate(address user) external view returns (uint16) {
+    function getEffectiveDeathRate(
+        address user
+    ) external view returns (uint16) {
         return _getEffectiveDeathRate(_getGhostCoreStorage(), user);
     }
 
     /// @inheritdoc IGhostCore
-    function getLevelConfig(Level level) external view returns (LevelConfig memory) {
+    function getLevelConfig(
+        Level level
+    ) external view returns (LevelConfig memory) {
         return _getGhostCoreStorage().levelConfigs[level];
     }
 
     /// @inheritdoc IGhostCore
-    function getLevelState(Level level) external view returns (LevelState memory) {
+    function getLevelState(
+        Level level
+    ) external view returns (LevelState memory) {
         return _getGhostCoreStorage().levelStates[level];
     }
 
@@ -547,12 +583,16 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function isInLockPeriod(address user) external view returns (bool) {
+    function isInLockPeriod(
+        address user
+    ) external view returns (bool) {
         return _isInLockPeriod(_getGhostCoreStorage(), user);
     }
 
     /// @inheritdoc IGhostCore
-    function isAlive(address user) external view returns (bool) {
+    function isAlive(
+        address user
+    ) external view returns (bool) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         return $.positions[user].level != Level.NONE && $.positions[user].alive;
     }
@@ -566,7 +606,9 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function getActiveBoosts(address user) external view returns (Boost[] memory) {
+    function getActiveBoosts(
+        address user
+    ) external view returns (Boost[] memory) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         Boost[] storage boosts = $.userBoosts[user];
 
@@ -589,11 +631,9 @@ contract GhostCore is
     }
 
     /// @inheritdoc IGhostCore
-    function getCullingRisk(address user)
-        external
-        view
-        returns (uint16 riskBps, bool isEligible, uint16 capacityPct)
-    {
+    function getCullingRisk(
+        address user
+    ) external view returns (uint16 riskBps, bool isEligible, uint16 capacityPct) {
         GhostCoreStorageLayout storage $ = _getGhostCoreStorage();
         Position storage pos = $.positions[user];
 
@@ -631,15 +671,17 @@ contract GhostCore is
     }
 
     /// @notice Update level configuration
-    function updateLevelConfig(Level level, LevelConfig calldata config)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
+    function updateLevelConfig(
+        Level level,
+        LevelConfig calldata config
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _getGhostCoreStorage().levelConfigs[level] = config;
     }
 
     /// @notice Update boost signer address
-    function setBoostSigner(address newSigner) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setBoostSigner(
+        address newSigner
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _getGhostCoreStorage().boostSigner = newSigner;
     }
 
@@ -672,11 +714,10 @@ contract GhostCore is
     // INTERNAL FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function _calculatePendingRewards(GhostCoreStorageLayout storage $, address user)
-        internal
-        view
-        returns (uint256)
-    {
+    function _calculatePendingRewards(
+        GhostCoreStorageLayout storage $,
+        address user
+    ) internal view returns (uint256) {
         Position storage pos = $.positions[user];
         if (pos.level == Level.NONE || !pos.alive) return 0;
 
@@ -687,11 +728,10 @@ contract GhostCore is
         return accRewards - pos.rewardDebt;
     }
 
-    function _getEffectiveDeathRate(GhostCoreStorageLayout storage $, address user)
-        internal
-        view
-        returns (uint16)
-    {
+    function _getEffectiveDeathRate(
+        GhostCoreStorageLayout storage $,
+        address user
+    ) internal view returns (uint16) {
         Position storage pos = $.positions[user];
         if (pos.level == Level.NONE) return 0;
 
@@ -715,11 +755,10 @@ contract GhostCore is
         return baseRate - uint16(totalReduction);
     }
 
-    function _isInLockPeriod(GhostCoreStorageLayout storage $, address user)
-        internal
-        view
-        returns (bool)
-    {
+    function _isInLockPeriod(
+        GhostCoreStorageLayout storage $,
+        address user
+    ) internal view returns (bool) {
         Position storage pos = $.positions[user];
         if (pos.level == Level.NONE) return false;
 
@@ -760,7 +799,10 @@ contract GhostCore is
         }
     }
 
-    function _extendResetTimer(GhostCoreStorageLayout storage $, uint256 amount) internal {
+    function _extendResetTimer(
+        GhostCoreStorageLayout storage $,
+        uint256 amount
+    ) internal {
         SystemReset storage reset = $.systemReset;
 
         uint256 extension;
@@ -796,7 +838,10 @@ contract GhostCore is
         reset.lastDepositTime = uint64(block.timestamp);
     }
 
-    function _settleResetPenalty(GhostCoreStorageLayout storage $, address user) internal {
+    function _settleResetPenalty(
+        GhostCoreStorageLayout storage $,
+        address user
+    ) internal {
         uint256 lastEpoch = $.lastSettledEpoch[user];
         uint256 currentEpoch = $.systemReset.epoch;
 
@@ -863,8 +908,8 @@ contract GhostCore is
 
             // Distribute remaining to same level
             if ($.levelStates[level].totalStaked > 0) {
-                $.levelStates[level].accRewardsPerShare +=
-                    (remaining * REWARD_PRECISION) / $.levelStates[level].totalStaked;
+                $.levelStates[level].accRewardsPerShare += (remaining * REWARD_PRECISION)
+                    / $.levelStates[level].totalStaked;
             }
         }
 
@@ -894,9 +939,7 @@ contract GhostCore is
     // UPGRADE AUTHORIZATION
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    { }
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) { }
 }

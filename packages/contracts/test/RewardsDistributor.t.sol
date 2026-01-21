@@ -38,9 +38,8 @@ contract RewardsDistributorTest is Test {
 
         // Deploy GhostCore
         GhostCore ghostCoreImpl = new GhostCore();
-        bytes memory initData = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory initData =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
         ERC1967Proxy proxy = new ERC1967Proxy(address(ghostCoreImpl), initData);
         ghostCore = GhostCore(address(proxy));
 
@@ -205,8 +204,7 @@ contract RewardsDistributorTest is Test {
         ghostCore.jackIn(100 * 1e18, IGhostCore.Level.VAULT);
 
         // Get initial accRewardsPerShare
-        IGhostCore.LevelState memory vaultBefore =
-            ghostCore.getLevelState(IGhostCore.Level.VAULT);
+        IGhostCore.LevelState memory vaultBefore = ghostCore.getLevelState(IGhostCore.Level.VAULT);
 
         vm.warp(block.timestamp + 1 days);
         distributor.distribute();
@@ -318,7 +316,9 @@ contract RewardsDistributorTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_PendingEmissions_LinearVesting(uint256 daysElapsed) public {
+    function testFuzz_PendingEmissions_LinearVesting(
+        uint256 daysElapsed
+    ) public {
         daysElapsed = bound(daysElapsed, 1, 730);
 
         vm.warp(block.timestamp + daysElapsed * 1 days);

@@ -139,7 +139,9 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
     /// @notice Collect toll from a user
     /// @dev Called by authorized game contracts
     /// @param reason Identifier for the toll reason (for analytics)
-    function collectToll(bytes32 reason) external payable {
+    function collectToll(
+        bytes32 reason
+    ) external payable {
         if (!authorizedCollectors[msg.sender]) revert Unauthorized();
         if (msg.value < tollAmount) revert TollRequired();
 
@@ -159,7 +161,9 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
     /// @notice Execute buyback with accumulated ETH
     /// @dev Can be called by anyone (keeper or user)
     /// @param minDataOut Minimum DATA to receive (slippage protection)
-    function executeBuyback(uint256 minDataOut) external nonReentrant {
+    function executeBuyback(
+        uint256 minDataOut
+    ) external nonReentrant {
         uint256 ethBalance = address(this).balance;
         if (ethBalance == 0) revert InsufficientBalance();
 
@@ -197,10 +201,10 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
     /// @notice Execute buyback with custom swap data (for aggregator swaps)
     /// @param swapData Encoded swap calldata for the router
     /// @param minDataOut Minimum DATA to receive
-    function executeBuybackWithData(bytes calldata swapData, uint256 minDataOut)
-        external
-        nonReentrant
-    {
+    function executeBuybackWithData(
+        bytes calldata swapData,
+        uint256 minDataOut
+    ) external nonReentrant {
         uint256 ethBalance = address(this).balance;
         if (ethBalance == 0) revert InsufficientBalance();
         if (swapRouter == address(0)) revert InvalidAddress();
@@ -263,32 +267,43 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Set authorized toll collector
-    function setCollector(address collector, bool authorized) external onlyOwner {
+    function setCollector(
+        address collector,
+        bool authorized
+    ) external onlyOwner {
         if (collector == address(0)) revert InvalidAddress();
         authorizedCollectors[collector] = authorized;
     }
 
     /// @notice Update swap router
-    function setSwapRouter(address newRouter) external onlyOwner {
+    function setSwapRouter(
+        address newRouter
+    ) external onlyOwner {
         swapRouter = newRouter;
         emit SwapRouterUpdated(newRouter);
     }
 
     /// @notice Update toll amount
-    function setTollAmount(uint256 newAmount) external onlyOwner {
+    function setTollAmount(
+        uint256 newAmount
+    ) external onlyOwner {
         tollAmount = newAmount;
         emit TollAmountUpdated(newAmount);
     }
 
     /// @notice Update operations wallet
-    function setOperationsWallet(address newWallet) external onlyOwner {
+    function setOperationsWallet(
+        address newWallet
+    ) external onlyOwner {
         if (newWallet == address(0)) revert InvalidAddress();
         operationsWallet = newWallet;
         emit OperationsWalletUpdated(newWallet);
     }
 
     /// @notice Emergency withdraw ETH (in case of migration)
-    function emergencyWithdrawETH(address recipient) external onlyOwner {
+    function emergencyWithdrawETH(
+        address recipient
+    ) external onlyOwner {
         if (recipient == address(0)) revert InvalidAddress();
         uint256 balance = address(this).balance;
         (bool success,) = recipient.call{ value: balance }("");
@@ -296,7 +311,10 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
     }
 
     /// @notice Emergency withdraw tokens (in case of migration)
-    function emergencyWithdrawTokens(address token, address recipient) external onlyOwner {
+    function emergencyWithdrawTokens(
+        address token,
+        address recipient
+    ) external onlyOwner {
         if (recipient == address(0)) revert InvalidAddress();
         uint256 balance = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransfer(recipient, balance);
@@ -308,11 +326,10 @@ contract FeeRouter is Ownable2Step, ReentrancyGuard {
 
     /// @dev Execute swap via configured router
     /// @notice Override this for different DEX integrations
-    function _executeSwap(uint256 ethAmount, uint256 minDataOut)
-        internal
-        virtual
-        returns (uint256 dataReceived)
-    {
+    function _executeSwap(
+        uint256 ethAmount,
+        uint256 minDataOut
+    ) internal virtual returns (uint256 dataReceived) {
         // Default implementation for Uniswap V2/V3 style routers
         // This should be overridden for specific DEX integrations
 

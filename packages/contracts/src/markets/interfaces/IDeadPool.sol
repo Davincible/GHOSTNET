@@ -72,14 +72,10 @@ interface IDeadPool {
     );
 
     /// @notice Emitted when a bet is placed
-    event BetPlaced(
-        uint256 indexed roundId, address indexed user, bool isOver, uint256 amount
-    );
+    event BetPlaced(uint256 indexed roundId, address indexed user, bool isOver, uint256 amount);
 
     /// @notice Emitted when a round is resolved
-    event RoundResolved(
-        uint256 indexed roundId, bool outcome, uint256 totalPot, uint256 burned
-    );
+    event RoundResolved(uint256 indexed roundId, bool outcome, uint256 totalPot, uint256 burned);
 
     /// @notice Emitted when winnings are claimed
     event WinningsClaimed(uint256 indexed roundId, address indexed user, uint256 amount);
@@ -92,31 +88,49 @@ interface IDeadPool {
     /// @param roundId The round to bet on
     /// @param isOver True for OVER, false for UNDER
     /// @param amount Amount of DATA to wager
-    function placeBet(uint256 roundId, bool isOver, uint256 amount) external;
+    function placeBet(
+        uint256 roundId,
+        bool isOver,
+        uint256 amount
+    ) external;
 
     /// @notice Claim winnings from a resolved round
     /// @param roundId The round to claim from
     /// @return winnings Amount claimed
-    function claimWinnings(uint256 roundId) external returns (uint256 winnings);
+    function claimWinnings(
+        uint256 roundId
+    ) external returns (uint256 winnings);
 
     // ══════════════════════════════════════════════════════════════════════════════
     // VIEW FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Get round information
-    function getRound(uint256 roundId) external view returns (Round memory);
+    function getRound(
+        uint256 roundId
+    ) external view returns (Round memory);
 
     /// @notice Get user's bet on a round
-    function getBet(uint256 roundId, address user) external view returns (Bet memory);
+    function getBet(
+        uint256 roundId,
+        address user
+    ) external view returns (Bet memory);
 
     /// @notice Calculate potential winnings for a bet
-    function calculateWinnings(uint256 roundId, address user) external view returns (uint256);
+    function calculateWinnings(
+        uint256 roundId,
+        address user
+    ) external view returns (uint256);
 
     /// @notice Get current odds for OVER (in basis points)
-    function getOverOdds(uint256 roundId) external view returns (uint16);
+    function getOverOdds(
+        uint256 roundId
+    ) external view returns (uint16);
 
     /// @notice Get current odds for UNDER (in basis points)
-    function getUnderOdds(uint256 roundId) external view returns (uint16);
+    function getUnderOdds(
+        uint256 roundId
+    ) external view returns (uint16);
 
     /// @notice Get total number of rounds
     function roundCount() external view returns (uint256);

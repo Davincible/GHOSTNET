@@ -288,7 +288,9 @@ contract DataTokenTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_Transfer_TaxCalculation(uint256 amount) public {
+    function testFuzz_Transfer_TaxCalculation(
+        uint256 amount
+    ) public {
         // Bound amount to reasonable range
         amount = bound(amount, 1e18, INITIAL_ALICE);
 
@@ -328,8 +330,14 @@ contract DataTokenTest is Test {
         uint256 expectedReceived = 9; // 10 - 1 = 9
 
         assertEq(token.balanceOf(carol), expectedReceived, "Recipient gets 9 wei");
-        assertEq(token.balanceOf(treasury) - treasuryBefore, expectedTreasury, "Treasury gets 1 wei");
-        assertEq(token.balanceOf(token.DEAD_ADDRESS()) - deadBefore, expectedBurn, "Burn is 0 due to rounding");
+        assertEq(
+            token.balanceOf(treasury) - treasuryBefore, expectedTreasury, "Treasury gets 1 wei"
+        );
+        assertEq(
+            token.balanceOf(token.DEAD_ADDRESS()) - deadBefore,
+            expectedBurn,
+            "Burn is 0 due to rounding"
+        );
     }
 
     function test_Transfer_VerySmallAmount_NoTax() public {
@@ -340,7 +348,9 @@ contract DataTokenTest is Test {
         token.transfer(carol, transferAmount);
 
         // With 9 wei: tax = 9 * 1000 / 10000 = 0 (rounds down)
-        assertEq(token.balanceOf(carol), transferAmount, "Full amount received when tax rounds to 0");
+        assertEq(
+            token.balanceOf(carol), transferAmount, "Full amount received when tax rounds to 0"
+        );
     }
 
     function test_Transfer_EmitsTaxEvents() public {
@@ -414,7 +424,11 @@ contract DataTokenTest is Test {
         vm.prank(alice);
         token.transfer(treasury, transferAmount);
 
-        assertEq(token.balanceOf(treasury), treasuryBefore + transferAmount, "Treasury receives full amount");
+        assertEq(
+            token.balanceOf(treasury),
+            treasuryBefore + transferAmount,
+            "Treasury receives full amount"
+        );
     }
 
     function test_Transfer_FromTreasury_NoTax() public {
@@ -427,7 +441,9 @@ contract DataTokenTest is Test {
         assertEq(token.balanceOf(carol), transferAmount, "Carol receives full amount from treasury");
     }
 
-    function testFuzz_Burn_UpdatesState(uint256 amount) public {
+    function testFuzz_Burn_UpdatesState(
+        uint256 amount
+    ) public {
         amount = bound(amount, 1, INITIAL_ALICE);
 
         uint256 supplyBefore = token.totalSupply();

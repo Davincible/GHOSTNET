@@ -52,27 +52,24 @@ contract PrevRandaoTest {
     /// @return sampleId The ID of this sample
     /// @return prevrandao The block.prevrandao value
     /// @return derivedRandom A derived random value combining multiple sources
-    function recordSample() external returns (
-        uint256 sampleId,
-        uint256 prevrandao,
-        uint256 derivedRandom
-    ) {
+    function recordSample()
+        external
+        returns (uint256 sampleId, uint256 prevrandao, uint256 derivedRandom)
+    {
         sampleId = sampleCount++;
         prevrandao = block.prevrandao;
-        
+
         // Derive a random value similar to how we'd use it in production
-        derivedRandom = uint256(keccak256(abi.encode(
-            block.prevrandao,
-            block.timestamp,
-            block.number,
-            address(this),
-            sampleId
-        )));
+        derivedRandom = uint256(
+            keccak256(
+                abi.encode(block.prevrandao, block.timestamp, block.number, address(this), sampleId)
+            )
+        );
 
         // Store for analysis
         prevrandaoHistory.push(prevrandao);
         derivedHistory.push(derivedRandom);
-        
+
         // Track uniqueness
         if (!seenPrevrandao[prevrandao]) {
             seenPrevrandao[prevrandao] = true;
@@ -84,35 +81,37 @@ contract PrevRandaoTest {
         lastBlockNumber = block.number;
         lastDerivedRandom = derivedRandom;
 
-        emit RandomnessSample(
-            sampleId,
-            prevrandao,
-            block.number,
-            block.timestamp,
-            derivedRandom
-        );
+        emit RandomnessSample(sampleId, prevrandao, block.number, block.timestamp, derivedRandom);
 
         return (sampleId, prevrandao, derivedRandom);
     }
 
     /// @notice Get current block's randomness without recording
     /// @dev Use this to quickly check values without changing state
-    function getCurrentRandomness() external view returns (
-        uint256 prevrandao,
-        uint256 blockNumber,
-        uint256 blockTimestamp,
-        uint256 derivedRandom
-    ) {
+    function getCurrentRandomness()
+        external
+        view
+        returns (
+            uint256 prevrandao,
+            uint256 blockNumber,
+            uint256 blockTimestamp,
+            uint256 derivedRandom
+        )
+    {
         prevrandao = block.prevrandao;
         blockNumber = block.number;
         blockTimestamp = block.timestamp;
-        derivedRandom = uint256(keccak256(abi.encode(
-            block.prevrandao,
-            block.timestamp,
-            block.number,
-            address(this),
-            sampleCount // Use current count as nonce
-        )));
+        derivedRandom = uint256(
+            keccak256(
+                abi.encode(
+                    block.prevrandao,
+                    block.timestamp,
+                    block.number,
+                    address(this),
+                    sampleCount // Use current count as nonce
+                )
+            )
+        );
     }
 
     // ============ Analysis Functions ============
@@ -121,16 +120,15 @@ contract PrevRandaoTest {
     /// @param count Number of samples to return (from most recent)
     /// @return prevrandaoValues Array of prevrandao values
     /// @return derivedValues Array of derived random values
-    function getRecentSamples(uint256 count) external view returns (
-        uint256[] memory prevrandaoValues,
-        uint256[] memory derivedValues
-    ) {
+    function getRecentSamples(
+        uint256 count
+    ) external view returns (uint256[] memory prevrandaoValues, uint256[] memory derivedValues) {
         uint256 len = prevrandaoHistory.length;
         if (count > len) count = len;
-        
+
         prevrandaoValues = new uint256[](count);
         derivedValues = new uint256[](count);
-        
+
         for (uint256 i = 0; i < count; i++) {
             uint256 idx = len - count + i;
             prevrandaoValues[i] = prevrandaoHistory[idx];
@@ -145,18 +143,22 @@ contract PrevRandaoTest {
     /// @return uniqueValues Number of unique prevrandao values seen
     /// @return lastValue Most recent prevrandao value
     /// @return isNonZero True if last value was non-zero
-    function analyze() external view returns (
-        bool isWorking,
-        uint256 totalSamples,
-        uint256 uniqueValues,
-        uint256 lastValue,
-        bool isNonZero
-    ) {
+    function analyze()
+        external
+        view
+        returns (
+            bool isWorking,
+            uint256 totalSamples,
+            uint256 uniqueValues,
+            uint256 lastValue,
+            bool isNonZero
+        )
+    {
         totalSamples = sampleCount;
         uniqueValues = uniquePrevrandaoCount;
         lastValue = lastPrevrandao;
         isNonZero = lastPrevrandao != 0;
-        
+
         // Consider it "working" if we have multiple samples and they're mostly unique
         // Allow for some collisions but expect high entropy
         if (totalSamples >= 5) {
@@ -179,21 +181,14 @@ contract PrevRandaoTest {
     function simulateTraceScan(
         uint256 positionCount,
         uint256 deathRateBps
-    ) external view returns (
-        uint256 seed,
-        uint256 deaths,
-        uint256[] memory deathIndices
-    ) {
+    ) external view returns (uint256 seed, uint256 deaths, uint256[] memory deathIndices) {
         require(positionCount > 0 && positionCount <= 1000, "Invalid position count");
-        require(deathRateBps <= 10000, "Invalid death rate");
+        require(deathRateBps <= 10_000, "Invalid death rate");
 
         // Generate seed like we would in production
-        seed = uint256(keccak256(abi.encode(
-            block.prevrandao,
-            block.timestamp,
-            block.number,
-            positionCount
-        )));
+        seed = uint256(
+            keccak256(abi.encode(block.prevrandao, block.timestamp, block.number, positionCount))
+        );
 
         // Count deaths and track indices
         uint256[] memory tempIndices = new uint256[](positionCount);
@@ -202,8 +197,8 @@ contract PrevRandaoTest {
         for (uint256 i = 0; i < positionCount; i++) {
             // Per-position randomness
             uint256 positionSeed = uint256(keccak256(abi.encode(seed, i)));
-            uint256 roll = positionSeed % 10000;
-            
+            uint256 roll = positionSeed % 10_000;
+
             if (roll < deathRateBps) {
                 tempIndices[deathCount] = i;
                 deathCount++;
@@ -230,11 +225,7 @@ contract PrevRandaoTest {
         uint256 iterations,
         uint256 positionCount,
         uint256 targetDeathRateBps
-    ) external view returns (
-        uint256 avgDeathRate,
-        uint256 minDeaths,
-        uint256 maxDeaths
-    ) {
+    ) external view returns (uint256 avgDeathRate, uint256 minDeaths, uint256 maxDeaths) {
         require(iterations > 0 && iterations <= 100, "1-100 iterations");
         require(positionCount > 0 && positionCount <= 100, "1-100 positions");
 
@@ -244,17 +235,14 @@ contract PrevRandaoTest {
 
         for (uint256 iter = 0; iter < iterations; iter++) {
             // Generate unique seed per iteration
-            uint256 seed = uint256(keccak256(abi.encode(
-                block.prevrandao,
-                block.timestamp,
-                iter,
-                positionCount
-            )));
+            uint256 seed = uint256(
+                keccak256(abi.encode(block.prevrandao, block.timestamp, iter, positionCount))
+            );
 
             uint256 deaths = 0;
             for (uint256 i = 0; i < positionCount; i++) {
                 uint256 positionSeed = uint256(keccak256(abi.encode(seed, i)));
-                if (positionSeed % 10000 < targetDeathRateBps) {
+                if (positionSeed % 10_000 < targetDeathRateBps) {
                     deaths++;
                 }
             }
@@ -264,6 +252,6 @@ contract PrevRandaoTest {
             if (deaths > maxDeaths) maxDeaths = deaths;
         }
 
-        avgDeathRate = (totalDeaths * 10000) / (iterations * positionCount);
+        avgDeathRate = (totalDeaths * 10_000) / (iterations * positionCount);
     }
 }

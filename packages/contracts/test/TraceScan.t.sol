@@ -45,9 +45,8 @@ contract TraceScanTest is Test {
 
         // Deploy GhostCore
         GhostCore ghostCoreImpl = new GhostCore();
-        bytes memory ghostCoreInit = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory ghostCoreInit =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
         ERC1967Proxy ghostCoreProxy = new ERC1967Proxy(address(ghostCoreImpl), ghostCoreInit);
         ghostCore = GhostCore(address(ghostCoreProxy));
 
@@ -113,7 +112,10 @@ contract TraceScanTest is Test {
 
         vm.expectEmit(true, true, false, false);
         emit ITraceScan.ScanExecuted(
-            IGhostCore.Level.VAULT, 1, 0, uint64(block.timestamp) // seed will be different
+            IGhostCore.Level.VAULT,
+            1,
+            0,
+            uint64(block.timestamp) // seed will be different
         );
 
         traceScan.executeScan(IGhostCore.Level.VAULT);
@@ -147,7 +149,7 @@ contract TraceScanTest is Test {
     // ══════════════════════════════════════════════════════════════════════════════
 
     function test_IsDead_DeterministicResult() public pure {
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
         address user = address(0x1234);
         uint16 deathRate = 5000; // 50%
 
@@ -159,7 +161,7 @@ contract TraceScanTest is Test {
     }
 
     function test_IsDead_RespectsDeathRate() public view {
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
         uint16 lowDeathRate = 100; // 1%
         uint16 highDeathRate = 9900; // 99%
 
@@ -177,7 +179,11 @@ contract TraceScanTest is Test {
         assert(lowDeaths < highDeaths);
     }
 
-    function testFuzz_IsDead_AlwaysBelowRate(uint256 seed, address user, uint16 deathRate) public view {
+    function testFuzz_IsDead_AlwaysBelowRate(
+        uint256 seed,
+        address user,
+        uint16 deathRate
+    ) public view {
         // forge-lint: disable-next-line
         if (deathRate > 10_000) return;
 
@@ -841,11 +847,11 @@ contract TraceScanTest is Test {
     // HELPER FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function _isDead(uint256 seed, address user, uint16 deathRateBps)
-        internal
-        pure
-        returns (bool)
-    {
+    function _isDead(
+        uint256 seed,
+        address user,
+        uint16 deathRateBps
+    ) internal pure returns (bool) {
         uint256 roll = uint256(keccak256(abi.encode(seed, user))) % 10_000;
         return roll < deathRateBps;
     }

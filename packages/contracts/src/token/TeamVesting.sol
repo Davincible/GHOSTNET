@@ -96,7 +96,11 @@ contract TeamVesting is ReentrancyGuard {
     /// @param _beneficiaries Array of team member addresses
     /// @param _amounts Array of token amounts for each beneficiary
     /// @dev Token transfer to this contract must happen separately after deployment
-    constructor(IERC20 _token, address[] memory _beneficiaries, uint256[] memory _amounts) {
+    constructor(
+        IERC20 _token,
+        address[] memory _beneficiaries,
+        uint256[] memory _amounts
+    ) {
         if (address(_token) == address(0)) revert InvalidAddress();
         if (_beneficiaries.length != _amounts.length) revert ArrayLengthMismatch();
 
@@ -109,10 +113,8 @@ contract TeamVesting is ReentrancyGuard {
         for (uint256 i; i < _beneficiaries.length; ++i) {
             if (_beneficiaries[i] == address(0)) revert InvalidAddress();
 
-            vestingSchedules[_beneficiaries[i]] = VestingSchedule({
-                totalAmount: _amounts[i],
-                claimed: 0
-            });
+            vestingSchedules[_beneficiaries[i]] =
+                VestingSchedule({ totalAmount: _amounts[i], claimed: 0 });
             totalAllocated += _amounts[i];
         }
     }
@@ -124,7 +126,9 @@ contract TeamVesting is ReentrancyGuard {
     /// @notice Returns the amount of tokens vested for a beneficiary at current time
     /// @param beneficiary Address to check
     /// @return Amount of tokens vested (but not necessarily claimed)
-    function vestedAmount(address beneficiary) public view returns (uint256) {
+    function vestedAmount(
+        address beneficiary
+    ) public view returns (uint256) {
         VestingSchedule storage schedule = vestingSchedules[beneficiary];
 
         if (schedule.totalAmount == 0) {
@@ -149,7 +153,9 @@ contract TeamVesting is ReentrancyGuard {
     /// @notice Returns the amount of tokens available to claim for a beneficiary
     /// @param beneficiary Address to check
     /// @return Amount of tokens available to claim now
-    function claimableAmount(address beneficiary) public view returns (uint256) {
+    function claimableAmount(
+        address beneficiary
+    ) public view returns (uint256) {
         VestingSchedule storage schedule = vestingSchedules[beneficiary];
         uint256 vested = vestedAmount(beneficiary);
 
@@ -166,11 +172,9 @@ contract TeamVesting is ReentrancyGuard {
     /// @return vested Amount vested so far
     /// @return claimed Amount already claimed
     /// @return claimable Amount available to claim now
-    function getVestingInfo(address beneficiary)
-        external
-        view
-        returns (uint256 total, uint256 vested, uint256 claimed, uint256 claimable)
-    {
+    function getVestingInfo(
+        address beneficiary
+    ) external view returns (uint256 total, uint256 vested, uint256 claimed, uint256 claimable) {
         VestingSchedule storage schedule = vestingSchedules[beneficiary];
         return (
             schedule.totalAmount,

@@ -73,10 +73,7 @@ contract DataToken is ERC20, Ownable2Step, IDataToken {
         address _initialOwner,
         address[] memory _recipients,
         uint256[] memory _amounts
-    )
-        ERC20("GHOSTNET Data", "DATA")
-        Ownable(_initialOwner)
-    {
+    ) ERC20("GHOSTNET Data", "DATA") Ownable(_initialOwner) {
         if (_treasury == address(0)) revert InvalidTreasury();
         if (_recipients.length != _amounts.length) revert DistributionLengthMismatch();
 
@@ -104,7 +101,9 @@ contract DataToken is ERC20, Ownable2Step, IDataToken {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDataToken
-    function isExcludedFromTax(address account) external view returns (bool) {
+    function isExcludedFromTax(
+        address account
+    ) external view returns (bool) {
         return _taxExcluded[account];
     }
 
@@ -113,7 +112,10 @@ contract DataToken is ERC20, Ownable2Step, IDataToken {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDataToken
-    function setTaxExclusion(address account, bool excluded) external onlyOwner {
+    function setTaxExclusion(
+        address account,
+        bool excluded
+    ) external onlyOwner {
         _taxExcluded[account] = excluded;
         emit TaxExclusionSet(account, excluded);
     }
@@ -123,13 +125,18 @@ contract DataToken is ERC20, Ownable2Step, IDataToken {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc IDataToken
-    function burn(uint256 amount) external {
+    function burn(
+        uint256 amount
+    ) external {
         _burn(msg.sender, amount);
         totalBurned += amount;
     }
 
     /// @inheritdoc IDataToken
-    function burnFrom(address from, uint256 amount) external {
+    function burnFrom(
+        address from,
+        uint256 amount
+    ) external {
         _spendAllowance(from, msg.sender, amount);
         _burn(from, amount);
         totalBurned += amount;
@@ -144,7 +151,11 @@ contract DataToken is ERC20, Ownable2Step, IDataToken {
     /// @param from Source address
     /// @param to Destination address
     /// @param amount Amount to transfer (before tax)
-    function _update(address from, address to, uint256 amount) internal override {
+    function _update(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
         // Skip tax for mints, burns, and excluded addresses
         if (from == address(0) || to == address(0) || _taxExcluded[from] || _taxExcluded[to]) {
             super._update(from, to, amount);

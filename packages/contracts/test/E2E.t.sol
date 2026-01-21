@@ -50,11 +50,11 @@ contract E2ETest is Test {
     address public teamMember2 = makeAddr("teamMember2");
 
     // Players (simulating real users)
-    address public alice = makeAddr("alice");   // New player
-    address public bob = makeAddr("bob");       // Experienced staker
-    address public carol = makeAddr("carol");   // Whale
-    address public dave = makeAddr("dave");     // Prediction market player
-    address public eve = makeAddr("eve");       // High-risk player
+    address public alice = makeAddr("alice"); // New player
+    address public bob = makeAddr("bob"); // Experienced staker
+    address public carol = makeAddr("carol"); // Whale
+    address public dave = makeAddr("dave"); // Prediction market player
+    address public eve = makeAddr("eve"); // High-risk player
 
     // ══════════════════════════════════════════════════════════════════════════════
     // CONSTANTS
@@ -111,14 +111,14 @@ contract E2ETest is Test {
 
         // Deploy GhostCore
         GhostCore ghostCoreImpl = new GhostCore();
-        bytes memory ghostCoreInit = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory ghostCoreInit =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
         ghostCore = GhostCore(address(new ERC1967Proxy(address(ghostCoreImpl), ghostCoreInit)));
 
         // Deploy TraceScan
         TraceScan traceScanImpl = new TraceScan();
-        bytes memory traceScanInit = abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
+        bytes memory traceScanInit =
+            abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
         traceScan = TraceScan(address(new ERC1967Proxy(address(traceScanImpl), traceScanInit)));
 
         // Deploy DeadPool
@@ -132,12 +132,7 @@ contract E2ETest is Test {
         // Deploy mock swap router and FeeRouter
         swapRouter = new MockSwapRouter(address(token));
         feeRouter = new FeeRouter(
-            address(token),
-            weth,
-            address(swapRouter),
-            operationsWallet,
-            TOLL_AMOUNT,
-            owner
+            address(token), weth, address(swapRouter), operationsWallet, TOLL_AMOUNT, owner
         );
 
         // Fund swap router for buybacks
@@ -331,7 +326,7 @@ contract E2ETest is Test {
         // Carol purchases a boost off-chain (e.g., from in-game shop)
         console.log("1. Carol enters DARKNET level (high risk, 35% death rate)...");
         vm.prank(carol);
-        ghostCore.jackIn(10000 * 1e18, IGhostCore.Level.DARKNET);
+        ghostCore.jackIn(10_000 * 1e18, IGhostCore.Level.DARKNET);
 
         uint16 baseDeathRate = ghostCore.getEffectiveDeathRate(carol);
         console.log("   Base death rate:", baseDeathRate, "bps");
@@ -429,7 +424,7 @@ contract E2ETest is Test {
         uint256 burned = token.balanceOf(token.DEAD_ADDRESS()) - deadBalanceBefore;
 
         // 25% penalty on TVL, split 50/30/20
-        uint256 expectedPenalty = (tvl + 500 * 1e18) * 2500 / 10000;
+        uint256 expectedPenalty = (tvl + 500 * 1e18) * 2500 / 10_000;
         console.log("   Total penalty pool:", expectedPenalty / 1e18, "DATA");
         console.log("   Eve's jackpot (50%):", eveJackpot / 1e18, "DATA");
         console.log("   Burned (30%):", burned / 1e18, "DATA");
@@ -465,7 +460,7 @@ contract E2ETest is Test {
 
         // Level 4 (DARKNET) - 1 player who will likely die
         vm.prank(carol);
-        ghostCore.jackIn(10000 * 1e18, IGhostCore.Level.DARKNET);
+        ghostCore.jackIn(10_000 * 1e18, IGhostCore.Level.DARKNET);
 
         console.log("   Alice: 1000 DATA @ VAULT");
         console.log("   Bob: 2000 DATA @ VAULT");
@@ -498,7 +493,7 @@ contract E2ETest is Test {
         // Check cascade distribution
         if (carolDies) {
             console.log("\n3. Carol died - cascade distribution:");
-            console.log("   Carol's stake:", 10000, "DATA");
+            console.log("   Carol's stake:", 10_000, "DATA");
             console.log("   30% to DARKNET survivors: 0 (none)");
             console.log("   30% to upstream (VAULT): distributed to Alice & Bob");
             console.log("   30% burned");
@@ -749,7 +744,7 @@ contract E2ETest is Test {
 
         // Non-excluded transfer triggers tax
         vm.prank(alice);
-        token.transfer(dave, 10000 * 1e18);
+        token.transfer(dave, 10_000 * 1e18);
 
         uint256 taxBurn = token.totalBurned() - burnBefore;
         console.log("   Transfer: 10000 DATA");
@@ -859,11 +854,8 @@ contract E2ETest is Test {
             console.log("Emissions distributed");
 
             // Execute scans for each level that's due
-            IGhostCore.Level[3] memory levels = [
-                IGhostCore.Level.VAULT,
-                IGhostCore.Level.SUBNET,
-                IGhostCore.Level.DARKNET
-            ];
+            IGhostCore.Level[3] memory levels =
+                [IGhostCore.Level.VAULT, IGhostCore.Level.SUBNET, IGhostCore.Level.DARKNET];
 
             for (uint256 i = 0; i < levels.length; i++) {
                 IGhostCore.LevelState memory state = ghostCore.getLevelState(levels[i]);
@@ -923,7 +915,9 @@ contract E2ETest is Test {
                 vm.warp(block.timestamp + 5 hours);
                 vm.prank(players[i]);
                 (uint256 principal, uint256 rewards) = ghostCore.extract();
-                console.log("  Player extracted - Principal:", principal / 1e18, "Rewards:", rewards / 1e18);
+                console.log(
+                    "  Player extracted - Principal:", principal / 1e18, "Rewards:", rewards / 1e18
+                );
             }
         }
 
@@ -947,7 +941,9 @@ contract E2ETest is Test {
 
         bytes32 domainSeparator = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256("GHOSTNET"),
                 keccak256("1"),
                 block.chainid,
@@ -974,7 +970,9 @@ contract MockSwapRouter {
     IERC20 public immutable dataToken;
     uint256 public constant RATE = 1000; // 1000 DATA per ETH
 
-    constructor(address _dataToken) {
+    constructor(
+        address _dataToken
+    ) {
         dataToken = IERC20(_dataToken);
     }
 
@@ -992,5 +990,5 @@ contract MockSwapRouter {
         amounts[1] = dataOut;
     }
 
-    receive() external payable {}
+    receive() external payable { }
 }

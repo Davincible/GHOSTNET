@@ -69,14 +69,14 @@ contract SecurityTest is Test {
 
         // Deploy GhostCore
         GhostCore ghostCoreImpl = new GhostCore();
-        bytes memory ghostCoreInit = abi.encodeCall(
-            GhostCore.initialize, (address(token), treasury, boostSigner, owner)
-        );
+        bytes memory ghostCoreInit =
+            abi.encodeCall(GhostCore.initialize, (address(token), treasury, boostSigner, owner));
         ghostCore = GhostCore(address(new ERC1967Proxy(address(ghostCoreImpl), ghostCoreInit)));
 
         // Deploy TraceScan
         TraceScan traceScanImpl = new TraceScan();
-        bytes memory traceScanInit = abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
+        bytes memory traceScanInit =
+            abi.encodeCall(TraceScan.initialize, (address(ghostCore), owner));
         traceScan = TraceScan(address(new ERC1967Proxy(address(traceScanImpl), traceScanInit)));
 
         // Deploy DeadPool
@@ -89,12 +89,7 @@ contract SecurityTest is Test {
 
         // Deploy FeeRouter
         feeRouter = new FeeRouter(
-            address(token),
-            makeAddr("weth"),
-            address(0),
-            operationsWallet,
-            0.001 ether,
-            owner
+            address(token), makeAddr("weth"), address(0), operationsWallet, 0.001 ether, owner
         );
 
         // Deploy TeamVesting
@@ -180,7 +175,9 @@ contract SecurityTest is Test {
 
         // Verify attacker received tokens (stake + rewards)
         uint256 attackerBalanceAfter = token.balanceOf(address(reentrancyAttacker));
-        assertGt(attackerBalanceAfter, attackerBalanceBefore, "Attacker should have received tokens");
+        assertGt(
+            attackerBalanceAfter, attackerBalanceBefore, "Attacker should have received tokens"
+        );
     }
 
     function test_Attack_ReentrancyOnClaimRewards() public {
@@ -211,7 +208,9 @@ contract SecurityTest is Test {
 
         // Verify rewards were received
         uint256 attackerBalanceAfter = token.balanceOf(address(reentrancyAttacker));
-        assertGt(attackerBalanceAfter, attackerBalanceBefore, "Attacker should have received rewards");
+        assertGt(
+            attackerBalanceAfter, attackerBalanceBefore, "Attacker should have received rewards"
+        );
 
         // Second claim should return 0 (no pending rewards)
         uint256 balanceBeforeSecondClaim = token.balanceOf(address(reentrancyAttacker));
@@ -259,14 +258,17 @@ contract SecurityTest is Test {
 
         // Try to update level config
         vm.expectRevert();
-        ghostCore.updateLevelConfig(IGhostCore.Level.VAULT, IGhostCore.LevelConfig({
-            baseDeathRateBps: 0, // Try to set death rate to 0
-            scanInterval: 1,
-            minStake: 0,
-            maxPositions: 1000000,
-            cullingBottomPct: 0,
-            cullingPenaltyBps: 0
-        }));
+        ghostCore.updateLevelConfig(
+            IGhostCore.Level.VAULT,
+            IGhostCore.LevelConfig({
+                baseDeathRateBps: 0, // Try to set death rate to 0
+                scanInterval: 1,
+                minStake: 0,
+                maxPositions: 1_000_000,
+                cullingBottomPct: 0,
+                cullingPenaltyBps: 0
+            })
+        );
 
         // Try to change boost signer to self
         vm.expectRevert();
@@ -296,9 +298,7 @@ contract SecurityTest is Test {
         vm.prank(attacker);
         vm.expectRevert(
             abi.encodeWithSignature(
-                "AccessControlUnauthorizedAccount(address,bytes32)",
-                attacker,
-                adminRole
+                "AccessControlUnauthorizedAccount(address,bytes32)", attacker, adminRole
             )
         );
         ghostCore.grantRole(adminRole, attacker);
@@ -368,26 +368,15 @@ contract SecurityTest is Test {
 
         uint64 expiry = uint64(block.timestamp + 1 hours);
         bytes32 nonce = keccak256("attacker-boost-1");
-        bytes memory signature = _signBoost(
-            attacker,
-            IGhostCore.BoostType.DEATH_REDUCTION,
-            1500,
-            expiry,
-            nonce
-        );
+        bytes memory signature =
+            _signBoost(attacker, IGhostCore.BoostType.DEATH_REDUCTION, 1500, expiry, nonce);
 
         // Warp past expiry
         vm.warp(block.timestamp + 2 hours);
 
         vm.prank(attacker);
         vm.expectRevert(IGhostCore.SignatureExpired.selector);
-        ghostCore.applyBoost(
-            IGhostCore.BoostType.DEATH_REDUCTION,
-            1500,
-            expiry,
-            nonce,
-            signature
-        );
+        ghostCore.applyBoost(IGhostCore.BoostType.DEATH_REDUCTION, 1500, expiry, nonce, signature);
     }
 
     function test_Attack_ForgedSignature() public {
@@ -397,22 +386,30 @@ contract SecurityTest is Test {
         // Attacker creates their own signature (not from boostSigner)
         (, uint256 attackerPk) = makeAddrAndKey("attackerKey");
 
-        bytes32 structHash = keccak256(abi.encode(
-            keccak256("Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)"),
-            attacker,
-            uint8(IGhostCore.BoostType.DEATH_REDUCTION),
-            uint16(5000), // Try to get 50% death reduction
-            uint64(block.timestamp + 7 days),
-            bytes32("fake-nonce")
-        ));
+        bytes32 structHash = keccak256(
+            abi.encode(
+                keccak256(
+                    "Boost(address user,uint8 boostType,uint16 valueBps,uint64 expiry,bytes32 nonce)"
+                ),
+                attacker,
+                uint8(IGhostCore.BoostType.DEATH_REDUCTION),
+                uint16(5000), // Try to get 50% death reduction
+                uint64(block.timestamp + 7 days),
+                bytes32("fake-nonce")
+            )
+        );
 
-        bytes32 domainSeparator = keccak256(abi.encode(
-            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-            keccak256("GHOSTNET"),
-            keccak256("1"),
-            block.chainid,
-            address(ghostCore)
-        ));
+        bytes32 domainSeparator = keccak256(
+            abi.encode(
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
+                keccak256("GHOSTNET"),
+                keccak256("1"),
+                block.chainid,
+                address(ghostCore)
+            )
+        );
 
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(attackerPk, digest);
@@ -938,7 +935,9 @@ contract SecurityTest is Test {
 
         bytes32 domainSeparator = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256("GHOSTNET"),
                 keccak256("1"),
                 block.chainid,
@@ -968,13 +967,18 @@ contract ReentrancyAttacker {
     bool public attacking;
     uint256 public attackCount;
 
-    constructor(GhostCore _ghostCore, DataToken _token) {
+    constructor(
+        GhostCore _ghostCore,
+        DataToken _token
+    ) {
         ghostCore = _ghostCore;
         token = _token;
         token.approve(address(_ghostCore), type(uint256).max);
     }
 
-    function deposit(uint256 amount) external {
+    function deposit(
+        uint256 amount
+    ) external {
         ghostCore.jackIn(amount, IGhostCore.Level.VAULT);
     }
 
@@ -991,12 +995,15 @@ contract ReentrancyAttacker {
     }
 
     // Callback when receiving tokens - attempt reentrancy
-    function onERC20Received(address, uint256) external returns (bytes4) {
+    function onERC20Received(
+        address,
+        uint256
+    ) external returns (bytes4) {
         if (attacking && attackCount < 2) {
             attackCount++;
             // Try to reenter
-            try ghostCore.extract() {} catch {}
-            try ghostCore.claimRewards() {} catch {}
+            try ghostCore.extract() { } catch { }
+            try ghostCore.claimRewards() { } catch { }
         }
         return this.onERC20Received.selector;
     }
@@ -1005,7 +1012,7 @@ contract ReentrancyAttacker {
     receive() external payable {
         if (attacking && attackCount < 2) {
             attackCount++;
-            try ghostCore.extract() {} catch {}
+            try ghostCore.extract() { } catch { }
         }
     }
 }

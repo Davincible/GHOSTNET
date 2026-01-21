@@ -45,12 +45,7 @@ contract FeeRouterTest is Test {
 
         // Deploy FeeRouter
         feeRouter = new FeeRouter(
-            address(token),
-            weth,
-            address(swapRouter),
-            operationsWallet,
-            TOLL_AMOUNT,
-            owner
+            address(token), weth, address(swapRouter), operationsWallet, TOLL_AMOUNT, owner
         );
 
         // Authorize game contract as collector
@@ -83,7 +78,9 @@ contract FeeRouterTest is Test {
 
     function test_Constructor_RevertWhen_InvalidWeth() public {
         vm.expectRevert(FeeRouter.InvalidAddress.selector);
-        new FeeRouter(address(token), address(0), address(swapRouter), operationsWallet, TOLL_AMOUNT, owner);
+        new FeeRouter(
+            address(token), address(0), address(swapRouter), operationsWallet, TOLL_AMOUNT, owner
+        );
     }
 
     function test_Constructor_RevertWhen_InvalidOperationsWallet() public {
@@ -255,12 +252,7 @@ contract FeeRouterTest is Test {
         // Deploy with rejecting operations wallet
         RejectingWallet rejectWallet = new RejectingWallet();
         FeeRouter routerReject = new FeeRouter(
-            address(token),
-            weth,
-            address(swapRouter),
-            address(rejectWallet),
-            TOLL_AMOUNT,
-            owner
+            address(token), weth, address(swapRouter), address(rejectWallet), TOLL_AMOUNT, owner
         );
 
         vm.prank(alice);
@@ -293,14 +285,8 @@ contract FeeRouterTest is Test {
     }
 
     function test_ExecuteBuybackWithData_RevertWhen_NoRouter() public {
-        FeeRouter routerNoSwap = new FeeRouter(
-            address(token),
-            weth,
-            address(0),
-            operationsWallet,
-            TOLL_AMOUNT,
-            owner
-        );
+        FeeRouter routerNoSwap =
+            new FeeRouter(address(token), weth, address(0), operationsWallet, TOLL_AMOUNT, owner);
 
         vm.prank(alice);
         (bool success,) = address(routerNoSwap).call{ value: 10 ether }("");
@@ -544,7 +530,9 @@ contract FeeRouterTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_TollCollection(uint256 amount) public {
+    function testFuzz_TollCollection(
+        uint256 amount
+    ) public {
         vm.assume(amount >= TOLL_AMOUNT && amount <= 100 ether);
 
         vm.deal(gameContract, amount);
@@ -555,7 +543,9 @@ contract FeeRouterTest is Test {
         assertEq(address(feeRouter).balance, amount);
     }
 
-    function testFuzz_PreviewSplit_Correct(uint256 balance) public {
+    function testFuzz_PreviewSplit_Correct(
+        uint256 balance
+    ) public {
         vm.assume(balance > 0 && balance <= 1000 ether);
 
         vm.deal(alice, balance);
@@ -566,7 +556,7 @@ contract FeeRouterTest is Test {
         (uint256 buyback, uint256 ops) = feeRouter.previewSplit();
 
         // Verify 90/10 split
-        assertEq(buyback, (balance * 9000) / 10000);
+        assertEq(buyback, (balance * 9000) / 10_000);
         assertEq(ops, balance - buyback);
     }
 }
@@ -583,11 +573,15 @@ contract MockSwapRouter {
     // Return rate: 1000 DATA per ETH
     uint256 public constant RATE = 1000;
 
-    constructor(address _dataToken) {
+    constructor(
+        address _dataToken
+    ) {
         dataToken = IERC20(_dataToken);
     }
 
-    function setShouldFail(bool _shouldFail) external {
+    function setShouldFail(
+        bool _shouldFail
+    ) external {
         shouldFail = _shouldFail;
     }
 
@@ -626,7 +620,7 @@ contract MockSwapRouter {
         dataToken.transfer(msg.sender, dataOut);
     }
 
-    receive() external payable {}
+    receive() external payable { }
 }
 
 /// @dev Wallet that rejects ETH transfers

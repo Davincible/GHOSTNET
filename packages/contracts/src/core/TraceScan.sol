@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { UUPSUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import { AccessControlUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import { PausableUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    AccessControlUpgradeable
+} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {
+    PausableUpgradeable
+} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 import { ITraceScan } from "./interfaces/ITraceScan.sol";
 import { IGhostCore } from "./interfaces/IGhostCore.sol";
@@ -53,7 +56,10 @@ contract TraceScan is
     /// @notice Initialize the contract
     /// @param _ghostCore Address of the GhostCore contract
     /// @param _admin Address with DEFAULT_ADMIN_ROLE (should be timelock)
-    function initialize(address _ghostCore, address _admin) external initializer {
+    function initialize(
+        address _ghostCore,
+        address _admin
+    ) external initializer {
         __UUPSUpgradeable_init();
         __AccessControl_init();
         __Pausable_init();
@@ -74,7 +80,9 @@ contract TraceScan is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc ITraceScan
-    function executeScan(IGhostCore.Level level) external whenNotPaused {
+    function executeScan(
+        IGhostCore.Level level
+    ) external whenNotPaused {
         if (level == IGhostCore.Level.NONE || level > IGhostCore.Level.BLACK_ICE) {
             revert InvalidLevel();
         }
@@ -112,10 +120,10 @@ contract TraceScan is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc ITraceScan
-    function submitDeaths(IGhostCore.Level level, address[] calldata deadUsers)
-        external
-        whenNotPaused
-    {
+    function submitDeaths(
+        IGhostCore.Level level,
+        address[] calldata deadUsers
+    ) external whenNotPaused {
         TraceScanStorageLayout storage $ = _getTraceScanStorage();
         Scan storage scan = $.currentScans[level];
 
@@ -177,7 +185,9 @@ contract TraceScan is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc ITraceScan
-    function finalizeScan(IGhostCore.Level level) external whenNotPaused {
+    function finalizeScan(
+        IGhostCore.Level level
+    ) external whenNotPaused {
         TraceScanStorageLayout storage $ = _getTraceScanStorage();
         Scan storage scan = $.currentScans[level];
 
@@ -212,16 +222,19 @@ contract TraceScan is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc ITraceScan
-    function isDead(uint256 seed, address user, uint16 deathRateBps)
-        external
-        pure
-        returns (bool)
-    {
+    function isDead(
+        uint256 seed,
+        address user,
+        uint16 deathRateBps
+    ) external pure returns (bool) {
         return _isDead(seed, user, deathRateBps);
     }
 
     /// @inheritdoc ITraceScan
-    function wouldDie(IGhostCore.Level level, address user) external view returns (bool) {
+    function wouldDie(
+        IGhostCore.Level level,
+        address user
+    ) external view returns (bool) {
         TraceScanStorageLayout storage $ = _getTraceScanStorage();
         Scan storage scan = $.currentScans[level];
 
@@ -243,7 +256,9 @@ contract TraceScan is
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @inheritdoc ITraceScan
-    function canExecuteScan(IGhostCore.Level level) public view returns (bool) {
+    function canExecuteScan(
+        IGhostCore.Level level
+    ) public view returns (bool) {
         TraceScanStorageLayout storage $ = _getTraceScanStorage();
 
         // Check timer
@@ -258,7 +273,9 @@ contract TraceScan is
     }
 
     /// @inheritdoc ITraceScan
-    function canFinalizeScan(IGhostCore.Level level) public view returns (bool) {
+    function canFinalizeScan(
+        IGhostCore.Level level
+    ) public view returns (bool) {
         TraceScanStorageLayout storage $ = _getTraceScanStorage();
         Scan storage scan = $.currentScans[level];
 
@@ -275,7 +292,9 @@ contract TraceScan is
     }
 
     /// @inheritdoc ITraceScan
-    function getCurrentScan(IGhostCore.Level level) external view returns (Scan memory) {
+    function getCurrentScan(
+        IGhostCore.Level level
+    ) external view returns (Scan memory) {
         return _getTraceScanStorage().currentScans[level];
     }
 
@@ -323,12 +342,16 @@ contract TraceScan is
     }
 
     /// @notice Update submission window duration
-    function setSubmissionWindow(uint256 newWindow) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setSubmissionWindow(
+        uint256 newWindow
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _getTraceScanStorage().submissionWindow = newWindow;
     }
 
     /// @notice Update max batch size
-    function setMaxBatchSize(uint256 newSize) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setMaxBatchSize(
+        uint256 newSize
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _getTraceScanStorage().maxBatchSize = newSize;
     }
 
@@ -343,10 +366,10 @@ contract TraceScan is
     /// - block.number: Changes every block
     /// - level: Which level is being scanned
     /// - nonce: Incrementing counter (prevents replay)
-    function _generateSeed(TraceScanStorageLayout storage $, IGhostCore.Level level)
-        internal
-        returns (uint256)
-    {
+    function _generateSeed(
+        TraceScanStorageLayout storage $,
+        IGhostCore.Level level
+    ) internal returns (uint256) {
         return uint256(
             keccak256(
                 abi.encode(block.prevrandao, block.timestamp, block.number, level, $.scanNonce++)
@@ -356,7 +379,11 @@ contract TraceScan is
 
     /// @dev Pure function to determine if a user dies given seed and death rate
     /// Death is deterministic: same inputs always produce same output
-    function _isDead(uint256 seed, address user, uint16 deathRateBps) internal pure returns (bool) {
+    function _isDead(
+        uint256 seed,
+        address user,
+        uint16 deathRateBps
+    ) internal pure returns (bool) {
         uint256 roll = uint256(keccak256(abi.encode(seed, user))) % BPS;
         return roll < deathRateBps;
     }
@@ -365,9 +392,7 @@ contract TraceScan is
     // UPGRADE AUTHORIZATION
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    { }
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) { }
 }

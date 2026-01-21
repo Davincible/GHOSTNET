@@ -20,7 +20,7 @@ contract TeamVestingTest is Test {
 
     uint256 constant TOTAL_SUPPLY = 100_000_000 * 1e18;
     uint256 constant ALICE_ALLOCATION = 4_000_000 * 1e18; // 50% of 8M team allocation
-    uint256 constant BOB_ALLOCATION = 2_400_000 * 1e18;   // 30% of 8M
+    uint256 constant BOB_ALLOCATION = 2_400_000 * 1e18; // 30% of 8M
     uint256 constant CAROL_ALLOCATION = 1_600_000 * 1e18; // 20% of 8M
     uint256 constant TOTAL_TEAM_ALLOCATION = 8_000_000 * 1e18;
 
@@ -72,7 +72,7 @@ contract TeamVestingTest is Test {
     }
 
     function test_Constructor_SetsVestingSchedules() public view {
-        (uint256 aliceTotal, uint256 aliceVested, uint256 aliceClaimed, uint256 aliceClaimable) = 
+        (uint256 aliceTotal, uint256 aliceVested, uint256 aliceClaimed, uint256 aliceClaimable) =
             vesting.getVestingInfo(alice);
         assertEq(aliceTotal, ALICE_ALLOCATION);
         assertEq(aliceVested, 0);
@@ -322,7 +322,7 @@ contract TeamVestingTest is Test {
     function test_GetVestingInfo() public {
         vm.warp(block.timestamp + 365 days);
 
-        (uint256 total, uint256 vested, uint256 claimed, uint256 claimable) = 
+        (uint256 total, uint256 vested, uint256 claimed, uint256 claimable) =
             vesting.getVestingInfo(alice);
 
         assertEq(total, ALICE_ALLOCATION);
@@ -423,7 +423,9 @@ contract TeamVestingTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_VestedAmount_LinearProgression(uint256 timeElapsed) public {
+    function testFuzz_VestedAmount_LinearProgression(
+        uint256 timeElapsed
+    ) public {
         vm.assume(timeElapsed <= VESTING_DURATION * 2); // Cap at 2x vesting duration
 
         vm.warp(block.timestamp + timeElapsed);
@@ -440,7 +442,9 @@ contract TeamVestingTest is Test {
         }
     }
 
-    function testFuzz_ClaimableAmount_NeverExceedsTotal(uint256 timeElapsed) public {
+    function testFuzz_ClaimableAmount_NeverExceedsTotal(
+        uint256 timeElapsed
+    ) public {
         vm.assume(timeElapsed <= VESTING_DURATION * 2);
 
         vm.warp(block.timestamp + timeElapsed);
@@ -449,7 +453,10 @@ contract TeamVestingTest is Test {
         assertLe(claimable, ALICE_ALLOCATION);
     }
 
-    function testFuzz_Claim_TotalClaimedNeverExceedsAllocation(uint256 numClaims, uint256 timeBetween) public {
+    function testFuzz_Claim_TotalClaimedNeverExceedsAllocation(
+        uint256 numClaims,
+        uint256 timeBetween
+    ) public {
         numClaims = bound(numClaims, 1, 10);
         timeBetween = bound(timeBetween, 1 days, 100 days);
 
