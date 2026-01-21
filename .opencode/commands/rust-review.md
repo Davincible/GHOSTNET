@@ -15,7 +15,7 @@ You task with reviewing the latest code based on:
 - Does this code contain any potential surface areas for performance issues or security issues that we have not thought about yet?
 - Are the test functionally correct, and testing business logic?
 
-Please review the lastest relevant Rust git commit
+Please critically review the lastest relevant Rust git commit. Provide thourogh feedback, but don't invent things
 
 IMPORTANT: Please use your rust skills, call the skill mcp to load all relevant skills, and to thoroughly perform the review
 
