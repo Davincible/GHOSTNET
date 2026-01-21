@@ -8,6 +8,7 @@
 		DUEL_TIERS,
 	} from '$lib/core/types/duel';
 	import { createDuelStore } from '$lib/features/duels';
+	import { MOCK_USER_ADDRESS } from '$lib/core/providers/mock/generators/duel';
 	import { Shell, Box } from '$lib/ui/terminal';
 	import { Button, ProgressBar, Badge } from '$lib/ui/primitives';
 	import { AmountDisplay, AddressDisplay } from '$lib/ui/data-display';
@@ -399,8 +400,7 @@
 
 						<!-- Stats Comparison -->
 						{#if store.state.duel.results.challenger && store.state.duel.results.opponent}
-							{@const isChallenger =
-								store.state.duel.challenger === '0x1234567890123456789012345678901234567890'}
+							{@const isChallenger = store.state.duel.challenger === MOCK_USER_ADDRESS}
 							{@const yourResult = isChallenger
 								? store.state.duel.results.challenger
 								: store.state.duel.results.opponent}

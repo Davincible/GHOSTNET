@@ -12,13 +12,8 @@ import type {
 	DuelStats,
 	DuelHistoryEntry,
 	CreateDuelParams,
-	DuelTypingChallenge,
 } from '$lib/core/types';
-import {
-	DUEL_COUNTDOWN_SECONDS,
-	calculateDuelWinnings,
-	getUserDuelRole,
-} from '$lib/core/types/duel';
+import { DUEL_COUNTDOWN_SECONDS, calculateDuelWinnings } from '$lib/core/types/duel';
 import {
 	generateOpenChallenges,
 	generateUserChallenges,
@@ -28,7 +23,6 @@ import {
 	simulateAcceptDuel,
 	simulateStartDuel,
 	simulateCompleteDuel,
-	simulateCancelDuel,
 	createOpponentSimulator,
 } from '$lib/core/providers/mock/generators/duel';
 
@@ -112,6 +106,7 @@ export function createDuelStore(): DuelStore {
 	// Timers
 	let countdownInterval: ReturnType<typeof setInterval> | null = null;
 	let timeInterval: ReturnType<typeof setInterval> | null = null;
+	let opponentAcceptTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// Opponent simulator
 	let opponentSim: { start: () => void; stop: () => void } | null = null;
@@ -143,6 +138,10 @@ export function createDuelStore(): DuelStore {
 			clearInterval(timeInterval);
 			timeInterval = null;
 		}
+		if (opponentAcceptTimeout) {
+			clearTimeout(opponentAcceptTimeout);
+			opponentAcceptTimeout = null;
+		}
 		if (opponentSim) {
 			opponentSim.stop();
 			opponentSim = null;
@@ -170,7 +169,7 @@ export function createDuelStore(): DuelStore {
 		state = { status: 'waiting', duel };
 
 		// Simulate an opponent accepting after a short delay (for demo)
-		setTimeout(
+		opponentAcceptTimeout = setTimeout(
 			() => {
 				if (state.status === 'waiting' && state.duel.id === duel.id) {
 					const acceptedDuel = simulateAcceptDuel(duel);
@@ -315,8 +314,10 @@ export function createDuelStore(): DuelStore {
 				if (state.status === 'active') {
 					const userProgress = calculateUserProgress();
 					if (userProgress >= 100) {
-						// We both finished - compare times
-						completeDuel(true, result);
+						// We both finished - compare actual finish times
+						const userResult = createUserResult(true);
+						const youWon = userResult.finishTime <= result.finishTime;
+						completeDuel(youWon, result);
 					} else {
 						// Opponent finished first
 						completeDuel(false, result);
@@ -357,8 +358,12 @@ export function createDuelStore(): DuelStore {
 				yourProgress: {
 					...yourProgress,
 					typed: yourProgress.typed.slice(0, -1),
-					correctChars: wasCorrect ? yourProgress.correctChars - 1 : yourProgress.correctChars,
-					errorChars: wasCorrect ? yourProgress.errorChars : yourProgress.errorChars - 1,
+					correctChars: wasCorrect
+						? Math.max(0, yourProgress.correctChars - 1)
+						: yourProgress.correctChars,
+					errorChars: wasCorrect
+						? yourProgress.errorChars
+						: Math.max(0, yourProgress.errorChars - 1),
 					currentTime: Date.now(),
 				},
 			};
@@ -384,10 +389,7 @@ export function createDuelStore(): DuelStore {
 
 		// Check if user completed
 		if (yourProgress.correctChars + (isCorrect ? 1 : 0) >= command.length) {
-			// User finished - create result and complete
-			const userResult = createUserResult(true);
-
-			// Stop opponent sim
+			// User finished first - stop opponent sim
 			if (opponentSim) {
 				opponentSim.stop();
 			}

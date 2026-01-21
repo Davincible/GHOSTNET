@@ -39,7 +39,7 @@ const MOCK_OPPONENTS: Array<{ address: `0x${string}`; name: string }> = [
 ];
 
 /** User's address for mock mode */
-const USER_ADDRESS: `0x${string}` = '0x1234567890123456789012345678901234567890';
+export const MOCK_USER_ADDRESS: `0x${string}` = '0x1234567890123456789012345678901234567890';
 
 // ════════════════════════════════════════════════════════════════
 // HELPERS
@@ -120,7 +120,7 @@ export function generateMockDuel(options?: {
 	let opponentName: string | undefined;
 
 	if (isUserChallenger) {
-		challenger = USER_ADDRESS;
+		challenger = MOCK_USER_ADDRESS;
 		challengerName = 'You';
 	} else {
 		const mockChallenger = pickRandom(MOCK_OPPONENTS);
@@ -131,7 +131,7 @@ export function generateMockDuel(options?: {
 	// Add opponent based on status
 	if (status !== 'open' && status !== 'cancelled') {
 		if (isUserOpponent) {
-			opponent = USER_ADDRESS;
+			opponent = MOCK_USER_ADDRESS;
 			opponentName = 'You';
 		} else if (!isUserChallenger) {
 			// Pick a different mock opponent
@@ -303,7 +303,7 @@ export function generateDuelHistory(count: number = 10): DuelHistoryEntry[] {
 			isUserOpponent: !isUserChallenger,
 		});
 
-		const youWon = duel.winner === USER_ADDRESS;
+		const youWon = duel.winner === MOCK_USER_ADDRESS;
 		const { payout } = calculateDuelWinnings(duel.wagerAmount);
 		const netAmount = youWon ? payout - duel.wagerAmount : -duel.wagerAmount;
 
@@ -410,8 +410,8 @@ export function createOpponentSimulator(
 				const timeElapsed = Date.now() - startTime;
 				onComplete({
 					completed: true,
-					accuracy: correctChars / totalChars,
-					wpm: Math.round((correctChars / 5 / timeElapsed) * 60000),
+					accuracy: totalChars > 0 ? correctChars / totalChars : 0,
+					wpm: timeElapsed > 0 ? Math.round((correctChars / 5 / timeElapsed) * 60000) : 0,
 					timeElapsed,
 					finishTime: Date.now(),
 					progressPercent: 100,
@@ -443,7 +443,7 @@ export function simulateCreateDuel(params: CreateDuelParams): Duel {
 
 	return {
 		id: crypto.randomUUID(),
-		challenger: USER_ADDRESS,
+		challenger: MOCK_USER_ADDRESS,
 		challengerName: 'You',
 		opponent: params.targetAddress ?? null,
 		opponentName: params.targetAddress ? truncateAddress(params.targetAddress) : undefined,
@@ -467,7 +467,7 @@ export function simulateAcceptDuel(duel: Duel): Duel {
 	return {
 		...duel,
 		status: 'accepted',
-		opponent: USER_ADDRESS,
+		opponent: MOCK_USER_ADDRESS,
 		opponentName: 'You',
 	};
 }
@@ -491,7 +491,7 @@ export function simulateCompleteDuel(
 	userResult: DuelPlayerResult,
 	opponentResult: DuelPlayerResult
 ): Duel {
-	const isUserChallenger = duel.challenger === USER_ADDRESS;
+	const isUserChallenger = duel.challenger === MOCK_USER_ADDRESS;
 
 	const results: Duel['results'] = isUserChallenger
 		? { challenger: userResult, opponent: opponentResult }
