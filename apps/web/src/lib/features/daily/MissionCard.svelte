@@ -17,7 +17,7 @@
 	);
 
 	// Format reward for display
-	let rewardText = $derived(() => {
+	let rewardText = $derived.by(() => {
 		const { type, value, duration } = mission.reward;
 		const durationText = duration ? ` (${Math.round(duration / (60 * 60 * 1000))}h)` : '';
 
@@ -34,7 +34,7 @@
 	});
 
 	// Mission status icon
-	let statusIcon = $derived(() => {
+	let statusIcon = $derived.by(() => {
 		if (mission.claimed) return '✓';
 		if (mission.completed) return '●';
 		if (mission.progress > 0) return '■';
@@ -48,7 +48,7 @@
 
 <article class="mission-card" class:completed={mission.completed} class:claimed={mission.claimed}>
 	<header class="mission-header">
-		<span class="mission-status">{statusIcon()}</span>
+		<span class="mission-status">{statusIcon}</span>
 		<span class="mission-title">{mission.title}</span>
 		<span class="mission-progress-text">
 			{mission.progress}/{mission.target}
@@ -66,7 +66,7 @@
 	<footer class="mission-footer">
 		<span class="mission-reward">
 			<span class="reward-label">Reward:</span>
-			{rewardText()}
+			{rewardText}
 		</span>
 
 		{#if mission.completed && !mission.claimed}

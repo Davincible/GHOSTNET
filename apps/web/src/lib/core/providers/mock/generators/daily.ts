@@ -9,14 +9,12 @@
  * - Mission progress tracking
  */
 
-import type { DailyProgress, DailyMission, MissionReward } from '../../../types';
+import type { DailyProgress, DailyMission } from '../../../types';
 import {
 	DAILY_REWARDS,
 	MISSION_TEMPLATES,
 	getDailyReward,
 	getNextResetTime,
-	isSameUTCDay,
-	wasYesterdayUTC,
 } from '../../../types/daily';
 
 // ════════════════════════════════════════════════════════════════
@@ -26,12 +24,6 @@ import {
 /** Generate random integer in range (inclusive) */
 function randomInt(min: number, max: number): number {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/** Pick random items from an array without replacement */
-function pickRandomN<T>(arr: readonly T[], n: number): T[] {
-	const shuffled = [...arr].sort(() => Math.random() - 0.5);
-	return shuffled.slice(0, n);
 }
 
 /** Weighted random selection */
@@ -339,17 +331,18 @@ export function simulateCheckIn(progress: DailyProgress): DailyProgress {
 	}
 
 	const now = Date.now();
-	const newStreak = progress.currentStreak < 7 ? progress.currentStreak + 1 : 1; // Reset after 7
 
-	// Update week progress
-	const weekProgress = [...progress.weekProgress];
+	// Update week progress - mark current day as checked
+	const weekProgress = [...progress.weekProgress] as typeof progress.weekProgress;
 	weekProgress[progress.currentStreak - 1] = true;
 
-	// If completing day 7, reset for next week
-	if (progress.currentStreak === 7) {
-		weekProgress.fill(false);
-		weekProgress[0] = true;
-	}
+	// Calculate new streak
+	// On day 7, stay at 7 (week complete). Reset happens on next day via simulateDayPassing.
+	const isWeekComplete = progress.currentStreak === 7;
+	const newStreak = isWeekComplete ? 7 : progress.currentStreak + 1;
+
+	// Next reward: if week complete, show day 1 preview; otherwise show next day
+	const nextRewardDay = isWeekComplete ? 1 : Math.min(newStreak + 1, 7);
 
 	return {
 		...progress,
@@ -357,7 +350,7 @@ export function simulateCheckIn(progress: DailyProgress): DailyProgress {
 		maxStreak: Math.max(progress.maxStreak, newStreak),
 		lastCheckIn: now,
 		todayCheckedIn: true,
-		nextReward: getDailyReward(Math.min(newStreak + 1, 7)),
+		nextReward: getDailyReward(nextRewardDay),
 		weekProgress,
 	};
 }
@@ -388,6 +381,20 @@ export function simulateDayPassing(
 	}
 
 	// Day passed, yesterday was checked in
+	// If we completed day 7, reset to day 1 for new week
+	const wasWeekComplete = progress.currentStreak === 7 && progress.todayCheckedIn;
+
+	if (wasWeekComplete) {
+		return {
+			...progress,
+			currentStreak: 1,
+			todayCheckedIn: false,
+			nextReward: getDailyReward(1),
+			weekProgress: [false, false, false, false, false, false, false],
+			nextResetAt: getNextResetTime(now),
+		};
+	}
+
 	return {
 		...progress,
 		todayCheckedIn: false,

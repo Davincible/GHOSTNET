@@ -20,7 +20,7 @@ export type DailyRewardType = 'death_rate' | 'yield' | 'bonus_tokens';
 export interface DailyReward {
 	/** Day number in the streak (1-7) */
 	day: number;
-	/** Type of reward */
+	/** Type of reward (primary effect) */
 	type: DailyRewardType;
 	/** Value: negative for death_rate reduction, positive for yield/tokens */
 	value: number;
@@ -28,6 +28,8 @@ export interface DailyReward {
 	duration: number | null;
 	/** Human-readable description */
 	description: string;
+	/** Optional bonus tokens for compound rewards (e.g., Day 7) */
+	bonusTokens?: number;
 }
 
 /** User's daily check-in progress */
@@ -43,7 +45,7 @@ export interface DailyProgress {
 	/** The reward available for today's check-in */
 	nextReward: DailyReward;
 	/** Progress through the week [day1, day2, ...day7] */
-	weekProgress: boolean[];
+	weekProgress: [boolean, boolean, boolean, boolean, boolean, boolean, boolean];
 	/** Timestamp when daily resets (next UTC midnight) */
 	nextResetAt: number;
 }
@@ -98,10 +100,11 @@ export const DAILY_REWARDS: DailyReward[] = [
 	},
 	{
 		day: 7,
-		type: 'bonus_tokens',
-		value: 50,
-		duration: 24 * 60 * 60 * 1000, // Death rate bonus also lasts 24h
-		description: '-10% death rate + 50 $DATA',
+		type: 'death_rate',
+		value: -0.10,
+		duration: 24 * 60 * 60 * 1000,
+		description: '-10% death rate (24h) + 50 $DATA',
+		bonusTokens: 50,
 	},
 ];
 

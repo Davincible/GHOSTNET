@@ -93,32 +93,43 @@
 		if (dailyState.progress.todayCheckedIn) return;
 
 		checkingIn = true;
-		// Simulate network delay
-		await new Promise((resolve) => setTimeout(resolve, 800));
+		try {
+			// Simulate network delay
+			await new Promise((resolve) => setTimeout(resolve, 800));
 
-		// Update state
-		dailyState = {
-			...dailyState,
-			progress: simulateCheckIn(dailyState.progress),
-		};
+			// Update state
+			dailyState = {
+				...dailyState,
+				progress: simulateCheckIn(dailyState.progress),
+			};
 
-		toast.success(`Day ${dailyState.progress.currentStreak} reward claimed!`);
-		checkingIn = false;
+			toast.success(`Day ${dailyState.progress.currentStreak} reward claimed!`);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Check-in failed';
+			toast.error(message);
+		} finally {
+			checkingIn = false;
+		}
 	}
 
 	function handleClaimMission(missionId: string) {
 		const mission = dailyState.missions.find((m) => m.id === missionId);
 		if (!mission || !mission.completed || mission.claimed) return;
 
-		// Update mission state
-		dailyState = {
-			...dailyState,
-			missions: dailyState.missions.map((m) =>
-				m.id === missionId ? claimMission(m) : m
-			),
-		};
+		try {
+			// Update mission state
+			dailyState = {
+				...dailyState,
+				missions: dailyState.missions.map((m) =>
+					m.id === missionId ? claimMission(m) : m
+				),
+			};
 
-		toast.success(`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`);
+			toast.success(`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Failed to claim mission';
+			toast.error(message);
+		}
 	}
 
 	// Keyboard shortcuts (SHIFT + key)

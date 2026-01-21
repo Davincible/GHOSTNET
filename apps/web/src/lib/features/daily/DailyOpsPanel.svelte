@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import type { DailyProgress, DailyMission } from '$lib/core/types';
 	import { Box } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
@@ -37,6 +38,26 @@
 
 	// Count completed missions
 	let completedMissions = $derived(missions.filter((m) => m.completed).length);
+
+	// Format reset time - use UTC on server to avoid hydration mismatch
+	let resetTimeFormatted = $state('00:00 UTC');
+
+	$effect(() => {
+		if (browser) {
+			// Client-side: use local timezone
+			resetTimeFormatted = new Date(progress.nextResetAt).toLocaleTimeString([], {
+				hour: '2-digit',
+				minute: '2-digit',
+				timeZoneName: 'short',
+			});
+		} else {
+			// Server-side: use UTC for consistency
+			const date = new Date(progress.nextResetAt);
+			const hours = date.getUTCHours().toString().padStart(2, '0');
+			const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+			resetTimeFormatted = `${hours}:${minutes} UTC`;
+		}
+	});
 </script>
 
 <div class="daily-ops">
@@ -96,13 +117,7 @@
 	<!-- Reset countdown -->
 	<div class="reset-info">
 		<span class="reset-label">Resets at</span>
-		<span class="reset-time">
-			{new Date(progress.nextResetAt).toLocaleTimeString([], {
-				hour: '2-digit',
-				minute: '2-digit',
-				timeZoneName: 'short',
-			})}
-		</span>
+		<span class="reset-time">{resetTimeFormatted}</span>
 	</div>
 </div>
 
