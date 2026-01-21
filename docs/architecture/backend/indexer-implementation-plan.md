@@ -3,7 +3,7 @@
 > **Version**: 1.2.0  
 > **Created**: 2026-01-21  
 > **Last Updated**: 2026-01-21  
-> **Status**: In Progress (Phase 6 Complete, Phase 8 Next)  
+> **Status**: In Progress (Phases 3, 4, 6 Complete - Phase 7 or 8 Next)  
 > **Reference**: See `indexer-architecture.md` for full specification
 
 This document tracks the implementation progress of the GHOSTNET Event Indexer. Use this as the single source of truth for what's done, what's in progress, and what's next.
@@ -85,11 +85,11 @@ Every phase must pass before moving to the next:
 
 | Phase | Name | Duration | Status | Started | Completed |
 |-------|------|----------|--------|---------|-----------|
-| 0 | Project Scaffolding | 1 day | Complete | 2026-01-21 | 2026-01-21 |
-| 1 | Type Foundation | 2 days | Complete | 2026-01-21 | 2026-01-21 |
-| 2 | ABI Bindings | 2 days | Complete | 2026-01-21 | 2026-01-21 |
-| 3 | Vertical Slice (Positions) | 5 days | ~90% Complete | 2026-01-21 | - |
-| 4 | WebSocket + Reorg Handling | 3 days | Partial (WS done) | 2026-01-21 | - |
+| 0 | Project Scaffolding | 1 day | ✅ Complete | 2026-01-21 | 2026-01-21 |
+| 1 | Type Foundation | 2 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
+| 2 | ABI Bindings | 2 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
+| 3 | Vertical Slice (Positions) | 5 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
+| 4 | WebSocket + Reorg Handling | 3 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
 | 5 | Complete Event Handlers | 5 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
 | 6 | Apache Iggy Streaming | 4 days | ✅ Complete | 2026-01-21 | 2026-01-21 |
 | 7 | In-Memory Caching | 2 days | Partial (block cache) | 2026-01-21 | - |
@@ -248,9 +248,9 @@ services/ghostnet-indexer/
 
 **Duration**: 5 days
 
-**Status**: 🟢 ~90% Complete (started 2026-01-21) - Only integration tests remaining
+**Status**: ✅ Complete (2026-01-21)
 
-**This is the highest-risk phase** - it proves the architecture works.
+**This was the highest-risk phase** - it proved the architecture works.
 
 #### Tasks
 
@@ -268,8 +268,8 @@ services/ghostnet-indexer/
 | 3.10 | Create `migrations/00002_indexer_state.sql` | [x] | indexer_state, block_hashes tables |
 | 3.11 | Create `migrations/00003_positions.sql` | [x] | positions, position_history hypertables |
 | 3.12 | Write mock store for unit tests | [x] | MockCache in ports/cache.rs, MockPositionStore in handlers |
-| 3.13 | Write integration tests with testcontainers | [ ] | Pending |
-| 3.14 | Test full flow: RPC → Handler → DB | [ ] | Pending |
+| 3.13 | Write integration tests with testcontainers | [x] | 18 tests in tests/store_integration.rs |
+| 3.14 | Test full flow: RPC → Handler → DB | [x] | 9 tests in tests/full_flow_integration.rs |
 | 3.15 | Create `migrations/00004_scans_deaths.sql` | [x] | scans, deaths, level_stats, global_stats |
 | 3.16 | Implement `src/indexer/realtime_processor.rs` | [x] | MegaETH WebSocket Realtime API (~10ms latency) |
 | 3.17 | Add block timestamp caching | [x] | moka::future::Cache with 1hr TTL |
@@ -293,14 +293,18 @@ services/ghostnet-indexer/
 - [x] `migrations/20260121000002_indexer_state.sql`
 - [x] `migrations/20260121000003_positions.sql`
 - [x] `migrations/20260121000004_scans_deaths.sql`
-- [ ] `tests/store_integration.rs` (pending)
+- [x] `tests/common/mod.rs` (shared test utilities)
+- [x] `tests/common/containers.rs` (TimescaleDB testcontainer)
+- [x] `tests/common/fixtures.rs` (TestDb and fixture helpers)
+- [x] `tests/store_integration.rs` (18 store integration tests)
+- [x] `tests/full_flow_integration.rs` (9 end-to-end flow tests)
 
 #### Acceptance Criteria
 
 - [x] Can connect to MegaETH RPC (block_processor.rs with HTTP, realtime_processor.rs with WebSocket)
 - [x] Can decode JackedIn events (via ABI bindings and EventRouter)
 - [x] Can persist positions to TimescaleDB (PostgresStore implementation complete)
-- [ ] Integration tests pass with real TimescaleDB (pending testcontainers setup)
+- [x] Integration tests pass with real TimescaleDB (18 store tests, 9 full flow tests)
 
 ---
 
@@ -310,32 +314,33 @@ services/ghostnet-indexer/
 
 **Duration**: 3 days
 
-**Status**: 🟡 Partial (WebSocket done, reorg handling in store)
+**Status**: ✅ Complete (2026-01-21)
 
 #### Tasks
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 4.1 | Add WebSocket subscription to `block_processor.rs` | [x] | Done via `realtime_processor.rs` using MegaETH Realtime API |
-| 4.2 | Implement `src/indexer/reorg_handler.rs` | [ ] | Logic exists in IndexerStateStore |
-| 4.3 | Implement `src/indexer/checkpoint.rs` | [ ] | Via IndexerStateStore.set_last_block() |
+| 4.2 | Implement `src/indexer/reorg_handler.rs` | [x] | ReorgHandler with detect/execute methods |
+| 4.3 | Implement `src/indexer/checkpoint.rs` | [x] | CheckpointManager with recovery modes |
 | 4.4 | Add block_history table migration | [x] | `block_hashes` table in migration 00002 |
 | 4.5 | Implement reorg rollback SQL function | [x] | IndexerStateStore.execute_reorg_rollback() |
-| 4.6 | Write reorg simulation tests | [ ] | |
-| 4.7 | Test checkpoint recovery | [ ] | |
+| 4.6 | Write reorg simulation tests | [x] | 10 tests in tests/reorg_integration.rs |
+| 4.7 | Test checkpoint recovery | [x] | 8 tests in tests/reorg_integration.rs |
 
 #### Files Created/Modified
 
-- [ ] `src/indexer/block_processor.rs` (modified)
-- [ ] `src/indexer/reorg_handler.rs`
-- [ ] `src/indexer/checkpoint.rs`
-- [ ] Migration for `block_history` table
+- [x] `src/indexer/block_processor.rs` (modified)
+- [x] `src/indexer/reorg_handler.rs` (ReorgHandler, ReorgCheckResult, ReorgStats)
+- [x] `src/indexer/checkpoint.rs` (CheckpointManager, RecoveryMode, CheckpointState)
+- [x] Migration for `block_history` table (in 00002)
+- [x] `tests/reorg_integration.rs` (18 reorg/checkpoint integration tests)
 
 #### Acceptance Criteria
 
-- [ ] Real-time block subscription works
-- [ ] Reorg detection triggers rollback
-- [ ] Indexer recovers from restart at correct block
+- [x] Real-time block subscription works (via realtime_processor.rs)
+- [x] Reorg detection triggers rollback (ReorgHandler.check_for_reorg + execute_rollback)
+- [x] Indexer recovers from restart at correct block (CheckpointManager with recovery modes)
 
 ---
 
