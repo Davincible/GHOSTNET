@@ -472,10 +472,18 @@ contract ArcadeCore is
         if (session.game != msg.sender) revert SessionGameMismatch();
 
         // 3. Validate session allows refunds
-        // - CANCELLED: Always allows refunds
-        // - ACTIVE: Allows partial refunds (e.g., player wants out before game starts)
+        // - CANCELLED: Always allows refunds (if no payouts made)
+        // - ACTIVE: Only if no payouts have been made yet
         // - SETTLED: No refunds - game completed normally
+        //
+        // CRITICAL: Once ANY payout is made, refunds are blocked to prevent solvency attack
+        // Attack vector without this check:
+        //   1. Player deposits 100 (95 net after rake)
+        //   2. Game credits payout of 50
+        //   3. Game calls refund for 95 (original deposit)
+        //   4. Player has 145 pending but contract only has 95 tokens = INSOLVENT
         if (session.state == SessionState.SETTLED) revert SessionNotRefundable();
+        if (session.totalPaid > 0) revert RefundsBlockedAfterPayouts();
 
         // 4. Check for double-refund (Critical: prevents drain attack)
         bytes32 depositKey = _depositKey(sessionId, player);
@@ -529,7 +537,9 @@ contract ArcadeCore is
         if (session.game != msg.sender) revert SessionGameMismatch();
 
         // 3. Validate session allows refunds
+        // CRITICAL: Block refunds after any payouts to prevent solvency attack
         if (session.state == SessionState.SETTLED) revert SessionNotRefundable();
+        if (session.totalPaid > 0) revert RefundsBlockedAfterPayouts();
 
         uint256 totalRefunded;
         uint256 playersRefunded;
@@ -588,6 +598,10 @@ contract ArcadeCore is
 
         // 2. Session must be CANCELLED (games cancel when seed expires)
         if (session.state != SessionState.CANCELLED) revert SessionNotRefundable();
+
+        // CRITICAL: Block refunds after any payouts to prevent solvency attack
+        // Even for CANCELLED sessions, if payouts were made, refunds would cause insolvency
+        if (session.totalPaid > 0) revert RefundsBlockedAfterPayouts();
 
         // 3. Check for double-refund
         bytes32 depositKey = _depositKey(sessionId, player);

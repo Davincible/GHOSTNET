@@ -91,6 +91,7 @@ interface IArcadeCore {
     error InvalidRefundAmount();
     error AlreadyRefunded();
     error SessionNotRefundable();
+    error RefundsBlockedAfterPayouts();
     error NoDepositFound();
 
     // === ENTRY ERRORS ===
