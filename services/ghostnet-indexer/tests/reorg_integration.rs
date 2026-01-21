@@ -87,9 +87,10 @@ async fn test_reorg_detection_parent_mismatch() {
     // Should detect a reorg
     match result {
         ReorgCheckResult::ReorgDetected { fork_point, depth } => {
-            // Fork point should be somewhere before 103
-            assert!(fork_point.value() <= 102);
-            assert!(depth > 0);
+            // Current implementation uses from_block.prev().prev() = 103 - 2 = 101
+            // This is a simplified placeholder; real implementation would walk both chains.
+            assert_eq!(fork_point.value(), 101, "fork point should be two blocks before detection");
+            assert_eq!(depth, 2, "depth should match distance from detection to fork point");
         }
         other => panic!("Expected ReorgDetected, got {other:?}"),
     }
@@ -474,7 +475,7 @@ async fn test_full_reorg_workflow_with_positions() {
                 .get_block_hash(fork_point)
                 .await
                 .unwrap()
-                .unwrap_or(B256::ZERO);
+                .expect("fork point block hash should exist after rollback");
             checkpoint_manager
                 .reset_to(fork_point, fork_hash)
                 .await
@@ -491,7 +492,16 @@ async fn test_full_reorg_workflow_with_positions() {
         .unwrap()
         .is_none());
 
-    // Note: Positions are NOT rolled back in current implementation
-    // because we don't track block numbers on position rows (yet).
-    // This is documented as a TODO in execute_reorg_rollback().
+    // 6. Verify positions are NOT rolled back (known limitation)
+    // Positions don't track block numbers, so they persist after reorg.
+    // See TODO in execute_reorg_rollback() for future implementation.
+    let pos1_after = db
+        .store
+        .get_active_position(&pos1.user_address)
+        .await
+        .unwrap();
+    assert!(
+        pos1_after.is_some(),
+        "positions should persist after rollback (known limitation)"
+    );
 }
