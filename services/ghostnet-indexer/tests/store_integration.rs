@@ -8,7 +8,7 @@ mod common;
 
 use alloy::primitives::{B256, U256};
 
-use common::fixtures::{death_fixtures, position_fixtures, scan_fixtures, TestDb};
+use common::fixtures::{TestDb, death_fixtures, position_fixtures, scan_fixtures};
 use ghostnet_indexer::ports::{DeathStore, IndexerStateStore, PositionStore, ScanStore};
 use ghostnet_indexer::types::entities::ScanFinalizationData;
 use ghostnet_indexer::types::enums::Level;
@@ -212,11 +212,7 @@ async fn test_get_recent_scans() {
     }
 
     // Get recent scans with limit
-    let recent = db
-        .store
-        .get_recent_scans(Level::Darknet, 3)
-        .await
-        .unwrap();
+    let recent = db.store.get_recent_scans(Level::Darknet, 3).await.unwrap();
 
     assert_eq!(recent.len(), 3);
 }
@@ -390,32 +386,36 @@ async fn test_reorg_rollback() {
     db.store.execute_reorg_rollback(fork_point).await.unwrap();
 
     // Verify blocks after fork point are deleted
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(103))
-        .await
-        .unwrap()
-        .is_none());
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(104))
-        .await
-        .unwrap()
-        .is_none());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(103))
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(104))
+            .await
+            .unwrap()
+            .is_none()
+    );
 
     // Verify blocks at and before fork point still exist
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(102))
-        .await
-        .unwrap()
-        .is_some());
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(101))
-        .await
-        .unwrap()
-        .is_some());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(102))
+            .await
+            .unwrap()
+            .is_some()
+    );
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(101))
+            .await
+            .unwrap()
+            .is_some()
+    );
 }
 
 #[tokio::test]
@@ -444,20 +444,22 @@ async fn test_prune_old_blocks() {
     assert!(pruned > 0);
 
     // Old blocks should be gone
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(1))
-        .await
-        .unwrap()
-        .is_none());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(1))
+            .await
+            .unwrap()
+            .is_none()
+    );
 
     // Recent blocks should still exist
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(100))
-        .await
-        .unwrap()
-        .is_some());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(100))
+            .await
+            .unwrap()
+            .is_some()
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -515,5 +517,8 @@ async fn test_hypertables_created() {
     .await
     .unwrap();
 
-    assert!(result.is_none(), "scans should NOT be a hypertable (needs unique constraint on scan_id)");
+    assert!(
+        result.is_none(),
+        "scans should NOT be a hypertable (needs unique constraint on scan_id)"
+    );
 }

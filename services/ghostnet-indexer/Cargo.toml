@@ -151,7 +151,8 @@ rstest = "0.24"
 
 [features]
 default = []
-# Exposes test utilities (mock implementations) for downstream crates
+# Exposes test utilities (mock implementations) for integration tests and downstream crates.
+# Run integration tests with: cargo test --features test-utils
 test-utils = []
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -6,7 +6,7 @@ use sqlx::PgPool;
 use testcontainers::ContainerAsync;
 use testcontainers::runners::AsyncRunner;
 
-use super::containers::{build_connection_string, TimescaleDb};
+use super::containers::{TimescaleDb, build_connection_string};
 use ghostnet_indexer::store::PostgresStore;
 
 /// A test database instance with pool and container.

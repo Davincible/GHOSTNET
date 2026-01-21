@@ -7,10 +7,8 @@ mod common;
 
 use alloy::primitives::B256;
 
-use common::fixtures::{position_fixtures, TestDb};
-use ghostnet_indexer::indexer::{
-    CheckpointManager, RecoveryMode, ReorgCheckResult, ReorgHandler,
-};
+use common::fixtures::{TestDb, position_fixtures};
+use ghostnet_indexer::indexer::{CheckpointManager, RecoveryMode, ReorgCheckResult, ReorgHandler};
 use ghostnet_indexer::ports::{IndexerStateStore, PositionStore};
 use ghostnet_indexer::types::enums::Level;
 use ghostnet_indexer::types::primitives::BlockNumber;
@@ -89,8 +87,15 @@ async fn test_reorg_detection_parent_mismatch() {
         ReorgCheckResult::ReorgDetected { fork_point, depth } => {
             // Current implementation uses from_block.prev().prev() = 103 - 2 = 101
             // This is a simplified placeholder; real implementation would walk both chains.
-            assert_eq!(fork_point.value(), 101, "fork point should be two blocks before detection");
-            assert_eq!(depth, 2, "depth should match distance from detection to fork point");
+            assert_eq!(
+                fork_point.value(),
+                101,
+                "fork point should be two blocks before detection"
+            );
+            assert_eq!(
+                depth, 2,
+                "depth should match distance from detection to fork point"
+            );
         }
         other => panic!("Expected ReorgDetected, got {other:?}"),
     }
@@ -232,18 +237,20 @@ async fn test_handle_reorg_full_flow() {
     assert_eq!(stats.new_hash, new_hash);
 
     // Blocks after fork point should be gone
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(101))
-        .await
-        .unwrap()
-        .is_none());
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(102))
-        .await
-        .unwrap()
-        .is_none());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(101))
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(102))
+            .await
+            .unwrap()
+            .is_none()
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -290,8 +297,7 @@ async fn test_checkpoint_update_and_load() {
 #[tokio::test]
 async fn test_checkpoint_get_start_block_resume_empty() {
     let db = TestDb::new().await;
-    let manager = CheckpointManager::new(db.store.clone())
-        .with_min_block(BlockNumber::new(1000));
+    let manager = CheckpointManager::new(db.store.clone()).with_min_block(BlockNumber::new(1000));
 
     let start = manager.get_start_block().await.unwrap();
 
@@ -350,8 +356,8 @@ async fn test_checkpoint_genesis_mode() {
         .await
         .unwrap();
 
-    let manager = CheckpointManager::new(db.store.clone())
-        .with_recovery_mode(RecoveryMode::Genesis);
+    let manager =
+        CheckpointManager::new(db.store.clone()).with_recovery_mode(RecoveryMode::Genesis);
 
     let start = manager.get_start_block().await.unwrap();
 
@@ -392,7 +398,10 @@ async fn test_checkpoint_reset_after_rollback() {
         .unwrap();
 
     // Set checkpoint at 500
-    manager.update(BlockNumber::new(500), hash_500).await.unwrap();
+    manager
+        .update(BlockNumber::new(500), hash_500)
+        .await
+        .unwrap();
 
     // Simulate reorg: first execute rollback (which clears indexer_state after fork)
     db.store
@@ -401,7 +410,10 @@ async fn test_checkpoint_reset_after_rollback() {
         .unwrap();
 
     // Then reset checkpoint to fork point
-    manager.reset_to(BlockNumber::new(400), hash_400).await.unwrap();
+    manager
+        .reset_to(BlockNumber::new(400), hash_400)
+        .await
+        .unwrap();
 
     // Load and verify - checkpoint should be at 400
     let state = manager.load().await.unwrap();
@@ -485,12 +497,13 @@ async fn test_full_reorg_workflow_with_positions() {
     }
 
     // 5. Verify blocks after fork point are gone
-    assert!(db
-        .store
-        .get_block_hash(BlockNumber::new(102))
-        .await
-        .unwrap()
-        .is_none());
+    assert!(
+        db.store
+            .get_block_hash(BlockNumber::new(102))
+            .await
+            .unwrap()
+            .is_none()
+    );
 
     // 6. Verify positions are NOT rolled back (known limitation)
     // Positions don't track block numbers, so they persist after reorg.

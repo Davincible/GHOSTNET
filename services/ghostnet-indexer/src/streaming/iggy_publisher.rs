@@ -2,16 +2,16 @@
 //!
 //! Implements the `EventPublisher` port using Apache Iggy as the streaming backend.
 
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use async_trait::async_trait;
 use bytes::Bytes;
 use iggy::client::{Client, MessageClient, StreamClient, TopicClient};
 use iggy::clients::client::IggyClient;
+use iggy::compression::compression_algorithm::CompressionAlgorithm;
 use iggy::identifier::Identifier;
 use iggy::messages::send_messages::{Message, Partitioning};
-use iggy::compression::compression_algorithm::CompressionAlgorithm;
 use iggy::utils::expiry::IggyExpiry;
 use iggy::utils::topic_size::MaxTopicSize;
 use tokio::sync::RwLock;
@@ -171,20 +171,15 @@ impl IggyPublisher {
                 // Check if it's a "not found" error, otherwise propagate
                 let err_str = e.to_string();
                 if !err_str.contains("not found") && !err_str.contains("NotFound") {
-                    return Err(InfraError::Streaming(format!(
-                        "Failed to check stream: {e}"
-                    ))
-                    .into());
+                    return Err(
+                        InfraError::Streaming(format!("Failed to check stream: {e}")).into(),
+                    );
                 }
             }
         }
 
         // Create the stream
-        match self
-            .client
-            .create_stream(&self.stream_name, Some(1))
-            .await
-        {
+        match self.client.create_stream(&self.stream_name, Some(1)).await {
             Ok(_stream_details) => {
                 info!(stream = %self.stream_name, "Created Iggy stream");
                 Ok(())
@@ -221,9 +216,7 @@ impl IggyPublisher {
             Err(e) => {
                 let err_str = e.to_string();
                 if !err_str.contains("not found") && !err_str.contains("NotFound") {
-                    return Err(
-                        InfraError::Streaming(format!("Failed to check topic: {e}")).into(),
-                    );
+                    return Err(InfraError::Streaming(format!("Failed to check topic: {e}")).into());
                 }
             }
         }

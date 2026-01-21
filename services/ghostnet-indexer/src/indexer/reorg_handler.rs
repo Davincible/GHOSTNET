@@ -557,7 +557,10 @@ mod tests {
         let hash = B256::from([0xAA; 32]);
         let parent = B256::from([0x99; 32]);
 
-        handler.record_block(block, hash, parent, 12345).await.unwrap();
+        handler
+            .record_block(block, hash, parent, 12345)
+            .await
+            .unwrap();
 
         let stored = store
             .get_block_hash(block)
@@ -586,11 +589,29 @@ mod tests {
         assert_eq!(*called, Some(fork_point));
 
         // Verify blocks after fork point are gone
-        assert!(store.get_block_hash(BlockNumber::new(101)).await.unwrap().is_none());
-        assert!(store.get_block_hash(BlockNumber::new(102)).await.unwrap().is_none());
+        assert!(
+            store
+                .get_block_hash(BlockNumber::new(101))
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            store
+                .get_block_hash(BlockNumber::new(102))
+                .await
+                .unwrap()
+                .is_none()
+        );
 
         // Block at fork point should remain
-        assert!(store.get_block_hash(BlockNumber::new(100)).await.unwrap().is_some());
+        assert!(
+            store
+                .get_block_hash(BlockNumber::new(100))
+                .await
+                .unwrap()
+                .is_some()
+        );
     }
 
     #[tokio::test]

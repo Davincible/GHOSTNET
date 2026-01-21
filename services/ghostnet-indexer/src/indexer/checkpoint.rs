@@ -340,11 +340,11 @@ mod tests {
         async fn set_last_block(&self, block: BlockNumber, hash: B256) -> Result<()> {
             let mut guard = self.last_block.lock().unwrap();
             *guard = Some((block.value(), hash));
-            
+
             // Also store in block_hashes
             let mut hashes = self.block_hashes.lock().unwrap();
             hashes.insert(block.value(), hash);
-            
+
             Ok(())
         }
 
@@ -380,7 +380,7 @@ mod tests {
             {
                 let mut last = store.last_block.lock().unwrap();
                 *last = Some((block, hash));
-                
+
                 let mut hashes = store.block_hashes.lock().unwrap();
                 hashes.insert(block, hash);
             }
@@ -459,8 +459,7 @@ mod tests {
     #[tokio::test]
     async fn get_start_block_genesis() {
         let store = MockStateStore::with_checkpoint(500, B256::from([0xAA; 32]));
-        let manager =
-            CheckpointManager::new(store).with_recovery_mode(RecoveryMode::Genesis);
+        let manager = CheckpointManager::new(store).with_recovery_mode(RecoveryMode::Genesis);
 
         let start = manager.get_start_block().await.unwrap();
         assert_eq!(start.value(), 0);

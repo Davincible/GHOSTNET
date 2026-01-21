@@ -87,7 +87,7 @@ impl Clock for SystemClock {
 /// # Example
 ///
 /// ```
-/// use chrono::{Duration, TimeZone, Utc};
+/// use chrono::{Duration, TimeZone, Timelike, Utc};
 /// use ghostnet_indexer::ports::{Clock, FakeClock};
 ///
 /// let clock = FakeClock::new(Utc.with_ymd_and_hms(2024, 1, 1, 12, 0, 0).unwrap());
@@ -107,6 +107,7 @@ pub struct FakeClock {
 impl FakeClock {
     /// Create a fake clock at the specified time.
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)] // DateTime::timestamp() is not const
     pub fn new(time: DateTime<Utc>) -> Self {
         Self {
             time: std::sync::atomic::AtomicI64::new(time.timestamp()),
@@ -121,7 +122,7 @@ impl FakeClock {
 
     /// Create a fake clock at Unix epoch (1970-01-01 00:00:00 UTC).
     #[must_use]
-    pub fn epoch() -> Self {
+    pub const fn epoch() -> Self {
         Self {
             time: std::sync::atomic::AtomicI64::new(0),
         }

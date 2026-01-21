@@ -137,7 +137,12 @@ impl CacheStats {
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
+#[allow(
+    clippy::expect_used,              // Test-only code; panicking on lock poison is acceptable
+    clippy::significant_drop_tightening, // Lock patterns are clear in test code
+    clippy::clone_on_copy             // Explicit clones are fine in tests
+)]
 pub mod mocks {
     //! Mock implementations for testing.
 
@@ -145,7 +150,7 @@ pub mod mocks {
     use std::sync::RwLock;
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    use super::*;
+    use super::{Cache, CacheStats, EthAddress, GlobalStats, Position};
     use crate::types::enums::Level;
 
     /// Simple in-memory cache for testing.

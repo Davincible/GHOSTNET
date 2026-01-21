@@ -59,4 +59,4 @@ mod iggy_publisher;
 mod topics;
 
 pub use iggy_publisher::{IggyPublisher, NoOpPublisher};
-pub use topics::{Topic, TopicConfig, STREAM_NAME};
+pub use topics::{STREAM_NAME, Topic, TopicConfig};

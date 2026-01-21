@@ -4,8 +4,8 @@
 
 use std::collections::HashMap;
 
-use testcontainers::core::{ContainerPort, WaitFor};
 use testcontainers::Image;
+use testcontainers::core::{ContainerPort, WaitFor};
 
 /// TimescaleDB container image.
 ///
@@ -61,8 +61,12 @@ impl Image for TimescaleDb {
 
     fn env_vars(
         &self,
-    ) -> impl IntoIterator<Item = (impl Into<std::borrow::Cow<'_, str>>, impl Into<std::borrow::Cow<'_, str>>)>
-    {
+    ) -> impl IntoIterator<
+        Item = (
+            impl Into<std::borrow::Cow<'_, str>>,
+            impl Into<std::borrow::Cow<'_, str>>,
+        ),
+    > {
         self.env_vars.iter().map(|(k, v)| (k.as_str(), v.as_str()))
     }
 
