@@ -13,6 +13,9 @@ export * from './daily';
 // Re-export market/consumables types
 export * from './market';
 
+// Re-export duel types
+export * from './duel';
+
 // ════════════════════════════════════════════════════════════════
 // ENUMS & CONSTANTS
 // ════════════════════════════════════════════════════════════════

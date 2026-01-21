@@ -13,6 +13,8 @@
 		onTraceEvasion?: () => void;
 		/** Callback when hack run is clicked */
 		onHackRun?: () => void;
+		/** Callback when duels is clicked */
+		onDuels?: () => void;
 		/** Callback when crew is clicked */
 		onCrew?: () => void;
 		/** Callback when dead pool is clicked */
@@ -24,6 +26,7 @@
 		onExtract,
 		onTraceEvasion,
 		onHackRun,
+		onDuels,
 		onCrew,
 		onDeadPool
 	}: Props = $props();
@@ -78,6 +81,16 @@
 			onclick={onHackRun}
 		>
 			Hack Run
+		</Button>
+
+		<Button
+			variant="secondary"
+			hotkey="D"
+			fullWidth
+			disabled={!canPlayGames}
+			onclick={onDuels}
+		>
+			PvP Duels
 		</Button>
 
 		<div class="divider"></div>

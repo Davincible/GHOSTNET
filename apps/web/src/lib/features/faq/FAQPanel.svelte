@@ -90,7 +90,7 @@
 		{
 			id: 'pvp-duels',
 			question: 'What are PvP Duels?',
-			answer: 'Head-to-head typing races. Both players wager the same amount. Same challenge, first to finish wins. Winner takes 90% of pot, 10% burned. Challenge anyone or accept open challenges.'
+			answer: 'Head-to-head typing races. Both players wager the same amount. Same challenge, first to finish wins. Winner takes 95% of pot, 5% burned. Challenge anyone or accept open challenges.'
 		},
 		// === SOCIAL ===
 		{

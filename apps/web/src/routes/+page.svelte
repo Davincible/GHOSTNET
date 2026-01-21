@@ -68,6 +68,10 @@
 		goto('/games/hackrun');
 	}
 
+	function handleDuels() {
+		goto('/games/duels');
+	}
+
 	function handleCrew() {
 		goto('/crew');
 	}
@@ -183,6 +187,15 @@
 					handleHackRun();
 				}
 				break;
+			case 'd':
+				if (!provider.currentUser) {
+					toast.warning('Connect wallet first');
+				} else if (!provider.position) {
+					toast.warning('Jack In first to play Duels');
+				} else {
+					handleDuels();
+				}
+				break;
 			case 'c':
 				if (!provider.currentUser) {
 					toast.warning('Connect wallet to access Crew');
@@ -259,6 +272,7 @@
 					onExtract={handleExtract}
 					onTraceEvasion={handleTraceEvasion}
 					onHackRun={handleHackRun}
+					onDuels={handleDuels}
 					onCrew={handleCrew}
 					onDeadPool={handleDeadPool}
 				/>
