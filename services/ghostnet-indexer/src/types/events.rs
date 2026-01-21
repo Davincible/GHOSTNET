@@ -42,7 +42,15 @@ pub struct EventMetadata {
 ///
 /// This enum allows type-safe handling of any event from any GHOSTNET contract.
 /// Use pattern matching to handle specific event types.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// # Serialization
+///
+/// Events are serialized with a type tag for deserialization:
+/// ```json
+/// {"JackedIn": {"meta": {...}, "user": "0x...", "amount": "1000", ...}}
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 #[non_exhaustive] // CRITICAL: New event types will be added as contracts evolve
 pub enum GhostnetEvent {
     // ═══════════════════════════════════════════════════════════════════════════

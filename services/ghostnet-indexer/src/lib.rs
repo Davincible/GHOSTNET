@@ -60,11 +60,11 @@ pub mod handlers;
 pub mod indexer;
 pub mod ports;
 pub mod store;
+pub mod streaming;
 pub mod types;
 
 // Future modules (uncomment as implemented):
 // pub mod api;
-// pub mod streaming;
 
 /// Library version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

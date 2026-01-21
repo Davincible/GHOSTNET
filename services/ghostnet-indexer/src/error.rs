@@ -108,7 +108,7 @@ pub enum InfraError {
 
     /// Streaming error (Apache Iggy).
     #[error("streaming error: {0}")]
-    Streaming(#[source] Box<dyn std::error::Error + Send + Sync>),
+    Streaming(String),
 
     /// JSON serialization/deserialization error.
     #[error("serialization error: {0}")]
