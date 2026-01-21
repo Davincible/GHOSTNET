@@ -64,7 +64,7 @@ Phase 2 completes the full product vision from `master-design.md`:
 
 ## 2. Implementation Status
 
-> **Last verified:** 2026-01-21 (Updated: Phase 2I PvP Duels implemented - PHASE 2 COMPLETE!)
+> **Last verified:** 2026-01-21 (Phase 2 COMPLETE - All 9 phases implemented and code reviewed)
 
 ### Overview
 
@@ -94,7 +94,7 @@ OVERALL PHASE 2:      ███████████████████�
 - [x] Error handling system (`errors.ts` - 596 lines)
 - [x] Toast notifications (`ToastContainer`, `TransactionToast`)
 - [x] Transaction state management
-- [x] Navigation "Coming Soon" states (implemented but need wiring)
+- [x] Navigation fully wired to all routes
 
 #### Phase 2B: Dead Pool ✅
 - [x] Type definitions (`DeadPoolRound`, `DeadPoolResult`, `DeadPoolHistory`, etc.)
@@ -124,8 +124,6 @@ OVERALL PHASE 2:      ███████████████████�
 - [x] Page route (`/leaderboard/+page.svelte` - 212 lines)
 - [x] All UI components (CategoryTabs, TimeframeTabs, Table, CrewLeaderboard, YourRankCard)
 
-### Outstanding Items
-
 #### Phase 2F: Daily Operations ✅
 - [x] Type definitions (`daily.ts`) - Created with DailyProgress, DailyMission, utility functions
 - [x] Mock generator (`generators/daily.ts`) - Created with progress and mission generation
@@ -142,8 +140,8 @@ OVERALL PHASE 2:      ███████████████████�
 #### Phase 2H: Help & Onboarding ✅
 - [x] Help page route (`/help/+page.svelte`) - Created with 7 sections
 - [x] Help content - Written (Getting Started, Security Levels, Mini-Games, Crews, Tokenomics, Advanced, Keyboard)
-- [ ] Contextual tooltips - NOT CREATED (future enhancement)
-- [ ] First-time hints system - NOT CREATED (future enhancement)
+- [ ] Contextual tooltips - Deferred to future enhancement
+- [ ] First-time hints system - Deferred to future enhancement
 
 #### Phase 2I: PvP Duels ✅
 - [x] Type definitions (`duel.ts`) - Created with Duel, DuelTier, DuelStatus, DuelStats, etc.
@@ -151,6 +149,7 @@ OVERALL PHASE 2:      ███████████████████�
 - [x] Page route (`/games/duels/+page.svelte`) - Complete UI with lobby, active duel, results
 - [x] Store (`features/duels/store.svelte.ts`) - State machine for duel lifecycle
 - [x] Integration - Added to QuickActionsPanel with 'D' hotkey
+- [x] Code review fixes - Winner determination, memory leaks, guards for edge cases
 
 ### Known Issues / Technical Debt
 
@@ -159,10 +158,16 @@ OVERALL PHASE 2:      ███████████████████�
 
 **Fixed 2026-01-21:** All navigation items now properly link to their routes. Quick action handlers use `goto()` instead of toast messages.
 
-#### Provider Architecture Gap
-The mock provider (`provider.svelte.ts`) has a basic interface. Phase 2 features use separate mock generators called directly from pages rather than through the provider interface. Consider:
-- Integrating generators into the provider
-- Or accepting the current pattern as intentional for mock mode
+#### Provider Architecture Gap - Accepted Pattern
+The mock provider (`provider.svelte.ts`) has a basic interface. Phase 2 features use separate mock generators called directly from pages rather than through the provider interface. This pattern is intentional for mock mode - when Web3 integration is added (Phase 3), the generators will be replaced with contract calls while keeping the same store interfaces.
+
+### Future Enhancements (Post-Phase 2)
+
+These items were identified during Phase 2 but deferred:
+- Contextual tooltips for onboarding
+- First-time hints system
+- Feed event types for duels (DUEL_CREATED, DUEL_ACCEPTED, DUEL_COMPLETE)
+- Duel-specific audio sounds
 
 ### File Inventory
 
@@ -917,55 +922,42 @@ export interface TransactionState {
 </div>
 ```
 
-### 4.4 Navigation "Coming Soon" States
+### 4.4 Navigation States
+
+> **Status:** ✅ All navigation items now link to implemented routes.
 
 ```svelte
-<!-- lib/features/nav/NavigationBar.svelte - Updated -->
+<!-- lib/features/nav/NavigationBar.svelte - Current Implementation -->
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
   
   interface NavItem {
     id: string;
     label: string;
     href?: string;
-    comingSoon?: boolean;
+    comingSoon?: boolean;  // Retained for future features
     disabled?: boolean;
   }
   
+  // All routes now implemented
   const navItems: NavItem[] = [
     { id: 'network', label: 'NETWORK', href: '/' },
-    { id: 'position', label: 'POSITION', href: '/' },  // Same page, scrolls
+    { id: 'position', label: 'POSITION', href: '/' },
     { id: 'games', label: 'GAMES', href: '/typing' },
-    { id: 'crew', label: 'CREW', comingSoon: true },
-    { id: 'market', label: 'MARKET', comingSoon: true },
-    { id: 'leaderboard', label: 'RANKS', comingSoon: true },
+    { id: 'crew', label: 'CREW', href: '/crew' },
+    { id: 'market', label: 'MARKET', href: '/market' },
+    { id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },
     { id: 'help', label: '?', href: '/help' }
   ];
-  
-  let showComingSoon = $state(false);
-  let comingSoonFeature = $state('');
-  
-  function handleClick(item: NavItem) {
-    if (item.comingSoon) {
-      comingSoonFeature = item.label;
-      showComingSoon = true;
-      setTimeout(() => showComingSoon = false, 2000);
-      return;
-    }
-    if (item.href) {
-      goto(item.href);
-    }
-  }
 </script>
-
-<!-- Coming Soon tooltip -->
-{#if showComingSoon}
-  <div class="coming-soon-toast">
-    {comingSoonFeature} coming soon...
-  </div>
-{/if}
 ```
+
+Games are accessible via:
+- `/typing` - Trace Evasion (typing mini-game)
+- `/games/hackrun` - Hack Runs (roguelike mini-game)
+- `/games/duels` - PvP Duels (head-to-head typing races)
+
+Quick actions panel provides direct access with keyboard shortcuts: `T`, `H`, `D`
 
 ### 4.5 Final Polish Checklist
 
