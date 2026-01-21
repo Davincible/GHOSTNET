@@ -6,7 +6,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS positions (
-    id                  UUID PRIMARY KEY,
+    id                  UUID NOT NULL,
     user_address        BYTEA NOT NULL,              -- 20-byte Ethereum address
     level               SMALLINT NOT NULL,            -- Risk level (0-5)
     amount              NUMERIC NOT NULL,             -- Current staked amount
@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS positions (
     extracted_rewards   NUMERIC,                      -- Rewards received on extraction
     created_at_block    BIGINT NOT NULL,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    -- TimescaleDB requires partitioning column in primary key
+    PRIMARY KEY (id, entry_timestamp),
     
     -- Constraints
     CONSTRAINT chk_level CHECK (level >= 0 AND level <= 5),
@@ -55,8 +58,11 @@ CREATE INDEX IF NOT EXISTS idx_positions_level_entry
     ON positions(level, entry_timestamp ASC) 
     WHERE is_alive = TRUE AND is_extracted = FALSE;
 
--- Lookup by ID
+-- Lookup by ID (needed since id is not sole primary key anymore)
 CREATE INDEX IF NOT EXISTS idx_positions_id ON positions(id);
+
+-- Unique constraint on id to prevent duplicates across time partitions
+CREATE UNIQUE INDEX IF NOT EXISTS idx_positions_id_unique ON positions(id);
 
 -- Block number for reorg handling
 CREATE INDEX IF NOT EXISTS idx_positions_block ON positions(created_at_block);
@@ -66,14 +72,17 @@ CREATE INDEX IF NOT EXISTS idx_positions_block ON positions(created_at_block);
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS position_history (
-    id              UUID PRIMARY KEY,
+    id              UUID NOT NULL,
     position_id     UUID NOT NULL,
     user_address    BYTEA NOT NULL,
     action          VARCHAR(32) NOT NULL,             -- 'Jacked In', 'Stake Added', etc.
     amount_change   NUMERIC NOT NULL,                 -- Delta (positive or negative)
     new_total       NUMERIC NOT NULL,                 -- New amount after action
     block_number    BIGINT NOT NULL,
-    timestamp       TIMESTAMPTZ NOT NULL
+    timestamp       TIMESTAMPTZ NOT NULL,
+    
+    -- TimescaleDB requires partitioning column in primary key
+    PRIMARY KEY (id, timestamp)
 );
 
 -- Convert to hypertable

@@ -305,7 +305,7 @@ pub enum ExitReason {
     Culled,
     /// Position was closed during system reset
     SystemReset,
-    /// Position was superseded by a new JackedIn event
+    /// Position was superseded by a new `JackedIn` event.
     ///
     /// This should rarely happen - it indicates the contract allowed
     /// a user to jack in while already having an active position.
@@ -504,6 +504,12 @@ mod tests {
         #[test]
         fn system_reset_is_loss() {
             assert!(ExitReason::SystemReset.is_loss());
+        }
+
+        #[test]
+        fn superseded_is_not_loss() {
+            // Superseded means funds moved to a new position, not lost
+            assert!(!ExitReason::Superseded.is_loss());
         }
     }
 }

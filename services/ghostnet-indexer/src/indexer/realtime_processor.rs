@@ -124,6 +124,25 @@ impl BlockTimestampResult {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SUBSCRIPTION RESULT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Result of a subscription session.
+///
+/// Tracks whether the subscription processed logs successfully before ending,
+/// which determines whether the reconnect counter should be reset.
+enum SubscriptionResult {
+    /// Clean shutdown was requested.
+    CleanShutdown,
+    /// Connection failed before any logs were processed.
+    /// The reconnect counter should NOT be reset.
+    FailedBeforeActivity(crate::error::AppError),
+    /// Connection failed AFTER successfully processing logs.
+    /// The reconnect counter SHOULD be reset since we had a stable connection.
+    FailedAfterActivity(crate::error::AppError),
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // REALTIME PROCESSOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -219,12 +238,42 @@ impl RealtimeProcessor {
             }
 
             match self.run_subscription(&shutdown).await {
-                Ok(()) => {
+                SubscriptionResult::CleanShutdown => {
                     // Clean shutdown requested
                     info!("Realtime processor stopped cleanly");
                     return Ok(());
                 }
-                Err(e) => {
+                SubscriptionResult::FailedAfterActivity(e) => {
+                    // Had successful activity before failure - reset counter
+                    // This handles the case where we ran successfully for hours
+                    // before a transient disconnect
+                    info!("Resetting reconnect counter after successful activity");
+                    reconnect_attempts = 0;
+
+                    // Check if this was a shutdown-triggered error
+                    if shutdown.is_cancelled() {
+                        info!("Shutdown requested during subscription");
+                        return Ok(());
+                    }
+
+                    warn!(
+                        error = ?e,
+                        "WebSocket disconnected after activity, reconnecting"
+                    );
+
+                    // Wait for reconnect delay, but respect shutdown
+                    tokio::select! {
+                        () = shutdown.cancelled() => {
+                            info!("Shutdown requested during reconnect delay");
+                            return Ok(());
+                        }
+                        () = tokio::time::sleep(RECONNECT_DELAY) => {}
+                    }
+                }
+                SubscriptionResult::FailedBeforeActivity(e) => {
+                    // Failed before any successful activity - increment counter
+                    // This catches immediate connection failures, auth errors, etc.
+
                     // Check if this was a shutdown-triggered error
                     if shutdown.is_cancelled() {
                         info!("Shutdown requested during subscription");
@@ -246,7 +295,7 @@ impl RealtimeProcessor {
                         attempt = reconnect_attempts,
                         max = MAX_RECONNECT_ATTEMPTS,
                         error = ?e,
-                        "WebSocket disconnected, reconnecting"
+                        "WebSocket disconnected before activity, reconnecting"
                     );
 
                     // Wait for reconnect delay, but respect shutdown
@@ -265,18 +314,29 @@ impl RealtimeProcessor {
     /// Run a single subscription session.
     ///
     /// Connects, subscribes, and processes logs until disconnect, error, or shutdown.
-    /// Returns `Ok(())` on clean shutdown request.
-    async fn run_subscription(&self, shutdown: &CancellationToken) -> Result<()> {
+    /// Returns `SubscriptionResult` indicating how the session ended and whether
+    /// successful activity occurred (which affects reconnect counter behavior).
+    async fn run_subscription(&self, shutdown: &CancellationToken) -> SubscriptionResult {
         // Connect with timeout, but respect shutdown
         let ws = WsConnect::new(&self.ws_url);
         let provider = tokio::select! {
             () = shutdown.cancelled() => {
-                return Ok(());
+                return SubscriptionResult::CleanShutdown;
             }
             result = timeout(CONNECTION_TIMEOUT, ProviderBuilder::new().connect_ws(ws)) => {
-                result
-                    .map_err(|_| InfraError::Timeout("WebSocket connection timed out".into()))?
-                    .map_err(|e| InfraError::Rpc(Box::new(e)))?
+                match result {
+                    Err(_) => {
+                        return SubscriptionResult::FailedBeforeActivity(
+                            InfraError::Timeout("WebSocket connection timed out".into()).into()
+                        );
+                    }
+                    Ok(Err(e)) => {
+                        return SubscriptionResult::FailedBeforeActivity(
+                            InfraError::Rpc(Box::new(e)).into()
+                        );
+                    }
+                    Ok(Ok(p)) => p,
+                }
             }
         };
 
@@ -290,10 +350,14 @@ impl RealtimeProcessor {
             .to_block(alloy::eips::BlockNumberOrTag::Pending);
 
         // Subscribe to logs
-        let subscription = provider
-            .subscribe_logs(&filter)
-            .await
-            .map_err(|e| InfraError::Rpc(Box::new(e)))?;
+        let subscription = match provider.subscribe_logs(&filter).await {
+            Ok(s) => s,
+            Err(e) => {
+                return SubscriptionResult::FailedBeforeActivity(
+                    InfraError::Rpc(Box::new(e)).into(),
+                );
+            }
+        };
 
         info!(
             contracts = self.contract_addresses.len(),
@@ -302,6 +366,10 @@ impl RealtimeProcessor {
 
         // Convert to stream
         let mut log_stream = subscription.into_stream();
+
+        // Track whether we've successfully processed any logs.
+        // If we have, a subsequent disconnect should reset the reconnect counter.
+        let mut processed_logs = false;
 
         // Keep-alive task: send eth_chainId every 25 seconds
         // Uses a oneshot channel to signal failure back to the main loop
@@ -335,13 +403,18 @@ impl RealtimeProcessor {
                 // Check for shutdown request
                 () = shutdown.cancelled() => {
                     info!("Shutdown requested, stopping subscription");
-                    return Ok(());
+                    return SubscriptionResult::CleanShutdown;
                 }
 
                 // Check if keep-alive task failed
                 Ok(()) = &mut keepalive_failed_rx => {
                     warn!("Keep-alive task failed, reconnecting");
-                    return Err(InfraError::Internal("Keep-alive ping failed".into()).into());
+                    let err = InfraError::Internal("Keep-alive ping failed".into()).into();
+                    return if processed_logs {
+                        SubscriptionResult::FailedAfterActivity(err)
+                    } else {
+                        SubscriptionResult::FailedBeforeActivity(err)
+                    };
                 }
 
                 // Process incoming logs
@@ -350,11 +423,19 @@ impl RealtimeProcessor {
                         if let Err(e) = self.dispatch_log(&provider, log).await {
                             error!(error = ?e, "Failed to dispatch log");
                             // Continue processing - don't disconnect for single log failures
+                        } else {
+                            // Successfully processed a log
+                            processed_logs = true;
                         }
                     } else {
                         // Stream ended - connection closed
                         warn!("Log stream ended");
-                        return Err(InfraError::Internal("WebSocket stream ended".into()).into());
+                        let err = InfraError::Internal("WebSocket stream ended".into()).into();
+                        return if processed_logs {
+                            SubscriptionResult::FailedAfterActivity(err)
+                        } else {
+                            SubscriptionResult::FailedBeforeActivity(err)
+                        };
                     }
                 }
             }

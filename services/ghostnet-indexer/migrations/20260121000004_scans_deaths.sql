@@ -6,8 +6,8 @@
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS scans (
-    id                      UUID PRIMARY KEY,
-    scan_id                 VARCHAR(78) NOT NULL UNIQUE,  -- On-chain U256 as string
+    id                      UUID NOT NULL,
+    scan_id                 VARCHAR(78) NOT NULL,          -- On-chain U256 as string
     level                   SMALLINT NOT NULL,
     seed                    VARCHAR(78) NOT NULL,          -- Random seed (U256)
     executed_at             TIMESTAMPTZ NOT NULL,
@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS scans (
     protocol_fee            NUMERIC,
     survivor_count          INTEGER,
     
+    -- TimescaleDB requires partitioning column in primary key
+    PRIMARY KEY (id, executed_at),
+    
     CONSTRAINT chk_scan_level CHECK (level >= 1 AND level <= 5)
 );
 
@@ -30,7 +33,8 @@ SELECT create_hypertable('scans', 'executed_at',
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_scans_scan_id ON scans(scan_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_scans_scan_id ON scans(scan_id);  -- Unique on-chain ID
+CREATE INDEX IF NOT EXISTS idx_scans_id ON scans(id);                    -- Lookup by UUID
 CREATE INDEX IF NOT EXISTS idx_scans_level ON scans(level, executed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_scans_pending ON scans(executed_at ASC) 
     WHERE finalized_at IS NULL;
@@ -40,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_scans_pending ON scans(executed_at ASC)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE IF NOT EXISTS deaths (
-    id                      UUID PRIMARY KEY,
+    id                      UUID NOT NULL,
     scan_id                 UUID,                          -- May be NULL for culling deaths
     user_address            BYTEA NOT NULL,
     position_id             UUID,                          -- Link to position (if known)
@@ -48,6 +52,9 @@ CREATE TABLE IF NOT EXISTS deaths (
     level                   SMALLINT NOT NULL,
     ghost_streak_at_death   INTEGER,
     created_at              TIMESTAMPTZ NOT NULL,
+    
+    -- TimescaleDB requires partitioning column in primary key
+    PRIMARY KEY (id, created_at),
     
     CONSTRAINT chk_death_level CHECK (level >= 1 AND level <= 5),
     CONSTRAINT chk_amount_lost_positive CHECK (amount_lost >= 0)
@@ -60,6 +67,7 @@ SELECT create_hypertable('deaths', 'created_at',
 );
 
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_deaths_id ON deaths(id);  -- Lookup by UUID
 CREATE INDEX IF NOT EXISTS idx_deaths_scan ON deaths(scan_id) WHERE scan_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_deaths_user ON deaths(user_address, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_deaths_level ON deaths(level, created_at DESC);
@@ -120,6 +128,10 @@ COMMENT ON COLUMN scans.seed IS 'Random seed used for death selection';
 
 COMMENT ON TABLE deaths IS 'Individual death records from scans or culling';
 COMMENT ON COLUMN deaths.ghost_streak_at_death IS 'Ghost streak at time of death (for analytics)';
+
+-- NOTE: Foreign keys are intentionally omitted because TimescaleDB hypertables
+-- do not support foreign key constraints FROM hypertables to other tables.
+-- Referential integrity is enforced at the application layer.
 
 COMMENT ON TABLE level_stats IS 'Pre-computed statistics per risk level';
 COMMENT ON TABLE global_stats IS 'Protocol-wide statistics (single row)';
