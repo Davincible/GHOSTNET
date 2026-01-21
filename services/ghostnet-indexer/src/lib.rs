@@ -58,11 +58,11 @@ pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod indexer;
+pub mod ports;
 pub mod types;
 
 // Future modules (uncomment as implemented):
 // pub mod api;
-// pub mod ports;
 // pub mod store;
 // pub mod streaming;
 
