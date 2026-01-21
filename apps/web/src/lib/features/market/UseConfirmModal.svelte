@@ -54,11 +54,13 @@
 	}
 
 	function formatDuration(ms: number): string {
-		const hours = ms / (60 * 60 * 1000);
-		if (hours >= 24) {
-			return `${Math.round(hours / 24)} day${hours >= 48 ? 's' : ''}`;
+		const totalHours = ms / (60 * 60 * 1000);
+		if (totalHours >= 24) {
+			const days = Math.round(totalHours / 24);
+			return `${days} day${days !== 1 ? 's' : ''}`;
 		}
-		return `${Math.round(hours)} hour${hours !== 1 ? 's' : ''}`;
+		const hours = Math.round(totalHours);
+		return `${hours} hour${hours !== 1 ? 's' : ''}`;
 	}
 </script>
 

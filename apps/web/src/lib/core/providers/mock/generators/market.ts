@@ -5,7 +5,16 @@
  */
 
 import type { OwnedConsumable, Consumable, UseConsumableResult, Modifier } from '../../../types';
-import { CONSUMABLES, getConsumable, canUseConsumable } from '../../../types/market';
+import {
+	CONSUMABLES,
+	getConsumable,
+	canUseConsumable,
+	calculateBulkPrice,
+	getBulkDiscountPercent,
+} from '../../../types/market';
+
+// Re-export for backward compatibility
+export { calculateBulkPrice, getBulkDiscountPercent };
 
 // ════════════════════════════════════════════════════════════════
 // INVENTORY GENERATION
@@ -79,6 +88,16 @@ export function simulatePurchase(
 	error?: string;
 	cost: bigint;
 } {
+	// Validate quantity
+	if (quantity <= 0 || !Number.isInteger(quantity)) {
+		return {
+			inventory,
+			success: false,
+			error: 'Invalid quantity',
+			cost: 0n,
+		};
+	}
+
 	const consumable = getConsumable(consumableId);
 
 	if (!consumable) {
@@ -90,7 +109,8 @@ export function simulatePurchase(
 		};
 	}
 
-	const totalCost = consumable.price * BigInt(quantity);
+	// Use discounted price for bulk purchases
+	const totalCost = calculateBulkPrice(consumable, quantity);
 
 	if (userBalance < totalCost) {
 		return {
@@ -279,47 +299,4 @@ function createModifierFromEffect(
 	}
 }
 
-// ════════════════════════════════════════════════════════════════
-// BULK DISCOUNT CALCULATION
-// ════════════════════════════════════════════════════════════════
 
-/**
- * Calculate price with bulk discount.
- * - 3+: 5% off
- * - 5+: 10% off
- * - 10+: 15% off
- *
- * @param consumable - The consumable
- * @param quantity - Quantity to purchase
- * @returns Discounted total price
- */
-export function calculateBulkPrice(consumable: Consumable, quantity: number): bigint {
-	const baseTotal = consumable.price * BigInt(quantity);
-
-	let discountPercent = 0;
-	if (quantity >= 10) {
-		discountPercent = 15;
-	} else if (quantity >= 5) {
-		discountPercent = 10;
-	} else if (quantity >= 3) {
-		discountPercent = 5;
-	}
-
-	if (discountPercent === 0) {
-		return baseTotal;
-	}
-
-	// Calculate discount (integer math to avoid precision issues)
-	const discountAmount = (baseTotal * BigInt(discountPercent)) / 100n;
-	return baseTotal - discountAmount;
-}
-
-/**
- * Get the discount percentage for a quantity.
- */
-export function getBulkDiscountPercent(quantity: number): number {
-	if (quantity >= 10) return 15;
-	if (quantity >= 5) return 10;
-	if (quantity >= 3) return 5;
-	return 0;
-}

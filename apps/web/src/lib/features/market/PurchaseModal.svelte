@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Consumable } from '$lib/core/types';
-	import { calculateBulkPrice, getBulkDiscountPercent } from '$lib/core/providers/mock/generators/market';
+	import { calculateBulkPrice, getBulkDiscountPercent } from '$lib/core/types/market';
 	import { Modal } from '$lib/ui/modal';
 	import { Button } from '$lib/ui/primitives';
 	import { AmountDisplay } from '$lib/ui/data-display';
@@ -104,8 +104,10 @@
 					{#each presets as preset}
 						{#if preset <= maxQuantity}
 							<button
+								type="button"
 								class="preset-btn"
 								class:active={quantity === preset}
+								aria-pressed={quantity === preset}
 								onclick={() => (quantity = preset)}
 							>
 								{preset}

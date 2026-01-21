@@ -236,3 +236,43 @@ export function formatCooldown(cooldownEnds: number | null, now: number = Date.n
 export function getRarityClass(rarity: Consumable['rarity']): string {
 	return `rarity-${rarity}`;
 }
+
+// ════════════════════════════════════════════════════════════════
+// BULK DISCOUNT CALCULATION
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Calculate price with bulk discount.
+ * - 3+: 5% off
+ * - 5+: 10% off
+ * - 10+: 15% off
+ *
+ * @param consumable - The consumable
+ * @param quantity - Quantity to purchase
+ * @returns Discounted total price
+ */
+export function calculateBulkPrice(consumable: Consumable, quantity: number): bigint {
+	const baseTotal = consumable.price * BigInt(quantity);
+
+	const discountPercent = getBulkDiscountPercent(quantity);
+
+	if (discountPercent === 0) {
+		return baseTotal;
+	}
+
+	// Calculate discount (integer math to avoid precision issues)
+	const discountAmount = (baseTotal * BigInt(discountPercent)) / 100n;
+	return baseTotal - discountAmount;
+}
+
+/**
+ * Get the discount percentage for a quantity.
+ * @param quantity - Purchase quantity
+ * @returns Discount percentage (0, 5, 10, or 15)
+ */
+export function getBulkDiscountPercent(quantity: number): number {
+	if (quantity >= 10) return 15;
+	if (quantity >= 5) return 10;
+	if (quantity >= 3) return 5;
+	return 0;
+}
