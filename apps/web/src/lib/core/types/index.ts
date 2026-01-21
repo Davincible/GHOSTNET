@@ -7,6 +7,9 @@
 // Re-export error types
 export * from './errors';
 
+// Re-export daily operations types
+export * from './daily';
+
 // ════════════════════════════════════════════════════════════════
 // ENUMS & CONSTANTS
 // ════════════════════════════════════════════════════════════════

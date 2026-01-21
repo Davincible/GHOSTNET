@@ -9,9 +9,12 @@
 	import { WelcomePanel } from '$lib/features/welcome';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
 	import { FAQPanel } from '$lib/features/faq';
+	import { DailyOpsPanel } from '$lib/features/daily';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
+	import { generateMockDailyState, simulateCheckIn, claimMission } from '$lib/core/providers/mock/generators/daily';
+	import type { DailyProgress, DailyMission } from '$lib/core/types';
 
 	import { browser } from '$app/environment';
 
@@ -20,6 +23,10 @@
 
 	// Navigation state
 	let activeNav = $state('network');
+
+	// Daily Ops state - initialize with mock data
+	let dailyState = $state(generateMockDailyState({ todayCheckedIn: false }));
+	let checkingIn = $state(false);
 
 	// Mobile detection for responsive behavior
 	let isMobile = $state(false);
@@ -79,6 +86,39 @@
 
 	function handleNavigate(id: string) {
 		activeNav = id;
+	}
+
+	// Daily Ops handlers
+	async function handleDailyCheckIn() {
+		if (dailyState.progress.todayCheckedIn) return;
+
+		checkingIn = true;
+		// Simulate network delay
+		await new Promise((resolve) => setTimeout(resolve, 800));
+
+		// Update state
+		dailyState = {
+			...dailyState,
+			progress: simulateCheckIn(dailyState.progress),
+		};
+
+		toast.success(`Day ${dailyState.progress.currentStreak} reward claimed!`);
+		checkingIn = false;
+	}
+
+	function handleClaimMission(missionId: string) {
+		const mission = dailyState.missions.find((m) => m.id === missionId);
+		if (!mission || !mission.completed || mission.claimed) return;
+
+		// Update mission state
+		dailyState = {
+			...dailyState,
+			missions: dailyState.missions.map((m) =>
+				m.id === missionId ? claimMission(m) : m
+			),
+		};
+
+		toast.success(`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`);
 	}
 
 	// Keyboard shortcuts (SHIFT + key)
@@ -191,6 +231,14 @@
 			<div class="column column-right">
 				<PositionPanel />
 				<ModifiersPanel />
+				<!-- Daily Ops: check-in and missions -->
+				<DailyOpsPanel
+					progress={dailyState.progress}
+					missions={dailyState.missions}
+					onCheckIn={handleDailyCheckIn}
+					onClaimMission={handleClaimMission}
+					{checkingIn}
+				/>
 				<!-- Network Vitals: hidden on mobile (accessible via nav) -->
 				<div class="hide-mobile">
 					<NetworkVitalsPanel />
