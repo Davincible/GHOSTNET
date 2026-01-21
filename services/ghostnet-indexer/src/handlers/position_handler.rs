@@ -334,6 +334,7 @@ where
     ) -> Result<()> {
         let victim_address = Self::to_eth_address(&event.victim);
         let penalty_amount = Self::to_token_amount(&event.penaltyAmount);
+        // TODO: Track returned_amount in Position.extracted_amount when we add partial return support
         let _returned_amount = Self::to_token_amount(&event.returnedAmount);
 
         // Get existing position

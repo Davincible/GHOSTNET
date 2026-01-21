@@ -166,17 +166,18 @@ impl RealtimeProcessor {
                     );
 
                     tokio::time::sleep(RECONNECT_DELAY).await;
+
+                    // Note: reconnect_attempts resets inside run_subscription()
+                    // after successful subscription establishment
                 }
             }
-
-            // Reset counter on successful reconnect
-            reconnect_attempts = 0;
         }
     }
 
     /// Run a single subscription session.
     ///
     /// Connects, subscribes, and processes logs until disconnect or error.
+    /// Returns `Ok(())` only on clean shutdown request.
     async fn run_subscription(&self) -> Result<()> {
         // Connect with timeout
         let ws = WsConnect::new(&self.ws_url);
@@ -209,14 +210,18 @@ impl RealtimeProcessor {
         let mut log_stream = subscription.into_stream();
 
         // Keep-alive task: send eth_chainId every 25 seconds
+        // Uses a oneshot channel to signal failure back to the main loop
+        let (keepalive_failed_tx, mut keepalive_failed_rx) = tokio::sync::oneshot::channel::<()>();
         let provider_clone = provider.clone();
-        let keepalive_handle = tokio::spawn(async move {
+        tokio::spawn(async move {
             let mut keepalive_timer = interval(KEEPALIVE_INTERVAL);
             loop {
                 keepalive_timer.tick().await;
                 if let Err(e) = provider_clone.get_chain_id().await {
                     warn!(error = ?e, "Keep-alive ping failed");
-                    break;
+                    // Signal failure to main loop (ignore send error if receiver dropped)
+                    let _ = keepalive_failed_tx.send(());
+                    return;
                 }
                 debug!("Keep-alive ping sent");
             }
@@ -225,9 +230,10 @@ impl RealtimeProcessor {
         // Process logs
         loop {
             tokio::select! {
-                // Check if keep-alive task died
-                _ = &mut tokio::spawn(async {}) => {
-                    // This branch won't actually trigger; just for structure
+                // Check if keep-alive task failed
+                _ = &mut keepalive_failed_rx => {
+                    warn!("Keep-alive task failed, reconnecting");
+                    return Err(InfraError::Internal("Keep-alive ping failed".into()).into());
                 }
 
                 // Process incoming logs
@@ -242,7 +248,6 @@ impl RealtimeProcessor {
                         None => {
                             // Stream ended - connection closed
                             warn!("Log stream ended");
-                            keepalive_handle.abort();
                             return Err(InfraError::Internal("WebSocket stream ended".into()).into());
                         }
                     }
