@@ -1,4 +1,5 @@
 //! Scan event handler implementation.
+//! Scan event handler implementation.
 //!
 //! Handles all scan lifecycle events from the `TraceScan` contract:
 //! - `ScanExecuted` - Scan initiated with random seed (Phase 1)
@@ -207,48 +208,40 @@ where
         let finalized_at = Self::to_datetime(event.finalizedAt);
 
         // Get existing scan, or create incomplete record if missing
-        let existing = match self.store.get_scan_by_id(&scan_id).await? {
-            Some(scan) => scan,
-            None => {
-                // Scan not found - this could happen if we missed the ScanExecuted event
-                // Create a new scan record with what we know
-                warn!(
-                    scan_id = %scan_id,
-                    "ScanFinalized received but no ScanExecuted found, creating incomplete record"
-                );
+        let Some(existing) = self.store.get_scan_by_id(&scan_id).await? else {
+            // Scan not found - this could happen if we missed the ScanExecuted event
+            // Create a new scan record with what we know
+            warn!(
+                scan_id = %scan_id,
+                "ScanFinalized received but no ScanExecuted found, creating incomplete record"
+            );
 
-                let scan = Scan {
-                    id: Uuid::new_v4(),
-                    scan_id: scan_id.clone(),
-                    level,
-                    seed: "unknown".to_string(), // We don't have the seed
-                    executed_at: finalized_at,   // Use finalized time as executed
-                    finalized_at: Some(finalized_at),
-                    death_count: Some(
-                        event
-                            .deathCount
-                            .try_into()
-                            .unwrap_or(u32::MAX),
-                    ),
-                    total_dead: Some(Self::to_token_amount(&event.totalDead)),
-                    burned: None,
-                    distributed_same_level: None,
-                    distributed_upstream: None,
-                    protocol_fee: None,
-                    survivor_count: None,
-                };
+            let scan = Scan {
+                id: Uuid::new_v4(),
+                scan_id: scan_id.clone(),
+                level,
+                seed: "unknown".to_string(), // We don't have the seed
+                executed_at: finalized_at,   // Use finalized time as executed
+                finalized_at: Some(finalized_at),
+                death_count: Some(event.deathCount.try_into().unwrap_or(u32::MAX)),
+                total_dead: Some(Self::to_token_amount(&event.totalDead)),
+                burned: None,
+                distributed_same_level: None,
+                distributed_upstream: None,
+                protocol_fee: None,
+                survivor_count: None,
+            };
 
-                self.store.save_scan(&scan).await?;
+            self.store.save_scan(&scan).await?;
 
-                info!(
-                    scan_uuid = %scan.id,
-                    level = ?level,
-                    death_count = ?scan.death_count,
-                    "Incomplete scan created from finalization"
-                );
+            info!(
+                scan_uuid = %scan.id,
+                level = ?level,
+                death_count = ?scan.death_count,
+                "Incomplete scan created from finalization"
+            );
 
-                return Ok(());
-            }
+            return Ok(());
         };
 
         // Check if already finalized (idempotency)
@@ -265,16 +258,13 @@ where
         // those come from CascadeDistributed in GhostCore
         let finalization = ScanFinalizationData {
             finalized_at,
-            death_count: event
-                .deathCount
-                .try_into()
-                .unwrap_or(u32::MAX),
+            death_count: event.deathCount.try_into().unwrap_or(u32::MAX),
             total_dead: Self::to_token_amount(&event.totalDead),
-            burned: TokenAmount::zero(),                // Will be updated by CascadeDistributed
+            burned: TokenAmount::zero(), // Will be updated by CascadeDistributed
             distributed_same_level: TokenAmount::zero(), // Will be updated by CascadeDistributed
-            distributed_upstream: TokenAmount::zero(),   // Will be updated by CascadeDistributed
-            protocol_fee: TokenAmount::zero(),           // Will be updated by CascadeDistributed
-            survivor_count: 0,                           // Will be updated by SurvivorsUpdated
+            distributed_upstream: TokenAmount::zero(), // Will be updated by CascadeDistributed
+            protocol_fee: TokenAmount::zero(), // Will be updated by CascadeDistributed
+            survivor_count: 0,           // Will be updated by SurvivorsUpdated
         };
 
         // Update scan with finalization data
@@ -596,7 +586,10 @@ mod tests {
 
         // Scan should be unchanged
         let scan_after_second = store.get_scan("1").unwrap();
-        assert_eq!(scan_after_first.finalized_at, scan_after_second.finalized_at);
+        assert_eq!(
+            scan_after_first.finalized_at,
+            scan_after_second.finalized_at
+        );
     }
 
     #[test]

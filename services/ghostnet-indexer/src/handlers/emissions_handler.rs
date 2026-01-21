@@ -115,10 +115,8 @@ where
     ///
     /// Uses checked arithmetic to handle potential overflow from malicious input.
     fn validate_weights(weights: &[u16; 5]) -> bool {
-        weights
-            .iter()
-            .try_fold(0u16, |acc, &w| acc.checked_add(w))
-            .map_or(false, |sum| sum == BASIS_POINTS_DENOMINATOR)
+        weights.iter().try_fold(0u16, |acc, &w| acc.checked_add(w))
+            == Some(BASIS_POINTS_DENOMINATOR)
     }
 }
 
@@ -325,10 +323,7 @@ mod tests {
 
     #[test]
     fn bps_to_percent_conversion() {
-        assert_eq!(
-            EmissionsHandler::<MockCache>::bps_to_percent(500),
-            "5.00%"
-        );
+        assert_eq!(EmissionsHandler::<MockCache>::bps_to_percent(500), "5.00%");
         assert_eq!(
             EmissionsHandler::<MockCache>::bps_to_percent(1000),
             "10.00%"

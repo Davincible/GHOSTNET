@@ -88,12 +88,30 @@ impl Settings {
             .set_default("metrics.host", "0.0.0.0")?
             .set_default("metrics.port", 9090)?
             // Contract addresses - these MUST be set in production config
-            .set_default("contracts.ghost_core", "0x0000000000000000000000000000000000000001")?
-            .set_default("contracts.trace_scan", "0x0000000000000000000000000000000000000002")?
-            .set_default("contracts.dead_pool", "0x0000000000000000000000000000000000000003")?
-            .set_default("contracts.data_token", "0x0000000000000000000000000000000000000004")?
-            .set_default("contracts.fee_router", "0x0000000000000000000000000000000000000005")?
-            .set_default("contracts.rewards_distributor", "0x0000000000000000000000000000000000000006")?
+            .set_default(
+                "contracts.ghost_core",
+                "0x0000000000000000000000000000000000000001",
+            )?
+            .set_default(
+                "contracts.trace_scan",
+                "0x0000000000000000000000000000000000000002",
+            )?
+            .set_default(
+                "contracts.dead_pool",
+                "0x0000000000000000000000000000000000000003",
+            )?
+            .set_default(
+                "contracts.data_token",
+                "0x0000000000000000000000000000000000000004",
+            )?
+            .set_default(
+                "contracts.fee_router",
+                "0x0000000000000000000000000000000000000005",
+            )?
+            .set_default(
+                "contracts.rewards_distributor",
+                "0x0000000000000000000000000000000000000006",
+            )?
             // Load default configuration file
             .add_source(File::with_name(&format!("{config_dir}/default")).required(false))
             // Load environment-specific file
@@ -432,7 +450,7 @@ impl ContractAddresses {
             .into_iter()
             .map(|s| {
                 alloy::primitives::Address::from_str(s)
-                    .map_err(|e| format!("Invalid address '{}': {}", s, e))
+                    .map_err(|e| format!("Invalid address '{s}': {e}"))
             })
             .collect()
     }

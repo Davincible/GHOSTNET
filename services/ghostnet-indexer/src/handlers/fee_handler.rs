@@ -341,7 +341,9 @@ mod tests {
             dataBurned: U256::from(100_000_u64) * U256::from(10_u64).pow(U256::from(18_u64)), // 100k DATA
         };
 
-        let result = handler.handle_buyback_executed(event, test_metadata()).await;
+        let result = handler
+            .handle_buyback_executed(event, test_metadata())
+            .await;
         assert!(result.is_ok());
     }
 
@@ -356,7 +358,9 @@ mod tests {
             dataBurned: U256::ZERO,
         };
 
-        let result = handler.handle_buyback_executed(event, test_metadata()).await;
+        let result = handler
+            .handle_buyback_executed(event, test_metadata())
+            .await;
         assert!(result.is_ok());
     }
 

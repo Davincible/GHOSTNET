@@ -129,10 +129,8 @@ impl FakeClock {
 
     /// Advance time by the given duration.
     pub fn advance(&self, duration: chrono::Duration) {
-        self.time.fetch_add(
-            duration.num_seconds(),
-            std::sync::atomic::Ordering::SeqCst,
-        );
+        self.time
+            .fetch_add(duration.num_seconds(), std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Set time to a specific value.

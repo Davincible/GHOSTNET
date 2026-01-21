@@ -75,9 +75,7 @@ mod streaming;
 // Re-export all port traits
 pub use cache::Cache;
 pub use clock::{Clock, SystemClock};
-pub use store::{
-    DeathStore, IndexerStateStore, MarketStore, PositionStore, ScanStore, StatsStore,
-};
+pub use store::{DeathStore, IndexerStateStore, MarketStore, PositionStore, ScanStore, StatsStore};
 pub use streaming::EventPublisher;
 
 // Re-export test utilities for tests and downstream crates using test-utils feature

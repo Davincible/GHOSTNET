@@ -76,13 +76,13 @@ where
     C: Cache,
 {
     /// Create a new position handler.
-    pub fn new(store: Arc<S>, cache: Arc<C>) -> Self {
+    pub const fn new(store: Arc<S>, cache: Arc<C>) -> Self {
         Self { store, cache }
     }
 
     /// Convert an Alloy address to our EthAddress type.
-    fn to_eth_address(addr: &alloy::primitives::Address) -> EthAddress {
-        EthAddress::new(addr.0 .0)
+    const fn to_eth_address(addr: &alloy::primitives::Address) -> EthAddress {
+        EthAddress::new(addr.0.0)
     }
 
     /// Convert an Alloy U256 to our TokenAmount type.
@@ -236,8 +236,13 @@ where
         self.store.save_position(&position).await?;
 
         // Record history
-        self.record_history(&position, PositionAction::StakeAdded, added_amount.clone(), &meta)
-            .await?;
+        self.record_history(
+            &position,
+            PositionAction::StakeAdded,
+            added_amount.clone(),
+            &meta,
+        )
+        .await?;
 
         // Invalidate cache (sync operation - no await)
         self.cache.invalidate_position(&user_address);
@@ -375,8 +380,13 @@ where
         self.store.save_position(&position).await?;
 
         // Record history (the penalty amount is what was lost)
-        self.record_history(&position, PositionAction::Culled, penalty_amount.clone(), &meta)
-            .await?;
+        self.record_history(
+            &position,
+            PositionAction::Culled,
+            penalty_amount.clone(),
+            &meta,
+        )
+        .await?;
 
         // Invalidate cache (sync operation - no await)
         self.cache.invalidate_position(&victim_address);
@@ -446,10 +456,7 @@ mod tests {
 
     #[async_trait]
     impl PositionStore for MockPositionStore {
-        async fn get_active_position(
-            &self,
-            address: &EthAddress,
-        ) -> Result<Option<Position>> {
+        async fn get_active_position(&self, address: &EthAddress) -> Result<Option<Position>> {
             let positions = self.positions.read().unwrap();
             Ok(positions
                 .get(address)
@@ -463,11 +470,7 @@ mod tests {
             Ok(())
         }
 
-        async fn get_at_risk_positions(
-            &self,
-            _level: Level,
-            _limit: u32,
-        ) -> Result<Vec<Position>> {
+        async fn get_at_risk_positions(&self, _level: Level, _limit: u32) -> Result<Vec<Position>> {
             Ok(vec![])
         }
 
@@ -540,7 +543,7 @@ mod tests {
         let event = ghost_core::JackedIn {
             user: test_address(),
             amount: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)), // 1000 tokens
-            level: 3, // Subnet
+            level: 3,                                                                  // Subnet
             newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
 
@@ -551,7 +554,7 @@ mod tests {
         assert_eq!(store.position_count(), 1);
         assert_eq!(store.history_count(), 1);
 
-        let user_address = EthAddress::new(test_address().0 .0);
+        let user_address = EthAddress::new(test_address().0.0);
         let position = store.get_position(&user_address).unwrap();
         assert!(position.is_alive);
         assert!(!position.is_extracted);
@@ -561,7 +564,7 @@ mod tests {
     #[tokio::test]
     async fn handle_jacked_in_closes_existing_position() {
         let (handler, store, _cache) = create_handler();
-        let user_address = EthAddress::new(test_address().0 .0);
+        let user_address = EthAddress::new(test_address().0.0);
 
         // Create initial position via JackedIn
         let event1 = ghost_core::JackedIn {
@@ -570,7 +573,10 @@ mod tests {
             level: 2, // Mainframe
             newTotal: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_jacked_in(event1, test_metadata()).await.unwrap();
+        handler
+            .handle_jacked_in(event1, test_metadata())
+            .await
+            .unwrap();
 
         let first_position = store.get_position(&user_address).unwrap();
         let first_id = first_position.id;
@@ -583,7 +589,10 @@ mod tests {
             level: 4, // Darknet
             newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_jacked_in(event2, test_metadata()).await.unwrap();
+        handler
+            .handle_jacked_in(event2, test_metadata())
+            .await
+            .unwrap();
 
         // There should still be 1 position (the latest one overwrites)
         // But the old one was closed first
@@ -599,7 +608,7 @@ mod tests {
     #[tokio::test]
     async fn handle_stake_added_updates_amount() {
         let (handler, store, _cache) = create_handler();
-        let user_address = EthAddress::new(test_address().0 .0);
+        let user_address = EthAddress::new(test_address().0.0);
 
         // First create a position
         let jacked_in = ghost_core::JackedIn {
@@ -608,7 +617,10 @@ mod tests {
             level: 3,
             newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+        handler
+            .handle_jacked_in(jacked_in, test_metadata())
+            .await
+            .unwrap();
 
         // Now add stake
         let stake_added = ghost_core::StakeAdded {
@@ -616,7 +628,9 @@ mod tests {
             amount: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
             newTotal: U256::from(1500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        let result = handler.handle_stake_added(stake_added, test_metadata()).await;
+        let result = handler
+            .handle_stake_added(stake_added, test_metadata())
+            .await;
         assert!(result.is_ok());
 
         // Verify amount was updated
@@ -636,7 +650,9 @@ mod tests {
             amount: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
             newTotal: U256::from(500_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        let result = handler.handle_stake_added(stake_added, test_metadata()).await;
+        let result = handler
+            .handle_stake_added(stake_added, test_metadata())
+            .await;
 
         assert!(result.is_err());
         // Should be PositionNotFound error
@@ -647,7 +663,7 @@ mod tests {
     #[tokio::test]
     async fn handle_extracted_marks_position_closed() {
         let (handler, store, _cache) = create_handler();
-        let user_address = EthAddress::new(test_address().0 .0);
+        let user_address = EthAddress::new(test_address().0.0);
 
         // First create a position
         let jacked_in = ghost_core::JackedIn {
@@ -656,7 +672,10 @@ mod tests {
             level: 3,
             newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+        handler
+            .handle_jacked_in(jacked_in, test_metadata())
+            .await
+            .unwrap();
 
         // Extract
         let extracted = ghost_core::Extracted {
@@ -679,7 +698,7 @@ mod tests {
     #[tokio::test]
     async fn handle_position_culled_marks_dead() {
         let (handler, store, _cache) = create_handler();
-        let user_address = EthAddress::new(test_address().0 .0);
+        let user_address = EthAddress::new(test_address().0.0);
 
         // First create a position
         let jacked_in = ghost_core::JackedIn {
@@ -688,7 +707,10 @@ mod tests {
             level: 5, // BlackIce
             newTotal: U256::from(1000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_jacked_in(jacked_in, test_metadata()).await.unwrap();
+        handler
+            .handle_jacked_in(jacked_in, test_metadata())
+            .await
+            .unwrap();
 
         // Cull the position
         let culled = ghost_core::PositionCulled {
@@ -699,7 +721,9 @@ mod tests {
                 .parse()
                 .unwrap(),
         };
-        let result = handler.handle_position_culled(culled, test_metadata()).await;
+        let result = handler
+            .handle_position_culled(culled, test_metadata())
+            .await;
         assert!(result.is_ok());
 
         // Verify position is dead

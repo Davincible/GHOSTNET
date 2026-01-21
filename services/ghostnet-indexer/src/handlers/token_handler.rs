@@ -421,7 +421,9 @@ mod tests {
             excluded: true,
         };
 
-        let result = handler.handle_tax_exclusion_set(event, test_metadata()).await;
+        let result = handler
+            .handle_tax_exclusion_set(event, test_metadata())
+            .await;
         assert!(result.is_ok());
     }
 
@@ -434,7 +436,9 @@ mod tests {
             excluded: false,
         };
 
-        let result = handler.handle_tax_exclusion_set(event, test_metadata()).await;
+        let result = handler
+            .handle_tax_exclusion_set(event, test_metadata())
+            .await;
         assert!(result.is_ok());
     }
 

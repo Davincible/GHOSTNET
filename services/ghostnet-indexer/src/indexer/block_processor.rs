@@ -1,4 +1,5 @@
 //! Block processor for indexing GHOSTNET events.
+//! Block processor for fetching and dispatching blockchain events.
 //!
 //! The block processor is responsible for:
 //! - Fetching logs from the blockchain (HTTP polling or WebSocket subscription)
@@ -151,9 +152,7 @@ where
                     Ok(log_count) => {
                         info!(
                             from_block,
-                            to_block,
-                            log_count,
-                            "Processed blocks successfully"
+                            to_block, log_count, "Processed blocks successfully"
                         );
                         last_processed_block = to_block;
                     }
@@ -202,6 +201,8 @@ where
             let log_count = self.process_block_range(current, batch_end).await?;
 
             processed_blocks += batch_end - current + 1;
+            // Precision loss is acceptable for progress percentage display
+            #[allow(clippy::cast_precision_loss)]
             let progress = (processed_blocks as f64 / total_blocks as f64) * 100.0;
 
             info!(
@@ -319,8 +320,12 @@ where
             .map_err(|e| InfraError::Rpc(Box::new(e)))?
             .ok_or_else(|| InfraError::EventDecoding(format!("Block not found: {block_number}")))?;
 
+        // Block timestamps are always within i64 range (Unix epoch won't overflow until year 292 billion)
+        #[allow(clippy::cast_possible_wrap)]
         let timestamp = DateTime::<Utc>::from_timestamp(block.header.timestamp as i64, 0)
-            .ok_or_else(|| InfraError::EventDecoding(format!("Invalid timestamp: {}", block.header.timestamp)))?;
+            .ok_or_else(|| {
+                InfraError::EventDecoding(format!("Invalid timestamp: {}", block.header.timestamp))
+            })?;
 
         Ok(EventMetadata {
             block_number,

@@ -2,10 +2,25 @@
 //!
 //! This module provides the primary persistence layer using PostgreSQL
 //! with TimescaleDB extensions for efficient time-series queries.
+//!
+//! # Type Conversions
+//!
+//! PostgreSQL uses signed integers (i16, i32, i64) for numeric columns while our
+//! domain uses unsigned types. These casts are safe because:
+//! - Level values are 0-4 (fits in u8)
+//! - Block numbers won't exceed i64::MAX (~9 quintillion)
+//! - Counts won't exceed i32::MAX (~2 billion)
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless, // Using `as i64` for u32 is clear in DB binding context
+    clippy::use_self       // TryFrom implementations read better with explicit type names
+)]
 
 use alloy::primitives::B256;
 use async_trait::async_trait;
-use sqlx::{postgres::PgPool, FromRow};
+use sqlx::{FromRow, postgres::PgPool};
 use tracing::{debug, instrument};
 use uuid::Uuid;
 
@@ -112,8 +127,12 @@ impl TryFrom<PositionRow> for Position {
                 .transpose()
                 .map_err(|e| InfraError::Internal(format!("Invalid exit reason in DB: {e}")))?,
             exit_timestamp: row.exit_timestamp,
-            extracted_amount: row.extracted_amount.map(|d| TokenAmount::from_bigdecimal(&d)),
-            extracted_rewards: row.extracted_rewards.map(|d| TokenAmount::from_bigdecimal(&d)),
+            extracted_amount: row
+                .extracted_amount
+                .map(|d| TokenAmount::from_bigdecimal(&d)),
+            extracted_rewards: row
+                .extracted_rewards
+                .map(|d| TokenAmount::from_bigdecimal(&d)),
             created_at_block: BlockNumber::new(row.created_at_block as u64),
             updated_at: row.updated_at,
         })
@@ -184,8 +203,18 @@ impl PositionStore for PostgresStore {
         .bind(position.is_extracted)
         .bind(position.exit_reason.map(|r| r.to_string()))
         .bind(position.exit_timestamp)
-        .bind(position.extracted_amount.as_ref().map(TokenAmount::to_bigdecimal))
-        .bind(position.extracted_rewards.as_ref().map(TokenAmount::to_bigdecimal))
+        .bind(
+            position
+                .extracted_amount
+                .as_ref()
+                .map(TokenAmount::to_bigdecimal),
+        )
+        .bind(
+            position
+                .extracted_rewards
+                .as_ref()
+                .map(TokenAmount::to_bigdecimal),
+        )
         .bind(position.created_at_block.value() as i64)
         .bind(position.updated_at)
         .execute(&self.pool)
@@ -348,8 +377,12 @@ impl TryFrom<ScanRow> for Scan {
             death_count: row.death_count.map(|c| c as u32),
             total_dead: row.total_dead.map(|d| TokenAmount::from_bigdecimal(&d)),
             burned: row.burned.map(|d| TokenAmount::from_bigdecimal(&d)),
-            distributed_same_level: row.distributed_same_level.map(|d| TokenAmount::from_bigdecimal(&d)),
-            distributed_upstream: row.distributed_upstream.map(|d| TokenAmount::from_bigdecimal(&d)),
+            distributed_same_level: row
+                .distributed_same_level
+                .map(|d| TokenAmount::from_bigdecimal(&d)),
+            distributed_upstream: row
+                .distributed_upstream
+                .map(|d| TokenAmount::from_bigdecimal(&d)),
             protocol_fee: row.protocol_fee.map(|d| TokenAmount::from_bigdecimal(&d)),
             survivor_count: row.survivor_count.map(|c| c as u32),
         })
@@ -379,8 +412,16 @@ impl ScanStore for PostgresStore {
         .bind(scan.death_count.map(|c| c as i32))
         .bind(scan.total_dead.as_ref().map(TokenAmount::to_bigdecimal))
         .bind(scan.burned.as_ref().map(TokenAmount::to_bigdecimal))
-        .bind(scan.distributed_same_level.as_ref().map(TokenAmount::to_bigdecimal))
-        .bind(scan.distributed_upstream.as_ref().map(TokenAmount::to_bigdecimal))
+        .bind(
+            scan.distributed_same_level
+                .as_ref()
+                .map(TokenAmount::to_bigdecimal),
+        )
+        .bind(
+            scan.distributed_upstream
+                .as_ref()
+                .map(TokenAmount::to_bigdecimal),
+        )
         .bind(scan.protocol_fee.as_ref().map(TokenAmount::to_bigdecimal))
         .bind(scan.survivor_count.map(|c| c as i32))
         .execute(&self.pool)
@@ -582,13 +623,11 @@ impl DeathStore for PostgresStore {
     #[instrument(skip(self), fields(scan_id = %scan_id))]
     async fn get_deaths_for_scan(&self, scan_id: &str) -> Result<Vec<Death>> {
         // First get the scan's UUID from the on-chain scan_id
-        let scan_uuid: Option<Uuid> = sqlx::query_scalar(
-            "SELECT id FROM scans WHERE scan_id = $1",
-        )
-        .bind(scan_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(InfraError::Database)?;
+        let scan_uuid: Option<Uuid> = sqlx::query_scalar("SELECT id FROM scans WHERE scan_id = $1")
+            .bind(scan_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(InfraError::Database)?;
 
         let Some(uuid) = scan_uuid else {
             return Ok(Vec::new());
@@ -638,13 +677,11 @@ impl DeathStore for PostgresStore {
 
     #[instrument(skip(self), fields(level = ?level))]
     async fn count_deaths_by_level(&self, level: Level) -> Result<u64> {
-        let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM deaths WHERE level = $1",
-        )
-        .bind(level as i16)
-        .fetch_one(&self.pool)
-        .await
-        .map_err(InfraError::Database)?;
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM deaths WHERE level = $1")
+            .bind(level as i16)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(InfraError::Database)?;
 
         Ok(count as u64)
     }
@@ -791,13 +828,12 @@ impl IndexerStateStore for PostgresStore {
 
     #[instrument(skip(self), fields(block = %block.value()))]
     async fn get_block_hash(&self, block: BlockNumber) -> Result<Option<B256>> {
-        let row: Option<Vec<u8>> = sqlx::query_scalar(
-            "SELECT block_hash FROM block_hashes WHERE block_number = $1",
-        )
-        .bind(block.value() as i64)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(InfraError::Database)?;
+        let row: Option<Vec<u8>> =
+            sqlx::query_scalar("SELECT block_hash FROM block_hashes WHERE block_number = $1")
+                .bind(block.value() as i64)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(InfraError::Database)?;
 
         match row {
             Some(bytes) => {
@@ -844,12 +880,11 @@ impl IndexerStateStore for PostgresStore {
     #[instrument(skip(self), fields(keep_blocks = keep_blocks))]
     async fn prune_old_blocks(&self, keep_blocks: u64) -> Result<u64> {
         // Get current max block
-        let max_block: Option<i64> = sqlx::query_scalar(
-            "SELECT MAX(block_number) FROM block_hashes",
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(InfraError::Database)?;
+        let max_block: Option<i64> =
+            sqlx::query_scalar("SELECT MAX(block_number) FROM block_hashes")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(InfraError::Database)?;
 
         let Some(max) = max_block else {
             return Ok(0);

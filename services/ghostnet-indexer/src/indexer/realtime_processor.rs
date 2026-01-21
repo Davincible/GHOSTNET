@@ -168,7 +168,10 @@ impl std::fmt::Debug for RealtimeProcessor {
             .field("ws_url", &self.ws_url)
             .field("contract_addresses", &self.contract_addresses)
             .field("log_sender", &"<Sender>")
-            .field("block_cache", &format!("<Cache entries={}>", self.block_cache.entry_count()))
+            .field(
+                "block_cache",
+                &format!("<Cache entries={}>", self.block_cache.entry_count()),
+            )
             .finish()
     }
 }
@@ -601,8 +604,7 @@ mod tests {
             .build();
 
         let block_num = 12345u64;
-        let timestamp = DateTime::<Utc>::from_timestamp(1_700_000_000, 0)
-            .expect("valid timestamp");
+        let timestamp = DateTime::<Utc>::from_timestamp(1_700_000_000, 0).expect("valid timestamp");
 
         // Initially empty
         assert!(cache.get(&block_num).await.is_none());
@@ -620,12 +622,9 @@ mod tests {
 
     #[tokio::test]
     async fn block_cache_respects_max_capacity() {
-        let cache: MokaCache<u64, DateTime<Utc>> = MokaCache::builder()
-            .max_capacity(5)
-            .build();
+        let cache: MokaCache<u64, DateTime<Utc>> = MokaCache::builder().max_capacity(5).build();
 
-        let timestamp = DateTime::<Utc>::from_timestamp(1_700_000_000, 0)
-            .expect("valid timestamp");
+        let timestamp = DateTime::<Utc>::from_timestamp(1_700_000_000, 0).expect("valid timestamp");
 
         // Insert more than capacity
         for i in 0..10u64 {

@@ -28,6 +28,10 @@ panic = "deny"
 # Allow some pedantic lints that are too noisy
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+# Documentation style lints - too noisy for identifiers like contract names
+doc_markdown = "allow"
+# Raw string literals - r"" vs r#""# is subjective
+needless_raw_string_hashes = "allow"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEPENDENCIES

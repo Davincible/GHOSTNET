@@ -87,8 +87,8 @@ pub trait EventPublisher: Send + Sync {
 pub mod mocks {
     //! Mock implementations for testing.
 
-    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     use super::*;
 

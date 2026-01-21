@@ -123,6 +123,10 @@ pub struct CacheStats {
 impl CacheStats {
     /// Calculate hit rate as a percentage.
     #[must_use]
+    /// Calculate the cache hit rate as a percentage.
+    ///
+    /// Precision loss in f64 conversion is acceptable for statistics.
+    #[allow(clippy::cast_precision_loss)]
     pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
         if total == 0 {
@@ -138,8 +142,8 @@ pub mod mocks {
     //! Mock implementations for testing.
 
     use std::collections::HashMap;
-    use std::sync::atomic::{AtomicU64, Ordering};
     use std::sync::RwLock;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     use super::*;
     use crate::types::enums::Level;

@@ -94,7 +94,7 @@ where
 
     /// Convert an Alloy address to our `EthAddress` type.
     const fn to_eth_address(addr: &alloy::primitives::Address) -> EthAddress {
-        EthAddress::new(addr.0 .0)
+        EthAddress::new(addr.0.0)
     }
 
     /// Record a position history entry.
@@ -573,7 +573,7 @@ mod tests {
     }
 
     fn test_eth_address() -> EthAddress {
-        EthAddress::new(test_address().0 .0)
+        EthAddress::new(test_address().0.0)
     }
 
     fn test_metadata() -> EventMetadata {
@@ -733,8 +733,7 @@ mod tests {
     async fn handle_system_reset_closes_all_positions() {
         let position = create_test_position(Level::Subnet);
         let user_address = position.user_address;
-        let (handler, death_store, position_store, _cache) =
-            create_handler_with_position(position);
+        let (handler, death_store, position_store, _cache) = create_handler_with_position(position);
 
         let event = ghost_core::SystemResetTriggered {
             totalPenalty: U256::from(10000_u64) * U256::from(10_u64).pow(U256::from(18_u64)),

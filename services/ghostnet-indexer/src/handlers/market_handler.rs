@@ -309,7 +309,9 @@ where
         }
 
         // Resolve the round
-        self.store.resolve_round(&round_id, outcome, &burned).await?;
+        self.store
+            .resolve_round(&round_id, outcome, &burned)
+            .await?;
 
         // Invalidate cache
         self.cache.invalidate_all_positions();
@@ -468,7 +470,11 @@ mod tests {
 
         async fn get_active_rounds(&self, limit: u32) -> Result<Vec<Round>> {
             let rounds = self.rounds.read().unwrap();
-            let mut active: Vec<_> = rounds.values().filter(|r| !r.is_resolved).cloned().collect();
+            let mut active: Vec<_> = rounds
+                .values()
+                .filter(|r| !r.is_resolved)
+                .cloned()
+                .collect();
             active.truncate(limit as usize);
             Ok(active)
         }
@@ -494,8 +500,11 @@ mod tests {
 
         async fn get_user_bets(&self, address: &EthAddress, limit: u32) -> Result<Vec<Bet>> {
             let bets = self.bets.read().unwrap();
-            let mut user_bets: Vec<_> =
-                bets.iter().filter(|b| &b.user_address == address).cloned().collect();
+            let mut user_bets: Vec<_> = bets
+                .iter()
+                .filter(|b| &b.user_address == address)
+                .cloned()
+                .collect();
             user_bets.truncate(limit as usize);
             Ok(user_bets)
         }
@@ -586,7 +595,7 @@ mod tests {
 
         let event = dead_pool::RoundCreated {
             roundId: U256::from(1),
-            roundType: 0, // DeathCount
+            roundType: 0,   // DeathCount
             targetLevel: 4, // Darknet
             line: U256::from(10_u64) * U256::from(10_u64).pow(U256::from(18_u64)), // 10 DATA
             deadline: 1_700_000_000,
@@ -611,13 +620,16 @@ mod tests {
 
         let event = dead_pool::RoundCreated {
             roundId: U256::from(1),
-            roundType: 3, // SystemReset
+            roundType: 3,   // SystemReset
             targetLevel: 0, // Global
             line: U256::from(0),
             deadline: 1_700_000_000,
         };
 
-        handler.handle_round_created(event, test_metadata()).await.unwrap();
+        handler
+            .handle_round_created(event, test_metadata())
+            .await
+            .unwrap();
 
         let round = store.get_round("1").unwrap();
         assert_eq!(round.round_type, RoundType::SystemReset);
@@ -717,7 +729,10 @@ mod tests {
             isOver: false, // UNDER
             amount: U256::from(50_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_bet_placed(bet_event, test_metadata()).await.unwrap();
+        handler
+            .handle_bet_placed(bet_event, test_metadata())
+            .await
+            .unwrap();
 
         // Verify under_pool was updated
         let round = store.get_round("1").unwrap();
@@ -811,7 +826,10 @@ mod tests {
             isOver: true,
             amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_bet_placed(bet_over, test_metadata()).await.unwrap();
+        handler
+            .handle_bet_placed(bet_over, test_metadata())
+            .await
+            .unwrap();
 
         let bet_under = dead_pool::BetPlaced {
             roundId: U256::from(1),
@@ -819,7 +837,10 @@ mod tests {
             isOver: false,
             amount: U256::from(50_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_bet_placed(bet_under, test_metadata()).await.unwrap();
+        handler
+            .handle_bet_placed(bet_under, test_metadata())
+            .await
+            .unwrap();
 
         // Resolve round (OVER wins)
         let resolve_event = dead_pool::RoundResolved {
@@ -916,7 +937,10 @@ mod tests {
             isOver: true,
             amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_bet_placed(bet_event, test_metadata()).await.unwrap();
+        handler
+            .handle_bet_placed(bet_event, test_metadata())
+            .await
+            .unwrap();
 
         let resolve_event = dead_pool::RoundResolved {
             roundId: U256::from(1),
@@ -943,7 +967,10 @@ mod tests {
 
         // Verify bet was marked as claimed
         let bets = store.get_bets();
-        let bet = bets.iter().find(|b| b.user_address == EthAddress::from(test_address())).unwrap();
+        let bet = bets
+            .iter()
+            .find(|b| b.user_address == EthAddress::from(test_address()))
+            .unwrap();
         assert!(bet.is_claimed);
         assert_eq!(bet.winnings.as_ref().unwrap().to_string(), "190");
         assert!(bet.claimed_at.is_some());
@@ -990,7 +1017,10 @@ mod tests {
             isOver: true,
             amount: U256::from(100_u64) * U256::from(10_u64).pow(U256::from(18_u64)),
         };
-        handler.handle_bet_placed(bet_event, test_metadata()).await.unwrap();
+        handler
+            .handle_bet_placed(bet_event, test_metadata())
+            .await
+            .unwrap();
 
         let resolve_event = dead_pool::RoundResolved {
             roundId: U256::from(1),

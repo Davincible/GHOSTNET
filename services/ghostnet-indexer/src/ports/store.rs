@@ -264,8 +264,12 @@ pub trait MarketStore: Send + Sync {
     /// # Errors
     ///
     /// Returns an error if the round doesn't exist or is already resolved.
-    async fn resolve_round(&self, round_id: &str, outcome: bool, burned: &TokenAmount)
-        -> Result<()>;
+    async fn resolve_round(
+        &self,
+        round_id: &str,
+        outcome: bool,
+        burned: &TokenAmount,
+    ) -> Result<()>;
 
     /// Get active (unresolved) rounds.
     ///
