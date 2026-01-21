@@ -8,6 +8,9 @@
 //! # Running the Tests
 //!
 //! ```bash
+//! # Set your Alchemy API key for reliable RPC access
+//! export ALCHEMY_API_KEY=your_key_here
+//!
 //! # Run all live network tests (requires Docker + Internet)
 //! cargo test --test live_network_test --features test-utils -- --ignored --nocapture
 //!
@@ -17,18 +20,18 @@
 //!
 //! # Requirements
 //!
+//! - `ALCHEMY_API_KEY` environment variable (recommended, falls back to public RPC)
 //! - Docker daemon running (for TimescaleDB tests)
 //! - Internet connection (for MegaETH testnet RPC)
-//! - MegaETH testnet must be online (these tests may fail if testnet is down)
 //!
 //! # Note
 //!
 //! These tests are ignored by default because they:
 //! - Require network access to MegaETH testnet
 //! - Take 30+ seconds to run
-//! - Depend on external services that may be unavailable
+//! - Depend on external services
 //!
-//! If tests fail with 502 errors, the MegaETH testnet may be temporarily unavailable.
+//! Without `ALCHEMY_API_KEY`, tests use public RPCs which may be rate-limited or unstable.
 
 mod common;
 
@@ -57,16 +60,16 @@ fn install_crypto_provider() {
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// MegaETH testnet HTTP RPC URL (primary)
-/// Alternative: "https://timothy.megaeth.com/rpc" (may be deprecated)
-/// Fallback: "https://6343.rpc.thirdweb.com" (rate limited but stable)
-const MEGAETH_HTTP_RPC: &str = "https://carrot.megaeth.com/rpc";
+/// Alchemy RPC base URL (requires ALCHEMY_API_KEY env var)
+const ALCHEMY_HTTP_BASE: &str = "https://megaeth-testnet.g.alchemy.com/v2/";
 
-/// Fallback RPC via thirdweb (more stable, but rate limited on complex queries)
-const MEGAETH_HTTP_RPC_FALLBACK: &str = "https://6343.rpc.thirdweb.com";
+/// Fallback HTTP RPC via thirdweb (rate limited but works without API key)
+const FALLBACK_HTTP_RPC: &str = "https://6343.rpc.thirdweb.com";
 
-/// MegaETH testnet WebSocket RPC URL
-const MEGAETH_WS_RPC: &str = "wss://carrot.megaeth.com/ws";
+/// WebSocket RPC via MegaETH public endpoint
+/// Note: Alchemy doesn't support eth_subscribe for MegaETH, so we use public endpoint
+/// This endpoint may be unstable - WebSocket tests may fail during testnet maintenance
+const PUBLIC_WS_RPC: &str = "wss://carrot.megaeth.com/ws";
 
 /// MegaETH testnet chain ID
 const MEGAETH_CHAIN_ID: u64 = 6343;
@@ -81,34 +84,73 @@ const CONNECTION_TIMEOUT: Duration = Duration::from_secs(30);
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/// Get the HTTP RPC URL, preferring Alchemy if API key is set.
+fn get_http_rpc_url() -> String {
+    match std::env::var("ALCHEMY_API_KEY") {
+        Ok(key) if !key.is_empty() => {
+            info!("Using Alchemy RPC (ALCHEMY_API_KEY set)");
+            format!("{}{}", ALCHEMY_HTTP_BASE, key)
+        }
+        _ => {
+            info!("Using fallback RPC (ALCHEMY_API_KEY not set)");
+            FALLBACK_HTTP_RPC.to_string()
+        }
+    }
+}
+
+/// Get the WebSocket RPC URL.
+///
+/// Note: Alchemy doesn't support eth_subscribe for MegaETH, so we always use
+/// the public endpoint for WebSocket connections. This endpoint may be unstable.
+fn get_ws_rpc_url() -> String {
+    // Alchemy doesn't support WebSocket subscriptions for MegaETH
+    // Always use the public endpoint (may be unstable during testnet maintenance)
+    info!("Using public WebSocket endpoint (Alchemy doesn't support eth_subscribe)");
+    PUBLIC_WS_RPC.to_string()
+}
+
 /// Create an HTTP provider for MegaETH testnet.
 ///
-/// Tries the primary RPC first, falls back to thirdweb if it fails.
+/// Uses Alchemy if ALCHEMY_API_KEY env var is set, otherwise falls back to thirdweb.
 async fn create_http_provider()
 -> Result<impl Provider + Clone, Box<dyn std::error::Error + Send + Sync>> {
-    // Try primary RPC first
-    let url = MEGAETH_HTTP_RPC.parse()?;
+    let rpc_url = get_http_rpc_url();
+    let url = rpc_url.parse()?;
     let provider = ProviderBuilder::new().connect_http(url);
 
-    // Quick health check - if chainId works, provider is probably good
+    // Quick health check
     match timeout(Duration::from_secs(5), provider.get_chain_id()).await {
-        Ok(Ok(_)) => return Ok(provider),
-        _ => {
-            warn!("Primary RPC failed, trying fallback...");
+        Ok(Ok(chain_id)) => {
+            info!(chain_id, "Connected to MegaETH testnet");
+            return Ok(provider);
+        }
+        Ok(Err(e)) => {
+            warn!("RPC health check failed: {}", e);
+        }
+        Err(_) => {
+            warn!("RPC health check timed out");
         }
     }
 
-    // Fall back to thirdweb
-    let fallback_url = MEGAETH_HTTP_RPC_FALLBACK.parse()?;
-    let fallback_provider = ProviderBuilder::new().connect_http(fallback_url);
-    info!("Using fallback RPC: {}", MEGAETH_HTTP_RPC_FALLBACK);
-    Ok(fallback_provider)
+    // If Alchemy failed, try fallback
+    if rpc_url.contains("alchemy") {
+        info!("Alchemy failed, trying fallback RPC...");
+        let fallback_url = FALLBACK_HTTP_RPC.parse()?;
+        let fallback_provider = ProviderBuilder::new().connect_http(fallback_url);
+        return Ok(fallback_provider);
+    }
+
+    // Return the provider anyway, let the caller handle errors
+    Ok(provider)
 }
 
 /// Create a WebSocket provider for MegaETH testnet.
+///
+/// Uses Alchemy if ALCHEMY_API_KEY env var is set, otherwise falls back to public endpoint.
 async fn create_ws_provider()
 -> Result<impl Provider + Clone, Box<dyn std::error::Error + Send + Sync>> {
-    let ws = WsConnect::new(MEGAETH_WS_RPC);
+    let ws_url = get_ws_rpc_url();
+    let ws = WsConnect::new(&ws_url);
     let provider = timeout(CONNECTION_TIMEOUT, ProviderBuilder::new().connect_ws(ws)).await??;
     Ok(provider)
 }
@@ -168,8 +210,11 @@ async fn test_megaeth_http_connectivity() {
 }
 
 /// Test: Verify WebSocket connectivity to MegaETH testnet
+///
+/// Note: Uses public MegaETH WebSocket endpoint which may be unstable.
+/// Alchemy doesn't support eth_subscribe for MegaETH.
 #[tokio::test]
-#[ignore = "requires network access"]
+#[ignore = "requires network access; public WS endpoint may be unstable"]
 async fn test_megaeth_ws_connectivity() {
     install_crypto_provider();
     tracing_subscriber::fmt::try_init().ok();
