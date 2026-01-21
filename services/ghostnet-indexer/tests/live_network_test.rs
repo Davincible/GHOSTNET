@@ -5,10 +5,20 @@
 //! 2. Fetch real blocks and logs from the network
 //! 3. Store indexed data in TimescaleDB
 //!
+//! # MegaETH Realtime API
+//!
+//! MegaETH executes transactions within 10ms and exposes results via a Realtime API.
+//! Key features used in these tests:
+//! - **HTTP RPC**: Standard Ethereum JSON-RPC, queries against latest mini block
+//! - **WebSocket subscriptions**: `logs` with `fromBlock/toBlock: "pending"` for real-time streaming
+//! - **Mini blocks**: ~10ms preconfirmed blocks (vs 1s EVM blocks)
+//!
+//! See `docs/MegaETH_RealtimeAPI.md` for full documentation.
+//!
 //! # Running the Tests
 //!
 //! ```bash
-//! # Set your Alchemy API key for reliable RPC access
+//! # Set your Alchemy API key for reliable HTTP RPC access
 //! export ALCHEMY_API_KEY=your_key_here
 //!
 //! # Run all live network tests (requires Docker + Internet)
@@ -20,18 +30,15 @@
 //!
 //! # Requirements
 //!
-//! - `ALCHEMY_API_KEY` environment variable (recommended, falls back to public RPC)
+//! - `ALCHEMY_API_KEY` environment variable (recommended for HTTP, falls back to public RPC)
 //! - Docker daemon running (for TimescaleDB tests)
 //! - Internet connection (for MegaETH testnet RPC)
 //!
 //! # Note
 //!
-//! These tests are ignored by default because they:
-//! - Require network access to MegaETH testnet
-//! - Take 30+ seconds to run
-//! - Depend on external services
-//!
-//! Without `ALCHEMY_API_KEY`, tests use public RPCs which may be rate-limited or unstable.
+//! - HTTP tests use Alchemy (most reliable) with fallback to thirdweb
+//! - WebSocket tests use public endpoint (Alchemy doesn't support eth_subscribe)
+//! - Tests are ignored by default as they require network access and take 30+ seconds
 
 mod common;
 
@@ -213,6 +220,9 @@ async fn test_megaeth_http_connectivity() {
 ///
 /// Note: Uses public MegaETH WebSocket endpoint which may be unstable.
 /// Alchemy doesn't support eth_subscribe for MegaETH.
+///
+/// MegaETH Realtime API also supports `miniBlocks` subscription for
+/// streaming mini blocks (~10ms) instead of EVM blocks (~1s).
 #[tokio::test]
 #[ignore = "requires network access; public WS endpoint may be unstable"]
 async fn test_megaeth_ws_connectivity() {
@@ -563,13 +573,17 @@ async fn test_live_indexing_pipeline() {
     );
 }
 
-/// Test: WebSocket subscription with log streaming
+/// Test: WebSocket subscription with log streaming using MegaETH Realtime API
+///
+/// According to MegaETH Realtime API docs, log subscriptions with
+/// `fromBlock: "pending"` and `toBlock: "pending"` stream logs as soon as
+/// transactions are packaged into mini blocks (~10ms latency).
 #[tokio::test]
-#[ignore = "requires network access"]
+#[ignore = "requires network access; public WS endpoint may be unstable"]
 async fn test_ws_log_subscription() {
     install_crypto_provider();
     tracing_subscriber::fmt::try_init().ok();
-    info!("Testing WebSocket log subscription...");
+    info!("Testing WebSocket log subscription (MegaETH Realtime API)...");
 
     // Connect via WebSocket
     let provider = create_ws_provider()
@@ -578,8 +592,12 @@ async fn test_ws_log_subscription() {
 
     info!("Connected, subscribing to logs...");
 
-    // Subscribe to ALL logs (no address filter)
-    let filter = Filter::new();
+    // Subscribe to ALL logs with pending block tags for real-time streaming
+    // This follows MegaETH Realtime API: fromBlock/toBlock = "pending"
+    let filter = Filter::new()
+        .from_block(BlockNumberOrTag::Pending)
+        .to_block(BlockNumberOrTag::Pending);
+
     let subscription = provider
         .subscribe_logs(&filter)
         .await
