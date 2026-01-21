@@ -51,6 +51,8 @@
 //! router.route_log(&log, metadata).await?;
 //! ```
 
+mod block_processor;
 mod event_router;
 
+pub use block_processor::BlockProcessor;
 pub use event_router::EventRouter;

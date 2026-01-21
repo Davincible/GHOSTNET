@@ -26,6 +26,8 @@ pub struct Settings {
     pub logging: LoggingSettings,
     /// Metrics configuration.
     pub metrics: MetricsSettings,
+    /// Smart contract addresses.
+    pub contracts: ContractAddresses,
 }
 
 impl Settings {
@@ -85,6 +87,13 @@ impl Settings {
             .set_default("metrics.enabled", true)?
             .set_default("metrics.host", "0.0.0.0")?
             .set_default("metrics.port", 9090)?
+            // Contract addresses - these MUST be set in production config
+            .set_default("contracts.ghost_core", "0x0000000000000000000000000000000000000001")?
+            .set_default("contracts.trace_scan", "0x0000000000000000000000000000000000000002")?
+            .set_default("contracts.dead_pool", "0x0000000000000000000000000000000000000003")?
+            .set_default("contracts.data_token", "0x0000000000000000000000000000000000000004")?
+            .set_default("contracts.fee_router", "0x0000000000000000000000000000000000000005")?
+            .set_default("contracts.rewards_distributor", "0x0000000000000000000000000000000000000006")?
             // Load default configuration file
             .add_source(File::with_name(&format!("{config_dir}/default")).required(false))
             // Load environment-specific file
@@ -377,6 +386,58 @@ impl MetricsSettings {
     }
 }
 
+/// GHOSTNET smart contract addresses.
+///
+/// These addresses point to the deployed contracts on MegaETH.
+/// All addresses should be checksummed.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ContractAddresses {
+    /// GhostCore contract - main game logic.
+    pub ghost_core: String,
+    /// TraceScan contract - scan execution.
+    pub trace_scan: String,
+    /// DeadPool contract - prediction market.
+    pub dead_pool: String,
+    /// DataToken contract - $DATA ERC20.
+    pub data_token: String,
+    /// FeeRouter contract - fee collection.
+    pub fee_router: String,
+    /// RewardsDistributor contract - emissions.
+    pub rewards_distributor: String,
+}
+
+impl ContractAddresses {
+    /// Get all contract addresses as a vector.
+    ///
+    /// Useful for building log filters covering all contracts.
+    #[must_use]
+    pub fn all(&self) -> Vec<&str> {
+        vec![
+            &self.ghost_core,
+            &self.trace_scan,
+            &self.dead_pool,
+            &self.data_token,
+            &self.fee_router,
+            &self.rewards_distributor,
+        ]
+    }
+
+    /// Parse all addresses into Alloy Address types.
+    ///
+    /// # Errors
+    /// Returns an error if any address is invalid.
+    pub fn parse_all(&self) -> Result<Vec<alloy::primitives::Address>, String> {
+        use std::str::FromStr;
+        self.all()
+            .into_iter()
+            .map(|s| {
+                alloy::primitives::Address::from_str(s)
+                    .map_err(|e| format!("Invalid address '{}': {}", s, e))
+            })
+            .collect()
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // TESTS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -506,6 +567,14 @@ mod tests {
                 enabled: true,
                 host: "0.0.0.0".into(),
                 port: 9090,
+            },
+            contracts: ContractAddresses {
+                ghost_core: "0x0000000000000000000000000000000000000001".into(),
+                trace_scan: "0x0000000000000000000000000000000000000002".into(),
+                dead_pool: "0x0000000000000000000000000000000000000003".into(),
+                data_token: "0x0000000000000000000000000000000000000004".into(),
+                fee_router: "0x0000000000000000000000000000000000000005".into(),
+                rewards_distributor: "0x0000000000000000000000000000000000000006".into(),
             },
         }
     }

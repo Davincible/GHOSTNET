@@ -133,6 +133,14 @@ pub enum InfraError {
     /// Configuration file error.
     #[error("configuration error: {0}")]
     Config(#[from] config::ConfigError),
+
+    /// Internal channel or runtime error.
+    #[error("internal error: {0}")]
+    Internal(String),
+
+    /// Address parsing error.
+    #[error("address parsing error: {0}")]
+    AddressParsing(String),
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

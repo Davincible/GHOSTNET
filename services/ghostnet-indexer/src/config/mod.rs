@@ -17,6 +17,6 @@
 mod settings;
 
 pub use settings::{
-    ApiSettings, CacheSettings, DatabaseSettings, IggySettings, LoggingSettings, MetricsSettings,
-    RateLimitSettings, RpcSettings, Settings, WebSocketSettings,
+    ApiSettings, CacheSettings, ContractAddresses, DatabaseSettings, IggySettings, LoggingSettings,
+    MetricsSettings, RateLimitSettings, RpcSettings, Settings, WebSocketSettings,
 };
