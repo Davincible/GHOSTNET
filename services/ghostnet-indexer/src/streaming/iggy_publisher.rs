@@ -39,6 +39,8 @@ pub struct IggyPublisher {
     stream_name: String,
     /// Number of partitions per topic.
     partition_count: u32,
+    /// Whether we're connected to the Iggy server.
+    connected: AtomicBool,
     /// Whether we've initialized the stream and topics.
     initialized: AtomicBool,
     /// Lock for initialization to prevent races.
@@ -50,8 +52,8 @@ impl std::fmt::Debug for IggyPublisher {
         f.debug_struct("IggyPublisher")
             .field("stream_name", &self.stream_name)
             .field("partition_count", &self.partition_count)
+            .field("connected", &self.connected.load(Ordering::SeqCst))
             .field("initialized", &self.initialized.load(Ordering::SeqCst))
-            .field("connected", &self.is_connected())
             .finish_non_exhaustive()
     }
 }
@@ -76,6 +78,7 @@ impl IggyPublisher {
             client: Arc::new(client),
             stream_name: settings.stream_name.clone(),
             partition_count: settings.partition_count,
+            connected: AtomicBool::new(false),
             initialized: AtomicBool::new(false),
             init_lock: RwLock::new(()),
         })
@@ -93,6 +96,7 @@ impl IggyPublisher {
             .await
             .map_err(|e| InfraError::Streaming(format!("Failed to connect to Iggy: {e}")))?;
 
+        self.connected.store(true, Ordering::SeqCst);
         info!(stream = %self.stream_name, "Connected to Iggy server");
         Ok(())
     }
@@ -108,6 +112,7 @@ impl IggyPublisher {
             .await
             .map_err(|e| InfraError::Streaming(format!("Failed to disconnect from Iggy: {e}")))?;
 
+        self.connected.store(false, Ordering::SeqCst);
         self.initialized.store(false, Ordering::SeqCst);
         info!("Disconnected from Iggy server");
         Ok(())
@@ -116,6 +121,7 @@ impl IggyPublisher {
     /// Ensure the stream and topics exist.
     ///
     /// This is called lazily on first publish and is idempotent.
+    /// Will auto-connect if not already connected.
     #[instrument(skip(self))]
     async fn ensure_initialized(&self) -> Result<()> {
         // Fast path: already initialized
@@ -127,6 +133,11 @@ impl IggyPublisher {
         let _guard = self.init_lock.write().await;
         if self.initialized.load(Ordering::SeqCst) {
             return Ok(());
+        }
+
+        // Auto-connect if not connected
+        if !self.connected.load(Ordering::SeqCst) {
+            self.connect().await?;
         }
 
         // Create stream if it doesn't exist
@@ -371,18 +382,15 @@ impl EventPublisher for IggyPublisher {
     }
 
     fn is_connected(&self) -> bool {
-        // IggyClient doesn't expose connection state directly
-        // We rely on the initialized flag as a proxy
-        self.initialized.load(Ordering::SeqCst)
+        self.connected.load(Ordering::SeqCst)
     }
 }
 
 /// A no-op publisher for testing or when streaming is disabled.
 ///
-/// This struct is intentionally public for downstream consumers who may want
-/// to disable streaming without removing the publisher from their code.
+/// Use this when you want to satisfy the `EventPublisher` trait without
+/// actually sending events anywhere.
 #[derive(Debug, Default, Clone)]
-#[allow(dead_code)]
 pub struct NoOpPublisher;
 
 #[async_trait]
