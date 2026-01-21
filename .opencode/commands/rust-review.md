@@ -13,8 +13,9 @@ You task with reviewing the latest code based on:
 - Any major security vulnerabilities
 - Any major performance bottlenecks
 - Does this code contain any potential surface areas for performance issues or security issues that we have not thought about yet?
+- Are the test functionally correct, and testing business logic?
 
-Please review the last git commit
+Please review the lastest relevant Rust git commit
 
 IMPORTANT: Please use your rust skills, call the skill mcp to load all relevant skills, and to thoroughly perform the review
 
