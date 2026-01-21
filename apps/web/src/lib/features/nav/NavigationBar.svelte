@@ -2,11 +2,19 @@
 	import { goto } from '$app/navigation';
 	import { Row } from '$lib/ui/layout';
 
+	/**
+	 * Navigation item configuration.
+	 *
+	 * The `comingSoon` flag is retained for future features that aren't yet implemented.
+	 * When set, clicking the item shows a toast instead of navigating, and applies
+	 * the `.nav-item-coming-soon` style (reduced opacity).
+	 */
 	interface NavItem {
 		id: string;
 		label: string;
 		href?: string;
 		disabled?: boolean;
+		/** Shows "coming soon" toast instead of navigating. Retained for future features. */
 		comingSoon?: boolean;
 	}
 
@@ -33,16 +41,21 @@
 	];
 
 	function handleClick(item: NavItem) {
+		// Handle "coming soon" features - show toast and don't navigate
 		if (item.comingSoon) {
 			comingSoonFeature = item.label;
 			showComingSoon = true;
 			setTimeout(() => (showComingSoon = false), 2000);
 			return;
 		}
+
+		// Update active state first (useful for same-page navigation like network/position)
+		onNavigate?.(item.id);
+
+		// Then navigate if there's an href
 		if (item.href) {
 			goto(item.href);
 		}
-		onNavigate?.(item.id);
 	}
 </script>
 

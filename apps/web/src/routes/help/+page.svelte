@@ -220,9 +220,10 @@
 		<div class="help-layout">
 			<!-- Section Navigation -->
 			<nav class="help-nav" aria-label="Help sections">
-				<Stack gap={1}>
+				<div class="nav-items">
 					{#each sections as section (section.id)}
 						<button
+							type="button"
 							class="nav-item"
 							class:active={activeSection === section.id}
 							onclick={() => (activeSection = section.id)}
@@ -232,7 +233,7 @@
 							<span class="nav-label">{section.title}</span>
 						</button>
 					{/each}
-				</Stack>
+				</div>
 			</nav>
 
 			<!-- Content Area -->
@@ -240,17 +241,20 @@
 				<Box title={currentSection.title}>
 					<Stack gap={2}>
 						{#each currentSection.content as item, index (index)}
+							{@const panelId = `panel-${currentSection.id}-${index}`}
 							<div class="help-item" class:expanded={isExpanded(currentSection.id, index)}>
 								<button
+									type="button"
 									class="item-header"
 									onclick={() => toggleItem(currentSection.id, index)}
 									aria-expanded={isExpanded(currentSection.id, index)}
+									aria-controls={panelId}
 								>
 									<span class="item-icon">{isExpanded(currentSection.id, index) ? '[-]' : '[+]'}</span>
 									<span class="item-question">{item.question}</span>
 								</button>
 								{#if isExpanded(currentSection.id, index)}
-									<div class="item-body">
+									<div class="item-body" id={panelId} role="region">
 										<p class="item-answer">{item.answer}</p>
 										{#if item.tip}
 											<div class="item-tip">
@@ -323,6 +327,12 @@
 		position: sticky;
 		top: var(--space-4);
 		height: fit-content;
+	}
+
+	.nav-items {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
 	.nav-item {
@@ -429,7 +439,7 @@
 		padding-left: calc(var(--space-3) + 2.5ch + var(--space-2));
 		border-top: 1px solid var(--color-border-subtle);
 		background: var(--color-bg-secondary);
-		animation: expand 0.15s ease-out;
+		animation: expand var(--duration-fast) ease-out;
 	}
 
 	@keyframes expand {
@@ -495,12 +505,15 @@
 
 		.help-nav {
 			position: static;
-			display: flex;
 			overflow-x: auto;
-			gap: var(--space-1);
 			padding-bottom: var(--space-2);
 			margin-bottom: var(--space-2);
 			border-bottom: 1px solid var(--color-border-subtle);
+		}
+
+		.nav-items {
+			flex-direction: row;
+			gap: var(--space-1);
 		}
 
 		.nav-item {
