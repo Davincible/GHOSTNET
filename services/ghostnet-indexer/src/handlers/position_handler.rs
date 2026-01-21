@@ -161,8 +161,8 @@ where
             // Record history for the closed position
             self.record_history(
                 &existing,
-                PositionAction::JackedIn, // Using JackedIn to indicate superseded by new entry
-                TokenAmount::zero(),       // No amount change, just closure
+                PositionAction::Superseded,
+                TokenAmount::zero(), // No amount change, just closure
                 &meta,
             )
             .await?;

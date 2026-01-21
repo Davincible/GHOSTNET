@@ -321,6 +321,11 @@ pub enum PositionAction {
     SystemReset,
     /// User claimed accumulated rewards.
     RewardsClaimed,
+    /// Position was superseded by a new JackedIn event.
+    ///
+    /// This indicates the old position was closed to make room for a new one.
+    /// The funds moved to the new position, so this is not a loss.
+    Superseded,
 }
 
 impl PositionAction {
@@ -335,6 +340,7 @@ impl PositionAction {
             Self::Culled => "Culled",
             Self::SystemReset => "System Reset",
             Self::RewardsClaimed => "Rewards Claimed",
+            Self::Superseded => "Superseded",
         }
     }
 }

@@ -244,6 +244,22 @@ impl TokenAmount {
             Self(result)
         }
     }
+
+    /// Convert to `sqlx::types::BigDecimal` for database storage.
+    #[must_use]
+    pub fn to_bigdecimal(&self) -> sqlx::types::BigDecimal {
+        // SQLx BigDecimal and bigdecimal::BigDecimal are compatible
+        // via string conversion (they may be different versions)
+        self.0.to_string().parse().unwrap_or_default()
+    }
+
+    /// Create from `sqlx::types::BigDecimal`.
+    #[must_use]
+    pub fn from_bigdecimal(value: &sqlx::types::BigDecimal) -> Self {
+        // Parse via string to handle version compatibility
+        let s = value.to_string();
+        Self::parse(&s).unwrap_or_else(|_| Self::zero())
+    }
 }
 
 impl fmt::Debug for TokenAmount {
@@ -345,6 +361,12 @@ impl GhostStreak {
         self.0
     }
 
+    /// Alias for `get()` for consistency with other newtypes.
+    #[must_use]
+    pub const fn value(&self) -> i32 {
+        self.0
+    }
+
     /// Increment by one (saturating at MAX).
     #[must_use]
     pub const fn increment(&self) -> Self {
@@ -411,6 +433,12 @@ impl BlockNumber {
     /// Get the value.
     #[must_use]
     pub const fn get(&self) -> u64 {
+        self.0
+    }
+
+    /// Alias for `get()` for consistency with other newtypes.
+    #[must_use]
+    pub const fn value(&self) -> u64 {
         self.0
     }
 

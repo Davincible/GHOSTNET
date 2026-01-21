@@ -93,6 +93,37 @@ const BLOCK_CACHE_MAX_CAPACITY: u64 = 10_000;
 const BLOCK_CACHE_TTL: Duration = Duration::from_secs(3600); // 1 hour
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// BLOCK TIMESTAMP RESULT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Result of fetching a block timestamp.
+///
+/// Distinguishes between successfully fetched timestamps (which should be cached)
+/// and fallback timestamps (which should not be cached to allow retry on next request).
+#[derive(Debug, Clone, Copy)]
+enum BlockTimestampResult {
+    /// Timestamp was successfully fetched from the RPC.
+    Fetched(DateTime<Utc>),
+    /// Fallback timestamp used when block was not found or RPC failed.
+    /// This should not be cached to allow retry on the next request.
+    Fallback(DateTime<Utc>),
+}
+
+impl BlockTimestampResult {
+    /// Get the timestamp value regardless of variant.
+    const fn timestamp(&self) -> DateTime<Utc> {
+        match self {
+            Self::Fetched(ts) | Self::Fallback(ts) => *ts,
+        }
+    }
+
+    /// Returns true if this was a successful fetch (should be cached).
+    const fn should_cache(&self) -> bool {
+        matches!(self, Self::Fetched(_))
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // REALTIME PROCESSOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -379,17 +410,19 @@ impl RealtimeProcessor {
             cached
         } else {
             // Cache miss - fetch from RPC
-            let ts = self.fetch_block_timestamp(provider, block_number).await;
+            let result = self.fetch_block_timestamp(provider, block_number).await;
 
-            // Only cache successful fetches (not fallback timestamps)
-            // We identify successful fetches by checking if the timestamp is not "now"
-            // A more robust approach would be to return an enum, but this is simpler
-            if ts != Utc::now() {
-                self.block_cache.insert(block_number, ts).await;
+            // Only cache successfully fetched timestamps, not fallbacks.
+            // Fallback timestamps (used when block not found or RPC failed) should
+            // not be cached to allow retry on the next request for this block.
+            if result.should_cache() {
+                self.block_cache
+                    .insert(block_number, result.timestamp())
+                    .await;
                 debug!(block_number, "Block timestamp cached");
             }
 
-            ts
+            result.timestamp()
         };
 
         Ok(EventMetadata {
@@ -405,10 +438,18 @@ impl RealtimeProcessor {
 
     /// Fetch block timestamp from the RPC provider.
     ///
+    /// Returns a `BlockTimestampResult` indicating whether the timestamp was
+    /// successfully fetched (and should be cached) or is a fallback (should not
+    /// be cached to allow retry).
+    ///
     /// Falls back to current time if the block is not found (mini-block not yet
     /// in EVM block) or if the RPC call fails.
     #[allow(clippy::cast_possible_wrap)] // Block timestamps won't exceed i64::MAX until year 292 billion
-    async fn fetch_block_timestamp<P>(&self, provider: &P, block_number: u64) -> DateTime<Utc>
+    async fn fetch_block_timestamp<P>(
+        &self,
+        provider: &P,
+        block_number: u64,
+    ) -> BlockTimestampResult
     where
         P: Provider,
     {
@@ -417,17 +458,18 @@ impl RealtimeProcessor {
             .await
         {
             Ok(Some(block)) => {
-                DateTime::<Utc>::from_timestamp(block.header.timestamp as i64, 0)
-                    .unwrap_or_else(Utc::now)
+                let ts = DateTime::<Utc>::from_timestamp(block.header.timestamp as i64, 0)
+                    .unwrap_or_else(Utc::now);
+                BlockTimestampResult::Fetched(ts)
             }
             Ok(None) => {
                 // Block not found - use current time (mini-block not yet in EVM block)
-                debug!(block_number, "Block not found, using current time");
-                Utc::now()
+                debug!(block_number, "Block not found, using fallback timestamp");
+                BlockTimestampResult::Fallback(Utc::now())
             }
             Err(e) => {
-                warn!(block_number, error = ?e, "Failed to fetch block, using current time");
-                Utc::now()
+                warn!(block_number, error = ?e, "Failed to fetch block, using fallback timestamp");
+                BlockTimestampResult::Fallback(Utc::now())
             }
         }
     }

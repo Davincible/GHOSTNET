@@ -334,6 +334,27 @@ impl ExitReason {
     }
 }
 
+impl std::fmt::Display for ExitReason {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
+impl std::str::FromStr for ExitReason {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Extracted" => Ok(Self::Extracted),
+            "Traced" => Ok(Self::Traced),
+            "Culled" => Ok(Self::Culled),
+            "System Reset" | "SystemReset" => Ok(Self::SystemReset),
+            "Superseded" => Ok(Self::Superseded),
+            _ => Err(format!("Unknown exit reason: {s}")),
+        }
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // TESTS
 // ═══════════════════════════════════════════════════════════════════════════════
