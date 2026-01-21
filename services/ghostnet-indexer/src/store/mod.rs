@@ -65,8 +65,10 @@
 //! Migrations are located in `migrations/` and run via `sqlx migrate run`.
 //! See individual migration files for schema details.
 
+mod cache;
 mod postgres;
 
+pub use cache::MemoryCache;
 pub use postgres::PostgresStore;
 
 // Re-export commonly used types for convenience

@@ -72,8 +72,8 @@ mod clock;
 mod store;
 mod streaming;
 
-// Re-export all port traits
-pub use cache::Cache;
+// Re-export all port traits and types
+pub use cache::{Cache, CacheStats};
 pub use clock::{Clock, SystemClock};
 pub use store::{DeathStore, IndexerStateStore, MarketStore, PositionStore, ScanStore, StatsStore};
 pub use streaming::EventPublisher;
