@@ -59,10 +59,10 @@ CREATE INDEX IF NOT EXISTS idx_positions_level_entry
     WHERE is_alive = TRUE AND is_extracted = FALSE;
 
 -- Lookup by ID (needed since id is not sole primary key anymore)
+-- Note: Cannot have UNIQUE on id alone in TimescaleDB hypertables.
+-- The (id, entry_timestamp) composite primary key already ensures uniqueness.
+-- This index enables fast id lookups across time partitions.
 CREATE INDEX IF NOT EXISTS idx_positions_id ON positions(id);
-
--- Unique constraint on id to prevent duplicates across time partitions
-CREATE UNIQUE INDEX IF NOT EXISTS idx_positions_id_unique ON positions(id);
 
 -- Block number for reorg handling
 CREATE INDEX IF NOT EXISTS idx_positions_block ON positions(created_at_block);

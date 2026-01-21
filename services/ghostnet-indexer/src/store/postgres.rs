@@ -168,6 +168,8 @@ impl PositionStore for PostgresStore {
 
     #[instrument(skip(self, position), fields(id = %position.id, user = %position.user_address))]
     async fn save_position(&self, position: &Position) -> Result<()> {
+        // Note: TimescaleDB hypertables require the partitioning column in ON CONFLICT.
+        // The primary key is (id, entry_timestamp), so we use that for upsert.
         sqlx::query(
             r#"
             INSERT INTO positions (
@@ -177,7 +179,7 @@ impl PositionStore for PostgresStore {
                 created_at_block, updated_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-            ON CONFLICT (id) DO UPDATE SET
+            ON CONFLICT (id, entry_timestamp) DO UPDATE SET
                 amount = EXCLUDED.amount,
                 reward_debt = EXCLUDED.reward_debt,
                 last_add_timestamp = EXCLUDED.last_add_timestamp,
