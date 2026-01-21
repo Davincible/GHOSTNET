@@ -58,15 +58,15 @@
 	}
 
 	function handleHackRun() {
-		toast.info('Hack Run coming soon...');
+		goto('/games/hackrun');
 	}
 
 	function handleCrew() {
-		toast.info('Crew system coming soon...');
+		goto('/crew');
 	}
 
 	function handleDeadPool() {
-		toast.info('Dead Pool coming soon...');
+		goto('/market');
 	}
 
 	function handleWatchFeed() {

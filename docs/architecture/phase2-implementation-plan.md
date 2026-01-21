@@ -1,28 +1,31 @@
 # GHOSTNET Phase 2 Implementation Plan
 
-**Version:** 1.0  
-**Status:** Planning  
+**Version:** 1.1  
+**Status:** In Progress (~65% Complete)  
 **Created:** 2026-01-20  
-**Prerequisite:** Phase 1 MVP Complete (Phases 0-6)
+**Last Updated:** 2026-01-21  
+**Prerequisite:** Phase 1 MVP Complete (Phases 0-6) ✅
 
 ---
 
 ## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Visual Design Evolution](#2-visual-design-evolution)
-3. [Phase 2A: MVP Completion](#3-phase-2a-mvp-completion)
-4. [Phase 2B: Dead Pool (Prediction Market)](#4-phase-2b-dead-pool-prediction-market)
-5. [Phase 2C: Hack Runs (Mini-Game)](#5-phase-2c-hack-runs-mini-game)
-6. [Phase 2D: Crew System](#6-phase-2d-crew-system)
-7. [Phase 2E: Leaderboard & Rankings](#7-phase-2e-leaderboard--rankings)
-8. [Phase 2F: Daily Operations](#8-phase-2f-daily-operations)
-9. [Phase 2G: Consumables & Black Market](#9-phase-2g-consumables--black-market)
-10. [Phase 2H: Help & Onboarding](#10-phase-2h-help--onboarding)
-11. [Phase 2I: PvP Duels](#11-phase-2i-pvp-duels)
-12. [Technical Infrastructure](#12-technical-infrastructure)
-13. [Implementation Schedule](#13-implementation-schedule)
-14. [Appendix: Type Definitions](#14-appendix-type-definitions)
+2. [Implementation Status](#2-implementation-status) ← **NEW**
+3. [Visual Design Evolution](#3-visual-design-evolution)
+4. [Phase 2A: MVP Completion](#4-phase-2a-mvp-completion) ✅
+5. [Phase 2B: Dead Pool (Prediction Market)](#5-phase-2b-dead-pool-prediction-market) ✅
+6. [Phase 2C: Hack Runs (Mini-Game)](#6-phase-2c-hack-runs-mini-game) ✅
+7. [Phase 2D: Crew System](#7-phase-2d-crew-system) ✅
+8. [Phase 2E: Leaderboard & Rankings](#8-phase-2e-leaderboard--rankings) ✅
+9. [Phase 2F: Daily Operations](#9-phase-2f-daily-operations) ❌
+10. [Phase 2G: Consumables & Black Market](#10-phase-2g-consumables--black-market) ❌
+11. [Phase 2H: Help & Onboarding](#11-phase-2h-help--onboarding) ✅
+12. [Phase 2I: PvP Duels](#12-phase-2i-pvp-duels) ❌
+13. [Technical Infrastructure](#13-technical-infrastructure)
+14. [Implementation Schedule](#14-implementation-schedule)
+15. [Appendix: Type Definitions](#15-appendix-type-definitions)
+16. [Next Steps & Action Items](#16-next-steps--action-items) ← **NEW**
 
 ---
 
@@ -42,29 +45,181 @@ The MVP implementation delivers:
 
 Phase 2 completes the full product vision from `master-design.md`:
 
-| Phase | Feature | Priority | Effort | Dependencies |
-|-------|---------|----------|--------|--------------|
-| 2A | MVP Completion | Critical | 1 week | None |
-| 2B | Dead Pool | High | 2 weeks | 2A |
-| 2C | Hack Runs | High | 3 weeks | 2A |
-| 2D | Crew System | Medium | 2 weeks | 2A |
-| 2E | Leaderboard | Medium | 1 week | 2A |
-| 2F | Daily Ops | Low | 1 week | 2A |
-| 2G | Consumables | Low | 1 week | 2A, 2B |
-| 2H | Help System | Medium | 1 week | 2A |
-| 2I | PvP Duels | Low | 2 weeks | 2A, 2C |
+| Phase | Feature | Priority | Effort | Dependencies | Status |
+|-------|---------|----------|--------|--------------|--------|
+| 2A | MVP Completion | Critical | 1 week | None | ✅ Complete |
+| 2B | Dead Pool | High | 2 weeks | 2A | ✅ Complete |
+| 2C | Hack Runs | High | 3 weeks | 2A | ✅ Complete |
+| 2D | Crew System | Medium | 2 weeks | 2A | ✅ Complete |
+| 2E | Leaderboard | Medium | 1 week | 2A | ✅ Complete |
+| 2F | Daily Ops | Low | 1 week | 2A | ❌ Not Started |
+| 2G | Consumables | Low | 1 week | 2A, 2B | ❌ Not Started |
+| 2H | Help System | Medium | 1 week | 2A | ✅ Complete |
+| 2I | PvP Duels | Low | 2 weeks | 2A, 2C | ❌ Not Started |
 
-**Total Estimated Duration:** 10-14 weeks (with parallelization)
+**Total Estimated Duration:** 10-14 weeks (with parallelization)  
+**Current Progress:** ~70% complete (6 of 9 phases done)
 
-### Visual Direction Shift
+---
+
+## 2. Implementation Status
+
+> **Last verified:** 2026-01-21 (Updated: Navigation wiring complete, Help page implemented)
+
+### Overview
+
+```
+PHASE 2 PROGRESS
+═══════════════════════════════════════════════════════════════════════════
+
+Phase 1 (MVP)         ████████████████████████████████████████  100%  ✅
+Phase 2A (MVP Comp)   ████████████████████████████████████████  100%  ✅
+Phase 2B (Dead Pool)  ████████████████████████████████████████  100%  ✅
+Phase 2C (Hack Runs)  ████████████████████████████████████████  100%  ✅
+Phase 2D (Crew)       ████████████████████████████████████████  100%  ✅
+Phase 2E (Leaderboard)████████████████████████████████████████  100%  ✅
+Phase 2F (Daily Ops)  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    0%  ❌
+Phase 2G (Consumables)░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    0%  ❌
+Phase 2H (Help)       ████████████████████████████████████████  100%  ✅
+Phase 2I (PvP Duels)  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    0%  ❌
+
+OVERALL PHASE 2:      ████████████████████████████░░░░░░░░░░░░   ~70%
+```
+
+### Completed Features
+
+#### Phase 2A: MVP Completion ✅
+- [x] Visual style migration to teal-cyan palette (`tokens.css`)
+- [x] Responsive design (`responsive.css`, mobile nav)
+- [x] Error handling system (`errors.ts` - 596 lines)
+- [x] Toast notifications (`ToastContainer`, `TransactionToast`)
+- [x] Transaction state management
+- [x] Navigation "Coming Soon" states (implemented but need wiring)
+
+#### Phase 2B: Dead Pool ✅
+- [x] Type definitions (`DeadPoolRound`, `DeadPoolResult`, `DeadPoolHistory`, etc.)
+- [x] Mock generator (`generators/deadpool.ts`)
+- [x] Page route (`/market/+page.svelte` - 194 lines)
+- [x] All UI components (Header, RoundCard, OddsDisplay, PoolBars, BetModal, ResultsPanel)
+- [x] Live pool update simulation (5-second intervals)
+
+#### Phase 2C: Hack Runs ✅
+- [x] Type definitions (`hackrun.ts` - 287 lines)
+- [x] Game state machine store
+- [x] Run/node generators
+- [x] Page route (`/games/hackrun/+page.svelte` - 473 lines)
+- [x] All UI components (SelectionView, ActiveRunView, NodeMap, etc.)
+- [x] Audio integration
+
+#### Phase 2D: Crew System ✅
+- [x] Type definitions (`Crew`, `CrewMember`, `CrewBonus`, `CrewActivity`, etc.)
+- [x] Mock generator (`generators/crew.ts`)
+- [x] Page route (`/crew/+page.svelte` - 261 lines)
+- [x] All UI components (Header, BonusesPanel, MembersPanel, ActivityFeed, Modals)
+- [x] Create/join/leave crew flows
+
+#### Phase 2E: Leaderboard ✅
+- [x] Type definitions (`leaderboard.ts` - 251 lines)
+- [x] Mock generator (`generators/leaderboard.ts`)
+- [x] Page route (`/leaderboard/+page.svelte` - 212 lines)
+- [x] All UI components (CategoryTabs, TimeframeTabs, Table, CrewLeaderboard, YourRankCard)
+
+### Outstanding Items
+
+#### Phase 2F: Daily Operations ❌
+- [ ] Type definitions (`daily.ts`) - NOT CREATED
+- [ ] Mock generator - NOT CREATED
+- [ ] UI components - NOT CREATED
+- [ ] Integration with modifiers system - NOT DONE
+
+#### Phase 2G: Consumables & Black Market ❌
+- [ ] Type definitions (`market.ts`) - NOT CREATED
+- [ ] Consumable definitions (Stimpack, EMP Jammer, etc.) - NOT CREATED
+- [ ] Mock generator - NOT CREATED
+- [ ] UI components - NOT CREATED
+- [ ] Integration into `/market` page - NOT DONE
+
+#### Phase 2H: Help & Onboarding ✅
+- [x] Help page route (`/help/+page.svelte`) - Created with 7 sections
+- [x] Help content - Written (Getting Started, Security Levels, Mini-Games, Crews, Tokenomics, Advanced, Keyboard)
+- [ ] Contextual tooltips - NOT CREATED (future enhancement)
+- [ ] First-time hints system - NOT CREATED (future enhancement)
+
+#### Phase 2I: PvP Duels ❌
+- [ ] Type definitions (`duel.ts`) - NOT CREATED
+- [ ] Mock generator - NOT CREATED
+- [ ] Page route (`/games/duels/+page.svelte`) - NOT CREATED
+- [ ] All UI components - NOT CREATED
+
+### Known Issues / Technical Debt
+
+#### Navigation & Quick Actions - ✅ RESOLVED
+~~The navigation bar and quick action handlers were showing "coming soon" for implemented features.~~
+
+**Fixed 2026-01-21:** All navigation items now properly link to their routes. Quick action handlers use `goto()` instead of toast messages.
+
+#### Provider Architecture Gap
+The mock provider (`provider.svelte.ts`) has a basic interface. Phase 2 features use separate mock generators called directly from pages rather than through the provider interface. Consider:
+- Integrating generators into the provider
+- Or accepting the current pattern as intentional for mock mode
+
+### File Inventory
+
+#### Type Files
+```
+lib/core/types/
+├── index.ts         # Core types + Crew + DeadPool (471 lines) ✅
+├── hackrun.ts       # Hack Run types (287 lines) ✅
+├── leaderboard.ts   # Leaderboard types (251 lines) ✅
+├── errors.ts        # Error handling (596 lines) ✅
+├── daily.ts         # ❌ MISSING
+├── market.ts        # ❌ MISSING
+└── duel.ts          # ❌ MISSING
+```
+
+#### Route Files
+```
+routes/
+├── +page.svelte           # Command Center ✅
+├── typing/+page.svelte    # Trace Evasion ✅
+├── market/+page.svelte    # Dead Pool ✅
+├── crew/+page.svelte      # Crew System ✅
+├── leaderboard/+page.svelte # Rankings ✅
+├── games/
+│   ├── hackrun/+page.svelte # Hack Runs ✅
+│   └── duels/+page.svelte   # ❌ MISSING
+└── help/+page.svelte        # Help System ✅
+```
+
+#### Mock Generators
+```
+lib/core/providers/mock/generators/
+├── feed.ts          ✅
+├── network.ts       ✅
+├── position.ts      ✅
+├── deadpool.ts      ✅
+├── crew.ts          ✅
+├── leaderboard.ts   ✅
+├── daily.ts         # ❌ MISSING
+├── market.ts        # ❌ MISSING
+└── duel.ts          # ❌ MISSING
+```
+
+---
+
+## 3. Visual Design Evolution
+
+### 3.1 Design Philosophy Shift
 
 Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. This evolves the current hacker terminal aesthetic into something more sophisticated—military operations center meets spacecraft engineering blueprint. The core terminal DNA remains, but with increased polish and professionalism.
 
 ---
 
-## 2. Visual Design Evolution
+## 3. Visual Design Evolution
 
-### 2.1 Design Philosophy Shift
+> **Status:** ✅ Complete - Teal-cyan palette implemented in `tokens.css`
+
+### 3.1 Design Philosophy Shift
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -97,7 +252,7 @@ Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. T
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Updated Color Palette
+### 3.2 Updated Color Palette
 
 ```css
 /* tokens.css - Phase 2 Updates */
@@ -169,7 +324,7 @@ Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. T
 }
 ```
 
-### 2.3 Typography Refinements
+### 3.3 Typography Refinements
 
 ```css
 /* Typography - Phase 2 */
@@ -203,7 +358,7 @@ Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. T
 }
 ```
 
-### 2.4 Visual Effects (Refined)
+### 3.4 Visual Effects (Refined)
 
 ```css
 /* Phase 2: Subtle, sophisticated effects */
@@ -271,7 +426,7 @@ Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. T
 }
 ```
 
-### 2.5 Card & Container Patterns
+### 3.5 Card & Container Patterns
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -304,7 +459,7 @@ Phase 2 introduces a refined visual language: **Satellite Command Dashboard**. T
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.6 Wireframe Illustrations
+### 3.6 Wireframe Illustrations
 
 Phase 2 introduces **wireframe technical illustrations** for key visual elements:
 
@@ -338,7 +493,7 @@ Phase 2 introduces **wireframe technical illustrations** for key visual elements
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.7 Migration Strategy
+### 3.7 Migration Strategy
 
 ```
 VISUAL MIGRATION PLAN
@@ -364,13 +519,15 @@ ONGOING (Each Feature):
 
 ---
 
-## 3. Phase 2A: MVP Completion
+## 4. Phase 2A: MVP Completion
+
+> **Status:** ✅ COMPLETE
 
 **Priority:** Critical  
 **Duration:** 1 week  
 **Dependencies:** None
 
-### 3.1 Objectives
+### 4.1 Objectives
 
 Complete the remaining ~5% of Phase 1:
 1. Responsive design verification (mobile/tablet)
@@ -379,7 +536,7 @@ Complete the remaining ~5% of Phase 1:
 4. Final polish checklist
 5. Visual style migration foundation
 
-### 3.2 Responsive Design
+### 4.2 Responsive Design
 
 #### 3.2.1 Breakpoint System
 
@@ -517,7 +674,7 @@ RESPONSIVE IMPLEMENTATION CHECKLIST
   □ Desktop (1280px+)
 ```
 
-### 3.3 Error Handling
+### 4.3 Error Handling
 
 #### 3.3.1 Error Types
 
@@ -759,7 +916,7 @@ export interface TransactionState {
 </div>
 ```
 
-### 3.4 Navigation "Coming Soon" States
+### 4.4 Navigation "Coming Soon" States
 
 ```svelte
 <!-- lib/features/nav/NavigationBar.svelte - Updated -->
@@ -809,7 +966,7 @@ export interface TransactionState {
 {/if}
 ```
 
-### 3.5 Final Polish Checklist
+### 4.5 Final Polish Checklist
 
 ```
 MVP POLISH CHECKLIST
@@ -869,7 +1026,7 @@ ACCESSIBILITY VERIFICATION:
 □ All images have alt text (or aria-hidden)
 ```
 
-### 3.6 Files to Create/Modify
+### 4.6 Files to Create/Modify
 
 ```
 PHASE 2A FILE LIST
@@ -900,13 +1057,21 @@ MODIFY:
 
 ---
 
-## 4. Phase 2B: Dead Pool (Prediction Market)
+## 5. Phase 2B: Dead Pool (Prediction Market)
+
+> **Status:** ✅ COMPLETE
+> 
+> **Implemented Files:**
+> - `routes/market/+page.svelte` (194 lines)
+> - `lib/features/deadpool/*` (7 components)
+> - `lib/core/providers/mock/generators/deadpool.ts`
+> - Types integrated in `lib/core/types/index.ts`
 
 **Priority:** High  
 **Duration:** 2 weeks  
 **Dependencies:** Phase 2A complete
 
-### 4.1 Overview
+### 5.1 Overview
 
 Dead Pool is GHOSTNET's prediction market where players bet on network outcomes. It's a key engagement and revenue feature (5% rake burned).
 
@@ -932,7 +1097,7 @@ Dead Pool is GHOSTNET's prediction market where players bet on network outcomes.
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Type Definitions
+### 5.2 Type Definitions
 
 Types already exist in `lib/core/types/index.ts`:
 
@@ -976,7 +1141,7 @@ export interface DeadPoolHistory {
 }
 ```
 
-### 4.3 Provider Interface Extensions
+### 5.3 Provider Interface Extensions
 
 ```typescript
 // lib/core/providers/types.ts - Add to DataProvider interface
@@ -999,7 +1164,7 @@ type DeadPoolUpdate =
   | { type: 'NEW_ROUND'; round: DeadPoolRound };
 ```
 
-### 4.4 UI Components
+### 5.4 UI Components
 
 #### 4.4.1 Dead Pool Page Layout
 
@@ -1345,7 +1510,7 @@ routes/market/+page.svelte
 </Modal>
 ```
 
-### 4.5 Mock Provider Extensions
+### 5.5 Mock Provider Extensions
 
 ```typescript
 // lib/core/providers/mock/generators/deadpool.ts
@@ -1438,7 +1603,7 @@ export function resolveRound(round: DeadPoolRound): DeadPoolResult {
 }
 ```
 
-### 4.6 Implementation Checklist
+### 5.6 Implementation Checklist
 
 ```
 PHASE 2B: DEAD POOL
@@ -1508,7 +1673,14 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 5. Phase 2C: Hack Runs (Mini-Game)
+## 6. Phase 2C: Hack Runs (Mini-Game)
+
+> **Status:** ✅ COMPLETE
+> 
+> **Implemented Files:**
+> - `routes/games/hackrun/+page.svelte` (473 lines)
+> - `lib/features/hackrun/*` (8 components + store + generators)
+> - `lib/core/types/hackrun.ts` (287 lines)
 
 **Priority:** High  
 **Duration:** 3 weeks  
@@ -1628,7 +1800,7 @@ export interface HackRunResult {
 }
 ```
 
-### 5.3 UI Components
+### 6.3 UI Components
 
 #### 5.3.1 Hack Run Page Layout
 
@@ -1759,7 +1931,7 @@ routes/games/hackrun/+page.svelte
     └── HistoryRow.svelte (×N)
 ```
 
-### 5.4 Game Logic
+### 6.4 Game Logic
 
 ```typescript
 // lib/features/hackrun/store.svelte.ts
@@ -1960,7 +2132,7 @@ function calculateXP(run: HackRun, progress: any[]): number {
 }
 ```
 
-### 5.5 Implementation Checklist
+### 6.5 Implementation Checklist
 
 ```
 PHASE 2C: HACK RUNS
@@ -2064,7 +2236,15 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 6. Phase 2D: Crew System
+## 7. Phase 2D: Crew System
+
+> **Status:** ✅ COMPLETE
+> 
+> **Implemented Files:**
+> - `routes/crew/+page.svelte` (261 lines)
+> - `lib/features/crew/*` (9 components)
+> - `lib/core/providers/mock/generators/crew.ts`
+> - Types integrated in `lib/core/types/index.ts`
 
 **Priority:** Medium  
 **Duration:** 2 weeks  
@@ -2342,7 +2522,15 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 7. Phase 2E: Leaderboard & Rankings
+## 8. Phase 2E: Leaderboard & Rankings
+
+> **Status:** ✅ COMPLETE
+> 
+> **Implemented Files:**
+> - `routes/leaderboard/+page.svelte` (212 lines)
+> - `lib/features/leaderboard/*` (7 components)
+> - `lib/core/providers/mock/generators/leaderboard.ts`
+> - `lib/core/types/leaderboard.ts` (251 lines)
 
 **Priority:** Medium  
 **Duration:** 1 week  
@@ -2544,7 +2732,15 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 8. Phase 2F: Daily Operations
+## 9. Phase 2F: Daily Operations
+
+> **Status:** ❌ NOT STARTED
+> 
+> **Missing Files:**
+> - `lib/core/types/daily.ts`
+> - `lib/core/providers/mock/generators/daily.ts`
+> - `lib/features/daily/*` components
+> - Integration into main page or modal
 
 **Priority:** Low  
 **Duration:** 1 week  
@@ -2723,7 +2919,15 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 9. Phase 2G: Consumables & Black Market
+## 10. Phase 2G: Consumables & Black Market
+
+> **Status:** ❌ NOT STARTED
+> 
+> **Missing Files:**
+> - `lib/core/types/market.ts`
+> - `lib/core/providers/mock/generators/market.ts`
+> - `lib/features/market/*` components (ConsumableCard, InventoryPanel, etc.)
+> - Integration into `/market` page alongside Dead Pool
 
 **Priority:** Low  
 **Duration:** 1 week  
@@ -2888,7 +3092,16 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 10. Phase 2H: Help & Onboarding
+## 11. Phase 2H: Help & Onboarding
+
+> **Status:** ✅ COMPLETE (Core Implementation)
+> 
+> **Implemented Files:**
+> - `routes/help/+page.svelte` (370+ lines) - Full help page with 7 sections
+> 
+> **Future Enhancements (Optional):**
+> - Contextual tooltip components
+> - First-time hints system
 
 **Priority:** Medium  
 **Duration:** 1 week  
@@ -2982,7 +3195,15 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 11. Phase 2I: PvP Duels
+## 12. Phase 2I: PvP Duels
+
+> **Status:** ❌ NOT STARTED
+> 
+> **Missing Files:**
+> - `lib/core/types/duel.ts`
+> - `lib/core/providers/mock/generators/duel.ts`
+> - `routes/games/duels/+page.svelte`
+> - `lib/features/duels/*` components
 
 **Priority:** Low  
 **Duration:** 2 weeks  
@@ -3133,7 +3354,7 @@ ACCEPTANCE CRITERIA:
 
 ---
 
-## 12. Technical Infrastructure
+## 13. Technical Infrastructure
 
 ### 12.1 Provider Architecture Evolution
 
@@ -3326,7 +3547,7 @@ COVERAGE TARGETS:
 
 ---
 
-## 13. Implementation Schedule
+## 14. Implementation Schedule
 
 ### 13.1 Recommended Sequence
 
@@ -3407,7 +3628,7 @@ MILESTONE 5: Full Feature Complete (End of Week 14)
 
 ---
 
-## 14. Appendix: Type Definitions
+## 15. Appendix: Type Definitions
 
 All type definitions are provided inline in their respective sections. For a consolidated view, create these files:
 
@@ -3423,11 +3644,63 @@ lib/core/types/
 
 ---
 
+## 16. Next Steps & Action Items
+
+### Immediate (Quick Wins)
+
+1. **Update NavigationBar.svelte** - Remove `comingSoon: true` from CREW, MARKET, RANKS
+   ```typescript
+   // Change from:
+   { id: 'crew', label: 'CREW', comingSoon: true }
+   // To:
+   { id: 'crew', label: 'CREW', href: '/crew' }
+   ```
+
+2. **Wire up Main Page Quick Actions** - Update handlers in `+page.svelte`:
+   ```typescript
+   // Change from:
+   handleHackRun() { toast.info('Hack Run coming soon...'); }
+   // To:
+   handleHackRun() { goto('/games/hackrun'); }
+   ```
+
+### Short Term (1-2 weeks)
+
+3. **Implement Phase 2F: Daily Operations**
+   - Create `lib/core/types/daily.ts`
+   - Create `lib/core/providers/mock/generators/daily.ts`
+   - Create daily ops components
+   - Integrate into main page or dedicated modal
+
+4. **Implement Phase 2H: Help System**
+   - Create `routes/help/+page.svelte`
+   - Write help content
+   - Add contextual tooltips to key UI elements
+
+### Medium Term (2-4 weeks)
+
+5. **Implement Phase 2G: Consumables**
+   - Create types, generators, and components
+   - Integrate into `/market` page
+
+6. **Implement Phase 2I: PvP Duels**
+   - Create full duel system
+   - Build matchmaking UI
+
+### Technical Debt
+
+7. **Provider Architecture** - Consider integrating mock generators into main provider interface for consistency
+
+8. **Subsection Numbering** - Some subsection numbers in this document are inconsistent with parent sections (cosmetic issue)
+
+---
+
 ## Document History
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-01-20 | GHOSTNET Team | Initial Phase 2 plan |
+| 1.1 | 2026-01-21 | Claude | Added Implementation Status section; marked completed phases (2A-2E); identified missing phases (2F-2I); added Next Steps |
 
 ---
 

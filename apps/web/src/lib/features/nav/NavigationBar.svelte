@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/ui/primitives';
+	import { goto } from '$app/navigation';
 	import { Row } from '$lib/ui/layout';
 
 	interface NavItem {
@@ -23,13 +23,13 @@
 	let comingSoonFeature = $state('');
 
 	const navItems: NavItem[] = [
-		{ id: 'network', label: 'NETWORK' },
-		{ id: 'position', label: 'POSITION' },
-		{ id: 'games', label: 'GAMES' },
-		{ id: 'crew', label: 'CREW', comingSoon: true },
-		{ id: 'market', label: 'MARKET', comingSoon: true },
-		{ id: 'leaderboard', label: 'RANKS', comingSoon: true },
-		{ id: 'help', label: '?' },
+		{ id: 'network', label: 'NETWORK', href: '/' },
+		{ id: 'position', label: 'POSITION', href: '/' },
+		{ id: 'games', label: 'GAMES', href: '/typing' },
+		{ id: 'crew', label: 'CREW', href: '/crew' },
+		{ id: 'market', label: 'MARKET', href: '/market' },
+		{ id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },
+		{ id: 'help', label: '?', href: '/help' },
 	];
 
 	function handleClick(item: NavItem) {
@@ -38,6 +38,9 @@
 			showComingSoon = true;
 			setTimeout(() => (showComingSoon = false), 2000);
 			return;
+		}
+		if (item.href) {
+			goto(item.href);
 		}
 		onNavigate?.(item.id);
 	}
