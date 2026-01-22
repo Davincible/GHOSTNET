@@ -21,8 +21,9 @@ library BlockhashHistory {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice EIP-2935 system contract address (standardized across all Prague chains)
-    /// @dev This address is fixed by the EIP specification
-    address internal constant HISTORY_CONTRACT = 0x0000000000000000000000000000000000000935;
+    /// @dev This address is fixed by the EIP specification per EIP-2935.
+    ///      Computed from rlp([0x3462413Af4609098e1E27A490f554f260213D685, 0])
+    address internal constant HISTORY_CONTRACT = 0x0000F90827F1C53a10cb7A02335B175320002935;
 
     /// @notice Number of blocks available in extended history
     /// @dev EIP-2935 specifies 8191 blocks of history (ring buffer)

@@ -16,7 +16,7 @@ contract BlockhashHistoryCoverageTest is Test {
     // ══════════════════════════════════════════════════════════════════════════════
 
     function test_Constants() public pure {
-        assertEq(BlockhashHistory.getHistoryContractAddress(), address(0x0935));
+        assertEq(BlockhashHistory.getHistoryContractAddress(), address(0x0000F90827F1C53a10cb7A02335B175320002935));
         assertEq(BlockhashHistory.getNativeLimit(), 256);
         assertEq(BlockhashHistory.getExtendedWindow(), 8191);
     }
@@ -30,7 +30,7 @@ contract BlockhashHistoryCoverageTest is Test {
     }
 
     function test_IsAvailable_WithCode() public {
-        vm.etch(address(0x0935), hex"6001");
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), hex"6001");
         assertTrue(BlockhashHistory.isAvailable());
     }
 
@@ -64,7 +64,7 @@ contract BlockhashHistoryCoverageTest is Test {
     function test_GetBlockhash_WithMockEIP2935() public {
         // Deploy mock at EIP-2935 address
         MockEIP2935 mock = new MockEIP2935();
-        vm.etch(address(0x0935), address(mock).code);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), address(mock).code);
 
         bytes32 hash = BlockhashHistory.getBlockhash(block.number - 100);
         // Mock returns keccak256 of block number
@@ -74,7 +74,7 @@ contract BlockhashHistoryCoverageTest is Test {
     function test_GetBlockhash_MockStaticCallFails() public {
         // Deploy mock that reverts
         RevertingMock mock = new RevertingMock();
-        vm.etch(address(0x0935), address(mock).code);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), address(mock).code);
 
         bytes32 hash = BlockhashHistory.getBlockhash(block.number - 100);
         // Should return 0 on failed staticcall
@@ -117,7 +117,7 @@ contract BlockhashHistoryCoverageTest is Test {
     function test_GetBlockhashWithFallback_OldBlock_WithEIP2935() public {
         // Deploy mock at EIP-2935 address
         MockEIP2935 mock = new MockEIP2935();
-        vm.etch(address(0x0935), address(mock).code);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), address(mock).code);
 
         (bytes32 hash, bool usedExtended) =
             BlockhashHistory.getBlockhashWithFallback(block.number - 500);
@@ -129,7 +129,7 @@ contract BlockhashHistoryCoverageTest is Test {
     function test_GetBlockhashWithFallback_TooOld_WithEIP2935() public {
         // Deploy mock at EIP-2935 address
         MockEIP2935 mock = new MockEIP2935();
-        vm.etch(address(0x0935), address(mock).code);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), address(mock).code);
 
         // Roll to make block 1 too old even for EIP-2935 (8191 blocks)
         vm.roll(10_000);
@@ -148,7 +148,7 @@ contract BlockhashHistoryCoverageTest is Test {
     }
 
     function test_GetEffectiveWindow_WithEIP2935() public {
-        vm.etch(address(0x0935), hex"6001");
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), hex"6001");
         assertEq(BlockhashHistory.getEffectiveWindow(), 8191);
     }
 
@@ -173,12 +173,12 @@ contract BlockhashHistoryCoverageTest is Test {
     }
 
     function test_IsBlockHashRetrievable_Old_WithEIP2935() public {
-        vm.etch(address(0x0935), hex"6001");
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), hex"6001");
         assertTrue(BlockhashHistory.isBlockHashRetrievable(block.number - 500));
     }
 
     function test_IsBlockHashRetrievable_TooOld_WithEIP2935() public {
-        vm.etch(address(0x0935), hex"6001");
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), hex"6001");
         vm.roll(20_000);
         assertFalse(BlockhashHistory.isBlockHashRetrievable(1));
     }
@@ -189,7 +189,7 @@ contract BlockhashHistoryCoverageTest is Test {
     }
 
     function test_IsBlockHashRetrievable_AtEdge_WithEIP2935() public {
-        vm.etch(address(0x0935), hex"6001");
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), hex"6001");
         assertTrue(BlockhashHistory.isBlockHashRetrievable(block.number - 8191));
         assertFalse(BlockhashHistory.isBlockHashRetrievable(block.number - 8192));
     }

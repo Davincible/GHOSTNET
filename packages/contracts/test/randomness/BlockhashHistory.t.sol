@@ -23,7 +23,7 @@ contract BlockhashHistoryTest is Test {
     function test_HistoryContract_Address() public pure {
         assertEq(
             BlockhashHistory.getHistoryContractAddress(),
-            address(0x0000000000000000000000000000000000000935),
+            address(0x0000F90827F1C53a10cb7A02335B175320002935),
             "History contract address mismatch"
         );
     }
@@ -49,7 +49,7 @@ contract BlockhashHistoryTest is Test {
     function test_IsAvailable_WhenCodeDeployed() public {
         // Deploy mock code at the EIP-2935 address
         bytes memory mockCode = hex"600160005260206000F3"; // Returns 1
-        vm.etch(address(0x0935), mockCode);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), mockCode);
 
         bool available = BlockhashHistory.isAvailable();
         assertTrue(available, "Should be available with deployed contract");
@@ -67,7 +67,7 @@ contract BlockhashHistoryTest is Test {
     function test_GetEffectiveWindow_WithEIP2935() public {
         // Deploy mock code
         bytes memory mockCode = hex"600160005260206000F3";
-        vm.etch(address(0x0935), mockCode);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), mockCode);
 
         uint256 window = BlockhashHistory.getEffectiveWindow();
         assertEq(window, 8191, "Should return extended window when EIP-2935 available");
@@ -217,7 +217,7 @@ contract BlockhashHistoryTest is Test {
         // Deploy a mock that returns a known hash
         MockBlockhashHistory mock = new MockBlockhashHistory();
         bytes memory code = address(mock).code;
-        vm.etch(address(0x0935), code);
+        vm.etch(address(0x0000F90827F1C53a10cb7A02335B175320002935), code);
 
         vm.roll(10_000);
 
