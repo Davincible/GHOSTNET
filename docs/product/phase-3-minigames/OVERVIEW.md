@@ -44,7 +44,7 @@ PHASE 3C GAMES                                                  STATUS
 09. SHADOW PROTOCOL (Meta)                                      [░░░░░░░░░░░░] NOT STARTED
 
 ══════════════════════════════════════════════════════════════════════════════
-OVERALL PROGRESS: Infrastructure In Progress → 1038 Tests Passing
+OVERALL PROGRESS: Infrastructure In Progress → 1041 Tests Passing
 ══════════════════════════════════════════════════════════════════════════════
 ```
 
@@ -126,7 +126,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 #### 0.2 Smart Contract Core
 **Location:** `packages/contracts/src/arcade/`  
 **Spec:** [infrastructure/contracts.md](./infrastructure/contracts.md), [arcade-contracts-plan.md](../../architecture/arcade-contracts-plan.md)  
-**Status:** 85% COMPLETE (1038 tests passing)
+**Status:** 85% COMPLETE (1041 tests passing)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -383,9 +383,16 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - ✅ Entry config validation (max 10% rake, max 100% burn)
 
 **Tests:**
-- ✅ 40 comprehensive tests for GameRegistry
+- ✅ 43 comprehensive tests for GameRegistry (including code review additions)
 - ✅ Fuzz tests for config validation and grace period timing
-- ✅ Full test suite now at 1038 tests (up from 501)
+- ✅ Full test suite now at 1041 tests (up from 501)
+
+**Code Review Fixes (2026-01-22):**
+- ✅ Added `ArcadeCoreUpdated` event for `setArcadeCore` (monitoring support)
+- ✅ Added `GameAlreadyMarkedForRemoval` error (clearer semantics)
+- ✅ Added `GracePeriodNotElapsed(currentTime, removalTime)` error (actionable)
+- ✅ Added `isGamePendingRemoval()` helper view function
+- ✅ Documented intentional behavior: `cancelGameRemoval` does not unpause
 
 **Architecture Decision:**
 - GameRegistry provides admin-facing game management with metadata and grace periods
@@ -469,7 +476,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 1. ✅ ~~Create arcade directory structure~~ - Done in `packages/contracts/src/arcade/`
 2. **Implement Game Engine core** - State machine, timer, score systems (apps/web)
-3. ✅ ~~Implement Contract Core~~ - ArcadeCore + GameRegistry complete with 1038 tests
+3. ✅ ~~Implement Contract Core~~ - ArcadeCore + GameRegistry complete with 1041 tests
 4. **Implement Randomness Contracts** - `FutureBlockRandomness.sol`, `BlockhashHistory.sol`
 5. **Verify EIP-2935 on MegaETH** - Critical dependency check
 
