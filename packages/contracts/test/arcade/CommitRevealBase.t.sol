@@ -30,8 +30,8 @@ contract CommitRevealBaseTest is Test {
 
         bytes32 hash = game.generateCommitmentHash(choice, secret, alice);
 
-        // Hash should be deterministic
-        bytes32 expectedHash = keccak256(abi.encodePacked(choice, secret, alice));
+        // Hash should be deterministic (using abi.encode for collision resistance)
+        bytes32 expectedHash = keccak256(abi.encode(choice, secret, alice));
         assertEq(hash, expectedHash, "Hash should match expected");
     }
 
@@ -258,6 +258,24 @@ contract CommitRevealBaseTest is Test {
     // VIEW FUNCTION TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
+    function test_HasCommitted_VsHasEverCommitted_AfterForfeit() public {
+        bytes32 commitHash = game.generateCommitmentHash(1, bytes32("secret"), alice);
+        game.commit(ROUND_ID, alice, commitHash, BET_AMOUNT);
+
+        // Before forfeit: both return true
+        assertTrue(game.hasCommitted(ROUND_ID, alice), "hasCommitted should be true before forfeit");
+        assertTrue(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should be true before forfeit");
+
+        // After forfeit: hasCommitted returns false, hasEverCommitted still true
+        game.forfeit(ROUND_ID, alice);
+        assertFalse(game.hasCommitted(ROUND_ID, alice), "hasCommitted should be false after forfeit");
+        assertTrue(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should still be true after forfeit");
+    }
+
+    function test_HasEverCommitted_NeverCommitted() public view {
+        assertFalse(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should be false if never committed");
+    }
+
     function test_CanReveal_BeforeCommit() public view {
         assertFalse(game.canReveal(ROUND_ID, alice), "Should not be able to reveal before commit");
     }
@@ -289,7 +307,7 @@ contract CommitRevealBaseTest is Test {
         uint128 amount
     ) public {
         vm.assume(amount > 0);
-        vm.assume(secret != bytes32(0));
+        // Note: zero secrets are valid - contract only validates hash matches
 
         bytes32 commitHash = game.generateCommitmentHash(choice, secret, alice);
 
@@ -317,7 +335,6 @@ contract CommitRevealBaseTest is Test {
         uint128 amount
     ) public {
         vm.assume(amount > 0);
-        vm.assume(actualSecret != bytes32(0));
         vm.assume(actualSecret != wrongSecret);
 
         bytes32 commitHash = game.generateCommitmentHash(choice, actualSecret, alice);
@@ -334,7 +351,6 @@ contract CommitRevealBaseTest is Test {
         uint128 amount
     ) public {
         vm.assume(amount > 0);
-        vm.assume(secret != bytes32(0));
         vm.assume(actualChoice != wrongChoice);
 
         bytes32 commitHash = game.generateCommitmentHash(actualChoice, secret, alice);

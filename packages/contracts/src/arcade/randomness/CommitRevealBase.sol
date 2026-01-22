@@ -50,9 +50,6 @@ abstract contract CommitRevealBase {
     /// @notice Revealed choice/secret does not match commitment hash
     error InvalidReveal();
 
-    /// @notice Reveal period has closed
-    error RevealPeriodClosed();
-
     /// @notice Invalid commitment hash (zero)
     error InvalidCommitmentHash();
 
@@ -86,10 +83,12 @@ abstract contract CommitRevealBase {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Player commitment for a round
-    /// @dev Packed for storage efficiency: 32 + 16 + 1 + 1 = 50 bytes = 2 slots
+    /// @dev Storage layout (2 slots total):
+    ///      - Slot 0: bytes32 hash (32 bytes)
+    ///      - Slot 1: uint128 amount (16) + uint8 revealedChoice (1) + bool revealed (1) = 18 bytes packed
     struct Commitment {
         bytes32 hash;           // keccak256(choice, secret, player)
-        uint128 amount;         // Bet amount
+        uint128 amount;         // Bet amount (0 after forfeit)
         uint8 revealedChoice;   // Revealed choice (255 = not revealed)
         bool revealed;          // Whether choice has been revealed
     }
@@ -112,7 +111,7 @@ abstract contract CommitRevealBase {
         bytes32 secret,
         address player
     ) external pure returns (bytes32 commitHash) {
-        return keccak256(abi.encodePacked(choice, secret, player));
+        return keccak256(abi.encode(choice, secret, player));
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -163,7 +162,7 @@ abstract contract CommitRevealBase {
         if (c.revealed) revert AlreadyRevealed();
 
         // Verify the reveal matches the commitment
-        bytes32 expected = keccak256(abi.encodePacked(choice, secret, player));
+        bytes32 expected = keccak256(abi.encode(choice, secret, player));
         if (expected != c.hash) revert InvalidReveal();
 
         c.revealed = true;
@@ -196,12 +195,23 @@ abstract contract CommitRevealBase {
     // VIEW FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    /// @notice Check if a player has committed to a round
+    /// @notice Check if a player has an active commitment (with stake at risk)
+    /// @dev Returns false after forfeit since amount becomes 0.
+    ///      Use `hasEverCommitted()` to check if a player submitted a commitment regardless of forfeit.
     /// @param roundId The round identifier
     /// @param player The player address
-    /// @return committed True if player has committed
+    /// @return committed True if player has active commitment with stake
     function hasCommitted(uint256 roundId, address player) external view returns (bool committed) {
         return _commitments[roundId][player].amount > 0;
+    }
+
+    /// @notice Check if a player ever submitted a commitment (even if forfeited)
+    /// @dev Returns true even after forfeit since hash is never cleared.
+    /// @param roundId The round identifier
+    /// @param player The player address
+    /// @return everCommitted True if player ever submitted a commitment hash
+    function hasEverCommitted(uint256 roundId, address player) external view returns (bool everCommitted) {
+        return _commitments[roundId][player].hash != bytes32(0);
     }
 
     /// @notice Check if a player has revealed their commitment
