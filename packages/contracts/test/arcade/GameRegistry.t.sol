@@ -438,12 +438,18 @@ contract GameRegistryTest is Test {
         registry.markGameForRemoval(address(mockGame1));
 
         // Try to remove before grace period ends
-        vm.warp(block.timestamp + registry.REMOVAL_GRACE_PERIOD() - 1);
+        uint256 timeBeforeRemoval = block.timestamp + registry.REMOVAL_GRACE_PERIOD() - 1;
+        vm.warp(timeBeforeRemoval);
 
         assertFalse(registry.canRemoveGame(address(mockGame1)));
 
+        uint256 removalTime = registry.getPendingRemoval(address(mockGame1));
         vm.prank(owner);
-        vm.expectRevert(IGameRegistry.InvalidConfig.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                GameRegistry.GracePeriodNotElapsed.selector, timeBeforeRemoval, removalTime
+            )
+        );
         registry.removeGame(address(mockGame1));
     }
 
@@ -464,8 +470,66 @@ contract GameRegistryTest is Test {
         registry.markGameForRemoval(address(mockGame1));
 
         vm.prank(owner);
-        vm.expectRevert(IGameRegistry.GameAlreadyRegistered.selector);
+        vm.expectRevert(GameRegistry.GameAlreadyMarkedForRemoval.selector);
         registry.markGameForRemoval(address(mockGame1));
+    }
+
+    function test_CancelGameRemoval_DoesNotUnpauseGame() public {
+        vm.prank(owner);
+        registry.registerGame(address(mockGame1), defaultConfig);
+
+        vm.prank(owner);
+        registry.markGameForRemoval(address(mockGame1));
+
+        // Game should be paused after marking for removal
+        assertTrue(registry.isGamePaused(address(mockGame1)));
+
+        vm.prank(owner);
+        registry.cancelGameRemoval(address(mockGame1));
+
+        // Game should STILL be paused after cancellation (intentional behavior)
+        assertTrue(registry.isGamePaused(address(mockGame1)));
+    }
+
+    function test_RegisterGame_AfterRemoval() public {
+        // Register, mark for removal, wait, remove
+        vm.prank(owner);
+        registry.registerGame(address(mockGame1), defaultConfig);
+
+        vm.prank(owner);
+        registry.markGameForRemoval(address(mockGame1));
+
+        vm.warp(block.timestamp + registry.REMOVAL_GRACE_PERIOD() + 1);
+
+        vm.prank(owner);
+        registry.removeGame(address(mockGame1));
+
+        // Should be able to re-register
+        vm.prank(owner);
+        registry.registerGame(address(mockGame1), defaultConfig);
+
+        assertTrue(registry.isGameRegistered(address(mockGame1)));
+        assertFalse(registry.isGamePaused(address(mockGame1)));
+    }
+
+    function test_IsGamePendingRemoval() public {
+        vm.prank(owner);
+        registry.registerGame(address(mockGame1), defaultConfig);
+
+        // Not pending initially
+        assertFalse(registry.isGamePendingRemoval(address(mockGame1)));
+
+        vm.prank(owner);
+        registry.markGameForRemoval(address(mockGame1));
+
+        // Now pending
+        assertTrue(registry.isGamePendingRemoval(address(mockGame1)));
+
+        vm.prank(owner);
+        registry.cancelGameRemoval(address(mockGame1));
+
+        // No longer pending after cancellation
+        assertFalse(registry.isGamePendingRemoval(address(mockGame1)));
     }
 
     function test_CancelGameRemoval_RevertWhen_NotPending() public {
@@ -510,6 +574,10 @@ contract GameRegistryTest is Test {
 
     function test_SetArcadeCore_Success() public {
         address newCore = makeAddr("newCore");
+        address oldCore = address(registry.arcadeCore());
+
+        vm.expectEmit(true, true, false, false);
+        emit GameRegistry.ArcadeCoreUpdated(oldCore, newCore);
 
         vm.prank(owner);
         registry.setArcadeCore(newCore);

@@ -43,8 +43,26 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
     /// @notice Maximum burn in basis points (100%)
     uint16 public constant MAX_BURN_BPS = 10_000;
 
-    /// @notice Basis points denominator
-    uint16 private constant BPS = 10_000;
+    // ══════════════════════════════════════════════════════════════════════════════
+    // ERRORS (additional to IGameRegistry)
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    /// @notice Game is already marked for removal
+    error GameAlreadyMarkedForRemoval();
+
+    /// @notice Grace period has not elapsed yet
+    /// @param currentTime Current block timestamp
+    /// @param removalTime Timestamp when removal becomes allowed
+    error GracePeriodNotElapsed(uint256 currentTime, uint256 removalTime);
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // EVENTS (additional to IGameRegistry)
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    /// @notice Emitted when ArcadeCore reference is updated
+    /// @param oldArcadeCore Previous ArcadeCore address
+    /// @param newArcadeCore New ArcadeCore address
+    event ArcadeCoreUpdated(address indexed oldArcadeCore, address indexed newArcadeCore);
 
     // ══════════════════════════════════════════════════════════════════════════════
     // STORAGE
@@ -152,6 +170,15 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
         return removalTime > 0 && block.timestamp >= removalTime;
     }
 
+    /// @notice Check if a game is pending removal (grace period started)
+    /// @param game Game address
+    /// @return pending True if game is marked for removal
+    function isGamePendingRemoval(
+        address game
+    ) external view returns (bool pending) {
+        return _pendingRemovals[game] > 0;
+    }
+
     // ══════════════════════════════════════════════════════════════════════════════
     // ADMIN FUNCTIONS (IGameRegistry)
     // ══════════════════════════════════════════════════════════════════════════════
@@ -237,7 +264,7 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
         address game
     ) external onlyOwner {
         if (!_registeredGames.contains(game)) revert GameNotRegistered();
-        if (_pendingRemovals[game] > 0) revert GameAlreadyRegistered(); // Already marked
+        if (_pendingRemovals[game] > 0) revert GameAlreadyMarkedForRemoval();
 
         uint256 removalTime = block.timestamp + REMOVAL_GRACE_PERIOD;
         _pendingRemovals[game] = removalTime;
@@ -253,6 +280,9 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
     }
 
     /// @inheritdoc IGameRegistry
+    /// @dev Does NOT automatically unpause the game. Call unpauseGame() separately
+    ///      after cancelling removal if you want to resume the game. This is intentional
+    ///      to require explicit action before players can enter again.
     function cancelGameRemoval(
         address game
     ) external onlyOwner {
@@ -270,7 +300,7 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
         uint256 removalTime = _pendingRemovals[game];
         if (removalTime == 0) revert GameNotRegistered();
         if (block.timestamp < removalTime) {
-            revert InvalidConfig(); // Grace period not passed
+            revert GracePeriodNotElapsed(block.timestamp, removalTime);
         }
 
         // Clear storage
@@ -291,13 +321,15 @@ contract GameRegistry is Ownable2Step, IGameRegistry {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Update the ArcadeCore reference
-    /// @dev Only callable by owner, use with caution
+    /// @dev Only callable by owner, use with caution. Emits ArcadeCoreUpdated event.
     /// @param newArcadeCore New ArcadeCore contract address
     function setArcadeCore(
         address newArcadeCore
     ) external onlyOwner {
         if (newArcadeCore == address(0)) revert ZeroAddress();
+        address oldArcadeCore = address(arcadeCore);
         arcadeCore = IArcadeCore(newArcadeCore);
+        emit ArcadeCoreUpdated(oldArcadeCore, newArcadeCore);
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
