@@ -131,6 +131,9 @@ contract HashCrash is
         uint256 crashMultiplier
     );
 
+    /// @notice Emitted when game active status changes
+    event GameActiveStatusChanged(bool isActive);
+
     // ══════════════════════════════════════════════════════════════════════════════
     // STATE
     // ══════════════════════════════════════════════════════════════════════════════
@@ -466,42 +469,66 @@ contract HashCrash is
     }
 
     /// @notice Calculate crash point from seed
-    /// @dev Uses exponential distribution with house edge
-    ///      Formula: crashPoint = max(1.00, (2^52 / (seed % 2^52)) * (1 - houseEdge))
+    /// @dev Uses standard crash game formula with house edge.
     ///
-    ///      This creates a distribution where:
-    ///      - ~4% of rounds crash at 1.00x (instant loss)
-    ///      - 50% of rounds crash below 2.00x
-    ///      - ~1% of rounds reach 100x
+    ///      MATHEMATICAL BASIS:
+    ///      The standard crash game formula is: multiplier = 1 / (1 - r)
+    ///      where r is uniformly distributed in [0, 1).
+    ///      This gives P(crash > x) = 1/x for x >= 1 (inverse distribution).
+    ///
+    ///      With house edge applied:
+    ///      - 4% of rounds crash instantly at 1.00x (guaranteed house win)
+    ///      - Remaining 96% follow the inverse distribution
+    ///
+    ///      EXPECTED DISTRIBUTION:
+    ///      - ~4% instant crash (1.00x) - house edge
+    ///      - ~50% crash below 2.00x
+    ///      - ~10% reach 10.00x
+    ///      - ~1% reach 100.00x
+    ///
+    ///      PRECISION:
+    ///      - We use 52 bits of the seed for ~4.5 quadrillion distinct values
+    ///      - Output scaled by MULTIPLIER_PRECISION (100 = 1.00x)
     ///
     /// @param seed The random seed
     /// @return crashMultiplier The crash point (100 = 1.00x, 200 = 2.00x, etc.)
     function _calculateCrashPoint(uint256 seed) internal pure returns (uint256 crashMultiplier) {
-        // Use lower 52 bits for uniform distribution
+        // Use lower 52 bits for uniform distribution in [0, 2^52)
         uint256 h = seed & ((1 << 52) - 1);
 
-        // House edge: ~4% of rounds crash at 1.00x
-        // This is achieved by having a 4% chance of instant crash
-        if (h < ((1 << 52) * HOUSE_EDGE_BPS) / BPS) {
+        // House edge: 4% of rounds crash at 1.00x (instant loss)
+        // Check if h falls in the bottom 4% of the range
+        uint256 houseEdgeThreshold = ((1 << 52) * HOUSE_EDGE_BPS) / BPS;
+        if (h < houseEdgeThreshold) {
             return MIN_CRASH_MULTIPLIER; // 1.00x
         }
 
-        // Calculate crash point using inverse of uniform distribution
-        // This gives exponential decay: P(crash > x) = 1/x
-        // Multiplier = (2^52 / h) * (1 - houseEdge)
-        // Scaled by MULTIPLIER_PRECISION (100)
+        // Standard crash formula: multiplier = 1 / (1 - r)
+        // where r = h / 2^52 (normalized to [0, 1))
+        //
+        // Rearranged for integer math:
+        // multiplier = 2^52 / (2^52 - h)
+        //
+        // To get the expected distribution with house edge already applied above,
+        // we use: multiplier = (2^52 - houseEdgeThreshold) / (2^52 - h)
+        //
+        // This ensures that after the house edge check:
+        // - h = houseEdgeThreshold maps to multiplier ~= 1.00x
+        // - h approaching 2^52 maps to very high multipliers
 
-        // Use a modified formula to get good distribution
-        // e = 2^52 / h gives raw multiplier in range [1, ~4 trillion]
-        // We cap at MAX_CRASH_MULTIPLIER for sanity
-        uint256 e = (1 << 52) / h;
+        uint256 maxH = (1 << 52);
+        uint256 effectiveRange = maxH - houseEdgeThreshold;  // Range after house edge
+        uint256 divisor = maxH - h;  // Distance from max
 
-        // Apply house edge reduction
-        uint256 adjustedMultiplier = (e * (BPS - HOUSE_EDGE_BPS)) / BPS;
+        // Prevent division by zero (h can equal maxH - 1 at most due to mask)
+        if (divisor == 0) {
+            return MAX_CRASH_MULTIPLIER;
+        }
 
-        // Convert to our precision (100 = 1.00x)
-        // e is already roughly in 1x units, so multiply by 100
-        crashMultiplier = adjustedMultiplier * MULTIPLIER_PRECISION;
+        // Calculate multiplier: (effectiveRange / divisor) * MULTIPLIER_PRECISION
+        // We multiply first to preserve precision, then divide
+        // Safe from overflow: effectiveRange < 2^52, MULTIPLIER_PRECISION = 100
+        crashMultiplier = (effectiveRange * MULTIPLIER_PRECISION) / divisor;
 
         // Clamp to valid range
         if (crashMultiplier < MIN_CRASH_MULTIPLIER) {
@@ -637,7 +664,10 @@ contract HashCrash is
     ) external override onlyOwner {
         Round storage round = _rounds[sessionId];
 
-        // Can only cancel active rounds
+        // Cannot cancel non-existent or already terminal rounds
+        if (round.state == SessionState.NONE) {
+            revert SessionDoesNotExist();
+        }
         if (
             round.state == SessionState.SETTLED ||
             round.state == SessionState.CANCELLED ||
@@ -659,5 +689,6 @@ contract HashCrash is
     /// @param active Whether game should be active
     function setActive(bool active) external onlyOwner {
         _gameInfo.isActive = active;
+        emit GameActiveStatusChanged(active);
     }
 }

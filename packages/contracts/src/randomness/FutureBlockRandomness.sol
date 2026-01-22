@@ -337,29 +337,34 @@ abstract contract FutureBlockRandomness {
     }
 
     /// @notice Convert seed to a random value in range [0, max)
-    /// @dev Uses rejection sampling for uniform distribution
-    ///      WARNING: max must be > 0
+    /// @dev Uses modulo for uniform distribution.
+    ///      The bias is negligible for max << 2^256.
     /// @param seed The seed value
-    /// @param max The exclusive upper bound
+    /// @param max The exclusive upper bound (must be > 0)
     /// @return result A uniformly distributed random value in [0, max)
     function _seedToRange(uint256 seed, uint256 max) internal pure returns (uint256 result) {
-        // Rejection sampling for uniform distribution
-        // The bias is negligible for max << 2^256
+        // SAFETY: Validate input to prevent division by zero
+        if (max == 0) {
+            return 0; // Safe fallback - caller error
+        }
         return seed % max;
     }
 
     /// @notice Convert seed to a random value in range [min, max]
     /// @dev Inclusive on both ends
-    ///      WARNING: max must be >= min
     /// @param seed The seed value
     /// @param min The inclusive lower bound
-    /// @param max The inclusive upper bound
+    /// @param max The inclusive upper bound (must be >= min)
     /// @return result A uniformly distributed random value in [min, max]
     function _seedToRangeInclusive(
         uint256 seed,
         uint256 min,
         uint256 max
     ) internal pure returns (uint256 result) {
+        // SAFETY: Validate input to prevent underflow
+        if (max < min) {
+            return min; // Safe fallback - caller error
+        }
         return min + (seed % (max - min + 1));
     }
 

@@ -362,8 +362,9 @@ contract HashCrashTest is Test {
 
         HashCrash.Round memory round = game.getRound(1);
 
-        // Cash out at a safe multiplier (below crash point)
-        uint256 cashoutMultiplier = 150; // 1.50x
+        // Cash out at minimum multiplier (1.00x) - always safe and always below crash
+        // unless crash is instant (which is 4% chance from house edge)
+        uint256 cashoutMultiplier = 100; // 1.00x - the minimum
         if (cashoutMultiplier < round.crashMultiplier) {
             vm.prank(player1);
             game.cashOut(cashoutMultiplier);
@@ -372,9 +373,9 @@ contract HashCrashTest is Test {
             assertEq(bet.cashedOutAt, cashoutMultiplier);
             assertTrue(bet.resolved);
 
-            // Check pending payout
+            // Check pending payout (should equal net bet at 1.00x)
             uint256 expectedPayout = (DEFAULT_BET * 95 / 100) * cashoutMultiplier / 100;
-            assertGt(arcadeCore.getPendingPayout(player1), 0);
+            assertEq(arcadeCore.getPendingPayout(player1), expectedPayout);
         }
     }
 
@@ -402,7 +403,7 @@ contract HashCrashTest is Test {
         _setupActiveRound();
 
         HashCrash.Round memory round = game.getRound(1);
-        uint256 cashoutMultiplier = 120;
+        uint256 cashoutMultiplier = 100; // 1.00x - minimum, always safe
 
         if (cashoutMultiplier < round.crashMultiplier) {
             vm.prank(player1);
@@ -457,10 +458,10 @@ contract HashCrashTest is Test {
 
         HashCrash.Round memory round = game.getRound(1);
 
-        // Cash out if possible
-        if (round.crashMultiplier > 110) {
+        // Cash out at minimum if crash point > minimum (safe payout)
+        if (round.crashMultiplier > 100) {
             vm.prank(player1);
-            game.cashOut(110);
+            game.cashOut(100); // 1.00x - minimum, always safe
         }
 
         game.resolveRound();
