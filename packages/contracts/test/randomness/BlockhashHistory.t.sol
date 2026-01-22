@@ -126,7 +126,8 @@ contract BlockhashHistoryTest is Test {
     }
 
     function test_GetBlockhashWithFallback_FutureBlock() public view {
-        (bytes32 hash, bool usedExtended) = BlockhashHistory.getBlockhashWithFallback(block.number + 1);
+        (bytes32 hash, bool usedExtended) =
+            BlockhashHistory.getBlockhashWithFallback(block.number + 1);
 
         assertEq(hash, bytes32(0), "Future block should return 0");
         assertFalse(usedExtended, "Should not claim extended was used");
@@ -180,7 +181,9 @@ contract BlockhashHistoryTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_GetBlockhash_NeverReverts(uint256 blockNum) public view {
+    function testFuzz_GetBlockhash_NeverReverts(
+        uint256 blockNum
+    ) public view {
         // Should never revert, just return 0 for invalid blocks
         bytes32 hash = BlockhashHistory.getBlockhash(blockNum);
         // No assertion needed - just checking it doesn't revert
@@ -189,14 +192,18 @@ contract BlockhashHistoryTest is Test {
         hash;
     }
 
-    function testFuzz_GetBlockhashWithFallback_NeverReverts(uint256 blockNum) public view {
+    function testFuzz_GetBlockhashWithFallback_NeverReverts(
+        uint256 blockNum
+    ) public view {
         (bytes32 hash, bool usedExtended) = BlockhashHistory.getBlockhashWithFallback(blockNum);
         assertTrue(true);
         hash;
         usedExtended;
     }
 
-    function testFuzz_IsBlockHashRetrievable_NeverReverts(uint256 blockNum) public view {
+    function testFuzz_IsBlockHashRetrievable_NeverReverts(
+        uint256 blockNum
+    ) public view {
         bool retrievable = BlockhashHistory.isBlockHashRetrievable(blockNum);
         assertTrue(true);
         retrievable;
@@ -212,7 +219,7 @@ contract BlockhashHistoryTest is Test {
         bytes memory code = address(mock).code;
         vm.etch(address(0x0935), code);
 
-        vm.roll(10000);
+        vm.roll(10_000);
 
         // Query an old block that would normally be unavailable
         bytes32 hash = BlockhashHistory.getBlockhash(5000);
@@ -225,7 +232,9 @@ contract BlockhashHistoryTest is Test {
 /// @notice Mock contract for EIP-2935
 /// @dev Returns keccak256(blockNumber) as the hash for any valid query
 contract MockBlockhashHistory {
-    fallback(bytes calldata input) external returns (bytes memory) {
+    fallback(
+        bytes calldata input
+    ) external returns (bytes memory) {
         require(input.length == 32, "Invalid input");
         uint256 blockNumber = abi.decode(input, (uint256));
         return abi.encode(keccak256(abi.encode(blockNumber)));

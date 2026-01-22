@@ -88,11 +88,7 @@ abstract contract FutureBlockRandomness {
     /// @param roundId The round identifier
     /// @param seedBlock The block number that will provide randomness
     /// @param deadline The last block before seed expires (considering EIP-2935)
-    event SeedCommitted(
-        uint256 indexed roundId,
-        uint256 seedBlock,
-        uint256 deadline
-    );
+    event SeedCommitted(uint256 indexed roundId, uint256 seedBlock, uint256 deadline);
 
     /// @notice Emitted when a seed is revealed
     /// @param roundId The round identifier
@@ -100,21 +96,14 @@ abstract contract FutureBlockRandomness {
     /// @param seed The derived seed value
     /// @param usedExtendedHistory True if EIP-2935 was used for retrieval
     event SeedRevealed(
-        uint256 indexed roundId,
-        bytes32 blockHash,
-        uint256 seed,
-        bool usedExtendedHistory
+        uint256 indexed roundId, bytes32 blockHash, uint256 seed, bool usedExtendedHistory
     );
 
     /// @notice Emitted when a seed expires (all history windows passed)
     /// @param roundId The round identifier
     /// @param seedBlock The seed block that expired
     /// @param expiredAtBlock The block when expiry was detected
-    event SeedExpiredEvent(
-        uint256 indexed roundId,
-        uint256 seedBlock,
-        uint256 expiredAtBlock
-    );
+    event SeedExpiredEvent(uint256 indexed roundId, uint256 seedBlock, uint256 expiredAtBlock);
 
     // ══════════════════════════════════════════════════════════════════════════════
     // STORAGE
@@ -124,13 +113,13 @@ abstract contract FutureBlockRandomness {
     /// @dev Packed for storage efficiency: 8 + 8 + 1 + 1 + 1 = 19 bytes in slot 0,
     ///      then 32 + 32 bytes for hash and seed in slots 1-2
     struct RoundSeed {
-        uint64 seedBlock;         // Block number to use for seed
-        uint64 commitBlock;       // Block when commitment was made
-        bool committed;           // Seed block set
-        bool revealed;            // Seed captured
+        uint64 seedBlock; // Block number to use for seed
+        uint64 commitBlock; // Block when commitment was made
+        bool committed; // Seed block set
+        bool revealed; // Seed captured
         bool usedExtendedHistory; // True if EIP-2935 was used
-        bytes32 blockHash;        // Captured block hash
-        uint256 seed;             // Final derived seed
+        bytes32 blockHash; // Captured block hash
+        uint256 seed; // Final derived seed
     }
 
     /// @notice Seed storage per round
@@ -145,7 +134,9 @@ abstract contract FutureBlockRandomness {
     ///      SECURITY: Must be called BEFORE players make choices that depend on randomness.
     ///
     /// @param roundId The round identifier (must be unique per game session)
-    function _commitSeed(uint256 roundId) internal {
+    function _commitSeed(
+        uint256 roundId
+    ) internal {
         if (roundId == 0) revert InvalidRoundId();
 
         RoundSeed storage rs = _roundSeeds[roundId];
@@ -173,7 +164,9 @@ abstract contract FutureBlockRandomness {
     ///
     /// @param roundId The round identifier
     /// @return seed The derived seed value (deterministic and verifiable)
-    function _revealSeed(uint256 roundId) internal returns (uint256 seed) {
+    function _revealSeed(
+        uint256 roundId
+    ) internal returns (uint256 seed) {
         RoundSeed storage rs = _roundSeeds[roundId];
 
         if (!rs.committed) revert SeedNotCommitted();
@@ -194,12 +187,7 @@ abstract contract FutureBlockRandomness {
         // - Replay attacks across different game contracts
         // - Replay attacks across different chains
         // - Collisions if same roundId is used in different games
-        seed = uint256(keccak256(abi.encode(
-            hash,
-            roundId,
-            address(this),
-            block.chainid
-        )));
+        seed = uint256(keccak256(abi.encode(hash, roundId, address(this), block.chainid)));
 
         // Cache the revealed seed
         rs.blockHash = hash;
@@ -217,7 +205,9 @@ abstract contract FutureBlockRandomness {
     /// @notice Get the cached seed for a round (reverts if not revealed)
     /// @param roundId The round identifier
     /// @return seed The cached seed value
-    function _getSeed(uint256 roundId) internal view returns (uint256 seed) {
+    function _getSeed(
+        uint256 roundId
+    ) internal view returns (uint256 seed) {
         RoundSeed storage rs = _roundSeeds[roundId];
         if (!rs.revealed) revert SeedNotCommitted();
         return rs.seed;
@@ -227,7 +217,9 @@ abstract contract FutureBlockRandomness {
     /// @dev Convenience function that auto-reveals if possible
     /// @param roundId The round identifier
     /// @return seed The seed value
-    function _getSeedOrReveal(uint256 roundId) internal returns (uint256 seed) {
+    function _getSeedOrReveal(
+        uint256 roundId
+    ) internal returns (uint256 seed) {
         RoundSeed storage rs = _roundSeeds[roundId];
         if (rs.revealed) {
             return rs.seed;
@@ -238,21 +230,27 @@ abstract contract FutureBlockRandomness {
     /// @notice Check if seed is committed
     /// @param roundId The round identifier
     /// @return committed True if seed block has been set
-    function _isSeedCommitted(uint256 roundId) internal view returns (bool committed) {
+    function _isSeedCommitted(
+        uint256 roundId
+    ) internal view returns (bool committed) {
         return _roundSeeds[roundId].committed;
     }
 
     /// @notice Check if seed is revealed
     /// @param roundId The round identifier
     /// @return revealed True if seed has been captured
-    function _isSeedRevealed(uint256 roundId) internal view returns (bool revealed) {
+    function _isSeedRevealed(
+        uint256 roundId
+    ) internal view returns (bool revealed) {
         return _roundSeeds[roundId].revealed;
     }
 
     /// @notice Check if seed can be revealed now
     /// @param roundId The round identifier
     /// @return ready True if seed block has been mined and hash is available
-    function _isSeedReady(uint256 roundId) internal view returns (bool ready) {
+    function _isSeedReady(
+        uint256 roundId
+    ) internal view returns (bool ready) {
         RoundSeed storage rs = _roundSeeds[roundId];
 
         if (!rs.committed || rs.revealed) return false;
@@ -267,7 +265,9 @@ abstract contract FutureBlockRandomness {
     /// @dev IMPORTANT: If true, the game should transition to refund state
     /// @param roundId The round identifier
     /// @return expired True if seed is no longer retrievable
-    function _isSeedExpired(uint256 roundId) internal view returns (bool expired) {
+    function _isSeedExpired(
+        uint256 roundId
+    ) internal view returns (bool expired) {
         RoundSeed storage rs = _roundSeeds[roundId];
 
         if (!rs.committed || rs.revealed) return false;
@@ -280,7 +280,9 @@ abstract contract FutureBlockRandomness {
     /// @notice Get remaining blocks before seed expires
     /// @param roundId The round identifier
     /// @return remaining Blocks until expiry (0 if expired or not applicable)
-    function _getRemainingRevealWindow(uint256 roundId) internal view returns (uint256 remaining) {
+    function _getRemainingRevealWindow(
+        uint256 roundId
+    ) internal view returns (uint256 remaining) {
         RoundSeed storage rs = _roundSeeds[roundId];
 
         if (!rs.committed || rs.revealed) return 0;
@@ -299,14 +301,18 @@ abstract contract FutureBlockRandomness {
     /// @notice Get the seed block for a round
     /// @param roundId The round identifier
     /// @return seedBlock The block number that provides randomness
-    function _getSeedBlock(uint256 roundId) internal view returns (uint256 seedBlock) {
+    function _getSeedBlock(
+        uint256 roundId
+    ) internal view returns (uint256 seedBlock) {
         return _roundSeeds[roundId].seedBlock;
     }
 
     /// @notice Get full round seed info
     /// @param roundId The round identifier
     /// @return info The complete RoundSeed struct
-    function _getRoundSeedInfo(uint256 roundId) internal view returns (RoundSeed memory info) {
+    function _getRoundSeedInfo(
+        uint256 roundId
+    ) internal view returns (RoundSeed memory info) {
         return _roundSeeds[roundId];
     }
 
@@ -332,7 +338,10 @@ abstract contract FutureBlockRandomness {
     /// @param seed The base seed
     /// @param index The sub-seed index
     /// @return subSeed A derived random value
-    function _deriveSubSeed(uint256 seed, uint256 index) internal pure returns (uint256 subSeed) {
+    function _deriveSubSeed(
+        uint256 seed,
+        uint256 index
+    ) internal pure returns (uint256 subSeed) {
         return uint256(keccak256(abi.encode(seed, index)));
     }
 
@@ -342,7 +351,10 @@ abstract contract FutureBlockRandomness {
     /// @param seed The seed value
     /// @param max The exclusive upper bound (must be > 0)
     /// @return result A uniformly distributed random value in [0, max)
-    function _seedToRange(uint256 seed, uint256 max) internal pure returns (uint256 result) {
+    function _seedToRange(
+        uint256 seed,
+        uint256 max
+    ) internal pure returns (uint256 result) {
         // SAFETY: Validate input to prevent division by zero
         if (max == 0) {
             return 0; // Safe fallback - caller error
@@ -373,7 +385,10 @@ abstract contract FutureBlockRandomness {
     /// @param seed The seed value
     /// @param probabilityBps The probability of returning true (0-10000)
     /// @return result True with given probability
-    function _seedToBool(uint256 seed, uint256 probabilityBps) internal pure returns (bool result) {
+    function _seedToBool(
+        uint256 seed,
+        uint256 probabilityBps
+    ) internal pure returns (bool result) {
         return (seed % 10_000) < probabilityBps;
     }
 }

@@ -33,14 +33,7 @@ import { FutureBlockRandomness } from "../../randomness/FutureBlockRandomness.so
 ///      - Additional rake handled by ArcadeCore on entry
 ///
 /// @custom:security-contact security@ghostnet.game
-contract HashCrash is
-    IArcadeGame,
-    FutureBlockRandomness,
-    Ownable2Step,
-    Pausable,
-    ReentrancyGuard
-{
-
+contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable, ReentrancyGuard {
     // ══════════════════════════════════════════════════════════════════════════════
     // CONSTANTS
     // ══════════════════════════════════════════════════════════════════════════════
@@ -125,10 +118,7 @@ contract HashCrash is
 
     /// @notice Emitted when a player crashes (didn't cash out in time)
     event PlayerCrashed(
-        uint256 indexed roundId,
-        address indexed player,
-        uint256 betAmount,
-        uint256 crashMultiplier
+        uint256 indexed roundId, address indexed player, uint256 betAmount, uint256 crashMultiplier
     );
 
     /// @notice Emitted when game active status changes
@@ -162,10 +152,10 @@ contract HashCrash is
 
     /// @notice Player bet in a round
     struct PlayerBet {
-        uint128 amount;           // Bet amount (net after rake)
-        uint128 grossAmount;      // Original bet (before rake, for refunds)
-        uint64 cashedOutAt;       // Multiplier at cashout (0 = not cashed out)
-        bool resolved;            // True if payout/crash has been processed
+        uint128 amount; // Bet amount (net after rake)
+        uint128 grossAmount; // Original bet (before rake, for refunds)
+        uint64 cashedOutAt; // Multiplier at cashout (0 = not cashed out)
+        bool resolved; // True if payout/crash has been processed
     }
 
     /// @notice Player bets by round
@@ -212,7 +202,9 @@ contract HashCrash is
     /// @notice Place a bet in the current round
     /// @dev Transfers DATA from player to ArcadeCore via processEntry
     /// @param amount Bet amount in DATA tokens
-    function placeBet(uint256 amount) external nonReentrant whenNotPaused {
+    function placeBet(
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         if (amount == 0) revert ZeroBetAmount();
 
         uint256 roundId = _currentRoundId;
@@ -256,7 +248,9 @@ contract HashCrash is
     /// @notice Cash out at current multiplier
     /// @dev Only callable when round is ACTIVE (crash point known)
     /// @param multiplier The multiplier to cash out at (must be < crash point)
-    function cashOut(uint256 multiplier) external nonReentrant whenNotPaused {
+    function cashOut(
+        uint256 multiplier
+    ) external nonReentrant whenNotPaused {
         uint256 roundId = _currentRoundId;
         Round storage round = _rounds[roundId];
 
@@ -298,10 +292,9 @@ contract HashCrash is
         // Check no active round
         Round storage currentRound = _rounds[_currentRoundId];
         if (
-            currentRound.state != SessionState.NONE &&
-            currentRound.state != SessionState.SETTLED &&
-            currentRound.state != SessionState.CANCELLED &&
-            currentRound.state != SessionState.EXPIRED
+            currentRound.state != SessionState.NONE && currentRound.state != SessionState.SETTLED
+                && currentRound.state != SessionState.CANCELLED
+                && currentRound.state != SessionState.EXPIRED
         ) {
             revert RoundInProgress();
         }
@@ -385,7 +378,9 @@ contract HashCrash is
                 emit PlayerPaidOut(roundId, player, 0, false);
             }
 
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
 
         // Settle the session
@@ -421,7 +416,10 @@ contract HashCrash is
     ///
     /// @param roundId The expired round
     /// @param player The player to refund
-    function claimExpiredRefund(uint256 roundId, address player) external nonReentrant {
+    function claimExpiredRefund(
+        uint256 roundId,
+        address player
+    ) external nonReentrant {
         Round storage round = _rounds[roundId];
 
         // Must be expired or cancelled
@@ -450,7 +448,9 @@ contract HashCrash is
 
     /// @notice Lock the round and commit seed
     /// @param roundId Round to lock
-    function _lockRound(uint256 roundId) internal {
+    function _lockRound(
+        uint256 roundId
+    ) internal {
         Round storage round = _rounds[roundId];
 
         // No bets = cancel the round
@@ -492,7 +492,9 @@ contract HashCrash is
     ///
     /// @param seed The random seed
     /// @return crashMultiplier The crash point (100 = 1.00x, 200 = 2.00x, etc.)
-    function _calculateCrashPoint(uint256 seed) internal pure returns (uint256 crashMultiplier) {
+    function _calculateCrashPoint(
+        uint256 seed
+    ) internal pure returns (uint256 crashMultiplier) {
         // Use lower 52 bits for uniform distribution in [0, 2^52)
         uint256 h = seed & ((1 << 52) - 1);
 
@@ -517,8 +519,8 @@ contract HashCrash is
         // - h approaching 2^52 maps to very high multipliers
 
         uint256 maxH = (1 << 52);
-        uint256 effectiveRange = maxH - houseEdgeThreshold;  // Range after house edge
-        uint256 divisor = maxH - h;  // Distance from max
+        uint256 effectiveRange = maxH - houseEdgeThreshold; // Range after house edge
+        uint256 divisor = maxH - h; // Distance from max
 
         // Prevent division by zero (h can equal maxH - 1 at most due to mask)
         if (divisor == 0) {
@@ -591,7 +593,9 @@ contract HashCrash is
     /// @notice Get round information
     /// @param roundId Round to query
     /// @return round The round data
-    function getRound(uint256 roundId) external view returns (Round memory round) {
+    function getRound(
+        uint256 roundId
+    ) external view returns (Round memory round) {
         return _rounds[roundId];
     }
 
@@ -609,7 +613,9 @@ contract HashCrash is
     /// @notice Get all players in a round
     /// @param roundId Round to query
     /// @return players Array of player addresses
-    function getRoundPlayers(uint256 roundId) external view returns (address[] memory players) {
+    function getRoundPlayers(
+        uint256 roundId
+    ) external view returns (address[] memory players) {
         return _roundPlayers[roundId];
     }
 
@@ -625,21 +631,27 @@ contract HashCrash is
     /// @notice Check if seed is ready for reveal
     /// @param roundId Round to check
     /// @return ready True if seed can be revealed
-    function isSeedReady(uint256 roundId) external view returns (bool ready) {
+    function isSeedReady(
+        uint256 roundId
+    ) external view returns (bool ready) {
         return _isSeedReady(roundId);
     }
 
     /// @notice Check if seed has expired
     /// @param roundId Round to check
     /// @return expired True if seed is expired
-    function isSeedExpired(uint256 roundId) external view returns (bool expired) {
+    function isSeedExpired(
+        uint256 roundId
+    ) external view returns (bool expired) {
         return _isSeedExpired(roundId);
     }
 
     /// @notice Get remaining blocks before seed expires
     /// @param roundId Round to check
     /// @return remaining Blocks remaining
-    function getRemainingRevealWindow(uint256 roundId) external view returns (uint256 remaining) {
+    function getRemainingRevealWindow(
+        uint256 roundId
+    ) external view returns (uint256 remaining) {
         return _getRemainingRevealWindow(roundId);
     }
 
@@ -669,9 +681,8 @@ contract HashCrash is
             revert SessionDoesNotExist();
         }
         if (
-            round.state == SessionState.SETTLED ||
-            round.state == SessionState.CANCELLED ||
-            round.state == SessionState.EXPIRED
+            round.state == SessionState.SETTLED || round.state == SessionState.CANCELLED
+                || round.state == SessionState.EXPIRED
         ) {
             revert InvalidSessionState();
         }
@@ -687,7 +698,9 @@ contract HashCrash is
 
     /// @notice Update game active status
     /// @param active Whether game should be active
-    function setActive(bool active) external onlyOwner {
+    function setActive(
+        bool active
+    ) external onlyOwner {
         _gameInfo.isActive = active;
         emit GameActiveStatusChanged(active);
     }

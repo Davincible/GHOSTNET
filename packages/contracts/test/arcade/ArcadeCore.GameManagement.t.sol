@@ -336,7 +336,9 @@ contract ArcadeCoreGameManagementTest is Test {
 
         // Verify burn occurred (check dead address)
         address deadAddress = 0x000000000000000000000000000000000000dEaD;
-        assertEq(token.balanceOf(deadAddress), expectedRake, "Dead address should have burned tokens");
+        assertEq(
+            token.balanceOf(deadAddress), expectedRake, "Dead address should have burned tokens"
+        );
     }
 
     /// @notice Verify registration with requiresPosition = true

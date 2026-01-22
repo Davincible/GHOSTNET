@@ -67,7 +67,9 @@ library BlockhashHistory {
     ///
     /// @param blockNumber The block number to get the hash for
     /// @return hash The blockhash, or bytes32(0) if unavailable
-    function getBlockhash(uint256 blockNumber) internal view returns (bytes32 hash) {
+    function getBlockhash(
+        uint256 blockNumber
+    ) internal view returns (bytes32 hash) {
         // Quick rejection: block must be in the past
         if (blockNumber >= block.number) {
             return bytes32(0);
@@ -168,7 +170,9 @@ library BlockhashHistory {
     /// @notice Check if a block hash is retrievable (within available history)
     /// @param blockNumber The block number to check
     /// @return retrievable True if the blockhash should be retrievable
-    function isBlockHashRetrievable(uint256 blockNumber) internal view returns (bool retrievable) {
+    function isBlockHashRetrievable(
+        uint256 blockNumber
+    ) internal view returns (bool retrievable) {
         if (blockNumber >= block.number) {
             return false;
         }

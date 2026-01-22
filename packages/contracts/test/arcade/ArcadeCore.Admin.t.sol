@@ -221,7 +221,9 @@ contract ArcadeCoreAdminTest is Test {
         uint256 treasuryAfter = token.balanceOf(newTreasury);
         uint256 expectedTreasuryRake = (100 * 1e18 * 500 / 10_000) * 8000 / 10_000; // 5% rake, 80% to treasury
 
-        assertEq(treasuryAfter - treasuryBefore, expectedTreasuryRake, "Rake should go to new treasury");
+        assertEq(
+            treasuryAfter - treasuryBefore, expectedTreasuryRake, "Rake should go to new treasury"
+        );
     }
 
     function test_SetTreasury_RevertWhen_ZeroAddress() public {
@@ -487,9 +489,21 @@ contract ArcadeCoreAdminTest is Test {
         IArcadeCore.SessionRecord memory session2 = arcadeCore.getSession(SESSION_2);
         IArcadeCore.SessionRecord memory session3 = arcadeCore.getSession(SESSION_3);
 
-        assertEq(uint8(session1.state), uint8(IArcadeCore.SessionState.CANCELLED), "Session 1 should be cancelled");
-        assertEq(uint8(session2.state), uint8(IArcadeCore.SessionState.CANCELLED), "Session 2 should be cancelled");
-        assertEq(uint8(session3.state), uint8(IArcadeCore.SessionState.CANCELLED), "Session 3 should be cancelled");
+        assertEq(
+            uint8(session1.state),
+            uint8(IArcadeCore.SessionState.CANCELLED),
+            "Session 1 should be cancelled"
+        );
+        assertEq(
+            uint8(session2.state),
+            uint8(IArcadeCore.SessionState.CANCELLED),
+            "Session 2 should be cancelled"
+        );
+        assertEq(
+            uint8(session3.state),
+            uint8(IArcadeCore.SessionState.CANCELLED),
+            "Session 3 should be cancelled"
+        );
     }
 
     function test_EmergencyQuarantineGame_AllowsRefunds() public {
@@ -654,17 +668,27 @@ contract ArcadeCoreAdminTest is Test {
         assertEq(session1After.game, session1Before.game, "Session 1 game preserved");
         assertEq(session1After.prizePool, session1Before.prizePool, "Session 1 prizePool preserved");
         assertEq(session1After.totalPaid, session1Before.totalPaid, "Session 1 totalPaid preserved");
-        assertEq(uint8(session1After.state), uint8(session1Before.state), "Session 1 state preserved");
+        assertEq(
+            uint8(session1After.state), uint8(session1Before.state), "Session 1 state preserved"
+        );
 
         assertEq(session2After.game, session2Before.game, "Session 2 game preserved");
         assertEq(session2After.prizePool, session2Before.prizePool, "Session 2 prizePool preserved");
 
         assertEq(arcadeCore.getPendingPayout(alice), alicePendingBefore, "Pending payout preserved");
-        assertTrue(arcadeCore.isGameRegistered(game) == game1Registered, "Game 1 registration preserved");
-        assertTrue(arcadeCore.isGameRegistered(game2) == game2Registered, "Game 2 registration preserved");
+        assertTrue(
+            arcadeCore.isGameRegistered(game) == game1Registered, "Game 1 registration preserved"
+        );
+        assertTrue(
+            arcadeCore.isGameRegistered(game2) == game2Registered, "Game 2 registration preserved"
+        );
 
         IArcadeCore.PlayerStats memory aliceStatsAfter = arcadeCore.getPlayerStats(alice);
-        assertEq(aliceStatsAfter.totalGamesPlayed, aliceStatsBefore.totalGamesPlayed, "Player stats preserved");
+        assertEq(
+            aliceStatsAfter.totalGamesPlayed,
+            aliceStatsBefore.totalGamesPlayed,
+            "Player stats preserved"
+        );
     }
 
     function test_Upgrade_PreservesSessions() public {
@@ -742,7 +766,9 @@ contract ArcadeCoreAdminTest is Test {
 
         IArcadeCore.PlayerStats memory statsAfter = arcadeCore.getPlayerStats(alice);
 
-        assertEq(statsAfter.totalGamesPlayed, statsBefore.totalGamesPlayed, "Games played preserved");
+        assertEq(
+            statsAfter.totalGamesPlayed, statsBefore.totalGamesPlayed, "Games played preserved"
+        );
         assertEq(statsAfter.totalWagered, statsBefore.totalWagered, "Total wagered preserved");
         assertEq(statsAfter.totalWon, statsBefore.totalWon, "Total won preserved");
         assertEq(statsAfter.totalWins, statsBefore.totalWins, "Total wins preserved");
@@ -775,7 +801,11 @@ contract ArcadeCoreAdminTest is Test {
         assertEq(configAfter.maxEntry, configBefore.maxEntry, "Max entry preserved");
         assertEq(configAfter.rakeBps, configBefore.rakeBps, "Rake BPS preserved");
         assertEq(configAfter.burnBps, configBefore.burnBps, "Burn BPS preserved");
-        assertEq(configAfter.requiresPosition, configBefore.requiresPosition, "RequiresPosition preserved");
+        assertEq(
+            configAfter.requiresPosition,
+            configBefore.requiresPosition,
+            "RequiresPosition preserved"
+        );
         assertEq(configAfter.paused, configBefore.paused, "Paused preserved");
     }
 
@@ -838,9 +868,7 @@ contract ArcadeCoreAdminTest is Test {
         // Attempt to reinitialize should fail
         vm.prank(admin);
         vm.expectRevert(); // InvalidInitialization
-        ArcadeCore(address(arcadeCore)).initialize(
-            address(token), address(0), newTreasury, admin
-        );
+        ArcadeCore(address(arcadeCore)).initialize(address(token), address(0), newTreasury, admin);
     }
 
     function test_Upgrade_ImplementationCannotBeInitialized() public {
@@ -884,8 +912,7 @@ contract ArcadeCoreAdminTest is Test {
         arcadeCore.grantRole(gameAdminRole, newGameAdmin);
 
         assertTrue(
-            arcadeCore.hasRole(gameAdminRole, newGameAdmin),
-            "New game admin should have role"
+            arcadeCore.hasRole(gameAdminRole, newGameAdmin), "New game admin should have role"
         );
 
         // Verify can use GAME_ADMIN functions
@@ -900,7 +927,9 @@ contract ArcadeCoreAdminTest is Test {
 
         vm.prank(newGameAdmin);
         arcadeCore.registerGame(game, config);
-        assertTrue(arcadeCore.isGameRegistered(game), "New game admin should be able to register games");
+        assertTrue(
+            arcadeCore.isGameRegistered(game), "New game admin should be able to register games"
+        );
     }
 
     function test_RoleManagement_AdminCanGrantPauser() public {
@@ -912,10 +941,7 @@ contract ArcadeCoreAdminTest is Test {
         vm.prank(admin);
         arcadeCore.grantRole(pauserRole, newPauser);
 
-        assertTrue(
-            arcadeCore.hasRole(pauserRole, newPauser),
-            "New pauser should have role"
-        );
+        assertTrue(arcadeCore.hasRole(pauserRole, newPauser), "New pauser should have role");
 
         // Verify can pause
         vm.prank(newPauser);
@@ -934,10 +960,7 @@ contract ArcadeCoreAdminTest is Test {
         vm.prank(admin);
         arcadeCore.revokeRole(gameAdminRole, gameAdmin);
 
-        assertFalse(
-            arcadeCore.hasRole(gameAdminRole, gameAdmin),
-            "Role should be revoked"
-        );
+        assertFalse(arcadeCore.hasRole(gameAdminRole, gameAdmin), "Role should be revoked");
 
         // Verify cannot use GAME_ADMIN functions anymore
         IArcadeCore.GameConfig memory config = IArcadeCore.GameConfig({
@@ -988,8 +1011,12 @@ contract ArcadeCoreAdminTest is Test {
         arcadeCore.upgradeToAndCall(address(v2Impl), "");
 
         // Roles preserved
-        assertTrue(arcadeCore.hasRole(arcadeCore.DEFAULT_ADMIN_ROLE(), admin), "Admin role preserved");
-        assertTrue(arcadeCore.hasRole(arcadeCore.GAME_ADMIN_ROLE(), gameAdmin), "Game admin role preserved");
+        assertTrue(
+            arcadeCore.hasRole(arcadeCore.DEFAULT_ADMIN_ROLE(), admin), "Admin role preserved"
+        );
+        assertTrue(
+            arcadeCore.hasRole(arcadeCore.GAME_ADMIN_ROLE(), gameAdmin), "Game admin role preserved"
+        );
         assertTrue(arcadeCore.hasRole(arcadeCore.PAUSER_ROLE(), pauser), "Pauser role preserved");
     }
 
@@ -1006,7 +1033,9 @@ contract ArcadeCoreAdminTest is Test {
         assertEq(session.game, game, "Game should match");
         assertEq(session.prizePool, netAmount, "Prize pool should match net amount");
         assertEq(session.totalPaid, 0, "Total paid should be 0 initially");
-        assertEq(uint8(session.state), uint8(IArcadeCore.SessionState.ACTIVE), "State should be ACTIVE");
+        assertEq(
+            uint8(session.state), uint8(IArcadeCore.SessionState.ACTIVE), "State should be ACTIVE"
+        );
         assertGt(session.createdAt, 0, "Created timestamp should be set");
         assertEq(session.settledAt, 0, "Settled timestamp should be 0");
     }
@@ -1139,7 +1168,9 @@ contract ArcadeCoreAdminTest is Test {
         uint256 alicePending = arcadeCore.getPendingPayout(alice);
         uint256 bobPending = arcadeCore.getPendingPayout(bob);
 
-        assertEq(totalPending, alicePending + bobPending, "Total should equal sum of individual payouts");
+        assertEq(
+            totalPending, alicePending + bobPending, "Total should equal sum of individual payouts"
+        );
         assertEq(totalPending, 60 * 1e18, "Total should be 60 DATA");
     }
 

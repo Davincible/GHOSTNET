@@ -56,22 +56,14 @@ interface IArcadeGame is IArcadeTypes {
 
     /// @notice Emitted when a player places a bet
     event BetPlaced(
-        uint256 indexed roundId,
-        address indexed player,
-        uint256 amount,
-        uint256 netAmount
+        uint256 indexed roundId, address indexed player, uint256 amount, uint256 netAmount
     );
 
     /// @notice Emitted when a round is resolved with outcome
     event RoundResolved(uint256 indexed roundId, uint256 seed, uint256 outcome);
 
     /// @notice Emitted when a player is paid out
-    event PlayerPaidOut(
-        uint256 indexed roundId,
-        address indexed player,
-        uint256 payout,
-        bool won
-    );
+    event PlayerPaidOut(uint256 indexed roundId, address indexed player, uint256 payout, bool won);
 
     /// @notice Emitted when a round is cancelled
     event RoundCancelled(uint256 indexed roundId, string reason);
@@ -99,7 +91,9 @@ interface IArcadeGame is IArcadeTypes {
     /// @notice Get session state
     /// @param sessionId Session to query
     /// @return state The session state
-    function getSessionState(uint256 sessionId) external view returns (SessionState state);
+    function getSessionState(
+        uint256 sessionId
+    ) external view returns (SessionState state);
 
     /// @notice Check if player is in a session
     /// @param sessionId Session to check
@@ -113,7 +107,9 @@ interface IArcadeGame is IArcadeTypes {
     /// @notice Get session prize pool (net deposits after rake)
     /// @param sessionId Session to query
     /// @return prizePool The total prize pool
-    function getSessionPrizePool(uint256 sessionId) external view returns (uint256 prizePool);
+    function getSessionPrizePool(
+        uint256 sessionId
+    ) external view returns (uint256 prizePool);
 
     // ══════════════════════════════════════════════════════════════════════════════
     // ADMIN
@@ -137,5 +133,8 @@ interface IArcadeGame is IArcadeTypes {
     /// @dev Should call arcadeCore.emergencyRefund for each player
     /// @param sessionId Session to cancel
     /// @param reason Cancellation reason (for events/logging)
-    function emergencyCancel(uint256 sessionId, string calldata reason) external;
+    function emergencyCancel(
+        uint256 sessionId,
+        string calldata reason
+    ) external;
 }

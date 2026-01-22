@@ -51,8 +51,7 @@ contract HashCrashTest is Test {
         // Deploy ArcadeCore as proxy
         ArcadeCore impl = new ArcadeCore();
         bytes memory initData = abi.encodeCall(
-            ArcadeCore.initialize,
-            (address(dataToken), address(0), treasury, admin)
+            ArcadeCore.initialize, (address(dataToken), address(0), treasury, admin)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
         arcadeCore = ArcadeCore(address(proxy));
@@ -85,7 +84,10 @@ contract HashCrashTest is Test {
         vm.roll(1000);
     }
 
-    function _fundPlayer(address player, uint256 amount) internal {
+    function _fundPlayer(
+        address player,
+        uint256 amount
+    ) internal {
         dataToken.mint(player, amount);
         vm.prank(player);
         // NOTE: Players approve ArcadeCore, not the game contract
@@ -188,9 +190,8 @@ contract HashCrashTest is Test {
         assertEq(round.playerCount, 3);
 
         // Prize pool should be sum of net bets
-        uint256 expectedPool = (DEFAULT_BET * 95 / 100)
-            + (DEFAULT_BET * 2 * 95 / 100)
-            + (DEFAULT_BET / 2 * 95 / 100);
+        uint256 expectedPool =
+            (DEFAULT_BET * 95 / 100) + (DEFAULT_BET * 2 * 95 / 100) + (DEFAULT_BET / 2 * 95 / 100);
         assertEq(round.prizePool, expectedPool);
     }
 

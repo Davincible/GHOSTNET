@@ -3,7 +3,9 @@ pragma solidity ^0.8.33;
 
 import { Test, console } from "forge-std/Test.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {
+    UUPSUpgradeable
+} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { DataToken } from "../../src/token/DataToken.sol";
 import { ArcadeCore } from "../../src/arcade/ArcadeCore.sol";
@@ -21,12 +23,16 @@ contract ReentrancyAttacker {
     uint256 public maxAttempts;
     bool public attackActive;
 
-    constructor(address _target) {
+    constructor(
+        address _target
+    ) {
         target = ArcadeCore(_target);
     }
 
     /// @notice Initiate reentrancy attack on withdrawPayout
-    function attack(uint256 _maxAttempts) external {
+    function attack(
+        uint256 _maxAttempts
+    ) external {
         maxAttempts = _maxAttempts;
         attackCount = 0;
         attackActive = true;
@@ -65,7 +71,10 @@ contract TokenCallbackAttacker {
     bool public attackActive;
     uint256 public targetSessionId;
 
-    constructor(address _arcadeCore, address _token) {
+    constructor(
+        address _arcadeCore,
+        address _token
+    ) {
         arcadeCore = ArcadeCore(_arcadeCore);
         token = DataToken(_token);
     }
@@ -76,7 +85,10 @@ contract TokenCallbackAttacker {
     }
 
     /// @notice Setup attack by depositing first
-    function deposit(uint256 sessionId, uint256 /* amount */) external {
+    function deposit(
+        uint256 sessionId,
+        uint256 /* amount */
+    ) external {
         targetSessionId = sessionId;
         // This call should work normally
         // ArcadeCore.processEntry must be called BY a registered game
@@ -91,7 +103,10 @@ contract TokenCallbackAttacker {
     }
 
     /// @notice Called if token transfer triggers a callback (shouldn't happen with DATA)
-    function onTokenTransfer(address, uint256) external returns (bool) {
+    function onTokenTransfer(
+        address,
+        uint256
+    ) external returns (bool) {
         if (attackActive && reentryCount < 3) {
             reentryCount++;
             try arcadeCore.withdrawPayout() { } catch { }
@@ -106,7 +121,10 @@ contract FlashLoanAttacker {
     DataToken public token;
     address public game;
 
-    constructor(address _arcadeCore, address _token) {
+    constructor(
+        address _arcadeCore,
+        address _token
+    ) {
         arcadeCore = ArcadeCore(_arcadeCore);
         token = DataToken(_token);
     }
@@ -115,7 +133,8 @@ contract FlashLoanAttacker {
     /// @dev In real attack, attacker would borrow -> exploit -> repay in single tx
     function executeFlashLoanAttack(
         uint256 borrowAmount,
-        uint256 /* sessionId */,
+        uint256,
+        /* sessionId */
         address _game
     ) external {
         game = _game;
@@ -142,7 +161,10 @@ contract FlashLoanAttacker {
     }
 
     /// @notice Attempt to process entry directly (should fail - not a game)
-    function attemptDirectEntry(uint256 sessionId, uint256 amount) external {
+    function attemptDirectEntry(
+        uint256 sessionId,
+        uint256 amount
+    ) external {
         token.approve(address(arcadeCore), amount);
         // This will fail with GameNotRegistered
         arcadeCore.processEntry(address(this), amount, sessionId);
@@ -155,12 +177,17 @@ contract FlashLoanAttacker {
 contract GasGriefingAttacker {
     ArcadeCore public arcadeCore;
 
-    constructor(address _arcadeCore) {
+    constructor(
+        address _arcadeCore
+    ) {
         arcadeCore = ArcadeCore(_arcadeCore);
     }
 
     /// @notice Attempt to cause OOG via massive batch
-    function attemptBatchOOG(uint256 sessionId, uint256 batchSize) external {
+    function attemptBatchOOG(
+        uint256 sessionId,
+        uint256 batchSize
+    ) external {
         address[] memory players = new address[](batchSize);
         for (uint256 i; i < batchSize; i++) {
             players[i] = address(uint160(i + 1));
@@ -173,11 +200,16 @@ contract GasGriefingAttacker {
 
 /// @notice Malicious implementation that tries to upgrade ArcadeCore
 contract MaliciousUpgrade is UUPSUpgradeable {
-    function drainFunds(address token, address to) external {
+    function drainFunds(
+        address token,
+        address to
+    ) external {
         IERC20(token).transfer(to, IERC20(token).balanceOf(address(this)));
     }
 
-    function _authorizeUpgrade(address) internal override {
+    function _authorizeUpgrade(
+        address
+    ) internal override {
         // No restrictions - malicious!
     }
 }
@@ -186,7 +218,9 @@ contract MaliciousUpgrade is UUPSUpgradeable {
 contract SessionManipulator {
     ArcadeCore public arcadeCore;
 
-    constructor(address _arcadeCore) {
+    constructor(
+        address _arcadeCore
+    ) {
         arcadeCore = ArcadeCore(_arcadeCore);
     }
 
@@ -309,7 +343,9 @@ contract ArcadeCoreSecurityTest is Test {
     }
 
     /// @notice Helper to calculate net amount after rake
-    function _netAmount(uint256 gross) internal pure returns (uint256) {
+    function _netAmount(
+        uint256 gross
+    ) internal pure returns (uint256) {
         return gross - (gross * RAKE_BPS / 10_000);
     }
 
@@ -899,9 +935,9 @@ contract ArcadeCoreSecurityTest is Test {
         amounts[0] = 90_000 ether;
         amounts[1] = 90_000 ether;
         amounts[2] = 90_000 ether;
-        burnAmounts[0] = 2_000 ether;
-        burnAmounts[1] = 2_000 ether;
-        burnAmounts[2] = 2_000 ether;
+        burnAmounts[0] = 2000 ether;
+        burnAmounts[1] = 2000 ether;
+        burnAmounts[2] = 2000 ether;
         results[0] = true;
         results[1] = true;
         results[2] = true;
@@ -1078,7 +1114,10 @@ contract ArcadeCoreSecurityTest is Test {
     }
 
     /// @notice Fuzz: Payout cannot exceed prize pool
-    function testFuzz_PayoutBoundedByPrizePool(uint256 entryAmount, uint256 payoutAmount) public {
+    function testFuzz_PayoutBoundedByPrizePool(
+        uint256 entryAmount,
+        uint256 payoutAmount
+    ) public {
         // Bound entry to valid range
         entryAmount = bound(entryAmount, 1 ether, 10_000 ether);
         payoutAmount = bound(payoutAmount, 0, type(uint128).max);
@@ -1099,7 +1138,10 @@ contract ArcadeCoreSecurityTest is Test {
     }
 
     /// @notice Fuzz: Refund bounded by deposit
-    function testFuzz_RefundBoundedByDeposit(uint256 entryAmount, uint256 refundAmount) public {
+    function testFuzz_RefundBoundedByDeposit(
+        uint256 entryAmount,
+        uint256 refundAmount
+    ) public {
         // Bound entry to valid range
         entryAmount = bound(entryAmount, 1 ether, 10_000 ether);
         refundAmount = bound(refundAmount, 1, type(uint128).max);
@@ -1142,13 +1184,13 @@ contract ArcadeCoreSecurityTest is Test {
         // Multiple deposits and payouts
         _createSessionWithEntry(SESSION_1, gameA, alice, 10_000 ether);
         vm.warp(block.timestamp + 2);
-        _createSessionWithEntry(SESSION_1, gameA, bob, 5_000 ether);
+        _createSessionWithEntry(SESSION_1, gameA, bob, 5000 ether);
 
         vm.prank(gameA);
-        arcadeCore.creditPayout(SESSION_1, alice, 3_000 ether, 1_000 ether, true);
+        arcadeCore.creditPayout(SESSION_1, alice, 3000 ether, 1000 ether, true);
 
         vm.prank(gameA);
-        arcadeCore.creditPayout(SESSION_1, bob, 2_000 ether, 500 ether, true);
+        arcadeCore.creditPayout(SESSION_1, bob, 2000 ether, 500 ether, true);
 
         // Check solvency
         uint256 totalPending = arcadeCore.getTotalPendingPayouts();
@@ -1164,7 +1206,7 @@ contract ArcadeCoreSecurityTest is Test {
 
         // Partial payout
         vm.prank(gameA);
-        arcadeCore.creditPayout(SESSION_1, alice, 3_000 ether, 0, true);
+        arcadeCore.creditPayout(SESSION_1, alice, 3000 ether, 0, true);
 
         uint256 treasuryBefore = token.balanceOf(treasury);
 

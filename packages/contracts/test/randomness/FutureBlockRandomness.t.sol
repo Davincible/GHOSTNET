@@ -208,7 +208,7 @@ contract FutureBlockRandomnessTest is Test {
     // ══════════════════════════════════════════════════════════════════════════════
 
     function test_DeriveSubSeed() public view {
-        uint256 baseSeed = 12345;
+        uint256 baseSeed = 12_345;
 
         uint256 sub0 = randomness.deriveSubSeed(baseSeed, 0);
         uint256 sub1 = randomness.deriveSubSeed(baseSeed, 1);
@@ -224,7 +224,7 @@ contract FutureBlockRandomnessTest is Test {
     }
 
     function test_SeedToRange() public view {
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
 
         uint256 result = randomness.seedToRange(seed, 100);
         assertTrue(result < 100, "Result should be less than max");
@@ -234,7 +234,7 @@ contract FutureBlockRandomnessTest is Test {
     }
 
     function test_SeedToRangeInclusive() public view {
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
 
         uint256 result = randomness.seedToRangeInclusive(seed, 10, 20);
         assertTrue(result >= 10, "Result should be >= min");
@@ -242,13 +242,13 @@ contract FutureBlockRandomnessTest is Test {
     }
 
     function test_SeedToBool() public view {
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
 
         // 50% probability
         bool result50 = randomness.seedToBool(seed, 5000);
 
         // 100% probability - always true
-        bool result100 = randomness.seedToBool(seed, 10000);
+        bool result100 = randomness.seedToBool(seed, 10_000);
         assertTrue(result100, "100% should always be true");
 
         // 0% probability - always false
@@ -263,7 +263,10 @@ contract FutureBlockRandomnessTest is Test {
     // FUZZ TESTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    function testFuzz_SeedToRange(uint256 seed, uint256 max) public view {
+    function testFuzz_SeedToRange(
+        uint256 seed,
+        uint256 max
+    ) public view {
         vm.assume(max > 0);
 
         uint256 result = randomness.seedToRange(seed, max);
@@ -283,20 +286,27 @@ contract FutureBlockRandomnessTest is Test {
         assertTrue(result <= max, "Result should be <= max");
     }
 
-    function testFuzz_SeedToBool(uint256 seed, uint256 probability) public view {
-        vm.assume(probability <= 10000);
+    function testFuzz_SeedToBool(
+        uint256 seed,
+        uint256 probability
+    ) public view {
+        vm.assume(probability <= 10_000);
 
         bool result = randomness.seedToBool(seed, probability);
 
         if (probability == 0) {
             assertFalse(result, "0% should always be false");
         }
-        if (probability == 10000) {
+        if (probability == 10_000) {
             assertTrue(result, "100% should always be true");
         }
     }
 
-    function testFuzz_DeriveSubSeed_Unique(uint256 seed, uint8 index1, uint8 index2) public view {
+    function testFuzz_DeriveSubSeed_Unique(
+        uint256 seed,
+        uint8 index1,
+        uint8 index2
+    ) public view {
         vm.assume(index1 != index2);
 
         uint256 sub1 = randomness.deriveSubSeed(seed, index1);
@@ -338,39 +348,57 @@ contract FutureBlockRandomnessTest is Test {
 
 /// @notice Concrete implementation of FutureBlockRandomness for testing
 contract TestRandomness is FutureBlockRandomness {
-    function commitSeed(uint256 roundId) external {
+    function commitSeed(
+        uint256 roundId
+    ) external {
         _commitSeed(roundId);
     }
 
-    function revealSeed(uint256 roundId) external returns (uint256) {
+    function revealSeed(
+        uint256 roundId
+    ) external returns (uint256) {
         return _revealSeed(roundId);
     }
 
-    function getSeed(uint256 roundId) external view returns (uint256) {
+    function getSeed(
+        uint256 roundId
+    ) external view returns (uint256) {
         return _getSeed(roundId);
     }
 
-    function isSeedCommitted(uint256 roundId) external view returns (bool) {
+    function isSeedCommitted(
+        uint256 roundId
+    ) external view returns (bool) {
         return _isSeedCommitted(roundId);
     }
 
-    function isSeedRevealed(uint256 roundId) external view returns (bool) {
+    function isSeedRevealed(
+        uint256 roundId
+    ) external view returns (bool) {
         return _isSeedRevealed(roundId);
     }
 
-    function isSeedReady(uint256 roundId) external view returns (bool) {
+    function isSeedReady(
+        uint256 roundId
+    ) external view returns (bool) {
         return _isSeedReady(roundId);
     }
 
-    function isSeedExpired(uint256 roundId) external view returns (bool) {
+    function isSeedExpired(
+        uint256 roundId
+    ) external view returns (bool) {
         return _isSeedExpired(roundId);
     }
 
-    function getRemainingRevealWindow(uint256 roundId) external view returns (uint256) {
+    function getRemainingRevealWindow(
+        uint256 roundId
+    ) external view returns (uint256) {
         return _getRemainingRevealWindow(roundId);
     }
 
-    function getSeedBlock(uint256 roundId) external view returns (uint256) {
+    function getSeedBlock(
+        uint256 roundId
+    ) external view returns (uint256) {
         return _getSeedBlock(roundId);
     }
 
@@ -380,11 +408,17 @@ contract TestRandomness is FutureBlockRandomness {
         return _getRoundSeedInfo(roundId);
     }
 
-    function deriveSubSeed(uint256 seed, uint256 index) external pure returns (uint256) {
+    function deriveSubSeed(
+        uint256 seed,
+        uint256 index
+    ) external pure returns (uint256) {
         return _deriveSubSeed(seed, index);
     }
 
-    function seedToRange(uint256 seed, uint256 max) external pure returns (uint256) {
+    function seedToRange(
+        uint256 seed,
+        uint256 max
+    ) external pure returns (uint256) {
         return _seedToRange(seed, max);
     }
 
@@ -396,7 +430,10 @@ contract TestRandomness is FutureBlockRandomness {
         return _seedToRangeInclusive(seed, min, max);
     }
 
-    function seedToBool(uint256 seed, uint256 probabilityBps) external pure returns (bool) {
+    function seedToBool(
+        uint256 seed,
+        uint256 probabilityBps
+    ) external pure returns (bool) {
         return _seedToBool(seed, probabilityBps);
     }
 }

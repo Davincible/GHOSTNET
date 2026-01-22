@@ -333,7 +333,9 @@ contract ArcadeCoreIntegrationTest is Test {
             IArcadeCore.SessionRecord memory session = arcadeCore.getSession(d.sessionId);
             assertEq(session.game, game1, "Session game mismatch");
             assertEq(session.prizePool, d.aliceNet + d.bobNet + d.charlieNet, "Prize pool mismatch");
-            assertEq(uint8(session.state), uint8(IArcadeCore.SessionState.ACTIVE), "Session not active");
+            assertEq(
+                uint8(session.state), uint8(IArcadeCore.SessionState.ACTIVE), "Session not active"
+            );
             d.prizePool = session.prizePool;
         }
 
@@ -384,7 +386,9 @@ contract ArcadeCoreIntegrationTest is Test {
         );
 
         IArcadeCore.SessionRecord memory session = arcadeCore.getSession(d.sessionId);
-        assertEq(uint8(session.state), uint8(IArcadeCore.SessionState.SETTLED), "Session not settled");
+        assertEq(
+            uint8(session.state), uint8(IArcadeCore.SessionState.SETTLED), "Session not settled"
+        );
     }
 
     /// @notice Helper to verify final accounting in lifecycle test
@@ -461,7 +465,9 @@ contract ArcadeCoreIntegrationTest is Test {
         // All players can withdraw their winnings
         for (uint256 i; i < 5; i++) {
             uint256 withdrawn = _withdraw(players[i]);
-            assertEq(withdrawn, netAmounts[i], string.concat("Player ", vm.toString(i), " withdrawal"));
+            assertEq(
+                withdrawn, netAmounts[i], string.concat("Player ", vm.toString(i), " withdrawal")
+            );
         }
 
         // Verify all got wins recorded
@@ -497,7 +503,9 @@ contract ArcadeCoreIntegrationTest is Test {
 
         uint256 remaining = totalNet - burnAmount;
         assertEq(
-            dataToken.balanceOf(treasury), treasuryBefore + remaining, "Treasury should get remaining"
+            dataToken.balanceOf(treasury),
+            treasuryBefore + remaining,
+            "Treasury should get remaining"
         );
 
         // All players have nothing to withdraw
@@ -1152,7 +1160,9 @@ contract ArcadeCoreIntegrationTest is Test {
 
         // Remaining from session 1 goes to new treasury
         assertGt(
-            dataToken.balanceOf(treasuryB), treasuryBBefore, "Treasury B should get settlement remaining"
+            dataToken.balanceOf(treasuryB),
+            treasuryBBefore,
+            "Treasury B should get settlement remaining"
         );
     }
 
