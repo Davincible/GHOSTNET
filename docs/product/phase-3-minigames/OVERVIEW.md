@@ -383,11 +383,9 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 | Contract | Address |
 |----------|---------|
-| MockERC20 (mDATA) | `0xA372efbf157F374319305C96561651567E542D2e` |
-| ArcadeCore (impl) | `0xFc6eBb3655625282c6fc3262f2FdA35983FE1096` |
-| ArcadeCore (proxy) | `0x554a3cc63851e0526d9938817949F97dC45b00EC` |
-| GameRegistry | `0x67244672BA46F50f2EBf6572a985faafFFE50C11` |
-| **HashCrash** | `0xdD4f4AE5efd64F7A1a4df32324718CcA9E90f9FD` |
+| MockERC20 (mDATA) | `0xf278eb6Cd5255dC67CFBcdbD57F91baCB3735804` |
+| ArcadeCore (proxy) | `0xC65338Eda8F8AEaDf89bA95042b99116dD899BD0` |
+| **HashCrash** | `0x037e0554f10e5447e08e4EDdbB16d8D8F402F785` |
 
 **Configuration:**
 - Deployer/Admin: `0xAeB643a650E374D8D62a8A3D9e5B175ecd8090D1`
@@ -422,11 +420,17 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - 95 DATA burned from crashed player + 2.5 DATA burn from rake
 - Total burned in first round: 97.5 DATA
 
-**Seed Delay Optimization:**
-- Reduced default seed delay from 50 blocks to 10 blocks
-- On MegaETH (100ms blocks): 1 second wait instead of 5 seconds
+**Seed Delay Optimization (Empirically Tested):**
+- MegaETH testnet actual block time: ~1.3 seconds (not 100ms)
+- Reduced HashCrash seed delay from 10 → 3 blocks
+- Measured result: **~3.9 seconds** from lock to seed ready
 - Games can override `_seedBlockDelay()` for custom timing
-- Minimum safety floor: 5 blocks (0.5 seconds)
+- Configuration: DEFAULT_SEED_BLOCK_DELAY=2, MIN=1, HashCrash=3
+
+| Network | Block Time | 3 Blocks |
+|---------|------------|----------|
+| Testnet | ~1.3s | ~4 seconds |
+| Mainnet | 100ms | 300ms |
 
 ---
 
