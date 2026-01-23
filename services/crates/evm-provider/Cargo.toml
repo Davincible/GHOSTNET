@@ -1,0 +1,67 @@
+# EVM Provider Abstraction
+# ═══════════════════════════════════════════════════════════════════════════════
+# Chain-agnostic interface for interacting with EVM-compatible blockchains.
+#
+# This crate provides:
+#   - `ChainProvider` trait for basic blockchain operations
+#   - `ExtendedChainProvider` trait for MegaETH-specific features
+#   - `NonceManager` for thread-safe nonce tracking
+#   - Provider implementations for standard EVM and MegaETH chains
+
+[package]
+name = "evm-provider"
+version = "0.1.0"
+description = "Chain abstraction layer for EVM-compatible blockchains"
+keywords = ["ethereum", "evm", "blockchain", "megaeth"]
+categories = ["api-bindings", "asynchronous"]
+
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dependencies]
+# Ethereum types and provider
+alloy = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+async-trait = { workspace = true }
+futures = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# MegaETH-specific RPC (optional for MegaEthProvider)
+megaeth-rpc = { workspace = true, optional = true }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEV DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[features]
+default = []
+# Enable MegaETH-specific provider implementation
+megaeth = ["dep:megaeth-rpc"]
