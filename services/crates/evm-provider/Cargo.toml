@@ -47,6 +47,9 @@ thiserror = { workspace = true }
 # Logging
 tracing = { workspace = true }
 
+# HTTP client (for StandardEvmProvider with custom timeouts)
+reqwest = { workspace = true }
+
 # MegaETH-specific RPC (optional for MegaEthProvider)
 megaeth-rpc = { workspace = true, optional = true }
 

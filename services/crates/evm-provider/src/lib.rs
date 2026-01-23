@@ -86,11 +86,11 @@
 
 pub mod error;
 pub mod nonce;
+pub mod standard;
 pub mod traits;
 pub mod types;
 
-// Future: Provider implementations
-// pub mod standard;  // StandardEvmProvider using alloy
+// Future: MegaETH-specific provider
 // #[cfg(feature = "megaeth")]
 // pub mod megaeth;   // MegaEthProvider using megaeth-rpc
 
@@ -101,6 +101,7 @@ pub mod types;
 // Primary types - what most users need
 pub use error::{ProviderError, Result};
 pub use nonce::LocalNonceManager;
+pub use standard::StandardEvmProvider;
 pub use traits::{ChainProvider, ExtendedChainProvider, NonceManager};
 pub use types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 
@@ -118,6 +119,7 @@ pub use types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 pub mod prelude {
     pub use crate::error::{ProviderError, Result};
     pub use crate::nonce::LocalNonceManager;
+    pub use crate::standard::StandardEvmProvider;
     pub use crate::traits::{ChainProvider, ExtendedChainProvider, NonceManager};
     pub use crate::types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 }
