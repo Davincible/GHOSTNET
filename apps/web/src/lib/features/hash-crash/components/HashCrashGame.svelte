@@ -6,16 +6,24 @@
 	import LivePlayersPanel from './LivePlayersPanel.svelte';
 	import RecentCrashes from './RecentCrashes.svelte';
 	import CrashChart from './CrashChart.svelte';
+	import { NetworkPenetrationTheme } from './themes/NetworkPenetration';
 	import { createHashCrashStore, type HashCrashStore } from '../store.svelte';
+	import { createThemeStore, type HashCrashTheme } from '../theme.svelte';
 
 	interface Props {
 		/** Optional external store (for testing) */
 		store?: HashCrashStore;
 		/** Enable simulation mode */
 		simulate?: boolean;
+		/** Visual theme to use */
+		theme?: HashCrashTheme;
 	}
 
-	let { store: externalStore, simulate = false }: Props = $props();
+	let { store: externalStore, simulate = false, theme: _theme = 'network-penetration' }: Props =
+		$props();
+
+	// Theme store for persisting selection
+	const themeStore = createThemeStore();
 
 	// Create or use provided store
 	function getStore(): HashCrashStore {
@@ -103,26 +111,39 @@
 	</header>
 
 	<!-- Main game area -->
-	<div class="game-layout">
-		<!-- Left: Chart and multiplier -->
+	<div class="game-layout" class:themed={themeStore.theme !== 'classic'}>
+		<!-- Left: Chart and multiplier (themed or classic) -->
 		<div class="game-main">
-			<Box
-				title="Multiplier"
-				variant="double"
-				borderColor={isCrashed ? 'red' : state.playerResult === 'won' ? 'bright' : 'default'}
-				glow={isAnimating || state.playerResult === 'won'}
-			>
-				<div class="multiplier-area">
-					<MultiplierDisplay
-						multiplier={state.multiplier}
-						targetMultiplier={state.playerBet?.targetMultiplier ?? null}
-						playerResult={state.playerResult}
-						crashed={isCrashed}
-						crashPoint={round?.crashPoint ?? null}
-					/>
-					<CrashChart multiplier={state.multiplier} crashed={isCrashed} />
-				</div>
-			</Box>
+			{#if themeStore.theme === 'network-penetration'}
+				<!-- Network Penetration Theme -->
+				<NetworkPenetrationTheme
+					depth={state.multiplier}
+					exitPoint={state.playerBet?.targetMultiplier ?? null}
+					{phase}
+					traced={isCrashed}
+					playerResult={state.playerResult}
+					roundId={round?.roundId}
+				/>
+			{:else}
+				<!-- Classic Theme (fallback) -->
+				<Box
+					title="Multiplier"
+					variant="double"
+					borderColor={isCrashed ? 'red' : state.playerResult === 'won' ? 'bright' : 'default'}
+					glow={isAnimating || state.playerResult === 'won'}
+				>
+					<div class="multiplier-area">
+						<MultiplierDisplay
+							multiplier={state.multiplier}
+							targetMultiplier={state.playerBet?.targetMultiplier ?? null}
+							playerResult={state.playerResult}
+							crashed={isCrashed}
+							crashPoint={round?.crashPoint ?? null}
+						/>
+						<CrashChart multiplier={state.multiplier} crashed={isCrashed} />
+					</div>
+				</Box>
+			{/if}
 
 			<!-- Recent crashes strip -->
 			<RecentCrashes crashPoints={state.recentCrashPoints} />
