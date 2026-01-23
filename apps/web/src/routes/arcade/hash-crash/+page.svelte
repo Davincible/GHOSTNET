@@ -9,7 +9,10 @@
 
 <svelte:head>
 	<title>HASH CRASH | GHOSTNET Arcade</title>
-	<meta name="description" content="Bet on the multiplier. Cash out before it crashes. A provably fair crash game on GHOSTNET." />
+	<meta
+		name="description"
+		content="Bet on the multiplier. Cash out before it crashes. A provably fair crash game on GHOSTNET."
+	/>
 </svelte:head>
 
 <Shell>

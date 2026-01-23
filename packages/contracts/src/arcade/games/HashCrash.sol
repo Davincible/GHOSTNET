@@ -11,16 +11,22 @@ import { IArcadeCore } from "../interfaces/IArcadeCore.sol";
 import { FutureBlockRandomness } from "../../randomness/FutureBlockRandomness.sol";
 
 /// @title HashCrash
-/// @notice A "crash" style multiplier game for GHOSTNET Arcade
-/// @dev Players bet before a round starts. A multiplier grows from 1.00x and "crashes"
-///      at a random point determined by the block hash. Players must cash out before
-///      the crash to win their bet multiplied by their cashout multiplier.
+/// @notice A pre-commit crash prediction game for GHOSTNET Arcade
+/// @dev Players place bet AND set target cash-out multiplier BEFORE the crash point
+///      is revealed. After betting closes, crash point is determined from future block
+///      hash. Outcome is instant: if targetMultiplier < crashPoint, player wins.
+///
+///      PRE-COMMIT MODEL:
+///      This eliminates timing advantages and bot sniping. In traditional crash games,
+///      bots can read the crash point on-chain and always cash out optimally. With
+///      pre-commit, players must commit their target multiplier BEFORE the crash
+///      point is known, making the game mathematically fair for all participants.
 ///
 ///      GAME FLOW:
-///      1. BETTING: Players place bets (60 second window or max players)
+///      1. BETTING: Players place bets with target multiplier (60s window or max players)
 ///      2. LOCKED: Betting closed, seed block committed (~1 sec wait on MegaETH)
-///      3. ACTIVE: Seed revealed, crash point known, players can cash out
-///      4. SETTLED: All players resolved (cashed out or crashed)
+///      3. REVEALED: Crash point revealed, settlement begins
+///      4. SETTLED: All players resolved (target < crash = WIN, target >= crash = LOSE)
 ///
 ///      SECURITY MODEL:
 ///      - All tokens held by ArcadeCore, not this contract
@@ -46,6 +52,13 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
 
     /// @notice Maximum crash point (100.00x)
     uint256 public constant MAX_CRASH_MULTIPLIER = 10_000;
+
+    /// @notice Minimum target multiplier (1.01x)
+    /// @dev Must be > 1.00x to have any risk
+    uint256 public constant MIN_TARGET_MULTIPLIER = 101;
+
+    /// @notice Maximum target multiplier (100.00x)
+    uint256 public constant MAX_TARGET_MULTIPLIER = 10_000;
 
     /// @notice Duration of betting phase
     uint256 public constant BETTING_DURATION = 60 seconds;
@@ -77,14 +90,14 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
     /// @notice Player has not placed a bet in this round
     error NoBetPlaced();
 
-    /// @notice Player already cashed out
-    error AlreadyCashedOut();
+    /// @notice Player already settled
+    error AlreadySettled();
 
-    /// @notice Crash point has already been reached
-    error AlreadyCrashed();
+    /// @notice Round not in revealed state for settlement
+    error NotRevealed();
 
-    /// @notice Invalid cashout multiplier
-    error InvalidCashoutMultiplier();
+    /// @notice Invalid target multiplier (must be 101-10000, i.e., 1.01x-100.00x)
+    error InvalidTargetMultiplier();
 
     /// @notice Round is full (max players reached)
     error RoundFull();
@@ -111,21 +124,30 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
     // EVENTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    /// @notice Emitted when a player cashes out
-    event CashOut(
+    /// @notice Emitted when a player places a bet with target (overrides IArcadeGame.BetPlaced)
+    /// @dev Includes targetMultiplier for pre-commit model
+    event BetPlaced(
         uint256 indexed roundId,
         address indexed player,
-        uint256 betAmount,
-        uint256 cashoutMultiplier,
-        uint256 payout
+        uint256 amount,
+        uint256 netAmount,
+        uint256 targetMultiplier
     );
 
     /// @notice Emitted when the crash point is revealed
-    event CrashPoint(uint256 indexed roundId, uint256 crashMultiplier, uint256 seed);
+    event CrashPointRevealed(uint256 indexed roundId, uint256 crashMultiplier, uint256 seed);
 
-    /// @notice Emitted when a player crashes (didn't cash out in time)
-    event PlayerCrashed(
-        uint256 indexed roundId, address indexed player, uint256 betAmount, uint256 crashMultiplier
+    /// @notice Emitted when a player wins (target < crash point)
+    event PlayerWon(
+        uint256 indexed roundId, address indexed player, uint256 targetMultiplier, uint256 payout
+    );
+
+    /// @notice Emitted when a player loses (target >= crash point)
+    event PlayerLost(
+        uint256 indexed roundId,
+        address indexed player,
+        uint256 targetMultiplier,
+        uint256 crashMultiplier
     );
 
     /// @notice Emitted when game active status changes
@@ -157,12 +179,12 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
     /// @notice Round data by ID
     mapping(uint256 roundId => Round) private _rounds;
 
-    /// @notice Player bet in a round
+    /// @notice Player bet in a round (pre-commit model)
     struct PlayerBet {
         uint128 amount; // Bet amount (net after rake)
         uint128 grossAmount; // Original bet (before rake, for refunds)
-        uint64 cashedOutAt; // Multiplier at cashout (0 = not cashed out)
-        bool resolved; // True if payout/crash has been processed
+        uint128 targetMultiplier; // Target cash-out multiplier (in basis points, 250 = 2.50x)
+        bool settled; // True if payout/loss has been processed
     }
 
     /// @notice Player bets by round
@@ -206,13 +228,21 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
     // PLAYER FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    /// @notice Place a bet in the current round
-    /// @dev Transfers DATA from player to ArcadeCore via processEntry
+    /// @notice Place a bet with pre-committed target multiplier
+    /// @dev Transfers DATA from player to ArcadeCore via processEntry.
+    ///      Player commits to BOTH the bet amount AND target multiplier before
+    ///      the crash point is revealed. This eliminates timing advantages.
     /// @param amount Bet amount in DATA tokens
+    /// @param targetMultiplier Target cash-out in basis points (101 = 1.01x, 250 = 2.50x)
     function placeBet(
-        uint256 amount
+        uint256 amount,
+        uint256 targetMultiplier
     ) external nonReentrant whenNotPaused {
         if (amount == 0) revert ZeroBetAmount();
+
+        // Validate target multiplier range
+        if (targetMultiplier < MIN_TARGET_MULTIPLIER) revert InvalidTargetMultiplier();
+        if (targetMultiplier > MAX_TARGET_MULTIPLIER) revert InvalidTargetMultiplier();
 
         uint256 roundId = _currentRoundId;
         Round storage round = _rounds[roundId];
@@ -232,19 +262,19 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
         // - Player statistics
         uint256 netAmount = arcadeCore.processEntry(msg.sender, amount, roundId);
 
-        // Record player bet
+        // Record player bet with target
         _playerBets[roundId][msg.sender] = PlayerBet({
             amount: uint128(netAmount),
             grossAmount: uint128(amount),
-            cashedOutAt: 0,
-            resolved: false
+            targetMultiplier: uint128(targetMultiplier),
+            settled: false
         });
         _roundPlayers[roundId].push(msg.sender);
 
         round.prizePool += netAmount;
         round.playerCount++;
 
-        emit BetPlaced(roundId, msg.sender, amount, netAmount);
+        emit BetPlaced(roundId, msg.sender, amount, netAmount, targetMultiplier);
 
         // Auto-lock if max players reached
         if (round.playerCount >= MAX_PLAYERS_PER_ROUND) {
@@ -252,41 +282,88 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
         }
     }
 
-    /// @notice Cash out at current multiplier
-    /// @dev Only callable when round is ACTIVE (crash point known)
-    /// @param multiplier The multiplier to cash out at (must be < crash point)
-    function cashOut(
-        uint256 multiplier
-    ) external nonReentrant whenNotPaused {
+    /// @notice Settle a player's bet after crash point is revealed
+    /// @dev Can be called by anyone after round is REVEALED.
+    ///      WIN: targetMultiplier < crashMultiplier => payout = bet × target / 100
+    ///      LOSE: targetMultiplier >= crashMultiplier => bet is burned
+    /// @param player The player to settle
+    function settle(
+        address player
+    ) external nonReentrant {
         uint256 roundId = _currentRoundId;
         Round storage round = _rounds[roundId];
 
-        // Must be in active phase
-        if (round.state != SessionState.ACTIVE) revert InvalidSessionState();
+        // Must be in revealed state
+        if (round.state != SessionState.ACTIVE) revert NotRevealed();
 
-        // Check player has a bet first (more informative error)
-        PlayerBet storage bet = _playerBets[roundId][msg.sender];
+        PlayerBet storage bet = _playerBets[roundId][player];
         if (bet.amount == 0) revert NoBetPlaced();
-        if (bet.cashedOutAt > 0) revert AlreadyCashedOut();
-        if (bet.resolved) revert AlreadyCashedOut();
+        if (bet.settled) revert AlreadySettled();
 
-        // Validate multiplier
-        if (multiplier < MIN_CRASH_MULTIPLIER) revert InvalidCashoutMultiplier();
-        if (multiplier >= round.crashMultiplier) revert AlreadyCrashed();
+        _settleBet(roundId, round, player, bet);
+    }
 
-        // Calculate payout
-        uint256 payout = (uint256(bet.amount) * multiplier) / MULTIPLIER_PRECISION;
+    /// @notice Batch settle all players in the round
+    /// @dev Iterates through all players and settles them. Can be called by anyone.
+    function settleAll() external nonReentrant {
+        uint256 roundId = _currentRoundId;
+        Round storage round = _rounds[roundId];
 
-        // Record cashout
-        bet.cashedOutAt = uint64(multiplier);
-        bet.resolved = true;
-        round.totalPaidOut += payout;
+        // Must be in revealed state
+        if (round.state != SessionState.ACTIVE) revert NotRevealed();
 
-        // Credit payout via ArcadeCore
-        arcadeCore.creditPayout(roundId, msg.sender, payout, 0, true);
+        address[] storage players = _roundPlayers[roundId];
+        uint256 len = players.length;
 
-        emit CashOut(roundId, msg.sender, bet.amount, multiplier, payout);
-        emit PlayerPaidOut(roundId, msg.sender, payout, true);
+        for (uint256 i; i < len;) {
+            address player = players[i];
+            PlayerBet storage bet = _playerBets[roundId][player];
+
+            if (!bet.settled && bet.amount > 0) {
+                _settleBet(roundId, round, player, bet);
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Settle the session
+        round.state = SessionState.SETTLED;
+        arcadeCore.settleSession(roundId);
+    }
+
+    /// @notice Internal function to settle a single bet
+    /// @param roundId The round ID
+    /// @param round The round storage reference
+    /// @param player The player to settle
+    /// @param bet The player's bet storage reference
+    function _settleBet(
+        uint256 roundId,
+        Round storage round,
+        address player,
+        PlayerBet storage bet
+    ) internal {
+        bet.settled = true;
+
+        if (bet.targetMultiplier < round.crashMultiplier) {
+            // WINNER: Target was below crash point
+            uint256 payout = (uint256(bet.amount) * bet.targetMultiplier) / MULTIPLIER_PRECISION;
+            round.totalPaidOut += payout;
+
+            // Credit payout via ArcadeCore
+            arcadeCore.creditPayout(roundId, player, payout, 0, true);
+
+            emit PlayerWon(roundId, player, bet.targetMultiplier, payout);
+            emit PlayerPaidOut(roundId, player, payout, true);
+        } else {
+            // LOSER: Target was at or above crash point
+            // Record loss via ArcadeCore (0 payout, burn the bet)
+            arcadeCore.creditPayout(roundId, player, 0, bet.amount, false);
+
+            emit PlayerLost(roundId, player, bet.targetMultiplier, round.crashMultiplier);
+            emit PlayerPaidOut(roundId, player, 0, false);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -339,8 +416,9 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
         _lockRound(roundId);
     }
 
-    /// @notice Reveal the crash point and enter active phase
-    /// @dev Anyone can call once seed block is mined
+    /// @notice Reveal the crash point and enter revealed phase for settlement
+    /// @dev Anyone can call once seed block is mined.
+    ///      After reveal, players can be settled via settle() or settleAll().
     function revealCrash() external nonReentrant whenNotPaused {
         uint256 roundId = _currentRoundId;
         Round storage round = _rounds[roundId];
@@ -353,46 +431,10 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
         // Calculate crash multiplier using house edge
         uint256 crashMultiplier = _calculateCrashPoint(seed);
         round.crashMultiplier = crashMultiplier;
-        round.state = SessionState.ACTIVE;
+        round.state = SessionState.ACTIVE; // ACTIVE means "revealed, ready for settlement"
 
-        emit CrashPoint(roundId, crashMultiplier, seed);
+        emit CrashPointRevealed(roundId, crashMultiplier, seed);
         emit RoundResolved(roundId, seed, crashMultiplier);
-    }
-
-    /// @notice Resolve all players who didn't cash out (they crashed)
-    /// @dev Marks losing players and settles the round
-    function resolveRound() external nonReentrant {
-        uint256 roundId = _currentRoundId;
-        Round storage round = _rounds[roundId];
-
-        if (round.state != SessionState.ACTIVE) revert InvalidSessionState();
-
-        address[] storage players = _roundPlayers[roundId];
-        uint256 len = players.length;
-
-        for (uint256 i; i < len;) {
-            address player = players[i];
-            PlayerBet storage bet = _playerBets[roundId][player];
-
-            if (!bet.resolved) {
-                // Player didn't cash out - they crashed
-                bet.resolved = true;
-
-                // Record loss via ArcadeCore (0 payout, burn the bet)
-                arcadeCore.creditPayout(roundId, player, 0, bet.amount, false);
-
-                emit PlayerCrashed(roundId, player, bet.amount, round.crashMultiplier);
-                emit PlayerPaidOut(roundId, player, 0, false);
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Settle the session
-        round.state = SessionState.SETTLED;
-        arcadeCore.settleSession(roundId);
     }
 
     /// @notice Handle expired seed by cancelling and refunding
@@ -436,10 +478,10 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
 
         PlayerBet storage bet = _playerBets[roundId][player];
         if (bet.grossAmount == 0) revert NoBetPlaced();
-        if (bet.resolved) revert AlreadyCashedOut();
+        if (bet.settled) revert AlreadySettled();
 
-        // Mark as resolved in game state
-        bet.resolved = true;
+        // Mark as settled in game state
+        bet.settled = true;
 
         // Use ArcadeCore's permissionless refund (refunds NET deposit)
         // This handles all the accounting and prevents double-refunds

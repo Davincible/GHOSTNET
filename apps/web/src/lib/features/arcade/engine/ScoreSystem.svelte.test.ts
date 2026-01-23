@@ -70,7 +70,7 @@ describe('createScoreSystem', () => {
 		it('returns score event', () => {
 			score = createScoreSystem({ initialMultiplier: 2 });
 			const event = score.addScore(100, 'Test');
-			
+
 			expect(event.basePoints).toBe(100);
 			expect(event.finalPoints).toBe(200);
 			expect(event.multiplier).toBe(2);
@@ -83,7 +83,7 @@ describe('createScoreSystem', () => {
 			score = createScoreSystem();
 			score.addScore(100, 'First');
 			score.addScore(200, 'Second');
-			
+
 			expect(score.state.recentScores).toHaveLength(2);
 			expect(score.state.recentScores[0].label).toBe('Second'); // Most recent first
 			expect(score.state.recentScores[1].label).toBe('First');
@@ -91,11 +91,11 @@ describe('createScoreSystem', () => {
 
 		it('limits recent scores', () => {
 			score = createScoreSystem({ recentScoresLimit: 3 });
-			
+
 			for (let i = 0; i < 5; i++) {
 				score.addScore(100, `Score ${i}`);
 			}
-			
+
 			expect(score.state.recentScores).toHaveLength(3);
 			expect(score.state.recentScores[0].label).toBe('Score 4'); // Most recent
 		});
@@ -117,7 +117,7 @@ describe('createScoreSystem', () => {
 		it('returns score event with multiplier of 1', () => {
 			score = createScoreSystem({ initialMultiplier: 2 });
 			const event = score.addBonus(100);
-			
+
 			expect(event.multiplier).toBe(1);
 			expect(event.basePoints).toBe(100);
 			expect(event.finalPoints).toBe(100);
@@ -146,7 +146,7 @@ describe('combo system', () => {
 			score = createScoreSystem();
 			score.incrementCombo();
 			expect(score.state.combo).toBe(1);
-			
+
 			score.incrementCombo();
 			expect(score.state.combo).toBe(2);
 		});
@@ -157,7 +157,7 @@ describe('combo system', () => {
 			score.incrementCombo();
 			score.incrementCombo();
 			expect(score.state.maxCombo).toBe(3);
-			
+
 			score.breakCombo();
 			score.incrementCombo();
 			expect(score.state.maxCombo).toBe(3); // Still 3
@@ -165,11 +165,11 @@ describe('combo system', () => {
 
 		it('respects max combo limit', () => {
 			score = createScoreSystem({ maxCombo: 5 });
-			
+
 			for (let i = 0; i < 10; i++) {
 				score.incrementCombo();
 			}
-			
+
 			expect(score.state.combo).toBe(5);
 		});
 	});
@@ -195,28 +195,28 @@ describe('combo system', () => {
 
 	describe('combo multiplier bonus', () => {
 		it('increases multiplier with combo', () => {
-			score = createScoreSystem({ 
+			score = createScoreSystem({
 				initialMultiplier: 1,
-				comboMultiplierBonus: 0.1 // +0.1x per combo
+				comboMultiplierBonus: 0.1, // +0.1x per combo
 			});
-			
+
 			score.incrementCombo();
 			expect(score.state.multiplier).toBeCloseTo(1.1, 5);
-			
+
 			score.incrementCombo();
 			expect(score.state.multiplier).toBeCloseTo(1.2, 5);
 		});
 
 		it('resets multiplier when combo breaks', () => {
-			score = createScoreSystem({ 
+			score = createScoreSystem({
 				initialMultiplier: 1,
-				comboMultiplierBonus: 0.1
+				comboMultiplierBonus: 0.1,
 			});
-			
+
 			score.incrementCombo();
 			score.incrementCombo();
 			score.breakCombo();
-			
+
 			expect(score.state.multiplier).toBe(1);
 		});
 	});
@@ -224,26 +224,26 @@ describe('combo system', () => {
 	describe('combo decay', () => {
 		it('auto-breaks combo after decay time', () => {
 			score = createScoreSystem({ comboDecay: 2000 });
-			
+
 			score.incrementCombo();
 			expect(score.state.combo).toBe(1);
-			
+
 			vi.advanceTimersByTime(2100);
-			
+
 			expect(score.state.combo).toBe(0);
 		});
 
 		it('resets decay timer on new combo', () => {
 			score = createScoreSystem({ comboDecay: 2000 });
-			
+
 			score.incrementCombo();
 			vi.advanceTimersByTime(1500); // Not yet decayed
-			
+
 			score.incrementCombo(); // Resets timer
 			vi.advanceTimersByTime(1500); // Total 3000ms, but timer reset
-			
+
 			expect(score.state.combo).toBe(2); // Still active
-			
+
 			vi.advanceTimersByTime(600); // Now decays (total 2100ms since last increment)
 			expect(score.state.combo).toBe(0);
 		});
@@ -269,7 +269,7 @@ describe('streak system', () => {
 		it('increases streak count', () => {
 			score.incrementStreak();
 			expect(score.state.streak).toBe(1);
-			
+
 			score.incrementStreak();
 			expect(score.state.streak).toBe(2);
 		});
@@ -342,32 +342,32 @@ describe('multiplier system', () => {
 		it('removes modifier after duration', () => {
 			score = createScoreSystem({ initialMultiplier: 1 });
 			score.addMultiplierModifier(0.5, 5000);
-			
+
 			expect(score.state.multiplier).toBe(1.5);
-			
+
 			vi.advanceTimersByTime(5100);
-			
+
 			expect(score.state.multiplier).toBe(1);
 		});
 
 		it('permanent modifier without duration', () => {
 			score = createScoreSystem({ initialMultiplier: 1 });
 			score.addMultiplierModifier(0.5); // No duration
-			
+
 			vi.advanceTimersByTime(100000);
-			
+
 			expect(score.state.multiplier).toBe(1.5);
 		});
 
 		it('combines with combo bonus', () => {
-			score = createScoreSystem({ 
+			score = createScoreSystem({
 				initialMultiplier: 1,
-				comboMultiplierBonus: 0.1
+				comboMultiplierBonus: 0.1,
 			});
-			
+
 			score.incrementCombo(); // +0.1
 			score.addMultiplierModifier(0.5); // +0.5
-			
+
 			expect(score.state.multiplier).toBeCloseTo(1.6, 5);
 		});
 	});
@@ -391,14 +391,14 @@ describe('reset', () => {
 
 	it('resets all state', () => {
 		score = createScoreSystem({ initialMultiplier: 1 });
-		
+
 		score.addScore(100);
 		score.incrementCombo();
 		score.incrementStreak();
 		score.addMultiplierModifier(0.5);
-		
+
 		score.reset();
-		
+
 		expect(score.state.score).toBe(0);
 		expect(score.state.combo).toBe(0);
 		expect(score.state.maxCombo).toBe(0);
@@ -410,12 +410,12 @@ describe('reset', () => {
 
 	it('clears timers', () => {
 		score = createScoreSystem({ comboDecay: 2000 });
-		
+
 		score.incrementCombo();
 		score.reset();
-		
+
 		vi.advanceTimersByTime(5000);
-		
+
 		// Should not try to break combo (already reset)
 		expect(score.state.combo).toBe(0);
 	});

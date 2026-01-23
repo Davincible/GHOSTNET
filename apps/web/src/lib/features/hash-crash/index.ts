@@ -29,11 +29,16 @@ export {
 	formatMultiplier,
 	getMultiplierColor,
 	calculateProfit,
+	calculateWinProbability,
 	BETTING_DURATION,
 	GROWTH_RATE,
 	MIN_BET,
 	MAX_BET,
+	MIN_TARGET,
+	MAX_TARGET,
 	type HashCrashStore,
 	type HashCrashState,
-	type PlayerInfo
 } from './store.svelte';
+
+// Re-export player types from arcade
+export type { HashCrashPlayerResult, HashCrashBet, HashCrashRound } from '$lib/core/types/arcade';

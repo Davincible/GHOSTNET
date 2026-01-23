@@ -22,7 +22,7 @@ export {
 	type PhaseTransition,
 	type PhaseConfig,
 	type GameEngineConfig,
-	type GameEngineState
+	type GameEngineState,
 } from './GameEngine.svelte';
 
 // Timer System - Countdowns, Clocks, Frame Loops
@@ -39,7 +39,7 @@ export {
 	type CountdownState,
 	type ClockState,
 	type CountdownConfig,
-	type ClockConfig
+	type ClockConfig,
 } from './TimerSystem.svelte';
 
 // Score System - Points, Combos, Streaks
@@ -48,7 +48,7 @@ export {
 	type ScoreSystem,
 	type ScoreState,
 	type ScoreEvent,
-	type ScoreConfig
+	type ScoreConfig,
 } from './ScoreSystem.svelte';
 
 // Reward System - Payouts, Burn Logic, Session Tracking
@@ -59,5 +59,5 @@ export {
 	type RewardConfig,
 	type PayoutCalculation,
 	type PoolPayoutCalculation,
-	type RewardState
+	type RewardState,
 } from './RewardSystem.svelte';

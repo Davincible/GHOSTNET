@@ -21,7 +21,7 @@ function createTestConfig(overrides: Partial<RewardConfig> = {}): RewardConfig {
 		burnRate: 1.0, // 100%
 		minBet: 10n * ONE_TOKEN, // 10 tokens
 		maxBet: 1000n * ONE_TOKEN, // 1000 tokens
-		...overrides
+		...overrides,
 	};
 }
 
@@ -114,16 +114,18 @@ describe('calculatePayout', () => {
 	let rewards: RewardSystem;
 
 	beforeEach(() => {
-		rewards = createRewardSystem(createTestConfig({
-			houseEdge: 0.03, // 3%
-			burnRate: 1.0 // 100%
-		}));
+		rewards = createRewardSystem(
+			createTestConfig({
+				houseEdge: 0.03, // 3%
+				burnRate: 1.0, // 100%
+			})
+		);
 	});
 
 	it('calculates gross payout correctly', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// 100 * 5.0 = 500
 		expect(payout.grossPayout).toBe(500n * ONE_TOKEN);
 	});
@@ -131,7 +133,7 @@ describe('calculatePayout', () => {
 	it('calculates house edge on profit', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// Gross: 500, Profit: 400, House edge: 400 * 0.03 = 12
 		expect(payout.houseEdgeAmount).toBe(12n * ONE_TOKEN);
 	});
@@ -139,7 +141,7 @@ describe('calculatePayout', () => {
 	it('calculates net payout after house edge', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// Gross: 500, House edge: 12, Net: 488
 		expect(payout.netPayout).toBe(488n * ONE_TOKEN);
 	});
@@ -147,7 +149,7 @@ describe('calculatePayout', () => {
 	it('calculates burn amount', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// House edge: 12, Burn rate: 100%, Burn: 12
 		expect(payout.burnAmount).toBe(12n * ONE_TOKEN);
 	});
@@ -155,7 +157,7 @@ describe('calculatePayout', () => {
 	it('calculates profit correctly', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// Net: 488, Bet: 100, Profit: 388
 		expect(payout.profit).toBe(388n * ONE_TOKEN);
 		expect(payout.isWin).toBe(true);
@@ -164,7 +166,7 @@ describe('calculatePayout', () => {
 	it('handles loss (multiplier < 1)', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(0.5);
-		
+
 		// Gross: 50, Profit: -50 (loss)
 		// House edge only applies to positive profit
 		expect(payout.grossPayout).toBe(50n * ONE_TOKEN);
@@ -177,7 +179,7 @@ describe('calculatePayout', () => {
 	it('handles break-even (multiplier = 1)', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(1.0);
-		
+
 		expect(payout.grossPayout).toBe(100n * ONE_TOKEN);
 		expect(payout.houseEdgeAmount).toBe(0n); // No profit, no house edge
 		expect(payout.profit).toBe(0n);
@@ -187,7 +189,7 @@ describe('calculatePayout', () => {
 	it('uses provided bet instead of current bet', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(2.0, 200n * ONE_TOKEN);
-		
+
 		expect(payout.bet).toBe(200n * ONE_TOKEN);
 		expect(payout.grossPayout).toBe(400n * ONE_TOKEN);
 	});
@@ -195,7 +197,7 @@ describe('calculatePayout', () => {
 	it('handles fractional multipliers', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(2.35);
-		
+
 		// 100 * 2.35 = 235
 		expect(payout.grossPayout).toBe(235n * ONE_TOKEN);
 	});
@@ -209,9 +211,11 @@ describe('calculatePoolPayout', () => {
 	let rewards: RewardSystem;
 
 	beforeEach(() => {
-		rewards = createRewardSystem(createTestConfig({
-			burnRate: 1.0 // 100% of rake burned
-		}));
+		rewards = createRewardSystem(
+			createTestConfig({
+				burnRate: 1.0, // 100% of rake burned
+			})
+		);
 	});
 
 	it('calculates rake correctly', () => {
@@ -221,7 +225,7 @@ describe('calculatePoolPayout', () => {
 			400n * ONE_TOKEN, // Losing pool
 			0.05 // 5% rake
 		);
-		
+
 		// Rake: 1000 * 0.05 = 50
 		expect(result.rakeAmount).toBe(50n * ONE_TOKEN);
 	});
@@ -233,7 +237,7 @@ describe('calculatePoolPayout', () => {
 			400n * ONE_TOKEN,
 			0.05
 		);
-		
+
 		// Total: 1000, Rake: 50, Distributable: 950
 		expect(result.distributablePool).toBe(950n * ONE_TOKEN);
 	});
@@ -245,7 +249,7 @@ describe('calculatePoolPayout', () => {
 			400n * ONE_TOKEN,
 			0.05
 		);
-		
+
 		// Rake: 50, Burn rate: 100%, Burn: 50
 		expect(result.burnAmount).toBe(50n * ONE_TOKEN);
 	});
@@ -257,7 +261,7 @@ describe('calculatePoolPayout', () => {
 			400n * ONE_TOKEN,
 			0.05
 		);
-		
+
 		// Distributable: 950, Winning pool: 600
 		// Multiplier: 950 / 600 = 1.583...
 		expect(result.payoutMultiplier).toBeCloseTo(1.58, 1);
@@ -270,7 +274,7 @@ describe('calculatePoolPayout', () => {
 			1000n * ONE_TOKEN,
 			0.05
 		);
-		
+
 		expect(result.payoutMultiplier).toBe(0);
 	});
 
@@ -280,7 +284,7 @@ describe('calculatePoolPayout', () => {
 			600n * ONE_TOKEN,
 			400n * ONE_TOKEN
 		);
-		
+
 		expect(result.rakeAmount).toBe(50n * ONE_TOKEN);
 	});
 });
@@ -365,7 +369,7 @@ describe('session tracking', () => {
 			rewards.recordLoss(30n * ONE_TOKEN);
 			rewards.recordWin(50n * ONE_TOKEN);
 			rewards.recordLoss(20n * ONE_TOKEN);
-			
+
 			// Winnings: 150, Losses: 50, PnL: 100
 			expect(rewards.state.sessionWinnings).toBe(150n * ONE_TOKEN);
 			expect(rewards.state.sessionLosses).toBe(50n * ONE_TOKEN);
@@ -377,7 +381,7 @@ describe('session tracking', () => {
 			rewards.recordLoss(30n * ONE_TOKEN);
 			rewards.recordWin(50n * ONE_TOKEN);
 			rewards.recordLoss(20n * ONE_TOKEN);
-			
+
 			expect(rewards.state.gamesPlayed).toBe(4);
 			expect(rewards.state.gamesWon).toBe(2);
 			expect(rewards.state.winRate).toBe(0.5);
@@ -393,14 +397,22 @@ describe('reward tiers', () => {
 	let rewards: RewardSystem;
 
 	beforeEach(() => {
-		rewards = createRewardSystem(createTestConfig({
-			tiers: [
-				{ id: 'perfect', name: 'PERFECT', minThreshold: 1.0, value: -0.25, description: '-25%' },
-				{ id: 'excellent', name: 'Excellent', minThreshold: 0.95, value: -0.20, description: '-20%' },
-				{ id: 'great', name: 'Great', minThreshold: 0.85, value: -0.15, description: '-15%' },
-				{ id: 'good', name: 'Good', minThreshold: 0.70, value: -0.10, description: '-10%' }
-			]
-		}));
+		rewards = createRewardSystem(
+			createTestConfig({
+				tiers: [
+					{ id: 'perfect', name: 'PERFECT', minThreshold: 1.0, value: -0.25, description: '-25%' },
+					{
+						id: 'excellent',
+						name: 'Excellent',
+						minThreshold: 0.95,
+						value: -0.2,
+						description: '-20%',
+					},
+					{ id: 'great', name: 'Great', minThreshold: 0.85, value: -0.15, description: '-15%' },
+					{ id: 'good', name: 'Good', minThreshold: 0.7, value: -0.1, description: '-10%' },
+				],
+			})
+		);
 	});
 
 	describe('getRewardTier', () => {
@@ -416,7 +428,7 @@ describe('reward tiers', () => {
 		});
 
 		it('returns great tier for 85-94%', () => {
-			const tier = rewards.getRewardTier(0.90);
+			const tier = rewards.getRewardTier(0.9);
 			expect(tier?.id).toBe('great');
 		});
 
@@ -426,7 +438,7 @@ describe('reward tiers', () => {
 		});
 
 		it('returns null below minimum threshold', () => {
-			const tier = rewards.getRewardTier(0.50);
+			const tier = rewards.getRewardTier(0.5);
 			expect(tier).toBeNull();
 		});
 
@@ -462,9 +474,9 @@ describe('resetSession', () => {
 		rewards.setEntryFee(25n * ONE_TOKEN);
 		rewards.recordWin(200n * ONE_TOKEN);
 		rewards.recordLoss(50n * ONE_TOKEN);
-		
+
 		rewards.resetSession();
-		
+
 		expect(rewards.state.currentBet).toBe(0n);
 		expect(rewards.state.entryFee).toBe(0n);
 		expect(rewards.state.sessionWinnings).toBe(0n);
@@ -484,16 +496,18 @@ describe('edge cases', () => {
 	let rewards: RewardSystem;
 
 	beforeEach(() => {
-		rewards = createRewardSystem(createTestConfig({
-			houseEdge: 0.03,
-			burnRate: 0.5 // 50% burn rate
-		}));
+		rewards = createRewardSystem(
+			createTestConfig({
+				houseEdge: 0.03,
+				burnRate: 0.5, // 50% burn rate
+			})
+		);
 	});
 
 	it('handles partial burn rate', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		// House edge: 12, Burn rate: 50%, Burn: 6
 		expect(payout.burnAmount).toBe(6n * ONE_TOKEN);
 	});
@@ -502,7 +516,7 @@ describe('edge cases', () => {
 		rewards = createRewardSystem(createTestConfig({ burnRate: 0 }));
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		expect(payout.burnAmount).toBe(0n);
 	});
 
@@ -510,7 +524,7 @@ describe('edge cases', () => {
 		rewards = createRewardSystem(createTestConfig({ houseEdge: 0 }));
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(5.0);
-		
+
 		expect(payout.houseEdgeAmount).toBe(0n);
 		expect(payout.grossPayout).toBe(payout.netPayout);
 	});
@@ -519,14 +533,14 @@ describe('edge cases', () => {
 		rewards = createRewardSystem(createTestConfig({ minBet: 1n }));
 		rewards.setBet(1n);
 		const payout = rewards.calculatePayout(2.0);
-		
+
 		expect(payout.grossPayout).toBe(2n);
 	});
 
 	it('handles very large multipliers', () => {
 		rewards.setBet(100n * ONE_TOKEN);
 		const payout = rewards.calculatePayout(1000.0);
-		
+
 		expect(payout.grossPayout).toBe(100000n * ONE_TOKEN);
 	});
 });

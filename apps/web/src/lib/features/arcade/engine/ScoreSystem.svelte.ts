@@ -69,7 +69,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 		comboDecay = 0,
 		maxCombo = 0,
 		comboMultiplierBonus = 0,
-		recentScoresLimit = 10
+		recentScoresLimit = 10,
 	} = config;
 
 	// -------------------------------------------------------------------------
@@ -84,7 +84,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 		maxCombo: 0,
 		streak: 0,
 		maxStreak: 0,
-		recentScores: []
+		recentScores: [],
 	});
 
 	// Timers
@@ -147,13 +147,13 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 			multiplier,
 			combo: state.combo,
 			timestamp: Date.now(),
-			label
+			label,
 		};
 
 		state = {
 			...state,
 			score: state.score + finalPoints,
-			recentScores: [event, ...state.recentScores.slice(0, recentScoresLimit - 1)]
+			recentScores: [event, ...state.recentScores.slice(0, recentScoresLimit - 1)],
 		};
 
 		return event;
@@ -168,13 +168,13 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 			multiplier: 1,
 			combo: state.combo,
 			timestamp: Date.now(),
-			label
+			label,
 		};
 
 		state = {
 			...state,
 			score: state.score + points,
-			recentScores: [event, ...state.recentScores.slice(0, recentScoresLimit - 1)]
+			recentScores: [event, ...state.recentScores.slice(0, recentScoresLimit - 1)],
 		};
 
 		return event;
@@ -194,7 +194,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 		state = {
 			...state,
 			combo: newCombo,
-			maxCombo: Math.max(state.maxCombo, newCombo)
+			maxCombo: Math.max(state.maxCombo, newCombo),
 		};
 
 		updateMultiplier();
@@ -220,7 +220,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 		state = {
 			...state,
 			streak: newStreak,
-			maxStreak: Math.max(state.maxStreak, newStreak)
+			maxStreak: Math.max(state.maxStreak, newStreak),
 		};
 	}
 
@@ -239,7 +239,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 
 	function addMultiplierModifier(modifier: number, duration?: number): void {
 		const entry: { value: number; timerId?: ReturnType<typeof setTimeout> } = {
-			value: modifier
+			value: modifier,
 		};
 
 		if (duration) {
@@ -270,7 +270,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 			maxCombo: 0,
 			streak: 0,
 			maxStreak: 0,
-			recentScores: []
+			recentScores: [],
 		};
 	}
 
@@ -301,7 +301,7 @@ export function createScoreSystem(config: ScoreConfig = {}): ScoreSystem {
 		setMultiplier,
 		addMultiplierModifier,
 		reset,
-		cleanup
+		cleanup,
 	};
 }
 

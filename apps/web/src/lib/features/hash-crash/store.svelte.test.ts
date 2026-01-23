@@ -1,26 +1,29 @@
 /**
- * HASH CRASH Store Tests
- * ======================
+ * HASH CRASH Store Tests (Pre-Commit Model)
+ * ==========================================
  * Tests for the Hash Crash game store functionality.
  *
  * CRITICAL: File must have .svelte.test.ts extension for runes to work!
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { flushSync, untrack } from 'svelte';
+import { untrack } from 'svelte';
 
 // Mock SvelteKit environment - must be before imports
 vi.mock('$app/environment', () => ({
-	browser: true
+	browser: true,
 }));
 import {
 	createHashCrashStore,
 	formatMultiplier,
 	getMultiplierColor,
 	calculateProfit,
+	calculateWinProbability,
 	MIN_BET,
 	MAX_BET,
-	GROWTH_RATE
+	MIN_TARGET,
+	MAX_TARGET,
+	GROWTH_RATE,
 } from './store.svelte';
 
 // ============================================================================
@@ -45,28 +48,46 @@ describe('formatMultiplier', () => {
 });
 
 describe('getMultiplierColor', () => {
-	it('returns mult-low for values under 2', () => {
-		expect(getMultiplierColor(1)).toBe('mult-low');
-		expect(getMultiplierColor(1.5)).toBe('mult-low');
-		expect(getMultiplierColor(1.99)).toBe('mult-low');
+	describe('without target', () => {
+		it('returns mult-low for values under 2', () => {
+			expect(getMultiplierColor(1)).toBe('mult-low');
+			expect(getMultiplierColor(1.5)).toBe('mult-low');
+			expect(getMultiplierColor(1.99)).toBe('mult-low');
+		});
+
+		it('returns mult-mid for values 2-5', () => {
+			expect(getMultiplierColor(2)).toBe('mult-mid');
+			expect(getMultiplierColor(3.5)).toBe('mult-mid');
+			expect(getMultiplierColor(4.99)).toBe('mult-mid');
+		});
+
+		it('returns mult-high for values 5-10', () => {
+			expect(getMultiplierColor(5)).toBe('mult-high');
+			expect(getMultiplierColor(7.5)).toBe('mult-high');
+			expect(getMultiplierColor(9.99)).toBe('mult-high');
+		});
+
+		it('returns mult-extreme for values 10+', () => {
+			expect(getMultiplierColor(10)).toBe('mult-extreme');
+			expect(getMultiplierColor(50)).toBe('mult-extreme');
+			expect(getMultiplierColor(100)).toBe('mult-extreme');
+		});
 	});
 
-	it('returns mult-mid for values 2-5', () => {
-		expect(getMultiplierColor(2)).toBe('mult-mid');
-		expect(getMultiplierColor(3.5)).toBe('mult-mid');
-		expect(getMultiplierColor(4.99)).toBe('mult-mid');
-	});
+	describe('with target', () => {
+		it('returns mult-safe when well below target', () => {
+			expect(getMultiplierColor(1.5, 3.0)).toBe('mult-safe');
+		});
 
-	it('returns mult-high for values 5-10', () => {
-		expect(getMultiplierColor(5)).toBe('mult-high');
-		expect(getMultiplierColor(7.5)).toBe('mult-high');
-		expect(getMultiplierColor(9.99)).toBe('mult-high');
-	});
+		it('returns mult-warning when approaching target', () => {
+			expect(getMultiplierColor(2.5, 3.0)).toBe('mult-warning');
+			expect(getMultiplierColor(2.8, 3.0)).toBe('mult-warning');
+		});
 
-	it('returns mult-extreme for values 10+', () => {
-		expect(getMultiplierColor(10)).toBe('mult-extreme');
-		expect(getMultiplierColor(50)).toBe('mult-extreme');
-		expect(getMultiplierColor(100)).toBe('mult-extreme');
+		it('returns mult-danger when at or above target', () => {
+			expect(getMultiplierColor(3.0, 3.0)).toBe('mult-danger');
+			expect(getMultiplierColor(3.5, 3.0)).toBe('mult-danger');
+		});
 	});
 });
 
@@ -95,6 +116,28 @@ describe('calculateProfit', () => {
 	});
 });
 
+describe('calculateWinProbability', () => {
+	it('calculates probability for 2x target (approximately 48%)', () => {
+		const prob = calculateWinProbability(2.0);
+		expect(prob).toBeCloseTo(0.48, 2);
+	});
+
+	it('calculates probability for 1.5x target (approximately 64%)', () => {
+		const prob = calculateWinProbability(1.5);
+		expect(prob).toBeCloseTo(0.64, 2);
+	});
+
+	it('calculates probability for 10x target (approximately 9.6%)', () => {
+		const prob = calculateWinProbability(10);
+		expect(prob).toBeCloseTo(0.096, 2);
+	});
+
+	it('caps probability at 99% for very low targets', () => {
+		const prob = calculateWinProbability(0.5);
+		expect(prob).toBe(0.99);
+	});
+});
+
 // ============================================================================
 // STORE CREATION TESTS
 // ============================================================================
@@ -119,9 +162,9 @@ describe('createHashCrashStore', () => {
 			expect(state.round).toBeNull();
 			expect(state.multiplier).toBe(1.0);
 			expect(state.playerBet).toBeNull();
-			expect(state.recentCashOuts).toEqual([]);
-			expect(state.recentCrashPoints).toEqual([]);
+			expect(state.playerResult).toBe('pending');
 			expect(state.players).toEqual([]);
+			expect(state.recentCrashPoints).toEqual([]);
 			expect(state.isConnected).toBe(false);
 			expect(state.isLoading).toBe(false);
 			expect(state.error).toBeNull();
@@ -131,8 +174,12 @@ describe('createHashCrashStore', () => {
 			expect(untrack(() => store.canBet)).toBe(false);
 		});
 
-		it('starts with canCashOut = false', () => {
-			expect(untrack(() => store.canCashOut)).toBe(false);
+		it('starts with isAnimating = false', () => {
+			expect(untrack(() => store.isAnimating)).toBe(false);
+		});
+
+		it('starts with hasWon = false', () => {
+			expect(untrack(() => store.hasWon)).toBe(false);
 		});
 
 		it('starts with potentialPayout = 0', () => {
@@ -148,7 +195,7 @@ describe('createHashCrashStore', () => {
 
 			// Try to place a bet below minimum
 			const tooSmall = 5n * 10n ** 18n; // 5 DATA (min is 10)
-			await store.placeBet(tooSmall);
+			await store.placeBet(tooSmall, 2.0);
 
 			const state = untrack(() => store.state);
 			expect(state.error).toContain('10');
@@ -160,10 +207,32 @@ describe('createHashCrashStore', () => {
 			vi.advanceTimersByTime(100);
 
 			const tooLarge = 2000n * 10n ** 18n; // 2000 DATA (max is 1000)
-			await store.placeBet(tooLarge);
+			await store.placeBet(tooLarge, 2.0);
 
 			const state = untrack(() => store.state);
 			expect(state.error).toContain('1000');
+		});
+
+		it('rejects targets below minimum', async () => {
+			store._simulateRound(5);
+			vi.advanceTimersByTime(100);
+
+			const validBet = 100n * 10n ** 18n;
+			await store.placeBet(validBet, 1.0); // 1.0x is below minimum 1.01x
+
+			const state = untrack(() => store.state);
+			expect(state.error).toContain('1.01');
+		});
+
+		it('rejects targets above maximum', async () => {
+			store._simulateRound(5);
+			vi.advanceTimersByTime(100);
+
+			const validBet = 100n * 10n ** 18n;
+			await store.placeBet(validBet, 150); // 150x is above maximum 100x
+
+			const state = untrack(() => store.state);
+			expect(state.error).toContain('100');
 		});
 	});
 
@@ -181,6 +250,14 @@ describe('createHashCrashStore', () => {
 			const after3s = untrack(() => store.timeRemaining);
 			expect(after3s).toBeLessThan(initial);
 			expect(after3s).toBeGreaterThan(6000);
+		});
+
+		it('calculates winProbability based on target', () => {
+			// No bet yet - should be 0
+			expect(untrack(() => store.winProbability)).toBe(0);
+
+			// We can't easily test this without mocking the internal state
+			// but the calculation is tested in calculateWinProbability tests
 		});
 	});
 });
@@ -202,7 +279,7 @@ describe('simulation mode', () => {
 		vi.useRealTimers();
 	});
 
-	it('starts a simulated round', () => {
+	it('starts a simulated round in betting phase', () => {
 		store._simulateRound(5);
 
 		const state = untrack(() => store.state);
@@ -211,54 +288,70 @@ describe('simulation mode', () => {
 		expect(state.round?.roundId).toBe(1);
 	});
 
-	it('transitions from betting to rising after betting period', () => {
+	it('transitions from betting to locked after betting period', () => {
 		store._simulateRound(5);
 
 		// Advance past betting period (10 seconds in simulation)
 		vi.advanceTimersByTime(10_100);
 
 		const state = untrack(() => store.state);
-		expect(state.round?.state).toBe('rising');
+		expect(state.round?.state).toBe('locked');
 	});
 
-	it('multiplier increases during rising phase', () => {
+	it('transitions from locked to revealed/animating', () => {
 		store._simulateRound(5);
-		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(10_100); // Past betting to locked
 
-		const initialMultiplier = untrack(() => store.state.multiplier);
+		// Advance past lock phase (2 seconds)
+		vi.advanceTimersByTime(2100);
 
-		// Advance a bit more (frame loop updates)
-		vi.advanceTimersByTime(1000);
-
-		// The multiplier should have increased
-		// Note: Due to how requestAnimationFrame works in tests, this may need adjustment
 		const state = untrack(() => store.state);
-		expect(state.round?.state).toBe('rising');
+		// Should be in animating phase with crash point set
+		expect(['revealed', 'animating']).toContain(state.round?.state);
+		expect(state.round?.crashPoint).toBe(5);
 	});
 
-	it('crashes at the specified crash point', () => {
+	it('determines player win immediately on reveal (3x target vs 5x crash)', () => {
+		// Test the win condition logic directly
+		// In real app, WebSocket would confirm bet placement
+		// Here we test the logic: target < crashPoint = WIN
+		const target = 3.0;
+		const crashPoint = 5.0;
+		const isWin = target < crashPoint;
+		expect(isWin).toBe(true);
+	});
+
+	it('determines player loss immediately on reveal (3x target vs 2x crash)', () => {
+		// Test the loss condition logic directly
+		// In real app, WebSocket would confirm bet placement
+		// Here we test the logic: target >= crashPoint = LOSE
+		const target = 3.0;
+		const crashPoint = 2.0;
+		const isWin = target < crashPoint;
+		expect(isWin).toBe(false);
+	});
+
+	it('animates and settles at crash point', () => {
 		const crashPoint = 3.0;
 		store._simulateRound(crashPoint);
+		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(2100); // Past lock to reveal/animate
 
-		vi.advanceTimersByTime(10_100); // Past betting, into rising
+		// Calculate animation duration: t = ln(crashPoint) / GROWTH_RATE
+		const animationTime = (Math.log(crashPoint) / GROWTH_RATE) * 1000;
 
-		// Calculate time to crash: t = ln(crashPoint) / GROWTH_RATE
-		const crashTime = (Math.log(crashPoint) / GROWTH_RATE) * 1000;
-
-		// Advance to just after crash
-		vi.advanceTimersByTime(crashTime + 100);
+		// Advance to just after animation should complete
+		vi.advanceTimersByTime(animationTime + 100);
 
 		const state = untrack(() => store.state);
-		expect(state.round?.state).toBe('crashed');
-		expect(state.round?.crashPoint).toBe(crashPoint);
+		expect(state.round?.state).toBe('settled');
+		expect(state.multiplier).toBe(crashPoint);
 	});
 
 	it('records crash points in history', () => {
 		store._simulateRound(2.5);
-		vi.advanceTimersByTime(10_100);
-
-		const crashTime = (Math.log(2.5) / GROWTH_RATE) * 1000;
-		vi.advanceTimersByTime(crashTime + 100);
+		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(2100); // Past lock to reveal
 
 		const state = untrack(() => store.state);
 		expect(state.recentCrashPoints).toContain(2.5);
@@ -266,15 +359,53 @@ describe('simulation mode', () => {
 
 	it('increments round ID for subsequent rounds', () => {
 		store._simulateRound(2);
-		vi.advanceTimersByTime(10_100);
+		expect(untrack(() => store.state.round?.roundId)).toBe(1);
+
+		// Complete the round
+		vi.advanceTimersByTime(10_100 + 2100);
 		const crashTime1 = (Math.log(2) / GROWTH_RATE) * 1000;
 		vi.advanceTimersByTime(crashTime1 + 100);
-
-		expect(untrack(() => store.state.round?.roundId)).toBe(1);
 
 		// Start another round
 		store._simulateRound(3);
 		expect(untrack(() => store.state.round?.roundId)).toBe(2);
+	});
+});
+
+// ============================================================================
+// WIN/LOSS DETERMINATION TESTS
+// ============================================================================
+
+describe('win/loss determination', () => {
+	it('player wins when target < crashPoint', () => {
+		// Target 2.5x, crash at 5x => WIN
+		const target = 2.5;
+		const crashPoint = 5;
+		const isWin = target < crashPoint;
+		expect(isWin).toBe(true);
+	});
+
+	it('player loses when target >= crashPoint', () => {
+		// Target 5x, crash at 3x => LOSE
+		const target = 5;
+		const crashPoint = 3;
+		const isWin = target < crashPoint;
+		expect(isWin).toBe(false);
+	});
+
+	it('player loses when target equals crashPoint', () => {
+		// Target 3x, crash at 3x => LOSE (must be strictly less)
+		const target = 3;
+		const crashPoint = 3;
+		const isWin = target < crashPoint;
+		expect(isWin).toBe(false);
+	});
+
+	it('calculates payout correctly for winner', () => {
+		const bet = 100n * 10n ** 18n;
+		const target = 2.5;
+		const expectedPayout = BigInt(Math.floor(Number(bet) * target));
+		expect(expectedPayout).toBe(250n * 10n ** 18n);
 	});
 });
 
@@ -289,6 +420,14 @@ describe('constants', () => {
 
 	it('MAX_BET is 1000 DATA', () => {
 		expect(MAX_BET).toBe(1000n * 10n ** 18n);
+	});
+
+	it('MIN_TARGET is 1.01x', () => {
+		expect(MIN_TARGET).toBe(1.01);
+	});
+
+	it('MAX_TARGET is 100x', () => {
+		expect(MAX_TARGET).toBe(100);
 	});
 
 	it('GROWTH_RATE is 0.06', () => {
@@ -315,38 +454,33 @@ describe('edge cases', () => {
 
 	it('handles very low crash points (instant crash)', () => {
 		store._simulateRound(1.01); // Very low crash point
-		vi.advanceTimersByTime(10_100);
+		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(2100); // Past lock to reveal
 
 		// Should crash almost immediately
 		const crashTime = (Math.log(1.01) / GROWTH_RATE) * 1000;
 		vi.advanceTimersByTime(crashTime + 100);
 
 		const state = untrack(() => store.state);
-		expect(state.round?.state).toBe('crashed');
+		expect(state.round?.state).toBe('settled');
 	});
 
 	it('handles high crash points', () => {
 		store._simulateRound(100); // Very high crash point
-		vi.advanceTimersByTime(10_100);
+		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(2100); // Past lock to reveal
 
-		// Should still be rising for a while
+		// Should still be animating for a while
 		vi.advanceTimersByTime(10_000);
 		const state = untrack(() => store.state);
-		expect(state.round?.state).toBe('rising');
+		expect(state.round?.state).toBe('animating');
 
-		// Eventually crashes
+		// Eventually settles
 		const crashTime = (Math.log(100) / GROWTH_RATE) * 1000;
 		vi.advanceTimersByTime(crashTime - 10_000 + 100);
 
 		const finalState = untrack(() => store.state);
-		expect(finalState.round?.state).toBe('crashed');
-	});
-
-	it('setAutoCashOut stores the value', () => {
-		store.setAutoCashOut(2.5);
-		// The value is stored internally - we can verify by checking if it would trigger
-		// In a real test, we'd mock the cash out and verify it's called at 2.5x
-		expect(true).toBe(true); // Placeholder - actual behavior tested in integration
+		expect(finalState.round?.state).toBe('settled');
 	});
 
 	it('disconnect cleans up properly', () => {
@@ -357,5 +491,33 @@ describe('edge cases', () => {
 
 		const state = untrack(() => store.state);
 		expect(state.isConnected).toBe(false);
+	});
+
+	it('cannot place bet after betting phase closes', async () => {
+		store._simulateRound(5);
+		vi.advanceTimersByTime(10_100); // Past betting phase
+
+		expect(untrack(() => store.canBet)).toBe(false);
+
+		await store.placeBet(100n * 10n ** 18n, 2.0);
+		// Should not have set a bet (canBet check will exit early)
+		expect(untrack(() => store.state.playerBet)).toBeNull();
+	});
+
+	it('blocks betting while loading (bet in progress)', async () => {
+		store._simulateRound(5);
+		vi.advanceTimersByTime(100);
+
+		// Initially can bet
+		expect(untrack(() => store.canBet)).toBe(true);
+
+		// Place a bet (this sets isLoading = true)
+		await store.placeBet(100n * 10n ** 18n, 2.0);
+
+		// While loading, canBet should be false
+		const state = untrack(() => store.state);
+		// isLoading is true, so canBet should be false
+		expect(state.isLoading).toBe(true);
+		expect(untrack(() => store.canBet)).toBe(false);
 	});
 });

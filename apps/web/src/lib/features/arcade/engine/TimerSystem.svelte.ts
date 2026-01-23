@@ -14,7 +14,7 @@ import type {
 	CountdownState,
 	ClockState,
 	CountdownConfig,
-	ClockConfig
+	ClockConfig,
 } from '$lib/core/types/arcade';
 
 // ============================================================================
@@ -100,7 +100,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 		criticalThreshold = 5000,
 		showMilliseconds = false,
 		onComplete,
-		onTick
+		onTick,
 	} = config;
 
 	let state = $state<CountdownState>({
@@ -109,7 +109,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 		remaining: duration,
 		progress: 0,
 		display: formatTime(duration, showMilliseconds),
-		critical: false
+		critical: false,
 	});
 
 	let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -126,7 +126,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 			remaining,
 			progress,
 			display: formatTime(remaining, showMilliseconds),
-			critical: remaining <= criticalThreshold && remaining > 0
+			critical: remaining <= criticalThreshold && remaining > 0,
 		};
 
 		onTick?.(remaining);
@@ -144,7 +144,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 			remaining: 0,
 			progress: 1,
 			display: formatTime(0, showMilliseconds),
-			critical: false
+			critical: false,
 		};
 		onComplete?.();
 	}
@@ -169,7 +169,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 			remaining: d,
 			progress: 0,
 			display: formatTime(d, showMilliseconds),
-			critical: d <= criticalThreshold
+			critical: d <= criticalThreshold,
 		};
 
 		intervalId = setInterval(tick, interval);
@@ -200,7 +200,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 			remaining: duration,
 			progress: 0,
 			display: formatTime(duration, showMilliseconds),
-			critical: false
+			critical: false,
 		};
 	}
 
@@ -214,7 +214,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 		state = {
 			...state,
 			remaining: state.remaining + ms,
-			duration: state.duration + ms
+			duration: state.duration + ms,
 		};
 	}
 
@@ -231,7 +231,7 @@ export function createCountdown(config: CountdownConfig): Countdown {
 		resume,
 		stop,
 		addTime,
-		cleanup
+		cleanup,
 	};
 }
 
@@ -277,7 +277,7 @@ export function createClock(config: ClockConfig = {}): Clock {
 		status: 'idle',
 		elapsed: 0,
 		display: '00:00',
-		startTime: 0
+		startTime: 0,
 	});
 
 	let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -289,7 +289,7 @@ export function createClock(config: ClockConfig = {}): Clock {
 		state = {
 			...state,
 			elapsed,
-			display: formatElapsed(elapsed)
+			display: formatElapsed(elapsed),
 		};
 
 		if (maxDuration && elapsed >= maxDuration) {
@@ -313,7 +313,7 @@ export function createClock(config: ClockConfig = {}): Clock {
 			status: 'running',
 			elapsed: 0,
 			display: '00:00',
-			startTime: Date.now()
+			startTime: Date.now(),
 		};
 
 		intervalId = setInterval(tick, interval);
@@ -341,7 +341,7 @@ export function createClock(config: ClockConfig = {}): Clock {
 			status: 'idle',
 			elapsed: 0,
 			display: '00:00',
-			startTime: 0
+			startTime: 0,
 		};
 	}
 
@@ -365,7 +365,7 @@ export function createClock(config: ClockConfig = {}): Clock {
 		resume,
 		stop,
 		getElapsed,
-		cleanup
+		cleanup,
 	};
 }
 
@@ -445,7 +445,7 @@ export function createFrameLoop(callback: (delta: number, time: number) => void)
 			return delta;
 		},
 		start,
-		stop
+		stop,
 	};
 }
 

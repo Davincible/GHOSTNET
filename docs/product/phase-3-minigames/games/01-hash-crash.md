@@ -11,7 +11,9 @@
 
 ## Overview
 
-HASH CRASH is a multiplier-based crash game where players bet $DATA and watch a multiplier climb. Cash out before it crashes to win. Wait too long and lose everything.
+HASH CRASH is a **pre-commit crash prediction game**. Players bet $DATA and choose a target cash-out multiplier BEFORE the crash point is revealed. If the crash point exceeds your target, you win. If not, you lose everything.
+
+This model eliminates timing advantages (no bot sniping) while maintaining the excitement of crash games through client-side animations.
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
@@ -20,20 +22,18 @@ HASH CRASH is a multiplier-based crash game where players bet $DATA and watch a 
 ║                                                                   ║
 ║                         MULTIPLIER                                ║
 ║                                                                   ║
-║                          ██  23.47x                               ║
+║                          ██  5.67x                                ║
 ║                         ██                                        ║
-║                        ██                                         ║
-║                       ██                                          ║
-║                     ███                                           ║
+║                        ██      YOUR TARGET: 3.00x ✓               ║
+║                       ██       ───────────────────                ║
+║                     ███        You're SAFE!                       ║
 ║                   ███                                             ║
 ║                ████                                               ║
 ║           ██████                                                  ║
 ║     ████████                                                      ║
 ║  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ║
 ║                                                                   ║
-║  YOUR BET: 100 $DATA              POTENTIAL: 2,347 $DATA          ║
-║                                                                   ║
-║                    [ CASH OUT @ 23.47x ]                          ║
+║  YOUR BET: 100 $DATA @ 3.00x         PAYOUT: 300 $DATA           ║
 ║                                                                   ║
 ║  ─────────────────────────────────────────────────────────────── ║
 ║  RECENT CRASHES: 1.23x │ 4.56x │ 12.34x │ 1.01x │ 89.12x         ║
@@ -45,54 +45,79 @@ HASH CRASH is a multiplier-based crash game where players bet $DATA and watch a 
 
 ## Core Mechanics
 
+### Game Model: Pre-Commit vs. Real-Time
+
+Traditional crash games let players cash out in real-time, creating timing races and bot advantages. HASH CRASH uses a **pre-commit model**:
+
+| Aspect | Traditional Crash | HASH CRASH (Pre-Commit) |
+|--------|-------------------|-------------------------|
+| Cash-out timing | Real-time during game | **Set BEFORE game starts** |
+| Bot advantage | High (can read chain state) | **None** (blind commitment) |
+| Outcome determination | When you click | **Instant on reveal** |
+| Animation purpose | Determines outcome | **Pure entertainment** |
+| Fairness | Timing-dependent | **Mathematically pure** |
+
 ### Game Flow
 
 ```
-1. BETTING PHASE (10 seconds)
-   └── Players place bets (10-1000 $DATA)
-
-2. LAUNCH PHASE
-   └── Multiplier starts at 1.00x
-   └── Increases exponentially
-
-3. ACTIVE PHASE
-   └── Players can cash out anytime
-   └── Multiplier keeps climbing
-   └── CRASH happens randomly
-
-4. RESOLUTION PHASE
-   └── Players who cashed out WIN
-   └── Players still in LOSE
-   └── New round starts
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           HASH CRASH GAME FLOW                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. BETTING PHASE (60 seconds)                                              │
+│     └─ Players place bets: 100 $DATA                                        │
+│     └─ Players set target: 2.50x                                            │
+│     └─ BOTH are locked in together                                          │
+│     └─ No changes after betting closes                                      │
+│                                                                             │
+│  2. LOCK PHASE (~3 blocks)                                                  │
+│     └─ Betting closes                                                       │
+│     └─ Contract commits to future block hash                                │
+│     └─ No one knows the crash point yet                                     │
+│                                                                             │
+│  3. REVEAL + SETTLE (instant)                                               │
+│     └─ Future block is mined                                                │
+│     └─ Crash point calculated from block hash: 3.47x                        │
+│     └─ All bets instantly resolved:                                         │
+│         • Target 2.50x < 3.47x → WIN (payout = 250 $DATA)                  │
+│         • Target 5.00x > 3.47x → LOSE (bet burned)                         │
+│                                                                             │
+│  4. ANIMATION PHASE (client-side only)                                      │
+│     └─ Client shows multiplier climbing: 1.00 → 1.50 → 2.50 ✓ → 3.47 💥    │
+│     └─ Creates excitement even though outcome is determined                 │
+│     └─ Players see "danger zone" as it approaches their target              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Multiplier Curve
+### Why Pre-Commit Works
 
-The multiplier follows an exponential curve:
+**Problem with real-time cash-out:**
+1. Crash point is revealed on-chain
+2. Bots read the crash point instantly
+3. Bots cash out at `crashPoint - 1` (guaranteed max payout)
+4. Human players always lose to bots
 
-```javascript
-// Multiplier at time t (in seconds)
-multiplier = 1.0 * Math.pow(E, growthRate * t)
-
-// Where growthRate determines speed
-// Typical: 0.05-0.08 per second
-```
+**Pre-commit solution:**
+1. Players commit bet + target BEFORE reveal
+2. No one knows crash point during betting
+3. After reveal, outcomes are instant (no timing race)
+4. Everyone plays on equal footing
 
 ### Crash Point Algorithm
 
-Crash point is determined by **future block hash** — a provably fair on-chain randomness source:
+Crash point is determined by **future block hash** — provably fair on-chain randomness:
 
 ```javascript
-// Pseudo-code for crash point calculation
+// Crash point calculation
 function calculateCrashPoint(blockHashSeed: bytes32): number {
   // Convert block hash to uniform random [0, 1)
   const random = uint256(blockHashSeed) / MAX_UINT256;
   
-  // House edge: 3%
-  const houseEdge = 0.03;
+  // House edge: 4%
+  const houseEdge = 0.04;
   
   // Crash point formula (inverse of cumulative distribution)
-  // This gives ~1% chance for >100x, ~3% for >33x, etc.
   const crashPoint = (1 - houseEdge) / (1 - random);
   
   // Minimum crash at 1.00x
@@ -100,87 +125,118 @@ function calculateCrashPoint(blockHashSeed: bytes32): number {
 }
 ```
 
-**How it works:**
-1. When betting phase closes, we commit to a block 5 blocks in the future
-2. That block's hash becomes the seed once mined
-3. No one can predict the hash until after all bets are locked
-```
-
 **Crash Point Distribution:**
-| Crash Point | Probability |
-|-------------|-------------|
-| < 1.5x | 35% |
-| 1.5x - 2x | 17% |
-| 2x - 3x | 15% |
-| 3x - 5x | 12% |
-| 5x - 10x | 10% |
-| 10x - 50x | 8% |
-| 50x - 100x | 2% |
-| > 100x | 1% |
+
+| Crash Point | Probability | Win if Target ≤ |
+|-------------|-------------|-----------------|
+| < 1.5x | 35% | ~35% win rate |
+| 1.5x - 2x | 17% | ~52% win rate |
+| 2x - 3x | 15% | ~67% win rate |
+| 3x - 5x | 12% | ~79% win rate |
+| 5x - 10x | 10% | ~89% win rate |
+| 10x - 50x | 8% | ~97% win rate |
+| 50x - 100x | 2% | ~99% win rate |
+| > 100x | 1% | ~100% win rate |
 
 ---
 
 ## User Interface
 
-### States
+### Betting Phase
 
-**1. Betting Phase**
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  HASH CRASH                           ROUND #4,847               ║
+║  HASH CRASH                           BETTING CLOSES IN: 47      ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
-║                    NEXT ROUND STARTING IN                         ║
-║                           07                                      ║
+║  PLACE YOUR BET                                                   ║
+║  ┌────────────────────────────────────────────────────────────┐  ║
+║  │                                                            │  ║
+║  │  Bet Amount:    [    100    ] $DATA                        │  ║
+║  │                                                            │  ║
+║  │  Quick Bet:     [10] [50] [100] [500] [MAX]               │  ║
+║  │                                                            │  ║
+║  │  ──────────────────────────────────────────────────────── │  ║
+║  │                                                            │  ║
+║  │  Cash Out At:   [   2.50   ] x                             │  ║
+║  │                                                            │  ║
+║  │  Quick Target:  [1.5x] [2x] [3x] [5x] [10x]               │  ║
+║  │                                                            │  ║
+║  │  ──────────────────────────────────────────────────────── │  ║
+║  │                                                            │  ║
+║  │  If crash > 2.50x:   WIN   +150 $DATA  (250 total)        │  ║
+║  │  If crash ≤ 2.50x:   LOSE  -100 $DATA                     │  ║
+║  │                                                            │  ║
+║  │  Win Probability:    ~61%                                  │  ║
+║  │  Expected Value:     97 $DATA (house edge: 4%)            │  ║
+║  │                                                            │  ║
+║  └────────────────────────────────────────────────────────────┘  ║
+║                                                                   ║
+║                      [ PLACE BET ]                                ║
 ║                                                                   ║
 ║  ─────────────────────────────────────────────────────────────── ║
-║                                                                   ║
-║  YOUR BET:  [    100    ] $DATA                                  ║
-║                                                                   ║
-║  QUICK BET: [10] [50] [100] [500] [MAX]                         ║
-║                                                                   ║
-║  AUTO CASH OUT: [ ] Enable at [____] x                           ║
-║                                                                   ║
-║                    [ PLACE BET ]                                  ║
-║                                                                   ║
-║  ─────────────────────────────────────────────────────────────── ║
-║  PLAYERS BETTING: 47        TOTAL POT: 12,450 $DATA              ║
+║  OTHER PLAYERS:                                                   ║
+║  0x7a3f  100 $DATA  @ 1.50x                                      ║
+║  0x9c2d  500 $DATA  @ 3.00x                                      ║
+║  0x3b1a   50 $DATA  @ 10.00x                                     ║
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**2. Active Phase (Rising)**
+### Waiting for Reveal
+
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  HASH CRASH                           ROUND #4,847               ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
-║                          5.67x                                    ║
+║                    WAITING FOR BLOCK #18,234,567                  ║
+║                                                                   ║
+║                         ▓▓▓░░░░░░░                               ║
+║                         3 blocks remaining                        ║
+║                                                                   ║
+║  ─────────────────────────────────────────────────────────────── ║
+║  YOUR BET: 100 $DATA @ 2.50x                                     ║
+║  ─────────────────────────────────────────────────────────────── ║
+║  47 players waiting │ 12,450 $DATA in pot                        ║
+║                                                                   ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+### Animation Phase (Outcome Already Determined)
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  HASH CRASH                           ROUND #4,847               ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║                          2.31x                                    ║
 ║                                                                   ║
 ║           ████████████████████                                    ║
 ║         ██████████████████                                        ║
-║       ████████████████                                            ║
-║     ██████████████                                                ║
-║   ████████████                                                    ║
+║       ████████████████       YOUR TARGET: 2.50x                  ║
+║     ██████████████           ─────────────────                    ║
+║   ████████████               Almost there...                      ║
 ║  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ║
-║                                                                   ║
-║  YOUR BET: 100 $DATA              POTENTIAL: 567 $DATA           ║
-║                                                                   ║
-║              [ CASH OUT @ 5.67x → 567 $DATA ]                    ║
+║                    ↑                                              ║
+║               Your target                                         ║
 ║                                                                   ║
 ║  ─────────────────────────────────────────────────────────────── ║
-║  STILL IN: 23/47              CASHED OUT: 24/47                  ║
+║  ✓ 0x7a3f  1.50x  SAFE                                           ║
+║  ? 0x9c2d  3.00x  waiting...                                     ║
+║  ? 0x3b1a  10.00x waiting...                                     ║
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-**3. Crashed State**
+### Result - Win
+
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║  HASH CRASH                           ROUND #4,847               ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
-║               ████  CRASHED @ 8.23x  ████                        ║
+║               💥 CRASHED @ 3.47x 💥                               ║
 ║                                                                   ║
 ║                    ░░░░░░░░░░░░░░░░░░░░                          ║
 ║                  ░░░░░░░░░░░░░░░░░░                              ║
@@ -189,29 +245,26 @@ function calculateCrashPoint(blockHashSeed: bytes32): number {
 ║            ░░░░░░░░░░░░                                          ║
 ║  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ║
 ║                                                                   ║
-║  YOU CASHED OUT @ 5.67x                    +467 $DATA             ║
+║  ┌────────────────────────────────────────────────────────────┐  ║
+║  │                                                            │  ║
+║  │       ✓ YOU WIN!  Target 2.50x < Crash 3.47x              │  ║
+║  │                                                            │  ║
+║  │       Bet: 100 $DATA  →  Payout: 250 $DATA                │  ║
+║  │       Profit: +150 $DATA                                   │  ║
+║  │                                                            │  ║
+║  └────────────────────────────────────────────────────────────┘  ║
 ║                                                                   ║
 ║  ─────────────────────────────────────────────────────────────── ║
-║  WINNERS: 24        LOSERS: 23        BURNED: 373 $DATA 🔥       ║
+║  ✓ 0x7a3f   1.50x  WON +50 $DATA                                 ║
+║  ✓ YOU      2.50x  WON +150 $DATA                                ║
+║  ✓ 0x9c2d   3.00x  WON +1000 $DATA                               ║
+║  ✗ 0x3b1a  10.00x  CRASHED -50 $DATA                             ║
+║                                                                   ║
+║  TOTAL BURNED: 423 $DATA 🔥                                      ║
 ║                                                                   ║
 ║                    NEXT ROUND IN: 05                              ║
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
-```
-
-### Live Players Panel
-
-Shows real-time cash-outs:
-
-```
-LIVE PLAYERS
-─────────────────────────────────────
-0x7a3f   100 $DATA    CASHED @ 2.3x  ✓
-0x9c2d   500 $DATA    IN PLAY...
-0x3b1a    50 $DATA    CASHED @ 5.1x  ✓
-0x8f2e   200 $DATA    IN PLAY...
-0x1d4c  1000 $DATA    CASHED @ 1.5x  ✓
-─────────────────────────────────────
 ```
 
 ---
@@ -224,42 +277,52 @@ LIVE PLAYERS
 |-----------|-------|
 | Minimum Bet | 10 $DATA |
 | Maximum Bet | 1,000 $DATA |
-| House Edge | 3% |
-| Burn Rate | 100% of house edge |
+| Maximum Players | 50 per round |
+| House Edge | 4% (built into crash formula) |
+| Rake | 3% on entry (sent to ArcadeCore) |
+| Burn Rate | 100% of loser bets |
 
-### Payout Calculation
+### Win/Loss Determination
 
-```javascript
-function calculatePayout(bet: bigint, cashOutMultiplier: number): bigint {
-  const grossPayout = bet * BigInt(Math.floor(cashOutMultiplier * 100)) / 100n;
-  return grossPayout;
-}
-
-// Example:
-// Bet: 100 $DATA
-// Cash out at 5.67x
-// Payout: 567 $DATA (profit: 467 $DATA)
+```
+IF player.targetMultiplier < round.crashPoint:
+    WINNER → Payout = bet × targetMultiplier
+ELSE:
+    LOSER → Bet is burned
 ```
 
-### Burn Mechanics
+### Example Round
 
-The 3% house edge is realized through the crash point formula:
-- On average, 3% of all bets flow to the protocol
-- 100% of this is burned (no protocol take)
-- Every round burns tokens, win or lose
-
-**Example Round:**
 ```
-Total Bets: 12,450 $DATA
-Crash Point: 8.23x
-Winners: 24 players cashed out before crash
-Losers: 23 players still in
+Round #4,847
+─────────────────────────────────────────────────
+Crash Point: 3.47x (revealed from block hash)
 
-Winner Payouts: ~8,200 $DATA (varied multipliers)
-Loser Losses: ~4,250 $DATA (all goes to burn)
-
-Net Burn: ~373 $DATA (3% of total action)
+Player A:  100 $DATA @ 1.50x → WIN  → 150 $DATA (profit: +50)
+Player B:  100 $DATA @ 2.50x → WIN  → 250 $DATA (profit: +150)
+Player C:  500 $DATA @ 3.00x → WIN  → 1500 $DATA (profit: +1000)
+Player D:   50 $DATA @ 5.00x → LOSE → 0 $DATA (burned: 50)
+Player E:  200 $DATA @ 10.0x → LOSE → 0 $DATA (burned: 200)
+─────────────────────────────────────────────────
+Total Wagered:   950 $DATA
+Total Payouts:  1900 $DATA
+Total Burned:    250 $DATA (losers)
+Net from Pool:   950 $DATA (winners draw from losers + rake)
 ```
+
+### Expected Value
+
+No matter what target you choose, the **expected value is ~96%** due to the crash point distribution:
+
+| Target | Win Probability | Payout if Win | Expected Value |
+|--------|-----------------|---------------|----------------|
+| 1.10x | ~88% | 1.10x | 0.97x |
+| 1.50x | ~65% | 1.50x | 0.97x |
+| 2.00x | ~49% | 2.00x | 0.97x |
+| 5.00x | ~19% | 5.00x | 0.97x |
+| 10.00x | ~10% | 10.00x | 0.97x |
+
+The house edge is **mathematically guaranteed** regardless of player strategy.
 
 ---
 
@@ -271,37 +334,34 @@ Net Burn: ~373 $DATA (3% of total action)
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { Ownable2Step, Ownable } from "@openzeppelin/contracts/access/Ownable2Step.sol";
-
-/// @title HashCrash
-/// @notice Multiplier crash game using future block hash for provably fair randomness
-/// @dev MegaETH-compatible: uses future block hash instead of VRF
-contract HashCrash is Ownable2Step, ReentrancyGuard {
-    using SafeERC20 for IERC20;
-
+/// @title HashCrash - Pre-Commit Crash Game
+/// @notice Players commit bet + target multiplier before crash point is revealed
+/// @dev Eliminates timing races and bot advantages through blind commitment
+contract HashCrash is FutureBlockRandomness, ReentrancyGuard, Pausable {
+    
     // ══════════════════════════════════════════════════════════════════
     // TYPES
     // ══════════════════════════════════════════════════════════════════
-
-    enum RoundState { BETTING, PENDING, ACTIVE, CRASHED, SETTLING }
     
-    struct Round {
-        uint256 roundId;
-        RoundState state;
-        uint256 totalBets;
-        uint256 seedBlock;      // Block number for randomness
-        bytes32 seedHash;       // Captured block hash
-        uint256 crashPoint;     // Stored as basis points (823 = 8.23x)
-        uint256 startTime;
-        uint256 bettingEndsAt;
+    enum RoundState { 
+        NONE,       // Round doesn't exist
+        BETTING,    // Accepting bets + targets
+        LOCKED,     // Waiting for seed block
+        REVEALED,   // Crash point known, settling
+        SETTLED     // All players paid/burned
     }
     
-    struct Bet {
-        uint256 amount;
-        uint256 cashOutPoint;   // 0 = not cashed out
+    struct Round {
+        RoundState state;
+        uint64 bettingEndTime;
+        uint256 prizePool;
+        uint256 crashMultiplier;  // 0 until revealed (in basis points, 250 = 2.50x)
+        uint256 playerCount;
+    }
+    
+    struct PlayerBet {
+        uint128 amount;           // Bet amount (after rake)
+        uint128 targetMultiplier; // Target cash-out (in basis points, 250 = 2.50x)
         bool settled;
     }
 
@@ -309,213 +369,100 @@ contract HashCrash is Ownable2Step, ReentrancyGuard {
     // CONSTANTS
     // ══════════════════════════════════════════════════════════════════
     
-    uint256 public constant HOUSE_EDGE_BPS = 300;       // 3%
-    uint256 public constant MIN_BET = 10 ether;         // 10 $DATA
-    uint256 public constant MAX_BET = 1000 ether;       // 1000 $DATA
-    uint256 public constant BETTING_DURATION = 10;      // 10 seconds
-    uint256 public constant SEED_BLOCK_DELAY = 5;       // 5 blocks (~5 seconds on MegaETH)
-    uint256 public constant BPS = 10000;
+    uint256 public constant MULTIPLIER_PRECISION = 100;  // 2 decimal places
+    uint256 public constant MIN_TARGET = 101;            // 1.01x minimum
+    uint256 public constant MAX_TARGET = 10000;          // 100.00x maximum
+    uint256 public constant BETTING_DURATION = 60 seconds;
+    uint256 public constant MAX_PLAYERS = 50;
+    uint256 public constant HOUSE_EDGE_BPS = 400;        // 4%
 
     // ══════════════════════════════════════════════════════════════════
-    // STATE
+    // PLAYER FUNCTIONS
     // ══════════════════════════════════════════════════════════════════
 
-    IERC20 public immutable dataToken;
-    uint256 public currentRound;
-    
-    mapping(uint256 => Round) public rounds;
-    mapping(uint256 => mapping(address => Bet)) public bets;
-    mapping(uint256 => address[]) internal roundPlayers;
-
-    // ══════════════════════════════════════════════════════════════════
-    // ERRORS
-    // ══════════════════════════════════════════════════════════════════
-
-    error NotBettingPhase();
-    error BettingNotEnded();
-    error InvalidBetAmount();
-    error AlreadyBet();
-    error NotActive();
-    error NoBet();
-    error AlreadyCashedOut();
-    error SeedBlockNotMined();
-    error SeedBlockTooOld();
-    error GameNotCrashed();
-
-    // ══════════════════════════════════════════════════════════════════
-    // EVENTS
-    // ══════════════════════════════════════════════════════════════════
-    
-    event RoundStarted(uint256 indexed roundId, uint256 bettingEndsAt);
-    event BetPlaced(uint256 indexed roundId, address indexed player, uint256 amount);
-    event SeedBlockCommitted(uint256 indexed roundId, uint256 seedBlock);
-    event GameStarted(uint256 indexed roundId, uint256 crashPoint, bytes32 seedHash);
-    event CashedOut(uint256 indexed roundId, address indexed player, uint256 multiplierBps, uint256 payout);
-    event RoundCrashed(uint256 indexed roundId, uint256 crashPointBps);
-
-    // ══════════════════════════════════════════════════════════════════
-    // CONSTRUCTOR
-    // ══════════════════════════════════════════════════════════════════
-
-    constructor(address _dataToken, address _owner) Ownable(_owner) {
-        dataToken = IERC20(_dataToken);
-    }
-
-    // ══════════════════════════════════════════════════════════════════
-    // ROUND LIFECYCLE
-    // ══════════════════════════════════════════════════════════════════
-
-    /// @notice Start a new betting round
-    function startRound() external {
-        // Verify previous round is complete
-        if (currentRound > 0) {
-            require(
-                rounds[currentRound].state == RoundState.CRASHED ||
-                rounds[currentRound].state == RoundState.SETTLING,
-                "Previous round not complete"
-            );
-        }
-
-        uint256 roundId = ++currentRound;
-        uint256 bettingEndsAt = block.timestamp + BETTING_DURATION;
+    /// @notice Place bet with pre-committed target multiplier
+    /// @param amount Bet amount in $DATA
+    /// @param targetMultiplier Target cash-out in basis points (250 = 2.50x)
+    function placeBet(uint256 amount, uint256 targetMultiplier) external nonReentrant {
+        Round storage round = _rounds[_currentRoundId];
         
-        rounds[roundId] = Round({
-            roundId: roundId,
-            state: RoundState.BETTING,
-            totalBets: 0,
-            seedBlock: 0,
-            seedHash: bytes32(0),
-            crashPoint: 0,
-            startTime: 0,
-            bettingEndsAt: bettingEndsAt
-        });
-
-        emit RoundStarted(roundId, bettingEndsAt);
-    }
-
-    /// @notice Place a bet for current round
-    function placeBet(uint256 amount) external nonReentrant {
-        Round storage round = rounds[currentRound];
+        // Validate round state
+        require(round.state == RoundState.BETTING, "Not betting phase");
+        require(block.timestamp < round.bettingEndTime, "Betting closed");
+        require(round.playerCount < MAX_PLAYERS, "Round full");
         
-        if (round.state != RoundState.BETTING) revert NotBettingPhase();
-        if (block.timestamp > round.bettingEndsAt) revert NotBettingPhase();
-        if (amount < MIN_BET || amount > MAX_BET) revert InvalidBetAmount();
-        if (bets[currentRound][msg.sender].amount > 0) revert AlreadyBet();
-
-        dataToken.safeTransferFrom(msg.sender, address(this), amount);
+        // Validate target
+        require(targetMultiplier >= MIN_TARGET, "Target too low");
+        require(targetMultiplier <= MAX_TARGET, "Target too high");
         
-        bets[currentRound][msg.sender] = Bet({
-            amount: amount,
-            cashOutPoint: 0,
+        // Validate no existing bet
+        require(_playerBets[_currentRoundId][msg.sender].amount == 0, "Already bet");
+        
+        // Process entry through ArcadeCore (handles rake)
+        uint256 netAmount = arcadeCore.processEntry(msg.sender, amount, _currentRoundId);
+        
+        // Record bet with target
+        _playerBets[_currentRoundId][msg.sender] = PlayerBet({
+            amount: uint128(netAmount),
+            targetMultiplier: uint128(targetMultiplier),
             settled: false
         });
         
-        roundPlayers[currentRound].push(msg.sender);
-        round.totalBets += amount;
+        round.prizePool += netAmount;
+        round.playerCount++;
         
-        emit BetPlaced(currentRound, msg.sender, amount);
+        emit BetPlaced(_currentRoundId, msg.sender, amount, targetMultiplier);
     }
 
-    /// @notice End betting phase and commit to future block for randomness
-    function endBetting() external {
-        Round storage round = rounds[currentRound];
+    // ══════════════════════════════════════════════════════════════════
+    // ROUND MANAGEMENT
+    // ══════════════════════════════════════════════════════════════════
+
+    /// @notice Reveal crash point from committed seed
+    function reveal() external nonReentrant {
+        Round storage round = _rounds[_currentRoundId];
+        require(round.state == RoundState.LOCKED, "Not locked");
         
-        if (round.state != RoundState.BETTING) revert NotBettingPhase();
-        if (block.timestamp < round.bettingEndsAt) revert BettingNotEnded();
-
-        // Commit to a future block hash for randomness
-        round.seedBlock = block.number + SEED_BLOCK_DELAY;
-        round.state = RoundState.PENDING;
-
-        emit SeedBlockCommitted(currentRound, round.seedBlock);
+        // Get seed from future block hash
+        uint256 seed = _revealSeed(_currentRoundId);
+        
+        // Calculate crash point
+        uint256 crashMultiplier = _calculateCrashPoint(seed);
+        
+        round.crashMultiplier = crashMultiplier;
+        round.state = RoundState.REVEALED;
+        
+        emit CrashPointRevealed(_currentRoundId, crashMultiplier, seed);
     }
 
-    /// @notice Start the game once seed block is mined
-    function startGame() external {
-        Round storage round = rounds[currentRound];
+    /// @notice Settle a player's bet (can be called by anyone)
+    function settle(address player) external nonReentrant {
+        Round storage round = _rounds[_currentRoundId];
+        require(round.state == RoundState.REVEALED, "Not revealed");
         
-        require(round.state == RoundState.PENDING, "Not pending");
-        if (block.number <= round.seedBlock) revert SeedBlockNotMined();
-        if (block.number > round.seedBlock + 256) revert SeedBlockTooOld();
-
-        // Capture block hash and calculate crash point
-        bytes32 hash = blockhash(round.seedBlock);
-        require(hash != bytes32(0), "Block hash unavailable");
-
-        uint256 seed = uint256(keccak256(abi.encode(hash, currentRound, address(this))));
-        uint256 crashPoint = _calculateCrashPoint(seed);
-
-        round.seedHash = hash;
-        round.crashPoint = crashPoint;
-        round.state = RoundState.ACTIVE;
-        round.startTime = block.timestamp;
-
-        emit GameStarted(currentRound, crashPoint, hash);
-    }
-
-    /// @notice Cash out at current multiplier
-    function cashOut() external nonReentrant {
-        Round storage round = rounds[currentRound];
-        Bet storage bet = bets[currentRound][msg.sender];
-
-        if (round.state != RoundState.ACTIVE) revert NotActive();
-        if (bet.amount == 0) revert NoBet();
-        if (bet.cashOutPoint > 0) revert AlreadyCashedOut();
-
-        uint256 currentMultiplier = getCurrentMultiplier();
+        PlayerBet storage bet = _playerBets[_currentRoundId][player];
+        require(bet.amount > 0, "No bet");
+        require(!bet.settled, "Already settled");
         
-        // Check if game already crashed
-        if (currentMultiplier >= round.crashPoint) {
-            revert GameNotCrashed(); // Actually crashed, can't cash out
-        }
-
-        bet.cashOutPoint = currentMultiplier;
         bet.settled = true;
         
-        uint256 payout = (bet.amount * currentMultiplier) / 100;
-        dataToken.safeTransfer(msg.sender, payout);
-        
-        emit CashedOut(currentRound, msg.sender, currentMultiplier, payout);
+        if (bet.targetMultiplier < round.crashMultiplier) {
+            // WINNER: Target was below crash point
+            uint256 payout = (uint256(bet.amount) * bet.targetMultiplier) / MULTIPLIER_PRECISION;
+            arcadeCore.creditPayout(_currentRoundId, player, payout, 0, true);
+            
+            emit PlayerWon(_currentRoundId, player, bet.targetMultiplier, payout);
+        } else {
+            // LOSER: Target was at or above crash point
+            arcadeCore.creditPayout(_currentRoundId, player, 0, bet.amount, false);
+            
+            emit PlayerLost(_currentRoundId, player, bet.targetMultiplier, round.crashMultiplier);
+        }
     }
 
-    /// @notice Trigger crash when multiplier reaches crash point
-    function triggerCrash() external {
-        Round storage round = rounds[currentRound];
-        
-        require(round.state == RoundState.ACTIVE, "Not active");
-        
-        uint256 currentMultiplier = getCurrentMultiplier();
-        require(currentMultiplier >= round.crashPoint, "Not crashed yet");
-
-        round.state = RoundState.CRASHED;
-        
-        emit RoundCrashed(currentRound, round.crashPoint);
-    }
-
-    // ══════════════════════════════════════════════════════════════════
-    // VIEW FUNCTIONS
-    // ══════════════════════════════════════════════════════════════════
-
-    /// @notice Get current multiplier based on elapsed time
-    function getCurrentMultiplier() public view returns (uint256) {
-        Round storage round = rounds[currentRound];
-        
-        if (round.state != RoundState.ACTIVE) return 100;
-        if (round.startTime == 0) return 100;
-
-        uint256 elapsed = block.timestamp - round.startTime;
-        
-        // Exponential growth approximation: 100 + 6*t
-        // 100 = 1.00x, increases by 0.06x per second
-        uint256 multiplier = 100 + (elapsed * 6);
-        
-        return multiplier;
-    }
-
-    /// @notice Verify crash point calculation (for provable fairness)
-    function verifyCrashPoint(bytes32 seedHash, uint256 roundId) external view returns (uint256) {
-        uint256 seed = uint256(keccak256(abi.encode(seedHash, roundId, address(this))));
-        return _calculateCrashPoint(seed);
+    /// @notice Batch settle all players
+    function settleAll() external nonReentrant {
+        // Iterate through all players and settle
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -523,21 +470,21 @@ contract HashCrash is Ownable2Step, ReentrancyGuard {
     // ══════════════════════════════════════════════════════════════════
 
     /// @notice Calculate crash point from seed
-    /// @dev Uses inverse transform sampling for exponential distribution
+    /// @dev Formula: crashPoint = (1 - houseEdge) / (1 - random)
     function _calculateCrashPoint(uint256 seed) internal pure returns (uint256) {
-        // Convert seed to uniform random in [0, 1) with high precision
-        uint256 random = seed % 1e18;
-        if (random == 0) random = 1;
-
-        // Crash point formula: (10000 - houseEdge) / (10000 - random_scaled)
-        uint256 numerator = (BPS - HOUSE_EDGE_BPS) * 1e18;
-        uint256 denominator = 1e18 - random;
-
-        uint256 crashPoint = numerator / denominator;
-
-        // Minimum crash of 1.00x (100 basis points)
+        // Use lower bits for uniform random in [0, 10000)
+        uint256 random = seed % 10000;
+        
+        // Avoid division by zero
+        if (random >= 9999) random = 9999;
+        
+        // crashPoint = (10000 - 400) / (10000 - random) * 100
+        // = 9600 * 100 / (10000 - random)
+        uint256 crashPoint = (9600 * MULTIPLIER_PRECISION) / (10000 - random);
+        
+        // Minimum 1.00x
         if (crashPoint < 100) crashPoint = 100;
-
+        
         return crashPoint;
     }
 }
@@ -546,159 +493,178 @@ contract HashCrash is Ownable2Step, ReentrancyGuard {
 ### Frontend Store
 
 ```typescript
-// src/lib/features/arcade/hash-crash/store.svelte.ts
+// src/lib/features/hash-crash/store.svelte.ts
 
 import { browser } from '$app/environment';
+import type { HashCrashPhase, HashCrashRound } from '$lib/core/types/arcade';
+import { createCountdown, createFrameLoop } from '$lib/features/arcade/engine';
 
-export type RoundState = 'betting' | 'active' | 'crashed' | 'settling';
-
-interface CrashRound {
-  roundId: number;
-  state: RoundState;
-  totalBets: bigint;
-  crashPoint: number | null;
-  startTime: number;
-  bettingEndsAt: number;
-}
+export type RoundPhase = 'idle' | 'betting' | 'locked' | 'revealed' | 'animating' | 'settled';
 
 interface PlayerBet {
   amount: bigint;
-  cashOutMultiplier: number | null;
-  potentialPayout: bigint;
+  targetMultiplier: number;  // e.g., 2.50
 }
 
-interface CashOut {
-  address: string;
-  multiplier: number;
+interface PlayerResult {
+  address: `0x${string}`;
+  targetMultiplier: number;
+  won: boolean;
   payout: bigint;
-  timestamp: number;
 }
 
 export function createHashCrashStore() {
-  // State
-  let round = $state<CrashRound | null>(null);
-  let currentMultiplier = $state(1.0);
+  // ─────────────────────────────────────────────────────────────────
+  // STATE
+  // ─────────────────────────────────────────────────────────────────
+  
+  let phase = $state<RoundPhase>('idle');
+  let roundId = $state(0);
+  let crashPoint = $state<number | null>(null);      // Actual crash point (revealed)
+  let displayMultiplier = $state(1.0);               // Animated display value
   let playerBet = $state<PlayerBet | null>(null);
-  let recentCashOuts = $state<CashOut[]>([]);
+  let playerResult = $state<'pending' | 'won' | 'lost'>('pending');
+  let players = $state<PlayerResult[]>([]);
   let recentCrashPoints = $state<number[]>([]);
-  let isConnected = $state(false);
   
-  // Derived
-  let canBet = $derived(round?.state === 'betting' && playerBet === null);
-  let canCashOut = $derived(round?.state === 'active' && playerBet !== null && playerBet.cashOutMultiplier === null);
+  // Timers
+  const bettingCountdown = createCountdown({
+    duration: 60_000,
+    criticalThreshold: 10_000,
+  });
+  
+  // Animation loop for visual multiplier climbing
+  let animationStartTime = 0;
+  const GROWTH_RATE = 0.06;
+  
+  const animationLoop = createFrameLoop((delta, time) => {
+    if (phase !== 'animating' || !crashPoint) return;
+    
+    const elapsed = (Date.now() - animationStartTime) / 1000;
+    const currentMult = Math.pow(Math.E, GROWTH_RATE * elapsed);
+    
+    // Check if animation reached crash point
+    if (currentMult >= crashPoint) {
+      displayMultiplier = crashPoint;
+      animationLoop.stop();
+      phase = 'settled';
+    } else {
+      displayMultiplier = currentMult;
+      
+      // Check if we passed player's target (for visual feedback)
+      if (playerBet && currentMult >= playerBet.targetMultiplier && playerResult === 'pending') {
+        playerResult = 'won';
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────
+  // DERIVED
+  // ─────────────────────────────────────────────────────────────────
+  
+  let canBet = $derived(phase === 'betting' && playerBet === null);
+  let isAnimating = $derived(phase === 'animating');
+  let hasWon = $derived(playerResult === 'won');
   let potentialPayout = $derived(
-    playerBet ? BigInt(Math.floor(Number(playerBet.amount) * currentMultiplier)) : 0n
+    playerBet ? BigInt(Math.floor(Number(playerBet.amount) * playerBet.targetMultiplier)) : 0n
   );
-  
-  // Animation frame for smooth multiplier updates
-  let animationFrame: number | null = null;
-  
-  function startMultiplierAnimation() {
-    if (!browser || round?.state !== 'active') return;
+
+  // ─────────────────────────────────────────────────────────────────
+  // ACTIONS
+  // ─────────────────────────────────────────────────────────────────
+
+  async function placeBet(amount: bigint, targetMultiplier: number) {
+    if (!canBet) return;
     
-    const startTime = round.startTime;
-    const growthRate = 0.06; // 6% per second
-    
-    function update() {
-      const elapsed = (Date.now() - startTime) / 1000;
-      currentMultiplier = Math.pow(Math.E, growthRate * elapsed);
-      
-      if (round?.state === 'active') {
-        animationFrame = requestAnimationFrame(update);
-      }
+    // Validate
+    if (targetMultiplier < 1.01 || targetMultiplier > 100) {
+      throw new Error('Target must be between 1.01x and 100x');
     }
     
-    animationFrame = requestAnimationFrame(update);
+    // Record locally (contract call happens separately)
+    playerBet = { amount, targetMultiplier };
+    
+    // TODO: Call contract
+    // await hashCrashContract.placeBet(amount, Math.floor(targetMultiplier * 100));
   }
-  
-  function stopMultiplierAnimation() {
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
+
+  function startAnimation(revealedCrashPoint: number) {
+    crashPoint = revealedCrashPoint;
+    displayMultiplier = 1.0;
+    playerResult = 'pending';
+    animationStartTime = Date.now();
+    phase = 'animating';
+    animationLoop.start();
+    
+    // Determine result immediately (even though animation is running)
+    if (playerBet && playerBet.targetMultiplier < revealedCrashPoint) {
+      // Will show as won once animation passes target
+    } else if (playerBet) {
+      // Will show as lost once animation reaches crash
+      playerResult = 'lost';
     }
   }
-  
-  // WebSocket connection for real-time updates
-  function connect() {
-    if (!browser) return;
+
+  function reset() {
+    phase = 'idle';
+    crashPoint = null;
+    displayMultiplier = 1.0;
+    playerBet = null;
+    playerResult = 'pending';
+    players = [];
+    animationLoop.stop();
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // SIMULATION (for demo/testing)
+  // ─────────────────────────────────────────────────────────────────
+
+  function simulateRound() {
+    // Start betting
+    roundId++;
+    phase = 'betting';
+    bettingCountdown.start(10_000);  // 10 second betting for demo
     
-    const ws = new WebSocket('wss://api.ghostnet.io/crash');
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    // After betting, reveal and animate
+    setTimeout(() => {
+      phase = 'locked';
+      bettingCountdown.stop();
       
-      switch (data.type) {
-        case 'ROUND_STATE':
-          round = data.round;
-          if (data.round.state === 'active') {
-            startMultiplierAnimation();
-          } else {
-            stopMultiplierAnimation();
-          }
-          break;
-          
-        case 'CASH_OUT':
-          recentCashOuts = [data.cashOut, ...recentCashOuts.slice(0, 19)];
-          break;
-          
-        case 'CRASHED':
-          round = { ...round!, state: 'crashed', crashPoint: data.crashPoint };
-          currentMultiplier = data.crashPoint;
-          recentCrashPoints = [data.crashPoint, ...recentCrashPoints.slice(0, 9)];
-          stopMultiplierAnimation();
-          break;
-          
-        case 'BET_CONFIRMED':
-          playerBet = {
-            amount: BigInt(data.amount),
-            cashOutMultiplier: null,
-            potentialPayout: BigInt(data.amount)
-          };
-          break;
-          
-        case 'CASH_OUT_CONFIRMED':
-          if (playerBet) {
-            playerBet = { ...playerBet, cashOutMultiplier: data.multiplier };
-          }
-          break;
-      }
-    };
-    
-    ws.onopen = () => { isConnected = true; };
-    ws.onclose = () => { isConnected = false; };
-    
-    return () => {
-      ws.close();
-      stopMultiplierAnimation();
-    };
+      // Simulate block wait
+      setTimeout(() => {
+        // Random crash point
+        const random = Math.random();
+        const simCrashPoint = 0.96 / (1 - random);
+        const clampedCrash = Math.max(1.01, Math.min(100, simCrashPoint));
+        
+        startAnimation(clampedCrash);
+        recentCrashPoints = [clampedCrash, ...recentCrashPoints.slice(0, 9)];
+      }, 2000);
+    }, 10_000);
   }
-  
-  async function placeBet(amount: bigint) {
-    // Contract interaction
-  }
-  
-  async function cashOut() {
-    // Contract interaction
-  }
-  
+
   return {
     // State
-    get round() { return round; },
-    get currentMultiplier() { return currentMultiplier; },
+    get phase() { return phase; },
+    get roundId() { return roundId; },
+    get crashPoint() { return crashPoint; },
+    get displayMultiplier() { return displayMultiplier; },
     get playerBet() { return playerBet; },
-    get recentCashOuts() { return recentCashOuts; },
+    get playerResult() { return playerResult; },
+    get players() { return players; },
     get recentCrashPoints() { return recentCrashPoints; },
-    get isConnected() { return isConnected; },
+    get bettingCountdown() { return bettingCountdown; },
     
     // Derived
     get canBet() { return canBet; },
-    get canCashOut() { return canCashOut; },
+    get isAnimating() { return isAnimating; },
+    get hasWon() { return hasWon; },
     get potentialPayout() { return potentialPayout; },
     
     // Actions
-    connect,
     placeBet,
-    cashOut
+    reset,
+    simulateRound,
   };
 }
 ```
@@ -711,35 +677,28 @@ export function createHashCrashStore() {
 
 ```css
 .hash-crash {
-  /* Rising multiplier - green intensity increases */
-  --mult-low: #00ff00;      /* 1x - 2x */
-  --mult-mid: #00ffaa;      /* 2x - 5x */
-  --mult-high: #00ffff;     /* 5x - 10x */
-  --mult-extreme: #ffff00;  /* 10x+ */
+  /* Multiplier colors - shifts as value increases */
+  --mult-safe: var(--color-accent);       /* Below player target */
+  --mult-danger: var(--color-amber);      /* Approaching target */
+  --mult-critical: var(--color-red);      /* Above target */
   
-  /* Crash - red flash */
-  --crash-color: #ff0000;
-  --crash-glow: rgba(255, 0, 0, 0.5);
+  /* Result colors */
+  --result-win: var(--color-accent);
+  --result-lose: var(--color-red);
 }
 ```
 
-### Animations
+### Animation Behavior
 
-**Multiplier Growth:**
-- Number scales slightly as it increases
-- Glow intensifies with higher multipliers
-- Color shifts through spectrum
+Since the outcome is already determined when the animation starts:
 
-**Cash Out:**
-- Green flash on the player's row
-- Payout amount animates in
-- Checkmark appears
+1. **Client knows crash point** before animation begins
+2. **Animation runs at fixed speed** (not real-time blockchain)
+3. **Player's target line** shown on chart
+4. **"SAFE" indicator** appears when multiplier passes target
+5. **Crash animation** happens at predetermined point
 
-**Crash:**
-- Screen flashes red
-- Multiplier "shatters" animation
-- Graph line turns to static/noise
-- Losers' bets show red X
+This creates suspense while being fully deterministic.
 
 ---
 
@@ -748,48 +707,38 @@ export function createHashCrashStore() {
 | Event | Sound |
 |-------|-------|
 | Round Start | Low hum building |
-| Multiplier Rising | Pitch increases with multiplier |
-| Cash Out (self) | Satisfying "cha-ching" |
-| Cash Out (others) | Soft click |
-| Approaching Danger (>10x) | Warning pulse |
+| Multiplier Rising | Pitch increases with value |
+| Passed Your Target | Triumphant "safe" chime |
+| Approaching Danger | Warning pulse |
 | Crash | Explosion + flatline |
-| Big Win (>20x) | Victory fanfare |
-
----
-
-## Feed Integration
-
-```
-> 0x7a3f cashed out HASH CRASH @ 12.4x [+1,240 $DATA] 💰
-> HASH CRASH round #4847 crashed @ 8.23x - 23 traced 💥
-> 0x9c2d rode HASH CRASH to 47.2x [+4,720 $DATA] 🚀
-> 🔥 HASH CRASH hit 100x+ - 3 legends cashed out 🔥
-```
+| Win | Victory cha-ching |
+| Lose | Deflating buzz |
 
 ---
 
 ## Testing Checklist
 
 ### Smart Contract
-- [ ] Bet placement in betting phase only
-- [ ] Cannot bet twice in same round
-- [ ] Cash out works during active phase only
-- [ ] Multiplier calculation accuracy
-- [ ] Seed block commitment after betting closes
-- [ ] Block hash capture within 256 block window
-- [ ] Crash point calculation deterministic from seed
-- [ ] Payout calculations correct
-- [ ] Round state transitions: BETTING → PENDING → ACTIVE → CRASHED
-
-### Provable Fairness
-- [ ] `verifyCrashPoint()` matches actual crash point
-- [ ] Seed hash matches `blockhash(seedBlock)`
-- [ ] Cannot predict crash point during betting phase
-- [ ] Same seed + roundId always produces same crash point
+- [ ] Bet placement requires target multiplier
+- [ ] Target must be between 1.01x and 100.00x
+- [ ] Cannot change bet or target after placement
+- [ ] Cannot bet after betting phase ends
+- [ ] Crash point only revealed after lock phase
+- [ ] Win condition: target < crashPoint
+- [ ] Lose condition: target >= crashPoint
+- [ ] Payout calculation: bet × target (for winners)
+- [ ] Losers' bets are burned
 
 ### Frontend
-- [ ] WebSocket real-time updates
-- [ ] UI animations smooth at 60fps
-- [ ] Mobile responsiveness
-- [ ] Fairness verification UI shows provenance chain
-- [ ] Load test with 100+ concurrent players
+- [ ] Betting UI shows both amount AND target inputs
+- [ ] Win probability calculator updates with target
+- [ ] Animation shows player's target line
+- [ ] "SAFE" indicator when multiplier passes target
+- [ ] Result is correct even before animation finishes
+- [ ] Recent crash history displays correctly
+
+### Fairness
+- [ ] Crash point derived from future block hash
+- [ ] No one can know crash point during betting
+- [ ] Verification function matches actual crash point
+- [ ] House edge mathematically correct (~4%)

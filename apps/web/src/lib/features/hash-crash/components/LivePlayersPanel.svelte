@@ -1,73 +1,107 @@
 <script lang="ts">
 	import Box from '$lib/ui/terminal/Box.svelte';
 	import AddressDisplay from '$lib/ui/data-display/AddressDisplay.svelte';
-	import type { HashCrashCashOut } from '$lib/core/types/arcade';
-	import type { PlayerInfo } from '../store.svelte';
+	import type { HashCrashPlayerResult } from '$lib/core/types/arcade';
 	import { formatMultiplier } from '../store.svelte';
 
 	interface Props {
-		/** All players in current round */
-		players: PlayerInfo[];
-		/** Recent cash-outs */
-		recentCashOuts: HashCrashCashOut[];
-		/** Whether game is active (rising) */
-		isActive: boolean;
+		/** All players and their results */
+		players: HashCrashPlayerResult[];
+		/** Crash point (once revealed) */
+		crashPoint: number | null;
+		/** Whether animation is in progress (reserved for future animation sync) */
+		isActive?: boolean;
 	}
 
-	let { players, recentCashOuts, isActive }: Props = $props();
+	let { players, crashPoint, isActive: _isActive }: Props = $props();
 
 	// Stats
 	let totalPlayers = $derived(players.length);
-	let cashedOutCount = $derived(players.filter((p) => p.cashedOut).length);
-	let stillInCount = $derived(totalPlayers - cashedOutCount);
+	let winnersCount = $derived(players.filter((p) => p.won).length);
+	let losersCount = $derived(players.filter((p) => !p.won && crashPoint !== null).length);
+
+	// Sort players: winners first, then by target multiplier
+	let sortedPlayers = $derived(
+		[...players].sort((a, b) => {
+			if (crashPoint === null) {
+				// Before reveal: sort by target multiplier
+				return a.targetMultiplier - b.targetMultiplier;
+			}
+			// After reveal: winners first, then by target
+			if (a.won !== b.won) return a.won ? -1 : 1;
+			return a.targetMultiplier - b.targetMultiplier;
+		})
+	);
 
 	// Format wei to DATA
 	function formatData(wei: bigint): string {
 		return (Number(wei) / 1e18).toFixed(0);
 	}
+
+	// Get player status based on animation state
+	function getPlayerStatus(
+		player: HashCrashPlayerResult,
+		currentCrash: number | null
+	): 'waiting' | 'safe' | 'crashed' {
+		if (currentCrash === null) return 'waiting';
+		if (player.targetMultiplier < currentCrash) return 'safe';
+		return 'crashed';
+	}
 </script>
 
-<Box title="Live Players" variant="single" borderColor="dim">
+<Box title="Players" variant="single" borderColor="dim">
 	<div class="players-panel">
-		{#if isActive}
+		{#if crashPoint !== null}
+			<!-- After reveal: show win/loss stats -->
 			<div class="stats-row">
 				<div class="stat">
-					<span class="stat-value in-play">{stillInCount}</span>
-					<span class="stat-label">IN PLAY</span>
+					<span class="stat-value winners">{winnersCount}</span>
+					<span class="stat-label">WINNERS</span>
 				</div>
 				<div class="stat">
-					<span class="stat-value cashed">{cashedOutCount}</span>
-					<span class="stat-label">CASHED OUT</span>
+					<span class="stat-value losers">{losersCount}</span>
+					<span class="stat-label">CRASHED</span>
 				</div>
 				<div class="stat">
 					<span class="stat-value">{totalPlayers}</span>
 					<span class="stat-label">TOTAL</span>
 				</div>
 			</div>
+		{:else if totalPlayers > 0}
+			<!-- Before reveal: show player count -->
+			<div class="stats-row">
+				<div class="stat">
+					<span class="stat-value">{totalPlayers}</span>
+					<span class="stat-label">PLAYERS BETTING</span>
+				</div>
+			</div>
 		{/if}
 
 		<div class="player-list">
-			{#if recentCashOuts.length > 0}
-				{#each recentCashOuts as cashOut (cashOut.address + cashOut.timestamp)}
-					<div class="player-row cashed-out">
-						<AddressDisplay address={cashOut.address} truncate />
-						<span class="amount">{formatData(cashOut.payout)} $DATA</span>
-						<span class="multiplier">{formatMultiplier(cashOut.multiplier)}</span>
-						<span class="status-icon">✓</span>
-					</div>
-				{/each}
-			{/if}
-
-			{#each players.filter((p) => !p.cashedOut) as player (player.address)}
-				<div class="player-row in-play">
+			{#each sortedPlayers as player (player.address)}
+				{@const status = getPlayerStatus(player, crashPoint)}
+				<div
+					class="player-row"
+					class:won={status === 'safe'}
+					class:lost={status === 'crashed'}
+					class:waiting={status === 'waiting'}
+				>
 					<AddressDisplay address={player.address} truncate />
-					<span class="amount">{formatData(player.betAmount)} $DATA</span>
-					<span class="status-text">IN PLAY</span>
-					<span class="status-dot"></span>
+					<span class="target">{formatMultiplier(player.targetMultiplier)}</span>
+					{#if status === 'safe'}
+						<span class="payout">+{formatData(player.payout)} $DATA</span>
+						<span class="status-icon won">+</span>
+					{:else if status === 'crashed'}
+						<span class="result-text">CRASHED</span>
+						<span class="status-icon lost">X</span>
+					{:else}
+						<span class="waiting-text">waiting...</span>
+						<span class="status-dot"></span>
+					{/if}
 				</div>
 			{/each}
 
-			{#if players.length === 0 && recentCashOuts.length === 0}
+			{#if players.length === 0}
 				<div class="empty-state">
 					<span>No players yet</span>
 				</div>
@@ -105,12 +139,12 @@
 		color: var(--color-text-primary);
 	}
 
-	.stat-value.in-play {
-		color: var(--color-amber);
+	.stat-value.winners {
+		color: var(--color-accent);
 	}
 
-	.stat-value.cashed {
-		color: var(--color-accent);
+	.stat-value.losers {
+		color: var(--color-red);
 	}
 
 	.stat-label {
@@ -135,21 +169,24 @@
 		padding: var(--space-2);
 		font-family: var(--font-mono);
 		font-size: var(--text-sm);
+		background: var(--color-bg-tertiary);
+		transition: background 0.3s ease;
 	}
 
-	.player-row.cashed-out {
-		background: var(--color-accent-glow);
+	.player-row.won {
+		background: rgba(0, 229, 204, 0.1);
 		animation: fade-in 0.3s ease;
 	}
 
-	.player-row.in-play {
-		background: var(--color-bg-tertiary);
+	.player-row.lost {
+		background: rgba(255, 0, 64, 0.1);
+		animation: fade-in 0.3s ease;
 	}
 
 	@keyframes fade-in {
 		from {
 			opacity: 0;
-			transform: translateY(-10px);
+			transform: translateY(-5px);
 		}
 		to {
 			opacity: 1;
@@ -157,30 +194,43 @@
 		}
 	}
 
-	.amount {
-		color: var(--color-text-secondary);
-	}
-
-	.multiplier {
-		color: var(--color-accent);
+	.target {
+		color: var(--color-cyan);
 		font-weight: var(--font-medium);
 	}
 
-	.status-icon {
+	.payout {
 		color: var(--color-accent);
+	}
+
+	.result-text {
+		color: var(--color-red);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+	}
+
+	.waiting-text {
+		color: var(--color-text-tertiary);
+		font-size: var(--text-xs);
+	}
+
+	.status-icon {
+		font-family: var(--font-mono);
 		font-weight: var(--font-bold);
 	}
 
-	.status-text {
-		color: var(--color-amber);
-		font-size: var(--text-xs);
-		letter-spacing: var(--tracking-wider);
+	.status-icon.won {
+		color: var(--color-accent);
+	}
+
+	.status-icon.lost {
+		color: var(--color-red);
 	}
 
 	.status-dot {
 		width: 8px;
 		height: 8px;
-		background: var(--color-amber);
+		background: var(--color-text-tertiary);
 		border-radius: 50%;
 		animation: pulse-dot 1s ease-in-out infinite;
 	}

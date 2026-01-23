@@ -16,7 +16,7 @@ import type {
 	PhaseTransition,
 	PhaseConfig,
 	GameEngineConfig,
-	GameEngineState
+	GameEngineState,
 } from '$lib/core/types/arcade';
 
 // ============================================================================
@@ -86,7 +86,7 @@ export function createGameEngine<TPhase extends string = StandardPhase>(
 		phaseStartTime: Date.now(),
 		transitioning: false,
 		error: null,
-		history: []
+		history: [],
 	});
 
 	// Phase timeout timer
@@ -170,7 +170,7 @@ export function createGameEngine<TPhase extends string = StandardPhase>(
 				from,
 				to,
 				timestamp: Date.now(),
-				data
+				data,
 			};
 
 			// Update state
@@ -180,7 +180,7 @@ export function createGameEngine<TPhase extends string = StandardPhase>(
 				phaseStartTime: Date.now(),
 				transitioning: false,
 				error: null,
-				history: [...state.history.slice(-(MAX_HISTORY_SIZE - 1)), transitionRecord]
+				history: [...state.history.slice(-(MAX_HISTORY_SIZE - 1)), transitionRecord],
 			};
 
 			// Enter new phase
@@ -218,7 +218,7 @@ export function createGameEngine<TPhase extends string = StandardPhase>(
 			phaseStartTime: Date.now(),
 			transitioning: false,
 			error: null,
-			history: []
+			history: [],
 		};
 	}
 
@@ -239,7 +239,7 @@ export function createGameEngine<TPhase extends string = StandardPhase>(
 		isPhase,
 		transition,
 		reset,
-		cleanup
+		cleanup,
 	};
 }
 
@@ -249,5 +249,5 @@ export type {
 	PhaseTransition,
 	PhaseConfig,
 	GameEngineConfig,
-	GameEngineState
+	GameEngineState,
 } from '$lib/core/types/arcade';

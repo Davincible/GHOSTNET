@@ -15,7 +15,7 @@ import {
 	formatElapsed,
 	type Countdown,
 	type Clock,
-	type FrameLoop
+	type FrameLoop,
 } from './TimerSystem.svelte';
 
 // ============================================================================
@@ -121,9 +121,9 @@ describe('createCountdown', () => {
 		it('decrements remaining time', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1000);
-			
+
 			expect(countdown.state.remaining).toBeLessThanOrEqual(9100);
 			expect(countdown.state.remaining).toBeGreaterThanOrEqual(8900);
 		});
@@ -131,9 +131,9 @@ describe('createCountdown', () => {
 		it('updates progress', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(5000);
-			
+
 			expect(countdown.state.progress).toBeCloseTo(0.5, 1);
 		});
 
@@ -141,9 +141,9 @@ describe('createCountdown', () => {
 			const onTick = vi.fn();
 			countdown = createCountdown({ duration: 10000, interval: 100, onTick });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(500);
-			
+
 			expect(onTick).toHaveBeenCalled();
 		});
 	});
@@ -152,9 +152,9 @@ describe('createCountdown', () => {
 		it('sets status to complete when done', () => {
 			countdown = createCountdown({ duration: 1000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1100);
-			
+
 			expect(countdown.state.status).toBe('complete');
 		});
 
@@ -162,18 +162,18 @@ describe('createCountdown', () => {
 			const onComplete = vi.fn();
 			countdown = createCountdown({ duration: 1000, interval: 100, onComplete });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1100);
-			
+
 			expect(onComplete).toHaveBeenCalledTimes(1);
 		});
 
 		it('sets remaining to 0 and progress to 1', () => {
 			countdown = createCountdown({ duration: 1000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1100);
-			
+
 			expect(countdown.state.remaining).toBe(0);
 			expect(countdown.state.progress).toBe(1);
 		});
@@ -181,41 +181,41 @@ describe('createCountdown', () => {
 
 	describe('critical threshold', () => {
 		it('sets critical flag when under threshold', () => {
-			countdown = createCountdown({ 
-				duration: 10000, 
+			countdown = createCountdown({
+				duration: 10000,
 				interval: 100,
-				criticalThreshold: 5000 
+				criticalThreshold: 5000,
 			});
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(6000);
-			
+
 			expect(countdown.state.critical).toBe(true);
 		});
 
 		it('critical is false when above threshold', () => {
-			countdown = createCountdown({ 
-				duration: 10000, 
+			countdown = createCountdown({
+				duration: 10000,
 				interval: 100,
-				criticalThreshold: 5000 
+				criticalThreshold: 5000,
 			});
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1000);
-			
+
 			expect(countdown.state.critical).toBe(false);
 		});
 
 		it('critical is false when complete', () => {
-			countdown = createCountdown({ 
-				duration: 1000, 
+			countdown = createCountdown({
+				duration: 1000,
 				interval: 100,
-				criticalThreshold: 5000 
+				criticalThreshold: 5000,
 			});
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(1100);
-			
+
 			expect(countdown.state.critical).toBe(false);
 		});
 	});
@@ -231,26 +231,26 @@ describe('createCountdown', () => {
 		it('pause preserves remaining time', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(3000);
 			countdown.pause();
-			
+
 			const pausedRemaining = countdown.state.remaining;
 			vi.advanceTimersByTime(5000);
-			
+
 			expect(countdown.state.remaining).toBe(pausedRemaining);
 		});
 
 		it('resume continues countdown', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(3000);
 			countdown.pause();
 			countdown.resume();
-			
+
 			expect(countdown.state.status).toBe('running');
-			
+
 			vi.advanceTimersByTime(3000);
 			expect(countdown.state.remaining).toBeLessThan(5000);
 		});
@@ -272,10 +272,10 @@ describe('createCountdown', () => {
 		it('resets to idle state', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(5000);
 			countdown.stop();
-			
+
 			expect(countdown.state.status).toBe('idle');
 			expect(countdown.state.remaining).toBe(10000);
 			expect(countdown.state.progress).toBe(0);
@@ -286,25 +286,25 @@ describe('createCountdown', () => {
 		it('adds time while running', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(5000);
 			const before = countdown.state.remaining;
-			
+
 			countdown.addTime(3000);
-			
+
 			expect(countdown.state.remaining).toBeGreaterThan(before);
 		});
 
 		it('adds time while paused', () => {
 			countdown = createCountdown({ duration: 10000, interval: 100 });
 			countdown.start();
-			
+
 			vi.advanceTimersByTime(5000);
 			countdown.pause();
 			const before = countdown.state.remaining;
-			
+
 			countdown.addTime(3000);
-			
+
 			expect(countdown.state.remaining).toBe(before + 3000);
 		});
 	});
@@ -351,9 +351,9 @@ describe('createClock', () => {
 		it('increments elapsed time', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(2000);
-			
+
 			expect(clock.state.elapsed).toBeGreaterThanOrEqual(1900);
 			expect(clock.state.elapsed).toBeLessThanOrEqual(2100);
 		});
@@ -361,9 +361,9 @@ describe('createClock', () => {
 		it('updates display', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(65000);
-			
+
 			expect(clock.state.display).toBe('01:05');
 		});
 	});
@@ -372,9 +372,9 @@ describe('createClock', () => {
 		it('stops at max duration', () => {
 			clock = createClock({ maxDuration: 5000, interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(10000);
-			
+
 			expect(clock.state.status).toBe('idle');
 		});
 
@@ -382,9 +382,9 @@ describe('createClock', () => {
 			const onMaxReached = vi.fn();
 			clock = createClock({ maxDuration: 5000, interval: 100, onMaxReached });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(5100);
-			
+
 			expect(onMaxReached).toHaveBeenCalledTimes(1);
 		});
 	});
@@ -393,26 +393,26 @@ describe('createClock', () => {
 		it('pause preserves elapsed time', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(3000);
 			clock.pause();
-			
+
 			const pausedElapsed = clock.state.elapsed;
 			vi.advanceTimersByTime(5000);
-			
+
 			expect(clock.state.elapsed).toBe(pausedElapsed);
 		});
 
 		it('resume continues counting', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(3000);
 			clock.pause();
 			clock.resume();
-			
+
 			vi.advanceTimersByTime(2000);
-			
+
 			expect(clock.state.elapsed).toBeGreaterThan(4000);
 		});
 	});
@@ -421,22 +421,22 @@ describe('createClock', () => {
 		it('returns current elapsed while running', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(2000);
-			
+
 			expect(clock.getElapsed()).toBeGreaterThanOrEqual(1900);
 		});
 
 		it('returns paused elapsed when paused', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(3000);
 			clock.pause();
-			
+
 			const elapsed = clock.getElapsed();
 			vi.advanceTimersByTime(5000);
-			
+
 			expect(clock.getElapsed()).toBe(elapsed);
 		});
 	});
@@ -445,10 +445,10 @@ describe('createClock', () => {
 		it('resets to idle state', () => {
 			clock = createClock({ interval: 100 });
 			clock.start();
-			
+
 			vi.advanceTimersByTime(5000);
 			clock.stop();
-			
+
 			expect(clock.state.status).toBe('idle');
 			expect(clock.state.elapsed).toBe(0);
 		});
@@ -506,9 +506,9 @@ describe('createFrameLoop', () => {
 		const callback = vi.fn();
 		loop = createFrameLoop(callback);
 		loop.start();
-		
+
 		vi.advanceTimersByTime(50); // ~3 frames
-		
+
 		expect(callback).toHaveBeenCalled();
 	});
 
@@ -516,9 +516,9 @@ describe('createFrameLoop', () => {
 		const callback = vi.fn();
 		loop = createFrameLoop(callback);
 		loop.start();
-		
+
 		vi.advanceTimersByTime(50);
-		
+
 		// Delta should be provided (will be 0 on first frame)
 		expect(callback).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
 	});
@@ -527,29 +527,29 @@ describe('createFrameLoop', () => {
 		const callback = vi.fn();
 		loop = createFrameLoop(callback);
 		loop.start();
-		
+
 		vi.advanceTimersByTime(16);
 		const callCount = callback.mock.calls.length;
-		
+
 		loop.stop();
 		vi.advanceTimersByTime(100);
-		
+
 		expect(callback.mock.calls.length).toBe(callCount);
 	});
 
 	it('can be restarted', () => {
 		const callback = vi.fn();
 		loop = createFrameLoop(callback);
-		
+
 		loop.start();
 		vi.advanceTimersByTime(32);
 		loop.stop();
-		
+
 		const callsAfterStop = callback.mock.calls.length;
-		
+
 		loop.start();
 		vi.advanceTimersByTime(32);
-		
+
 		expect(callback.mock.calls.length).toBeGreaterThan(callsAfterStop);
 	});
 });

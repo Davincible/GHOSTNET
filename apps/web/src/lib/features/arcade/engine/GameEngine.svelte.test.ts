@@ -15,7 +15,9 @@ import { createGameEngine, type GameEngine, type GameEngineConfig } from './Game
 
 type TestPhase = 'idle' | 'betting' | 'playing' | 'resolving' | 'complete';
 
-function createTestConfig(overrides: Partial<GameEngineConfig<TestPhase>> = {}): GameEngineConfig<TestPhase> {
+function createTestConfig(
+	overrides: Partial<GameEngineConfig<TestPhase>> = {}
+): GameEngineConfig<TestPhase> {
 	return {
 		initialPhase: 'idle',
 		phases: [
@@ -23,16 +25,16 @@ function createTestConfig(overrides: Partial<GameEngineConfig<TestPhase>> = {}):
 			{ phase: 'betting' },
 			{ phase: 'playing' },
 			{ phase: 'resolving' },
-			{ phase: 'complete' }
+			{ phase: 'complete' },
 		],
 		transitions: {
 			idle: ['betting'],
 			betting: ['playing', 'idle'],
 			playing: ['resolving'],
 			resolving: ['complete'],
-			complete: ['idle']
+			complete: ['idle'],
 		},
-		...overrides
+		...overrides,
 	};
 }
 
@@ -101,7 +103,7 @@ describe('createGameEngine', () => {
 	describe('phaseElapsed', () => {
 		it('returns time since phase started', () => {
 			engine = createGameEngine(createTestConfig());
-			
+
 			vi.advanceTimersByTime(1000);
 			expect(engine.phaseElapsed).toBeGreaterThanOrEqual(1000);
 		});
@@ -152,9 +154,9 @@ describe('transitions', () => {
 		it('resets phaseStartTime on transition', async () => {
 			vi.advanceTimersByTime(1000);
 			const beforeTransition = engine.state.phaseStartTime;
-			
+
 			await engine.transition('betting');
-			
+
 			expect(engine.state.phaseStartTime).toBeGreaterThan(beforeTransition);
 		});
 	});
@@ -176,28 +178,30 @@ describe('transitions', () => {
 		it('blocks concurrent transitions while transitioning flag is set', async () => {
 			// The transitioning flag is set synchronously at the start of transition()
 			// So we can test this by checking that a second call while transitioning returns false
-			
+
 			let resolveEnter: () => void = () => {};
 			const enterPromise = new Promise<void>((resolve) => {
 				resolveEnter = resolve;
 			});
 
-			engine = createGameEngine(createTestConfig({
-				phases: [
-					{ phase: 'idle' },
-					{
-						phase: 'betting',
-						onEnter: () => enterPromise
-					},
-					{ phase: 'playing' },
-					{ phase: 'resolving' },
-					{ phase: 'complete' }
-				]
-			}));
+			engine = createGameEngine(
+				createTestConfig({
+					phases: [
+						{ phase: 'idle' },
+						{
+							phase: 'betting',
+							onEnter: () => enterPromise,
+						},
+						{ phase: 'playing' },
+						{ phase: 'resolving' },
+						{ phase: 'complete' },
+					],
+				})
+			);
 
 			// Start first transition (will be blocked on enterPromise)
 			const firstTransition = engine.transition('betting');
-			
+
 			// Immediately try second transition - should be blocked because transitioning is true
 			const secondResult = await engine.transition('betting');
 			expect(secondResult).toBe(false);
@@ -205,7 +209,7 @@ describe('transitions', () => {
 			// Complete the first transition
 			resolveEnter();
 			const firstResult = await firstTransition;
-			
+
 			expect(firstResult).toBe(true);
 			expect(engine.phase).toBe('betting');
 		});
@@ -218,23 +222,25 @@ describe('transitions', () => {
 
 describe('phase callbacks', () => {
 	let engine: GameEngine<TestPhase>;
-	let onEnterBetting: ReturnType<typeof vi.fn>;
-	let onExitIdle: ReturnType<typeof vi.fn>;
+	let onEnterBetting: ReturnType<typeof vi.fn<() => void>>;
+	let onExitIdle: ReturnType<typeof vi.fn<() => void>>;
 
 	beforeEach(() => {
 		vi.useFakeTimers();
-		onEnterBetting = vi.fn();
-		onExitIdle = vi.fn();
+		onEnterBetting = vi.fn<() => void>();
+		onExitIdle = vi.fn<() => void>();
 
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle', onExit: onExitIdle },
-				{ phase: 'betting', onEnter: onEnterBetting },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle', onExit: onExitIdle },
+					{ phase: 'betting', onEnter: onEnterBetting },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 	});
 
 	afterEach(() => {
@@ -263,28 +269,30 @@ describe('phase callbacks', () => {
 
 	it('handles async callbacks', async () => {
 		let asyncCompleted = false;
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{
-					phase: 'betting',
-					onEnter: async () => {
-						await new Promise((resolve) => setTimeout(resolve, 50));
-						asyncCompleted = true;
-					}
-				},
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{
+						phase: 'betting',
+						onEnter: async () => {
+							await new Promise((resolve) => setTimeout(resolve, 50));
+							asyncCompleted = true;
+						},
+					},
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		const promise = engine.transition('betting');
 		expect(asyncCompleted).toBe(false);
-		
+
 		vi.advanceTimersByTime(50);
 		await promise;
-		
+
 		expect(asyncCompleted).toBe(true);
 	});
 });
@@ -306,15 +314,17 @@ describe('guards', () => {
 	});
 
 	it('blocks transition when guard returns false', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', canEnter: () => false },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', canEnter: () => false },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		const result = await engine.transition('betting');
 		expect(result).toBe(false);
@@ -322,15 +332,17 @@ describe('guards', () => {
 	});
 
 	it('allows transition when guard returns true', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', canEnter: () => true },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', canEnter: () => true },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		const result = await engine.transition('betting');
 		expect(result).toBe(true);
@@ -340,18 +352,20 @@ describe('guards', () => {
 	it('guard can use external state', async () => {
 		let canEnter = false;
 
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', canEnter: () => canEnter },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', canEnter: () => canEnter },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		expect(await engine.transition('betting')).toBe(false);
-		
+
 		canEnter = true;
 		expect(await engine.transition('betting')).toBe(true);
 	});
@@ -374,42 +388,46 @@ describe('phase timeouts', () => {
 	});
 
 	it('auto-transitions after timeout', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', timeout: 5000, timeoutTarget: 'playing' },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', timeout: 5000, timeoutTarget: 'playing' },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		await engine.transition('betting');
 		expect(engine.phase).toBe('betting');
 
 		vi.advanceTimersByTime(5000);
 		await vi.runAllTimersAsync();
-		
+
 		expect(engine.phase).toBe('playing');
 	});
 
 	it('clears timeout when transitioning manually', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', timeout: 5000, timeoutTarget: 'idle' },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', timeout: 5000, timeoutTarget: 'idle' },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		await engine.transition('betting');
 		await engine.transition('playing');
-		
+
 		vi.advanceTimersByTime(10000);
 		await vi.runAllTimersAsync();
-		
+
 		expect(engine.phase).toBe('playing'); // Not idle
 	});
 });
@@ -420,11 +438,11 @@ describe('phase timeouts', () => {
 
 describe('error handling', () => {
 	let engine: GameEngine<TestPhase>;
-	let onError: ReturnType<typeof vi.fn>;
+	let onError: ReturnType<typeof vi.fn<(error: Error, phase: TestPhase) => void>>;
 
 	beforeEach(() => {
 		vi.useFakeTimers();
-		onError = vi.fn();
+		onError = vi.fn<(error: Error, phase: TestPhase) => void>();
 	});
 
 	afterEach(() => {
@@ -433,21 +451,23 @@ describe('error handling', () => {
 	});
 
 	it('catches errors in callbacks and sets error state', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{
-					phase: 'betting',
-					onEnter: () => {
-						throw new Error('Test error');
-					}
-				},
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			],
-			onError
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{
+						phase: 'betting',
+						onEnter: () => {
+							throw new Error('Test error');
+						},
+					},
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+				onError,
+			})
+		);
 
 		const result = await engine.transition('betting');
 		expect(result).toBe(false);
@@ -456,21 +476,23 @@ describe('error handling', () => {
 	});
 
 	it('calls onError handler', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{
-					phase: 'betting',
-					onEnter: () => {
-						throw new Error('Test error');
-					}
-				},
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			],
-			onError
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{
+						phase: 'betting',
+						onEnter: () => {
+							throw new Error('Test error');
+						},
+					},
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+				onError,
+			})
+		);
 
 		await engine.transition('betting');
 		expect(onError).toHaveBeenCalledWith(expect.any(Error), 'idle');
@@ -497,61 +519,65 @@ describe('reset', () => {
 	it('returns to initial phase', async () => {
 		await engine.transition('betting');
 		await engine.transition('playing');
-		
+
 		engine.reset();
-		
+
 		expect(engine.phase).toBe('idle');
 	});
 
 	it('clears history', async () => {
 		await engine.transition('betting');
 		expect(engine.state.history).toHaveLength(1);
-		
+
 		engine.reset();
-		
+
 		expect(engine.state.history).toHaveLength(0);
 	});
 
 	it('clears error', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{
-					phase: 'betting',
-					onEnter: () => {
-						throw new Error('Test');
-					}
-				},
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{
+						phase: 'betting',
+						onEnter: () => {
+							throw new Error('Test');
+						},
+					},
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		await engine.transition('betting');
 		expect(engine.state.error).not.toBeNull();
-		
+
 		engine.reset();
-		
+
 		expect(engine.state.error).toBeNull();
 	});
 
 	it('clears pending timeouts', async () => {
-		engine = createGameEngine(createTestConfig({
-			phases: [
-				{ phase: 'idle' },
-				{ phase: 'betting', timeout: 5000, timeoutTarget: 'playing' },
-				{ phase: 'playing' },
-				{ phase: 'resolving' },
-				{ phase: 'complete' }
-			]
-		}));
+		engine = createGameEngine(
+			createTestConfig({
+				phases: [
+					{ phase: 'idle' },
+					{ phase: 'betting', timeout: 5000, timeoutTarget: 'playing' },
+					{ phase: 'playing' },
+					{ phase: 'resolving' },
+					{ phase: 'complete' },
+				],
+			})
+		);
 
 		await engine.transition('betting');
 		engine.reset();
-		
+
 		vi.advanceTimersByTime(10000);
-		
+
 		expect(engine.phase).toBe('idle');
 	});
 });
@@ -561,14 +587,11 @@ describe('reset', () => {
 // ============================================================================
 
 describe('history limit', () => {
-	let engine: GameEngine<TestPhase>;
-
 	beforeEach(() => {
 		vi.useFakeTimers();
 	});
 
 	afterEach(() => {
-		engine?.cleanup();
 		vi.restoreAllMocks();
 	});
 
@@ -580,8 +603,8 @@ describe('history limit', () => {
 			phases: [{ phase: 'a' }, { phase: 'b' }],
 			transitions: {
 				a: ['b'],
-				b: ['a']
-			}
+				b: ['a'],
+			},
 		});
 
 		// Make 30 transitions

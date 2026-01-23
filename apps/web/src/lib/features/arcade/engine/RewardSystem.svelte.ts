@@ -13,7 +13,7 @@ import type {
 	RewardConfig,
 	PayoutCalculation,
 	PoolPayoutCalculation,
-	RewardState
+	RewardState,
 } from '$lib/core/types/arcade';
 
 // ============================================================================
@@ -91,7 +91,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 		sessionPnL: 0n,
 		gamesPlayed: 0,
 		gamesWon: 0,
-		winRate: 0
+		winRate: 0,
 	});
 
 	// -------------------------------------------------------------------------
@@ -143,7 +143,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 			burnAmount,
 			netPayout,
 			profit: netProfit,
-			isWin: netProfit > 0n
+			isWin: netProfit > 0n,
 		};
 	}
 
@@ -172,7 +172,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 			rakeAmount,
 			burnAmount,
 			distributablePool,
-			payoutMultiplier
+			payoutMultiplier,
 		};
 	}
 
@@ -192,7 +192,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 			sessionPnL: newPnL,
 			gamesPlayed: newGamesPlayed,
 			gamesWon: newGamesWon,
-			winRate: newGamesWon / newGamesPlayed
+			winRate: newGamesWon / newGamesPlayed,
 		};
 	}
 
@@ -206,7 +206,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 			sessionLosses: newLosses,
 			sessionPnL: newPnL,
 			gamesPlayed: newGamesPlayed,
-			winRate: state.gamesWon / newGamesPlayed
+			winRate: state.gamesWon / newGamesPlayed,
 		};
 	}
 
@@ -236,7 +236,7 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 			sessionPnL: 0n,
 			gamesPlayed: 0,
 			gamesWon: 0,
-			winRate: 0
+			winRate: 0,
 		};
 	}
 
@@ -254,15 +254,9 @@ export function createRewardSystem(config: RewardConfig): RewardSystem {
 		recordWin,
 		recordLoss,
 		getRewardTier,
-		resetSession
+		resetSession,
 	};
 }
 
 // Re-export types for convenience
-export type {
-	RewardTier,
-	RewardConfig,
-	PayoutCalculation,
-	PoolPayoutCalculation,
-	RewardState
-};
+export type { RewardTier, RewardConfig, PayoutCalculation, PoolPayoutCalculation, RewardState };

@@ -262,7 +262,7 @@ export interface RewardState {
 // ============================================================================
 
 /** HASH CRASH specific types */
-export type HashCrashPhase = 'idle' | 'betting' | 'pending' | 'rising' | 'crashed' | 'settling';
+export type HashCrashPhase = 'idle' | 'betting' | 'locked' | 'revealed' | 'animating' | 'settled';
 
 export interface HashCrashRound {
 	roundId: number;
@@ -277,14 +277,15 @@ export interface HashCrashRound {
 }
 
 export interface HashCrashBet {
+	/** Bet amount in wei */
 	amount: bigint;
-	cashOutMultiplier: number | null;
-	settled: boolean;
+	/** Target cash-out multiplier (pre-committed) */
+	targetMultiplier: number;
 }
 
-export interface HashCrashCashOut {
+export interface HashCrashPlayerResult {
 	address: `0x${string}`;
-	multiplier: number;
+	targetMultiplier: number;
+	won: boolean;
 	payout: bigint;
-	timestamp: number;
 }

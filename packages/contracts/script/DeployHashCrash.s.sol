@@ -59,17 +59,18 @@ contract DeployHashCrash is Script {
 
         // Register game with ArcadeCore
         console2.log("Registering HashCrash with ArcadeCore...");
-        IArcadeCore(arcadeCore).registerGame(
-            hashCrash,
-            IArcadeCore.GameConfig({
-                minEntry: MIN_ENTRY,
-                maxEntry: MAX_ENTRY,
-                rakeBps: RAKE_BPS,
-                burnBps: BURN_BPS,
-                requiresPosition: false, // Anyone can play
-                paused: false
-            })
-        );
+        IArcadeCore(arcadeCore)
+            .registerGame(
+                hashCrash,
+                IArcadeCore.GameConfig({
+                    minEntry: MIN_ENTRY,
+                    maxEntry: MAX_ENTRY,
+                    rakeBps: RAKE_BPS,
+                    burnBps: BURN_BPS,
+                    requiresPosition: false, // Anyone can play
+                    paused: false
+                })
+            );
         console2.log("HashCrash registered!");
 
         vm.stopBroadcast();
@@ -77,7 +78,11 @@ contract DeployHashCrash is Script {
         _logDeployment(hashCrash, arcadeCore, deployer);
     }
 
-    function _logDeployment(address hashCrash, address arcadeCore, address deployer) internal pure {
+    function _logDeployment(
+        address hashCrash,
+        address arcadeCore,
+        address deployer
+    ) internal pure {
         console2.log("");
         console2.log("=== HASH CRASH DEPLOYMENT COMPLETE ===");
         console2.log("");
