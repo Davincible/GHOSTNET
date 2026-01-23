@@ -27,7 +27,7 @@ Randomness Integration (Future Block Hash)                      [█████
 
 PHASE 3A GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
-01. HASH CRASH (Casino)                                         [░░░░░░░░░░░░] NOT STARTED
+01. HASH CRASH (Casino)                                         [████████░░░░] CONTRACT DONE
 02. CODE DUEL (Competitive)                                     [░░░░░░░░░░░░] NOT STARTED
 03. DAILY OPS (Progression)                                     [░░░░░░░░░░░░] NOT STARTED
 
@@ -212,17 +212,18 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 **Spec:** [games/01-hash-crash.md](./games/01-hash-crash.md)  
 **Category:** Casino | **Entry:** 10-1000 $DATA | **Burn:** 3%  
 **Dependencies:** Game Engine, Contracts Core, Future Block Hash  
-**Status:** NOT STARTED
+**Status:** SMART CONTRACT COMPLETE (84 tests)
 
 | Task | Status | Notes |
 |------|--------|-------|
 | **Smart Contract** | | |
-| Implement `HashCrash.sol` | ⬜ | |
-| Future block hash integration for crash point | ⬜ | Commit seed block at round start |
-| Betting phase logic | ⬜ | |
-| Cash-out mechanics | ⬜ | |
-| Payout distribution | ⬜ | |
-| Contract tests | ⬜ | |
+| Implement `HashCrash.sol` | ✅ | Full implementation with IArcadeGame interface |
+| Future block hash integration for crash point | ✅ | Uses FutureBlockRandomness base |
+| Betting phase logic | ✅ | 60 second window, max 50 players |
+| Cash-out mechanics | ✅ | Multiplier validation, payout via ArcadeCore |
+| Payout distribution | ✅ | Pull pattern via ArcadeCore.creditPayout |
+| Expired seed handling | ✅ | Permissionless refund via claimExpiredRefund |
+| Contract tests | ✅ | 84 tests (HashCrashTest + HashCrashCoverageTest) |
 | **Frontend** | | |
 | Create `hash-crash/` feature | ⬜ | |
 | Implement store with Svelte 5 runes | ⬜ | |
@@ -236,7 +237,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Sound integration | ⬜ | |
 | Mobile responsive | ⬜ | |
 | **Testing** | | |
-| Unit tests | ⬜ | |
+| Unit tests | ✅ | 84 Solidity tests passing |
 | E2E tests | ⬜ | |
 | Load testing (100+ players) | ⬜ | |
 
@@ -386,6 +387,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | ArcadeCore (impl) | `0xFc6eBb3655625282c6fc3262f2FdA35983FE1096` |
 | ArcadeCore (proxy) | `0x554a3cc63851e0526d9938817949F97dC45b00EC` |
 | GameRegistry | `0x67244672BA46F50f2EBf6572a985faafFFE50C11` |
+| **HashCrash** | `0xdD4f4AE5efd64F7A1a4df32324718CcA9E90f9FD` |
 
 **Configuration:**
 - Deployer/Admin: `0xAeB643a650E374D8D62a8A3D9e5B175ecd8090D1`
@@ -410,8 +412,15 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - `treasury()` - Returns treasury address
 
 **Files Added:**
-- `script/DeployArcade.s.sol` - Deployment script with EIP-2935 verification
+- `script/DeployArcade.s.sol` - Deployment script with EIP-2935 check
+- `script/DeployHashCrash.s.sol` - HashCrash deployment script
 - `src/mocks/MockERC20.sol` - Simple mintable token for testing
+
+**HashCrash Testnet Verification:**
+- Full round flow executed successfully
+- Started round → Placed bet → Locked round → Revealed crash point (1.45x) → Resolved round
+- 95 DATA burned from crashed player + 2.5 DATA burn from rake
+- Total burned in first round: 97.5 DATA
 
 ---
 
@@ -561,10 +570,11 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 ### Sprint 2 (Week 3-4)
 
-1. **HASH CRASH Contract** - First game implementation (uses FutureBlockRandomness)
+1. ✅ ~~HASH CRASH Contract~~ - Complete with 84 tests (uses FutureBlockRandomness)
 2. **HASH CRASH Frontend** - Svelte 5 implementation
-3. **Keeper Bot** - Rust service for proactive seed reveals
-4. **E2E Testing** - Full stack integration tests
+3. **Deploy HashCrash to testnet** - Register with deployed ArcadeCore
+4. **Keeper Bot** - Rust service for proactive seed reveals
+5. **E2E Testing** - Full stack integration tests
 
 ### Pre-Mainnet Checklist
 
