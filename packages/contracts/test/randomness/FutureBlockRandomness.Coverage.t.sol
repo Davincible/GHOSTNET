@@ -217,8 +217,9 @@ contract FutureBlockRandomnessCoverageTest is Test {
     function test_GetRemainingRevealWindow_BeforeSeedBlock() public {
         randomness.commitSeed(1);
         // Should include remaining delay + full window
+        // Default delay is now 10 blocks
         uint256 remaining = randomness.getRemainingRevealWindow(1);
-        assertEq(remaining, 256 + 50); // window + delay
+        assertEq(remaining, 256 + 10); // window + default delay
     }
 
     function test_GetRemainingRevealWindow_AtExpiry() public {

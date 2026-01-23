@@ -9,12 +9,12 @@ import { BlockhashHistory } from "./BlockhashHistory.sol";
 ///
 ///      RANDOMNESS FLOW:
 ///      1. COMMIT: Call _commitSeed(roundId) during bet acceptance
-///         - Records seedBlock = block.number + SEED_BLOCK_DELAY
+///         - Records seedBlock = block.number + _seedBlockDelay()
 ///         - Attacker cannot predict what hash this future block will have
 ///
 ///      2. WAIT: Wait for seedBlock to be mined
-///         - SEED_BLOCK_DELAY provides sufficient entropy accumulation
-///         - On MegaETH (100ms blocks), 50 blocks = 5 seconds
+///         - Default 10 blocks = 1 second on MegaETH (100ms blocks)
+///         - Games can override _seedBlockDelay() for custom timing
 ///
 ///      3. REVEAL: Call _revealSeed(roundId) to capture the seed
 ///         - Retrieves blockhash(seedBlock)
@@ -43,11 +43,15 @@ abstract contract FutureBlockRandomness {
     // CONSTANTS
     // ══════════════════════════════════════════════════════════════════════════════
 
-    /// @notice Blocks to wait before seed is ready
-    /// @dev 50 blocks = 5 seconds on MegaETH (100ms blocks).
-    ///      Provides sufficient entropy accumulation while maintaining acceptable UX.
-    ///      Shorter delays risk manipulation; longer delays hurt UX.
-    uint256 public constant SEED_BLOCK_DELAY = 50;
+    /// @notice Default blocks to wait before seed is ready
+    /// @dev 10 blocks = 1 second on MegaETH (100ms blocks).
+    ///      Games can override via _seedBlockDelay() for different security/UX tradeoffs.
+    uint256 public constant DEFAULT_SEED_BLOCK_DELAY = 10;
+
+    /// @notice Minimum allowed seed block delay (safety floor)
+    /// @dev Prevents games from using dangerously short delays.
+    ///      5 blocks = 0.5 seconds minimum entropy accumulation.
+    uint256 public constant MIN_SEED_BLOCK_DELAY = 5;
 
     /// @notice Maximum blocks before native blockhash() returns 0 (EVM hard limit)
     /// @dev On MegaETH: 256 blocks = 25.6 seconds reveal window
@@ -142,7 +146,15 @@ abstract contract FutureBlockRandomness {
         RoundSeed storage rs = _roundSeeds[roundId];
         if (rs.committed) revert SeedAlreadyCommitted();
 
-        uint64 seedBlock = uint64(block.number + SEED_BLOCK_DELAY);
+        // Get delay from virtual function (allows game-specific configuration)
+        uint256 delay = _seedBlockDelay();
+
+        // Enforce minimum for safety
+        if (delay < MIN_SEED_BLOCK_DELAY) {
+            delay = MIN_SEED_BLOCK_DELAY;
+        }
+
+        uint64 seedBlock = uint64(block.number + delay);
         rs.seedBlock = seedBlock;
         rs.commitBlock = uint64(block.number);
         rs.committed = true;
@@ -151,6 +163,20 @@ abstract contract FutureBlockRandomness {
         uint256 deadline = seedBlock + _getEffectiveWindow();
 
         emit SeedCommitted(roundId, seedBlock, deadline);
+    }
+
+    /// @notice Get the seed block delay for this game
+    /// @dev Override to customize delay. Higher stakes games may want longer delays.
+    ///      Return value is clamped to MIN_SEED_BLOCK_DELAY minimum.
+    ///
+    ///      Recommended values for MegaETH (100ms blocks):
+    ///      - Low stakes (< 100 DATA): 10 blocks (1 second)
+    ///      - Medium stakes (100-1000 DATA): 15 blocks (1.5 seconds)
+    ///      - High stakes (> 1000 DATA): 20+ blocks (2+ seconds)
+    ///
+    /// @return delay Number of blocks to wait
+    function _seedBlockDelay() internal view virtual returns (uint256 delay) {
+        return DEFAULT_SEED_BLOCK_DELAY;
     }
 
     /// @notice Reveal and cache the seed

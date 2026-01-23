@@ -18,7 +18,7 @@ import { FutureBlockRandomness } from "../../randomness/FutureBlockRandomness.so
 ///
 ///      GAME FLOW:
 ///      1. BETTING: Players place bets (60 second window or max players)
-///      2. LOCKED: Betting closed, seed block committed, waiting for seed
+///      2. LOCKED: Betting closed, seed block committed (~1 sec wait on MegaETH)
 ///      3. ACTIVE: Seed revealed, crash point known, players can cash out
 ///      4. SETTLED: All players resolved (cashed out or crashed)
 ///
@@ -52,6 +52,10 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
 
     /// @notice Maximum players per round
     uint256 public constant MAX_PLAYERS_PER_ROUND = 50;
+
+    /// @notice Blocks to wait for seed (overrides FutureBlockRandomness default)
+    /// @dev 10 blocks = ~1 second on MegaETH. Good balance of security and UX for crash games.
+    uint256 public constant HASH_CRASH_SEED_DELAY = 10;
 
     /// @notice House edge in basis points (400 = 4%)
     /// @dev This creates ~96% expected value for players
@@ -466,6 +470,12 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
         // Get seed info for event
         FutureBlockRandomness.RoundSeed memory seedInfo = _getRoundSeedInfo(roundId);
         emit RoundStarted(roundId, seedInfo.seedBlock, uint64(block.timestamp));
+    }
+
+    /// @notice Get seed block delay for HashCrash
+    /// @dev 10 blocks = ~1 second on MegaETH for fast game flow
+    function _seedBlockDelay() internal pure override returns (uint256) {
+        return HASH_CRASH_SEED_DELAY;
     }
 
     /// @notice Calculate crash point from seed
