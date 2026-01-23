@@ -151,7 +151,7 @@ impl Default for FetchStats {
 impl FetchStats {
     /// Create stats for a completed single-batch fetch.
     #[must_use]
-    pub fn single_batch(log_count: usize) -> Self {
+    pub const fn single_batch(log_count: usize) -> Self {
         Self {
             total_logs: log_count,
             batches: 1,
@@ -244,15 +244,15 @@ impl RealtimeResponse {
 
 /// JSON-RPC request structure.
 #[derive(Debug, Serialize)]
-pub(crate) struct JsonRpcRequest<'a, P: Serialize> {
+pub(crate) struct JsonRpcRequest<'a, P> {
     pub jsonrpc: &'static str,
     pub method: &'a str,
     pub params: P,
     pub id: u64,
 }
 
-impl<'a, P: Serialize> JsonRpcRequest<'a, P> {
-    pub fn new(method: &'a str, params: P, id: u64) -> Self {
+impl<'a, P> JsonRpcRequest<'a, P> {
+    pub const fn new(method: &'a str, params: P, id: u64) -> Self {
         Self {
             jsonrpc: "2.0",
             method,

@@ -90,9 +90,9 @@ pub mod standard;
 pub mod traits;
 pub mod types;
 
-// Future: MegaETH-specific provider
-// #[cfg(feature = "megaeth")]
-// pub mod megaeth;   // MegaEthProvider using megaeth-rpc
+// MegaETH-specific provider (requires megaeth feature)
+#[cfg(feature = "megaeth")]
+pub mod megaeth;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RE-EXPORTS
@@ -104,6 +104,10 @@ pub use nonce::LocalNonceManager;
 pub use standard::StandardEvmProvider;
 pub use traits::{ChainProvider, ExtendedChainProvider, NonceManager};
 pub use types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
+
+// MegaETH provider (feature-gated)
+#[cfg(feature = "megaeth")]
+pub use megaeth::MegaEthProvider;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PRELUDE
@@ -122,6 +126,9 @@ pub mod prelude {
     pub use crate::standard::StandardEvmProvider;
     pub use crate::traits::{ChainProvider, ExtendedChainProvider, NonceManager};
     pub use crate::types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
+
+    #[cfg(feature = "megaeth")]
+    pub use crate::megaeth::MegaEthProvider;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

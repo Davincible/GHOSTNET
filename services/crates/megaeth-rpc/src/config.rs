@@ -129,7 +129,7 @@ impl ClientConfig {
     ///
     /// Does not panic. Invalid values are caught during validation.
     #[must_use]
-    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+    pub const fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
@@ -140,7 +140,7 @@ impl ClientConfig {
     ///
     /// * `max` - Maximum number of batches (1-10,000)
     #[must_use]
-    pub fn with_max_cursor_batches(mut self, max: usize) -> Self {
+    pub const fn with_max_cursor_batches(mut self, max: usize) -> Self {
         self.max_cursor_batches = max;
         self
     }
@@ -163,7 +163,7 @@ impl ClientConfig {
     /// let config = ClientConfig::default().with_max_logs(100_000);
     /// ```
     #[must_use]
-    pub fn with_max_logs(mut self, max: usize) -> Self {
+    pub const fn with_max_logs(mut self, max: usize) -> Self {
         self.max_logs = max;
         self
     }
@@ -181,36 +181,31 @@ impl ClientConfig {
     pub fn validate(&self) -> Result<()> {
         if self.timeout < MIN_TIMEOUT {
             return Err(MegaEthError::InvalidConfig(format!(
-                "timeout must be at least {:?}",
-                MIN_TIMEOUT
+                "timeout must be at least {MIN_TIMEOUT:?}"
             )));
         }
 
         if self.timeout > MAX_TIMEOUT {
             return Err(MegaEthError::InvalidConfig(format!(
-                "timeout must be at most {:?}",
-                MAX_TIMEOUT
+                "timeout must be at most {MAX_TIMEOUT:?}"
             )));
         }
 
         if self.max_cursor_batches < MIN_CURSOR_BATCHES {
             return Err(MegaEthError::InvalidConfig(format!(
-                "max_cursor_batches must be at least {}",
-                MIN_CURSOR_BATCHES
+                "max_cursor_batches must be at least {MIN_CURSOR_BATCHES}"
             )));
         }
 
         if self.max_cursor_batches > MAX_CURSOR_BATCHES {
             return Err(MegaEthError::InvalidConfig(format!(
-                "max_cursor_batches must be at most {}",
-                MAX_CURSOR_BATCHES
+                "max_cursor_batches must be at most {MAX_CURSOR_BATCHES}"
             )));
         }
 
         if self.max_logs > MAX_LOGS_LIMIT {
             return Err(MegaEthError::InvalidConfig(format!(
-                "max_logs must be at most {}",
-                MAX_LOGS_LIMIT
+                "max_logs must be at most {MAX_LOGS_LIMIT}"
             )));
         }
 

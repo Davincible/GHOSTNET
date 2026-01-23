@@ -160,7 +160,7 @@ impl MegaEthClient {
 
     /// Get the current configuration.
     #[must_use]
-    pub fn config(&self) -> &ClientConfig {
+    pub const fn config(&self) -> &ClientConfig {
         &self.config
     }
 
@@ -301,23 +301,20 @@ impl MegaEthClient {
                 });
             }
 
-            match response.cursor {
-                Some(cursor) => {
-                    filter = filter.with_cursor(cursor);
-                }
-                None => {
-                    // No more cursors - query complete
-                    let total_logs = all_logs.len();
-                    info!(total_logs, batches, "Cursor pagination complete");
-                    return Ok((
-                        all_logs,
-                        FetchStats {
-                            total_logs,
-                            batches,
-                            complete: true,
-                        },
-                    ));
-                }
+            if let Some(cursor) = response.cursor {
+                filter = filter.with_cursor(cursor);
+            } else {
+                // No more cursors - query complete
+                let total_logs = all_logs.len();
+                info!(total_logs, batches, "Cursor pagination complete");
+                return Ok((
+                    all_logs,
+                    FetchStats {
+                        total_logs,
+                        batches,
+                        complete: true,
+                    },
+                ));
             }
         }
     }
@@ -326,6 +323,10 @@ impl MegaEthClient {
     ///
     /// Convenience method that wraps [`get_logs_with_cursor`](Self::get_logs_with_cursor)
     /// for a single contract.
+    ///
+    /// # Errors
+    ///
+    /// See [`get_logs_with_cursor`](Self::get_logs_with_cursor) for error conditions.
     ///
     /// # Example
     ///
@@ -405,7 +406,7 @@ impl MegaEthClient {
             Ok(response) => {
                 if let Ok(body) = response.json::<serde_json::Value>().await {
                     if let Some(error) = body.get("error") {
-                        let code = error.get("code").and_then(|c| c.as_i64()).unwrap_or(0);
+                        let code = error.get("code").and_then(serde_json::Value::as_i64).unwrap_or(0);
                         // Method not found codes
                         if code == -32601 || code == -32600 {
                             debug!("realtime_sendRawTransaction not supported");
@@ -482,7 +483,7 @@ impl MegaEthClient {
     /// Send a JSON-RPC request and parse the response.
     async fn send_request<P, R>(&self, request: &JsonRpcRequest<'_, P>) -> Result<JsonRpcResponse<R>>
     where
-        P: serde::Serialize,
+        P: serde::Serialize + Sync,
         R: serde::de::DeserializeOwned,
     {
         let response = self

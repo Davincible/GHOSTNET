@@ -146,7 +146,7 @@ impl MegaEthError {
     /// Returns `true` for both [`MegaEthError::MethodNotSupported`] and
     /// [`MegaEthError::Rpc`] with method-not-found error codes.
     #[must_use]
-    pub fn is_method_not_supported(&self) -> bool {
+    pub const fn is_method_not_supported(&self) -> bool {
         match self {
             Self::MethodNotSupported { .. } => true,
             Self::Rpc { code, .. } => {
