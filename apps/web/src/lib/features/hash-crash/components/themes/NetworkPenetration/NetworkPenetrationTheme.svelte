@@ -59,12 +59,60 @@
 	// ─────────────────────────────────────────────────────────────────────────
 
 	let messages = $state<TerminalMessage[]>([]);
-	let lastPhase = $state<string | null>(null);
-	let lastDepthBucket = $state(0);
+
+	// NON-REACTIVE tracking variables (to avoid effect loops)
+	// These don't need to trigger re-renders, just track state for cleanup/guards
+	let lastPhase: string | null = null;
+	let lastDepthBucket = 0;
+	let hasSentCrashMessages = false;
+	let hasSentOutcomeMessages = false;
+
+	// Track pending timeouts for cleanup (non-reactive - no $state)
+	const pendingTimeouts: ReturnType<typeof setTimeout>[] = [];
+
+	function clearPendingTimeouts() {
+		while (pendingTimeouts.length > 0) {
+			clearTimeout(pendingTimeouts.pop());
+		}
+	}
+
+	function addMessages(msgs: TerminalMessage[]) {
+		// Add with delays, tracking timeouts for cleanup
+		msgs.forEach((msg, i) => {
+			const delay = msg.delay ?? i * 200;
+			const timeoutId = setTimeout(() => {
+				messages = [...messages, msg];
+			}, delay);
+			pendingTimeouts.push(timeoutId);
+		});
+	}
+
+	function getPhaseMessages(p: typeof phase): TerminalMessage[] {
+		switch (p) {
+			case 'betting':
+				return [...ROUND_START_MESSAGES, ...BETTING_MESSAGES];
+			case 'locked':
+				return LOCK_MESSAGES;
+			case 'revealed':
+			case 'animating':
+				return REVEAL_MESSAGES;
+			default:
+				return [];
+		}
+	}
 
 	// Add messages based on phase changes
 	$effect(() => {
 		if (phase !== lastPhase) {
+			// Reset state on new betting round
+			if (phase === 'betting') {
+				clearPendingTimeouts();
+				messages = [];
+				lastDepthBucket = 0;
+				hasSentCrashMessages = false;
+				hasSentOutcomeMessages = false;
+			}
+
 			const newMessages = getPhaseMessages(phase);
 			if (newMessages.length > 0) {
 				addMessages(newMessages);
@@ -87,54 +135,31 @@
 		}
 	});
 
-	// Add outcome messages
+	// Add outcome messages (only once per round)
 	$effect(() => {
-		if (traced && playerResult !== 'pending') {
+		if (traced && playerResult !== 'pending' && !hasSentOutcomeMessages) {
 			if (playerResult === 'won') {
 				addMessages(WIN_MESSAGES);
 			} else {
 				addMessages(LOSE_MESSAGES);
 			}
+			hasSentOutcomeMessages = true;
 		}
 	});
 
-	// Add crash messages
+	// Add crash messages (only once per round)
 	$effect(() => {
-		if (traced) {
+		if (traced && !hasSentCrashMessages) {
 			addMessages(CRASH_MESSAGES);
+			hasSentCrashMessages = true;
 		}
 	});
 
-	function getPhaseMessages(p: typeof phase): TerminalMessage[] {
-		switch (p) {
-			case 'betting':
-				return [...ROUND_START_MESSAGES, ...BETTING_MESSAGES];
-			case 'locked':
-				return LOCK_MESSAGES;
-			case 'revealed':
-			case 'animating':
-				return REVEAL_MESSAGES;
-			default:
-				return [];
-		}
-	}
-
-	function addMessages(msgs: TerminalMessage[]) {
-		// Add with delays
-		msgs.forEach((msg, i) => {
-			const delay = msg.delay ?? i * 200;
-			setTimeout(() => {
-				messages = [...messages, msg];
-			}, delay);
-		});
-	}
-
-	// Reset messages on new round
+	// Cleanup on unmount
 	$effect(() => {
-		if (phase === 'betting') {
-			messages = [];
-			lastDepthBucket = 0;
-		}
+		return () => {
+			clearPendingTimeouts();
+		};
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
@@ -179,76 +204,76 @@
 <TraceFlash active={traced}>
 	<GlitchEffect active={showGlitch} intensity={3}>
 		<TerminalOverlay>
-				<div class="network-penetration-theme">
-					<!-- Header -->
-					<header class="theme-header">
-						<span class="theme-title">ICE BREAKER</span>
-						{#if roundId > 0}
-							<span class="round-info">BREACH #{roundId}</span>
+			<div class="network-penetration-theme">
+				<!-- Header -->
+				<header class="theme-header">
+					<span class="theme-title">ICE BREAKER</span>
+					{#if roundId > 0}
+						<span class="round-info">BREACH #{roundId}</span>
+					{/if}
+					<span
+						class="status-indicator"
+						class:betting={phase === 'betting'}
+						class:active={isActive}
+						class:traced
+					>
+						{#if traced}
+							TRACED
+						{:else if phase === 'betting'}
+							AWAITING ENTRY
+						{:else if phase === 'locked'}
+							INITIALIZING
+						{:else if isActive}
+							BREACH ACTIVE
+						{:else}
+							STANDBY
 						{/if}
-						<span
-							class="status-indicator"
-							class:betting={phase === 'betting'}
-							class:active={isActive}
-							class:traced
-						>
-							{#if traced}
-								TRACED
-							{:else if phase === 'betting'}
-								AWAITING ENTRY
-							{:else if phase === 'locked'}
-								INITIALIZING
-							{:else if isActive}
-								BREACH ACTIVE
-							{:else}
-								STANDBY
-							{/if}
-						</span>
-					</header>
+					</span>
+				</header>
 
-					<!-- Main visualization area -->
-					<div class="visualization-area">
-						<!-- Large depth display -->
-						<DepthDisplay {depth} target={exitPoint} crashed={traced} {phase} showStatus={true} />
+				<!-- Main visualization area -->
+				<div class="visualization-area">
+					<!-- Large depth display -->
+					<DepthDisplay {depth} target={exitPoint} crashed={traced} {phase} showStatus={true} />
 
-						<!-- Penetration progress bar -->
-						<div class="bar-section">
-							<PenetrationBar {depth} {exitPoint} {maxDepth} active={isActive} {traced} />
-						</div>
-
-						<!-- Terminal log and threat meter side by side -->
-						<div class="info-row">
-							<div class="log-section">
-								<TerminalLog {messages} maxLines={5} height="100px" />
-							</div>
-
-							<div class="threat-section">
-								<IceThreatMeter level={threatLevel} active={isActive} />
-							</div>
-						</div>
+					<!-- Penetration progress bar -->
+					<div class="bar-section">
+						<PenetrationBar {depth} {exitPoint} {maxDepth} active={isActive} {traced} />
 					</div>
 
-					<!-- Player bet info (if has bet) -->
-					{#if exitPoint}
-						<div
-							class="bet-info"
-							class:won={playerResult === 'won'}
-							class:lost={playerResult === 'lost'}
-						>
-							<div class="bet-row">
-								<span class="bet-label">EXIT POINT:</span>
-								<span class="bet-value">{exitPoint.toFixed(2)}x</span>
-							</div>
-							{#if playerResult === 'won'}
-								<div class="result-badge won">EXTRACTION SECURED</div>
-							{:else if playerResult === 'lost'}
-								<div class="result-badge lost">TRACED - EXTRACTION FAILED</div>
-							{:else if isActive && depth >= exitPoint}
-								<div class="result-badge safe">EXIT AVAILABLE - SAFE</div>
-							{/if}
+					<!-- Terminal log and threat meter side by side -->
+					<div class="info-row">
+						<div class="log-section">
+							<TerminalLog {messages} maxLines={5} height="100px" />
 						</div>
-					{/if}
+
+						<div class="threat-section">
+							<IceThreatMeter level={threatLevel} active={isActive} />
+						</div>
+					</div>
 				</div>
+
+				<!-- Player bet info (if has bet) -->
+				{#if exitPoint}
+					<div
+						class="bet-info"
+						class:won={playerResult === 'won'}
+						class:lost={playerResult === 'lost'}
+					>
+						<div class="bet-row">
+							<span class="bet-label">EXIT POINT:</span>
+							<span class="bet-value">{exitPoint.toFixed(2)}x</span>
+						</div>
+						{#if playerResult === 'won'}
+							<div class="result-badge won">EXTRACTION SECURED</div>
+						{:else if playerResult === 'lost'}
+							<div class="result-badge lost">TRACED - EXTRACTION FAILED</div>
+						{:else if isActive && depth >= exitPoint}
+							<div class="result-badge safe">EXIT AVAILABLE - SAFE</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</TerminalOverlay>
 	</GlitchEffect>
 </TraceFlash>

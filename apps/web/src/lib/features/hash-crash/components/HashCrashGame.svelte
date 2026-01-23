@@ -19,11 +19,14 @@
 		theme?: HashCrashTheme;
 	}
 
-	let { store: externalStore, simulate = false, theme: _theme = 'network-penetration' }: Props =
-		$props();
+	let {
+		store: externalStore,
+		simulate = false,
+		theme: initialTheme = 'network-penetration',
+	}: Props = $props();
 
-	// Theme store for persisting selection
-	const themeStore = createThemeStore();
+	// Theme store for persisting selection (initialTheme used if no saved preference)
+	const themeStore = createThemeStore(initialTheme);
 
 	// Create or use provided store
 	function getStore(): HashCrashStore {

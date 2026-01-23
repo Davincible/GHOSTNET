@@ -95,11 +95,15 @@ export function getStatusText(
 
 const STORAGE_KEY = 'ghostnet-hashcrash-theme';
 
-export function createThemeStore() {
-	// Default theme
-	let theme = $state<HashCrashTheme>('network-penetration');
+/**
+ * Creates a theme store for Hash Crash visualization.
+ * @param initialTheme - Theme to use if no saved preference exists
+ */
+export function createThemeStore(initialTheme: HashCrashTheme = 'network-penetration') {
+	// Start with the provided initial theme
+	let theme = $state<HashCrashTheme>(initialTheme);
 
-	// Load from localStorage on init
+	// Load from localStorage on init (overrides initial if saved)
 	if (browser) {
 		const saved = localStorage.getItem(STORAGE_KEY);
 		if (saved === 'data-stream' || saved === 'network-penetration' || saved === 'classic') {
