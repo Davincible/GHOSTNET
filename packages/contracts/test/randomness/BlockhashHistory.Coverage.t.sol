@@ -16,7 +16,10 @@ contract BlockhashHistoryCoverageTest is Test {
     // ══════════════════════════════════════════════════════════════════════════════
 
     function test_Constants() public pure {
-        assertEq(BlockhashHistory.getHistoryContractAddress(), address(0x0000F90827F1C53a10cb7A02335B175320002935));
+        assertEq(
+            BlockhashHistory.getHistoryContractAddress(),
+            address(0x0000F90827F1C53a10cb7A02335B175320002935)
+        );
         assertEq(BlockhashHistory.getNativeLimit(), 256);
         assertEq(BlockhashHistory.getExtendedWindow(), 8191);
     }

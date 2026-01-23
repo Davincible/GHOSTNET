@@ -87,10 +87,10 @@ abstract contract CommitRevealBase {
     ///      - Slot 0: bytes32 hash (32 bytes)
     ///      - Slot 1: uint128 amount (16) + uint8 revealedChoice (1) + bool revealed (1) = 18 bytes packed
     struct Commitment {
-        bytes32 hash;           // keccak256(choice, secret, player)
-        uint128 amount;         // Bet amount (0 after forfeit)
-        uint8 revealedChoice;   // Revealed choice (255 = not revealed)
-        bool revealed;          // Whether choice has been revealed
+        bytes32 hash; // keccak256(choice, secret, player)
+        uint128 amount; // Bet amount (0 after forfeit)
+        uint8 revealedChoice; // Revealed choice (255 = not revealed)
+        bool revealed; // Whether choice has been revealed
     }
 
     /// @notice Mapping from roundId => player => commitment
@@ -178,7 +178,10 @@ abstract contract CommitRevealBase {
     /// @param roundId The round identifier
     /// @param player The player address
     /// @return amount The forfeited amount (0 if already revealed or no commitment)
-    function _forfeit(uint256 roundId, address player) internal returns (uint128 amount) {
+    function _forfeit(
+        uint256 roundId,
+        address player
+    ) internal returns (uint128 amount) {
         Commitment storage c = _commitments[roundId][player];
 
         // Nothing to forfeit if no commitment or already revealed
@@ -201,7 +204,10 @@ abstract contract CommitRevealBase {
     /// @param roundId The round identifier
     /// @param player The player address
     /// @return committed True if player has active commitment with stake
-    function hasCommitted(uint256 roundId, address player) external view returns (bool committed) {
+    function hasCommitted(
+        uint256 roundId,
+        address player
+    ) external view returns (bool committed) {
         return _commitments[roundId][player].amount > 0;
     }
 
@@ -210,7 +216,10 @@ abstract contract CommitRevealBase {
     /// @param roundId The round identifier
     /// @param player The player address
     /// @return everCommitted True if player ever submitted a commitment hash
-    function hasEverCommitted(uint256 roundId, address player) external view returns (bool everCommitted) {
+    function hasEverCommitted(
+        uint256 roundId,
+        address player
+    ) external view returns (bool everCommitted) {
         return _commitments[roundId][player].hash != bytes32(0);
     }
 
@@ -218,7 +227,10 @@ abstract contract CommitRevealBase {
     /// @param roundId The round identifier
     /// @param player The player address
     /// @return revealed True if player has revealed
-    function hasRevealed(uint256 roundId, address player) external view returns (bool revealed) {
+    function hasRevealed(
+        uint256 roundId,
+        address player
+    ) external view returns (bool revealed) {
         return _commitments[roundId][player].revealed;
     }
 
@@ -240,7 +252,10 @@ abstract contract CommitRevealBase {
     /// @param roundId The round identifier
     /// @param player The player address
     /// @return canReveal True if player can reveal
-    function canReveal(uint256 roundId, address player) external view returns (bool) {
+    function canReveal(
+        uint256 roundId,
+        address player
+    ) external view returns (bool) {
         Commitment storage c = _commitments[roundId][player];
         return c.amount > 0 && !c.revealed;
     }

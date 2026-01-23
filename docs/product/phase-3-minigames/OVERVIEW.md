@@ -44,7 +44,7 @@ PHASE 3C GAMES                                                  STATUS
 09. SHADOW PROTOCOL (Meta)                                      [░░░░░░░░░░░░] NOT STARTED
 
 ══════════════════════════════════════════════════════════════════════════════
-OVERALL PROGRESS: Core Infrastructure Complete → 1068 Tests Passing
+OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1070 Tests Passing
 ══════════════════════════════════════════════════════════════════════════════
 ```
 
@@ -126,7 +126,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 #### 0.2 Smart Contract Core
 **Location:** `packages/contracts/src/arcade/`  
 **Spec:** [infrastructure/contracts.md](./infrastructure/contracts.md), [arcade-contracts-plan.md](../../architecture/arcade-contracts-plan.md)  
-**Status:** COMPLETE (1068 tests passing)
+**Status:** COMPLETE (1070 tests passing, deployed to MegaETH testnet)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -159,7 +159,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 #### 0.3 Randomness Integration (Future Block Hash)
 **Location:** `packages/contracts/src/randomness/` (shared), `packages/contracts/src/arcade/randomness/` (arcade-specific)  
 **Spec:** [infrastructure/randomness.md](./infrastructure/randomness.md), [arcade-contracts-plan.md](../../architecture/arcade-contracts-plan.md) Section 6  
-**Status:** COMPLETE (contracts implemented, 47 tests passing)
+**Status:** COMPLETE (contracts implemented, EIP-2935 verified on testnet, 47 tests passing)
 
 > **Note:** MegaETH does not have Chainlink VRF. We use the **future block hash pattern**:
 > - Commit to a block 50 blocks in future (5 seconds on MegaETH)
@@ -178,7 +178,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Implement `CommitRevealBase.sol` | ✅ | In `src/arcade/randomness/` for arcade games |
 | Create verification UI component | ⬜ | Show block hash, seed derivation |
 | Implement keeper bot | ⬜ | `services/keeper/` |
-| Verify EIP-2935 on MegaETH testnet | ⬜ | **CRITICAL** before mainnet |
+| Verify EIP-2935 on MegaETH testnet | ✅ | **CONFIRMED** - 8191 block extended history available |
 
 **Contracts Implemented:**
 - `src/randomness/FutureBlockRandomness.sol` - Abstract base with seed commitment, reveal, and utility functions
@@ -376,6 +376,45 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 ## Completed Work Log
 
+### 2026-01-23: Testnet Deployment & EIP-2935 Verification
+
+**MegaETH Testnet Deployment (Chain ID 6343):**
+
+| Contract | Address |
+|----------|---------|
+| MockERC20 (mDATA) | `0xA372efbf157F374319305C96561651567E542D2e` |
+| ArcadeCore (impl) | `0xFc6eBb3655625282c6fc3262f2FdA35983FE1096` |
+| ArcadeCore (proxy) | `0x554a3cc63851e0526d9938817949F97dC45b00EC` |
+| GameRegistry | `0x67244672BA46F50f2EBf6572a985faafFFE50C11` |
+
+**Configuration:**
+- Deployer/Admin: `0xAeB643a650E374D8D62a8A3D9e5B175ecd8090D1`
+- Treasury: Deployer address (testnet only)
+- DataToken: MockERC20 (no production token on testnet yet)
+- GhostCore: Not configured (address(0))
+
+**EIP-2935 Verification:** ✅ CONFIRMED AVAILABLE
+- System contract exists at `0x0000F90827F1C53a10cb7A02335B175320002935`
+- Extended history window: 8191 blocks (~13.6 minutes on MegaETH with 100ms blocks)
+- Native window would only be 256 blocks (~25.6 seconds)
+- This significantly improves seed reveal reliability for games
+
+**Deployment Notes:**
+- Used `--legacy` flag (MegaETH doesn't support EIP-1559 fee estimation)
+- Used `--skip-simulation` (MegaEVM has different gas costs)
+- MockERC20 deployed for testing since no real DataToken exists yet
+
+**View Functions Added:**
+- `dataToken()` - Returns DATA token address
+- `ghostCore()` - Returns GhostCore contract address
+- `treasury()` - Returns treasury address
+
+**Files Added:**
+- `script/DeployArcade.s.sol` - Deployment script with EIP-2935 verification
+- `src/mocks/MockERC20.sol` - Simple mintable token for testing
+
+---
+
 ### 2026-01-23: Randomness Contracts Implementation
 
 **Randomness Contracts Implemented:**
@@ -508,15 +547,17 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 2. ✅ ~~Randomness Pattern Review~~ - Future block hash + EIP-2935 fallback designed
 3. ✅ ~~GameRegistry Implementation~~ - Complete with 43 tests, 7-day removal grace period
 4. ✅ ~~Randomness Contracts~~ - FutureBlockRandomness, BlockhashHistory, CommitRevealBase implemented
-5. **Testnet Deployment** - Deploy ArcadeCore + GameRegistry to MegaETH testnet
+5. ✅ ~~Testnet Deployment~~ - ArcadeCore + GameRegistry deployed to MegaETH testnet
+6. ✅ ~~EIP-2935 Verification~~ - Confirmed available with 8191 block extended history
 
 ### Sprint 1 (Complete)
 
 1. ✅ ~~Create arcade directory structure~~ - Done in `packages/contracts/src/arcade/`
-2. ✅ ~~Implement Contract Core~~ - ArcadeCore + GameRegistry complete with 1068 tests
+2. ✅ ~~Implement Contract Core~~ - ArcadeCore + GameRegistry complete with 1070 tests
 3. ✅ ~~Implement Randomness Contracts~~ - FutureBlockRandomness + BlockhashHistory + CommitRevealBase
-4. **Implement Game Engine core** - State machine, timer, score systems (apps/web)
-5. **Verify EIP-2935 on MegaETH** - Critical dependency check
+4. ✅ ~~Verify EIP-2935 on MegaETH~~ - Confirmed available (8191 block window)
+5. ✅ ~~Deploy to MegaETH Testnet~~ - ArcadeCore, GameRegistry, MockERC20
+6. **Implement Game Engine core** - State machine, timer, score systems (apps/web)
 
 ### Sprint 2 (Week 3-4)
 
@@ -528,7 +569,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 ### Pre-Mainnet Checklist
 
 - [ ] Security audit (external)
-- [ ] EIP-2935 availability confirmed on MegaETH
+- [x] EIP-2935 availability confirmed on MegaETH (8191 block window)
 - [ ] Keeper bot deployed and monitored
 - [ ] Monitoring/alerting configured
 - [ ] Formal verification of solvency invariant (optional)

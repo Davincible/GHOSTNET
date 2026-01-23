@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.33;
 
-import {Test} from "forge-std/Test.sol";
-import {CommitRevealBase} from "../../src/arcade/randomness/CommitRevealBase.sol";
+import { Test } from "forge-std/Test.sol";
+import { CommitRevealBase } from "../../src/arcade/randomness/CommitRevealBase.sol";
 
 /// @title CommitRevealBaseTest
 /// @notice Tests for the CommitRevealBase contract
@@ -148,7 +148,8 @@ contract CommitRevealBaseTest is Test {
         assertEq(revealed, choice, "Revealed choice should match");
         assertTrue(game.hasRevealed(ROUND_ID, alice), "Should be marked as revealed");
 
-        (uint128 amount, bool isRevealed, uint8 revealedChoice) = game.getCommitment(ROUND_ID, alice);
+        (uint128 amount, bool isRevealed, uint8 revealedChoice) =
+            game.getCommitment(ROUND_ID, alice);
         assertEq(amount, BET_AMOUNT, "Amount should be preserved");
         assertTrue(isRevealed, "Should be revealed");
         assertEq(revealedChoice, choice, "Revealed choice should match");
@@ -264,16 +265,26 @@ contract CommitRevealBaseTest is Test {
 
         // Before forfeit: both return true
         assertTrue(game.hasCommitted(ROUND_ID, alice), "hasCommitted should be true before forfeit");
-        assertTrue(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should be true before forfeit");
+        assertTrue(
+            game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should be true before forfeit"
+        );
 
         // After forfeit: hasCommitted returns false, hasEverCommitted still true
         game.forfeit(ROUND_ID, alice);
-        assertFalse(game.hasCommitted(ROUND_ID, alice), "hasCommitted should be false after forfeit");
-        assertTrue(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should still be true after forfeit");
+        assertFalse(
+            game.hasCommitted(ROUND_ID, alice), "hasCommitted should be false after forfeit"
+        );
+        assertTrue(
+            game.hasEverCommitted(ROUND_ID, alice),
+            "hasEverCommitted should still be true after forfeit"
+        );
     }
 
     function test_HasEverCommitted_NeverCommitted() public view {
-        assertFalse(game.hasEverCommitted(ROUND_ID, alice), "hasEverCommitted should be false if never committed");
+        assertFalse(
+            game.hasEverCommitted(ROUND_ID, alice),
+            "hasEverCommitted should be false if never committed"
+        );
     }
 
     function test_CanReveal_BeforeCommit() public view {
@@ -294,7 +305,9 @@ contract CommitRevealBaseTest is Test {
         game.commit(ROUND_ID, alice, commitHash, BET_AMOUNT);
         game.reveal(ROUND_ID, alice, 1, secret);
 
-        assertFalse(game.canReveal(ROUND_ID, alice), "Should not be able to reveal after already revealed");
+        assertFalse(
+            game.canReveal(ROUND_ID, alice), "Should not be able to reveal after already revealed"
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -381,7 +394,10 @@ contract TestCommitReveal is CommitRevealBase {
         return _reveal(roundId, player, choice, secret);
     }
 
-    function forfeit(uint256 roundId, address player) external returns (uint128) {
+    function forfeit(
+        uint256 roundId,
+        address player
+    ) external returns (uint128) {
         return _forfeit(roundId, player);
     }
 }

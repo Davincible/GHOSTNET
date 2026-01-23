@@ -811,6 +811,24 @@ contract ArcadeCore is
         return _MAX_BATCH_SIZE;
     }
 
+    /// @notice Get the DATA token address
+    /// @return Address of the DATA token contract
+    function dataToken() external view returns (address) {
+        return address(_getArcadeCoreStorage().dataToken);
+    }
+
+    /// @notice Get the GhostCore contract address
+    /// @return Address of the GhostCore contract (may be zero if not configured)
+    function ghostCore() external view returns (address) {
+        return address(_getArcadeCoreStorage().ghostCore);
+    }
+
+    /// @notice Get the treasury address
+    /// @return Address receiving protocol fees
+    function treasury() external view returns (address) {
+        return _getArcadeCoreStorage().treasury;
+    }
+
     // ══════════════════════════════════════════════════════════════════════════════
     // INTERNAL FUNCTIONS
     // ══════════════════════════════════════════════════════════════════════════════
