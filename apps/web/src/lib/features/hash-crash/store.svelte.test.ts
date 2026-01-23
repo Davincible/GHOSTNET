@@ -504,20 +504,22 @@ describe('edge cases', () => {
 		expect(untrack(() => store.state.playerBet)).toBeNull();
 	});
 
-	it('blocks betting while loading (bet in progress)', async () => {
+	it('blocks betting after bet is placed (no double betting)', async () => {
 		store._simulateRound(5);
 		vi.advanceTimersByTime(100);
 
 		// Initially can bet
 		expect(untrack(() => store.canBet)).toBe(true);
 
-		// Place a bet (this sets isLoading = true)
+		// Place a bet (optimistically sets playerBet immediately)
 		await store.placeBet(100n * 10n ** 18n, 2.0);
 
-		// While loading, canBet should be false
+		// After placing bet, canBet should be false because playerBet is set
 		const state = untrack(() => store.state);
-		// isLoading is true, so canBet should be false
-		expect(state.isLoading).toBe(true);
+		// Optimistic update: playerBet is set immediately, isLoading is false
+		expect(state.playerBet).not.toBeNull();
+		expect(state.playerBet?.amount).toBe(100n * 10n ** 18n);
+		expect(state.playerBet?.targetMultiplier).toBe(2.0);
 		expect(untrack(() => store.canBet)).toBe(false);
 	});
 });

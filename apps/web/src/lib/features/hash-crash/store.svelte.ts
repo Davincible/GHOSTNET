@@ -407,17 +407,26 @@ export function createHashCrashStore(): HashCrashStore {
 			return;
 		}
 
-		state = { ...state, isLoading: true, error: null };
+		// Optimistically set the bet immediately for responsive UI
+		// In production with smart contracts, this would be confirmed after tx
+		state = {
+			...state,
+			playerBet: { amount, targetMultiplier },
+			isLoading: false,
+			error: null,
+		};
 
 		// TODO: Call smart contract
-		// For now, send via WebSocket
-		ws?.send(
-			JSON.stringify({
-				type: 'PLACE_BET',
-				amount: amount.toString(),
-				targetMultiplier,
-			})
-		);
+		// For now, send via WebSocket (if connected)
+		if (ws && ws.readyState === WebSocket.OPEN) {
+			ws.send(
+				JSON.stringify({
+					type: 'PLACE_BET',
+					amount: amount.toString(),
+					targetMultiplier,
+				})
+			);
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────
