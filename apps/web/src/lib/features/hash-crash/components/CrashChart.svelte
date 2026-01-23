@@ -2,15 +2,13 @@
 	import { getMultiplierColor, GROWTH_RATE } from '../store.svelte';
 
 	interface Props {
-		/** Current multiplier */
+		/** Current multiplier (animated value from store) */
 		multiplier: number;
 		/** Whether game has crashed */
 		crashed?: boolean;
-		/** Start time of current game */
-		startTime?: number;
 	}
 
-	let { multiplier, crashed = false, startTime = 0 }: Props = $props();
+	let { multiplier, crashed = false }: Props = $props();
 
 	// SVG dimensions
 	const width = 400;
@@ -27,17 +25,20 @@
 	// Dynamic Y scale based on current multiplier
 	let maxMultiplier = $derived(Math.max(multiplier * 1.2, 2));
 
-	// Calculate elapsed time
-	let elapsed = $derived(startTime > 0 ? (Date.now() - startTime) / 1000 : 0);
+	// Calculate elapsed time from multiplier (inverse of e^(rate*t))
+	// multiplier = e^(GROWTH_RATE * t) => t = ln(multiplier) / GROWTH_RATE
+	let elapsed = $derived(multiplier > 1 ? Math.log(multiplier) / GROWTH_RATE : 0);
 
 	// Generate path points for the exponential curve
 	let pathData = $derived.by(() => {
 		if (elapsed <= 0) return '';
 
 		const points: string[] = [];
-		const step = Math.max(0.1, elapsed / 100); // Up to 100 points
+		const numPoints = Math.min(100, Math.ceil(elapsed * 10)); // More points for longer times
+		const step = elapsed / Math.max(numPoints, 1);
 
-		for (let t = 0; t <= elapsed; t += step) {
+		for (let i = 0; i <= numPoints; i++) {
+			const t = i * step;
 			const m = Math.pow(Math.E, GROWTH_RATE * t);
 			const x = padding.left + (t / maxTime) * chartWidth;
 			const y = padding.top + chartHeight - ((m - 1) / (maxMultiplier - 1)) * chartHeight;
@@ -52,7 +53,7 @@
 		return points.join(' ');
 	});
 
-	// Current point position
+	// Current point position - derived from elapsed time (which comes from multiplier)
 	let currentX = $derived(padding.left + (elapsed / maxTime) * chartWidth);
 	let currentY = $derived(
 		padding.top + chartHeight - ((multiplier - 1) / (maxMultiplier - 1)) * chartHeight

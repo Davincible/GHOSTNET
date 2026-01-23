@@ -120,11 +120,7 @@
 						crashed={isCrashed}
 						crashPoint={round?.crashPoint ?? null}
 					/>
-					<CrashChart
-						multiplier={state.multiplier}
-						crashed={isCrashed}
-						startTime={round?.startTime ?? 0}
-					/>
+					<CrashChart multiplier={state.multiplier} crashed={isCrashed} />
 				</div>
 			</Box>
 
