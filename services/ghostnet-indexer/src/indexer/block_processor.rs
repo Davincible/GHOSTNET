@@ -47,7 +47,7 @@ use tokio::sync::mpsc;
 use tokio::time::sleep;
 use tracing::{debug, error, info, instrument, warn};
 
-use super::megaeth_rpc::MegaEthRpcClient;
+use megaeth_rpc::MegaEthClient;
 use crate::config::ContractAddresses;
 use crate::error::{InfraError, Result};
 use crate::types::events::EventMetadata;
@@ -77,7 +77,7 @@ const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 ///
 /// # Backfill Optimization
 ///
-/// When a `MegaEthRpcClient` is configured via [`Self::with_megaeth_client`],
+/// When a `MegaEthClient` is configured via [`Self::with_megaeth_client`],
 /// the processor uses cursor-based pagination (`eth_getLogsWithCursor`) for
 /// efficient backfill on high-throughput chains. This is critical for MegaETH
 /// where standard `eth_getLogs` would timeout on large ranges.
@@ -86,7 +86,7 @@ pub struct BlockProcessor<P> {
     /// RPC provider for blockchain access (Alloy).
     provider: Arc<P>,
     /// Optional MegaETH-specific client for cursor-based pagination.
-    megaeth_client: Option<Arc<MegaEthRpcClient>>,
+    megaeth_client: Option<Arc<MegaEthClient>>,
     /// Parsed contract addresses to monitor.
     contract_addresses: Vec<Address>,
     /// Channel for sending logs to the event router.
@@ -140,7 +140,7 @@ where
     ///
     /// * `client` - MegaETH RPC client instance
     #[must_use]
-    pub fn with_megaeth_client(mut self, client: Arc<MegaEthRpcClient>) -> Self {
+    pub fn with_megaeth_client(mut self, client: Arc<MegaEthClient>) -> Self {
         self.megaeth_client = Some(client);
         self
     }
@@ -286,9 +286,9 @@ where
     /// # Example
     ///
     /// ```ignore
-    /// use ghostnet_indexer::indexer::{BlockProcessor, MegaEthRpcClient};
+    /// use ghostnet_indexer::indexer::{BlockProcessor, MegaEthClient};
     ///
-    /// let megaeth = MegaEthRpcClient::new("https://6343.rpc.thirdweb.com")?;
+    /// let megaeth = MegaEthClient::new("https://6343.rpc.thirdweb.com")?;
     /// let processor = BlockProcessor::new(provider, contracts, tx)?
     ///     .with_megaeth_client(Arc::new(megaeth));
     ///

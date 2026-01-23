@@ -61,13 +61,14 @@
 mod block_processor;
 mod checkpoint;
 mod event_router;
-mod megaeth_rpc;
 mod realtime_processor;
 mod reorg_handler;
 
 pub use block_processor::BlockProcessor;
 pub use checkpoint::{CheckpointManager, CheckpointState, RecoveryMode};
 pub use event_router::EventRouter;
-pub use megaeth_rpc::{FetchStats, MegaEthRpcClient};
 pub use realtime_processor::RealtimeProcessor;
 pub use reorg_handler::{ReorgCheckResult, ReorgHandler, ReorgStats};
+
+// Re-export MegaETH RPC types from the shared crate
+pub use megaeth_rpc::{FetchStats, MegaEthClient};

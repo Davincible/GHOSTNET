@@ -1,0 +1,111 @@
+# GHOSTNET Services Workspace
+# ========================================================================
+# This workspace contains all backend services and shared crates for the
+# GHOSTNET protocol.
+#
+# Structure:
+#   - crates/          Shared libraries (chain clients, core primitives)
+#   - ghostnet-indexer Event indexer service
+#   - ghost-fleet      Market making orchestration (future)
+
+[workspace]
+resolver = "3"
+members = [
+    # Shared crates
+    "crates/megaeth-rpc",
+    # "crates/evm-provider",   # Phase 2
+    # "crates/fleet-core",     # Phase 3
+
+    # Services
+    "ghostnet-indexer",
+    # "ghostnet-actions",      # Phase 4
+    # "ghost-fleet",           # Phase 5
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WORKSPACE-WIDE DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+# These are shared across all workspace members. Individual crates reference
+# these with { workspace = true } in their Cargo.toml.
+
+[workspace.dependencies]
+# ───────────────────────────────────────────────────────────────────────────────
+# ETHEREUM (Alloy - modern, type-safe Ethereum library)
+# ───────────────────────────────────────────────────────────────────────────────
+alloy = { version = "1.4", features = ["full"] }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ASYNC RUNTIME
+# ───────────────────────────────────────────────────────────────────────────────
+tokio = { version = "1", features = ["full", "tracing"] }
+futures = "0.3"
+async-trait = "0.1"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# HTTP CLIENT (for MegaETH RPC)
+# ───────────────────────────────────────────────────────────────────────────────
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SERIALIZATION
+# ───────────────────────────────────────────────────────────────────────────────
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY
+# ───────────────────────────────────────────────────────────────────────────────
+tracing = "0.1"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ERROR HANDLING
+# ───────────────────────────────────────────────────────────────────────────────
+thiserror = "2"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# UTILITIES
+# ───────────────────────────────────────────────────────────────────────────────
+hex = "0.4"
+
+# ───────────────────────────────────════════════════════════════════════════════
+# TESTING
+# ───────────────────────────────────────────────────────────────────────────────
+wiremock = "0.6"
+tokio-test = "0.4"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WORKSPACE LINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Shared lint configuration for all workspace members.
+# Individual crates inherit these via [lints] workspace = true
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "deny"
+# Allow some pedantic lints that are too noisy
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+# Documentation style lints - too noisy for identifiers like contract names
+doc_markdown = "allow"
+# Raw string literals - r"" vs r#""# is subjective
+needless_raw_string_hashes = "allow"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# WORKSPACE METADATA
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.88"
+authors = ["GHOSTNET Team"]
+license = "MIT"
+repository = "https://github.com/ghostnet/services"

@@ -1,0 +1,63 @@
+[package]
+name = "megaeth-rpc"
+version = "0.1.0"
+description = "MegaETH-specific JSON-RPC client with cursor pagination and realtime API support"
+readme = "README.md"
+
+# Inherit from workspace
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINTS (inherit from workspace)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[lints]
+workspace = true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dependencies]
+# Ethereum types (Address, Log, Bytes, etc.)
+alloy = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# HTTP client for JSON-RPC
+reqwest = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Observability
+tracing = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Utilities
+hex = { workspace = true }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEV DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[dev-dependencies]
+wiremock = { workspace = true }
+tokio-test = { workspace = true }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FEATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[features]
+default = []
+# Enable mock client for testing in downstream crates
+mock = []

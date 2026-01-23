@@ -10,28 +10,11 @@ repository = "https://github.com/ghostnet/indexer"
 readme = "README.md"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# LINTS
+# LINTS (inherit from workspace)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-[lints.rust]
-unsafe_code = "forbid"
-missing_debug_implementations = "warn"
-missing_docs = "warn"
-
-[lints.clippy]
-all = { level = "deny", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-nursery = { level = "warn", priority = -1 }
-unwrap_used = "deny"
-expect_used = "warn"
-panic = "deny"
-# Allow some pedantic lints that are too noisy
-module_name_repetitions = "allow"
-must_use_candidate = "allow"
-# Documentation style lints - too noisy for identifiers like contract names
-doc_markdown = "allow"
-# Raw string literals - r"" vs r#""# is subjective
-needless_raw_string_hashes = "allow"
+[lints]
+workspace = true
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEPENDENCIES
@@ -133,9 +116,9 @@ hex = "0.4"
 parking_lot = "0.12"
 
 # ───────────────────────────────────────────────────────────────────────────────
-# MEGAETH-SPECIFIC (cursor-based pagination requires raw HTTP client)
+# MEGAETH-SPECIFIC RPC CLIENT (workspace crate)
 # ───────────────────────────────────────────────────────────────────────────────
-reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+megaeth-rpc = { path = "../crates/megaeth-rpc" }
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEV DEPENDENCIES
@@ -144,6 +127,8 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 [dev-dependencies]
 tokio-test = "0.4"
 wiremock = "0.6"
+# For live network integration tests (HTTP client)
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 testcontainers = "0.23"
 testcontainers-modules = { version = "0.11", features = ["postgres"] }
 criterion = { version = "0.5", features = ["async_tokio"] }

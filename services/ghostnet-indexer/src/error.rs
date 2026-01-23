@@ -150,6 +150,10 @@ pub enum InfraError {
     /// Address parsing error.
     #[error("address parsing error: {0}")]
     AddressParsing(String),
+
+    /// MegaETH RPC error.
+    #[error("MegaETH RPC error: {0}")]
+    MegaEth(#[from] megaeth_rpc::MegaEthError),
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -357,6 +361,13 @@ impl From<crate::types::enums::InvalidBoostType> for AppError {
 impl From<crate::types::enums::InvalidRoundType> for AppError {
     fn from(err: crate::types::enums::InvalidRoundType) -> Self {
         Self::Domain(err.into())
+    }
+}
+
+// Convert MegaETH errors to application errors (via InfraError)
+impl From<megaeth_rpc::MegaEthError> for AppError {
+    fn from(err: megaeth_rpc::MegaEthError) -> Self {
+        Self::Infra(InfraError::MegaEth(err))
     }
 }
 
