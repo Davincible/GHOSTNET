@@ -45,8 +45,9 @@ pub enum MegaEthError {
     /// Request timed out waiting for response.
     ///
     /// Consider increasing the timeout for large queries or checking network conditions.
-    #[error("request timed out after {0:?}")]
-    Timeout(std::time::Duration),
+    /// The actual timeout duration is determined by [`ClientConfig::timeout`](crate::ClientConfig::timeout).
+    #[error("request timed out")]
+    Timeout,
 
     /// HTTP-level error (non-2xx status code, TLS issues, etc.).
     #[error("HTTP error: {0}")]
@@ -104,6 +105,19 @@ pub enum MegaEthError {
         /// Maximum allowed batches.
         max: usize,
     },
+
+    /// Log collection limit exceeded.
+    ///
+    /// The query returned more logs than the configured maximum.
+    /// This protects against memory exhaustion on high-throughput chains.
+    /// Consider narrowing the block range or increasing the log limit.
+    #[error("log limit exceeded: {collected} logs collected (max {max})")]
+    LogLimitExceeded {
+        /// Number of logs collected before stopping.
+        collected: usize,
+        /// Maximum allowed logs.
+        max: usize,
+    },
 }
 
 impl MegaEthError {
@@ -151,7 +165,7 @@ impl MegaEthError {
     #[must_use]
     pub fn is_retryable(&self) -> bool {
         match self {
-            Self::Connection(_) | Self::Timeout(_) => true,
+            Self::Connection(_) | Self::Timeout => true,
             Self::Http(msg) => {
                 // 5xx errors are typically retryable
                 msg.contains("500")
@@ -176,8 +190,7 @@ impl MegaEthError {
 impl From<reqwest::Error> for MegaEthError {
     fn from(err: reqwest::Error) -> Self {
         if err.is_timeout() {
-            // Use a sensible default duration since reqwest doesn't expose the actual timeout
-            Self::Timeout(std::time::Duration::from_secs(30))
+            Self::Timeout
         } else if err.is_connect() {
             Self::Connection(err.to_string())
         } else if err.is_request() || err.is_body() || err.is_decode() {
@@ -257,7 +270,7 @@ mod tests {
 
     #[test]
     fn error_is_retryable() {
-        let timeout = MegaEthError::Timeout(std::time::Duration::from_secs(30));
+        let timeout = MegaEthError::Timeout;
         assert!(timeout.is_retryable());
 
         let connection = MegaEthError::Connection("connection refused".into());

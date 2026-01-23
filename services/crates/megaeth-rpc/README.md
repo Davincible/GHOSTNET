@@ -104,10 +104,33 @@ use std::time::Duration;
 
 let config = ClientConfig::default()
     .with_timeout(Duration::from_secs(60))      // Longer timeout for large queries
-    .with_max_cursor_batches(200);              // Allow more pagination batches
+    .with_max_cursor_batches(200)               // Allow more pagination batches
+    .with_max_logs(500_000);                    // Memory protection: limit total logs
 
 let client = MegaEthClient::with_config("https://carrot.megaeth.com/rpc", config)?;
 ```
+
+### Memory Considerations
+
+When fetching logs with cursor pagination, **all logs are accumulated in memory** before being returned. For very large queries on high-throughput chains like MegaETH, this can consume significant memory.
+
+**Protection options:**
+
+1. **`max_logs`** - Limit total logs collected (recommended for production):
+   ```rust
+   let config = ClientConfig::default()
+       .with_max_logs(100_000);  // Error if more than 100k logs
+   ```
+
+2. **`max_cursor_batches`** - Limit number of RPC calls:
+   ```rust
+   let config = ClientConfig::default()
+       .with_max_cursor_batches(50);  // Error after 50 batches
+   ```
+
+3. **Narrow your query** - Use smaller block ranges or filter by contract address.
+
+**Memory estimation:** Each log is approximately 200-500 bytes depending on topics and data size. 100,000 logs ≈ 20-50 MB.
 
 ### Error Handling
 
@@ -162,6 +185,7 @@ The main client type. Create with `new()` or `with_config()`.
 Configuration options:
 - `timeout` - HTTP request timeout (default: 30s)
 - `max_cursor_batches` - Max pagination batches (default: 100)
+- `max_logs` - Max logs to collect, 0 for unlimited (default: 0)
 
 ### `FetchStats`
 

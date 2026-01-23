@@ -31,6 +31,13 @@ pub const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// Default maximum batches to fetch in a single cursor pagination operation.
 pub const DEFAULT_MAX_CURSOR_BATCHES: usize = 100;
 
+/// Default maximum logs to collect in a single cursor pagination operation.
+/// Set to 0 for unlimited (only batch limit applies).
+pub const DEFAULT_MAX_LOGS: usize = 0;
+
+/// Maximum allowed logs limit (10 million).
+pub const MAX_LOGS_LIMIT: usize = 10_000_000;
+
 /// Minimum allowed timeout.
 pub const MIN_TIMEOUT: Duration = Duration::from_secs(1);
 
@@ -57,8 +64,16 @@ pub const MAX_CURSOR_BATCHES: usize = 10_000;
 ///
 /// let config = ClientConfig::default()
 ///     .with_timeout(Duration::from_secs(60))
-///     .with_max_cursor_batches(200);
+///     .with_max_cursor_batches(200)
+///     .with_max_logs(100_000);
 /// ```
+///
+/// # Memory Considerations
+///
+/// When fetching logs with cursor pagination, all logs are accumulated in memory
+/// before being returned. For very large queries, this can consume significant memory.
+/// Use [`with_max_logs`](Self::with_max_logs) to set a limit on the total number of
+/// logs collected.
 #[derive(Debug, Clone)]
 pub struct ClientConfig {
     /// Request timeout for HTTP calls.
@@ -75,6 +90,16 @@ pub struct ClientConfig {
     /// Default: 100 batches.
     /// Range: 1-10,000 batches.
     pub max_cursor_batches: usize,
+
+    /// Maximum number of logs to collect in a single pagination operation.
+    ///
+    /// This provides memory protection for high-throughput chains where a single
+    /// query might return millions of logs. When this limit is reached, the client
+    /// returns an error with partial results information.
+    ///
+    /// Set to 0 (default) for unlimited - only `max_cursor_batches` applies.
+    /// Range: 0-10,000,000 logs.
+    pub max_logs: usize,
 }
 
 impl Default for ClientConfig {
@@ -82,6 +107,7 @@ impl Default for ClientConfig {
         Self {
             timeout: DEFAULT_REQUEST_TIMEOUT,
             max_cursor_batches: DEFAULT_MAX_CURSOR_BATCHES,
+            max_logs: DEFAULT_MAX_LOGS,
         }
     }
 }
@@ -116,6 +142,29 @@ impl ClientConfig {
     #[must_use]
     pub fn with_max_cursor_batches(mut self, max: usize) -> Self {
         self.max_cursor_batches = max;
+        self
+    }
+
+    /// Set the maximum number of logs to collect.
+    ///
+    /// This provides memory protection for large queries. When the limit is reached,
+    /// the client returns an error instead of accumulating more logs.
+    ///
+    /// # Arguments
+    ///
+    /// * `max` - Maximum number of logs (0 for unlimited, max 10,000,000)
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use megaeth_rpc::ClientConfig;
+    ///
+    /// // Limit to 100,000 logs to prevent memory exhaustion
+    /// let config = ClientConfig::default().with_max_logs(100_000);
+    /// ```
+    #[must_use]
+    pub fn with_max_logs(mut self, max: usize) -> Self {
+        self.max_logs = max;
         self
     }
 
@@ -155,6 +204,13 @@ impl ClientConfig {
             return Err(MegaEthError::InvalidConfig(format!(
                 "max_cursor_batches must be at most {}",
                 MAX_CURSOR_BATCHES
+            )));
+        }
+
+        if self.max_logs > MAX_LOGS_LIMIT {
+            return Err(MegaEthError::InvalidConfig(format!(
+                "max_logs must be at most {}",
+                MAX_LOGS_LIMIT
             )));
         }
 
@@ -226,5 +282,30 @@ mod tests {
             .with_timeout(MAX_TIMEOUT)
             .with_max_cursor_batches(MAX_CURSOR_BATCHES);
         assert!(max_config.validate().is_ok());
+    }
+
+    #[test]
+    fn max_logs_default_is_unlimited() {
+        let config = ClientConfig::default();
+        assert_eq!(config.max_logs, 0); // 0 means unlimited
+    }
+
+    #[test]
+    fn max_logs_builder() {
+        let config = ClientConfig::new().with_max_logs(100_000);
+        assert_eq!(config.max_logs, 100_000);
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_max_logs_too_high() {
+        let config = ClientConfig::new().with_max_logs(MAX_LOGS_LIMIT + 1);
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn validate_max_logs_at_limit() {
+        let config = ClientConfig::new().with_max_logs(MAX_LOGS_LIMIT);
+        assert!(config.validate().is_ok());
     }
 }

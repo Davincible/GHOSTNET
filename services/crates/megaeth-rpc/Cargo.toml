@@ -59,5 +59,3 @@ tokio-test = { workspace = true }
 
 [features]
 default = []
-# Enable mock client for testing in downstream crates
-mock = []

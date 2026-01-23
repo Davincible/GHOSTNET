@@ -46,8 +46,24 @@
 //! - **Cursor-based pagination**: Automatic multi-batch fetching for large queries
 //! - **Realtime transactions**: Submit and get receipt in ~10ms
 //! - **Graceful fallback detection**: Check if extended APIs are available
-//! - **Configurable**: Timeouts, batch limits, and more
+//! - **Configurable**: Timeouts, batch limits, log limits, and more
 //! - **Fully typed**: All requests and responses have proper Rust types
+//!
+//! # Memory Considerations
+//!
+//! When fetching logs with cursor pagination, all logs are accumulated in memory
+//! before being returned. For very large queries, configure limits to prevent
+//! memory exhaustion:
+//!
+//! ```
+//! use megaeth_rpc::ClientConfig;
+//!
+//! let config = ClientConfig::default()
+//!     .with_max_logs(100_000)        // Limit total logs collected
+//!     .with_max_cursor_batches(50);  // Limit RPC round-trips
+//! ```
+//!
+//! **Memory estimation:** Each log is approximately 200-500 bytes. 100,000 logs ≈ 20-50 MB.
 //!
 //! # Modules
 //!

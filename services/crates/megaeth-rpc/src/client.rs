@@ -286,6 +286,21 @@ impl MegaEthClient {
 
             all_logs.extend(response.logs);
 
+            // Check log limit (0 means unlimited)
+            if self.config.max_logs > 0 && all_logs.len() > self.config.max_logs {
+                let collected = all_logs.len();
+                warn!(
+                    collected,
+                    max = self.config.max_logs,
+                    batches,
+                    "Reached max logs limit, stopping"
+                );
+                return Err(MegaEthError::LogLimitExceeded {
+                    collected,
+                    max: self.config.max_logs,
+                });
+            }
+
             match response.cursor {
                 Some(cursor) => {
                     filter = filter.with_cursor(cursor);
@@ -575,6 +590,88 @@ mod tests {
         assert!(logs.is_empty());
         assert_eq!(stats.batches, 1);
         assert!(stats.complete);
+    }
+
+    #[tokio::test]
+    async fn get_logs_with_cursor_multi_batch() {
+        use std::sync::atomic::{AtomicU32, Ordering};
+        use std::sync::Arc;
+        use wiremock::{Request, Respond};
+
+        // Stateful responder that returns different responses based on request count
+        struct PaginatedResponder {
+            call_count: Arc<AtomicU32>,
+        }
+
+        impl Respond for PaginatedResponder {
+            fn respond(&self, _request: &Request) -> ResponseTemplate {
+                let count = self.call_count.fetch_add(1, Ordering::SeqCst);
+                if count == 0 {
+                    // First batch: return logs with cursor
+                    ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "result": {
+                            "logs": [{
+                                "address": "0x1234567890123456789012345678901234567890",
+                                "topics": [],
+                                "data": "0x",
+                                "blockNumber": "0x100",
+                                "transactionHash": "0x0000000000000000000000000000000000000000000000000000000000000001",
+                                "transactionIndex": "0x0",
+                                "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                                "logIndex": "0x0",
+                                "removed": false
+                            }],
+                            "cursor": "cursor_for_next_batch"
+                        }
+                    }))
+                } else {
+                    // Second batch: return logs without cursor (complete)
+                    ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                        "jsonrpc": "2.0",
+                        "id": 2,
+                        "result": {
+                            "logs": [{
+                                "address": "0x1234567890123456789012345678901234567890",
+                                "topics": [],
+                                "data": "0x",
+                                "blockNumber": "0x101",
+                                "transactionHash": "0x0000000000000000000000000000000000000000000000000000000000000002",
+                                "transactionIndex": "0x0",
+                                "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                                "logIndex": "0x0",
+                                "removed": false
+                            }],
+                            "cursor": null
+                        }
+                    }))
+                }
+            }
+        }
+
+        let mock_server = MockServer::start().await;
+        let call_count = Arc::new(AtomicU32::new(0));
+
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(PaginatedResponder {
+                call_count: call_count.clone(),
+            })
+            .mount(&mock_server)
+            .await;
+
+        let client = MegaEthClient::new(mock_server.uri()).expect("client creation failed");
+        let (logs, stats) = client
+            .get_logs_with_cursor(100, 200, None)
+            .await
+            .expect("fetch failed");
+
+        // Verify multi-batch pagination worked
+        assert_eq!(stats.batches, 2, "Expected 2 batches");
+        assert!(stats.complete, "Expected complete fetch");
+        assert_eq!(logs.len(), 2, "Expected 2 logs (1 from each batch)");
+        assert_eq!(call_count.load(Ordering::SeqCst), 2, "Expected 2 RPC calls");
     }
 
     #[tokio::test]
