@@ -422,6 +422,12 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - 95 DATA burned from crashed player + 2.5 DATA burn from rake
 - Total burned in first round: 97.5 DATA
 
+**Seed Delay Optimization:**
+- Reduced default seed delay from 50 blocks to 10 blocks
+- On MegaETH (100ms blocks): 1 second wait instead of 5 seconds
+- Games can override `_seedBlockDelay()` for custom timing
+- Minimum safety floor: 5 blocks (0.5 seconds)
+
 ---
 
 ### 2026-01-23: Randomness Contracts Implementation
