@@ -150,24 +150,40 @@ impl<P: ChainProvider> LocalNonceManager<P> {
 #[async_trait]
 impl<P: ChainProvider> NonceManager for LocalNonceManager<P> {
     async fn get_and_increment(&self, address: Address) -> Result<u64> {
-        // Ensure we have a cached nonce
-        self.ensure_cached(address).await?;
+        // Retry limit prevents infinite loop if something keeps clearing the cache
+        const MAX_RETRIES: u8 = 3;
 
-        // Get and increment atomically
-        let mut nonces = self.nonces.write().await;
-        // SAFETY: ensure_cached guarantees the address exists
-        let Some(nonce) = nonces.get_mut(&address) else {
-            // This should never happen due to ensure_cached
-            return Err(crate::error::ProviderError::Other(
-                "nonce cache inconsistency".into(),
-            ));
-        };
-        let current = *nonce;
-        *nonce += 1;
-        drop(nonces); // Release lock before logging
+        for attempt in 0..MAX_RETRIES {
+            // Ensure we have a cached nonce
+            self.ensure_cached(address).await?;
 
-        debug!(%address, nonce = current, "Got nonce");
-        Ok(current)
+            // Get and increment atomically
+            let mut nonces = self.nonces.write().await;
+
+            // Handle the rare case where clear() was called between ensure_cached and here
+            let Some(nonce) = nonces.get_mut(&address) else {
+                // Entry was removed (likely by clear()) - retry
+                drop(nonces);
+                warn!(
+                    %address,
+                    attempt,
+                    "Nonce entry removed during get_and_increment, retrying"
+                );
+                continue;
+            };
+
+            let current = *nonce;
+            *nonce += 1;
+            drop(nonces); // Release lock before logging
+
+            debug!(%address, nonce = current, "Got nonce");
+            return Ok(current);
+        }
+
+        // Exhausted retries - this indicates a serious issue with concurrent cache clearing
+        Err(crate::error::ProviderError::Other(format!(
+            "nonce cache cleared repeatedly for {address} - check for concurrent clear() calls"
+        )))
     }
 
     async fn sync(&self, address: Address) -> Result<()> {
@@ -190,8 +206,11 @@ impl<P: ChainProvider> NonceManager for LocalNonceManager<P> {
     }
 
     fn set(&self, address: Address, nonce: u64) {
-        // Use blocking lock since this is typically called in sync context
-        // For async context, use set_async
+        // Use blocking lock since this is typically called in sync context.
+        //
+        // WARNING: This uses blocking_write() which can deadlock if called from
+        // within an async task while another task holds the lock. In async contexts,
+        // use `set_async()` instead.
         let old = self.nonces.blocking_write().insert(address, nonce);
 
         debug!(
@@ -203,7 +222,11 @@ impl<P: ChainProvider> NonceManager for LocalNonceManager<P> {
     }
 
     fn peek(&self, address: Address) -> Option<u64> {
-        // Use blocking lock for sync access
+        // Use blocking lock for sync access.
+        //
+        // WARNING: This uses blocking_read() which can deadlock if called from
+        // within an async task while another task holds the lock. In async contexts,
+        // use `peek_async()` instead.
         self.nonces.blocking_read().get(&address).copied()
     }
 }
@@ -222,6 +245,7 @@ mod tests {
     use std::time::Duration;
 
     /// Mock provider that tracks nonce queries
+    #[derive(Debug)]
     struct MockProvider {
         chain_nonce: AtomicU64,
         query_count: AtomicU64,
@@ -417,5 +441,126 @@ mod tests {
         nonces.sort();
         let expected: Vec<u64> = (0..10).collect();
         assert_eq!(nonces, expected);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // Edge case and negative tests
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn sync_works_for_uncached_address() {
+        let provider = MockProvider::new(42);
+        let manager = LocalNonceManager::new(provider);
+
+        let addr = Address::repeat_byte(0x08);
+
+        // Sync an address that was never cached
+        manager.sync(addr).await.unwrap();
+
+        // Now it should be cached at chain value
+        assert_eq!(manager.peek_async(addr).await, Some(42));
+    }
+
+    /// Mock provider that fails after N successful queries
+    #[derive(Debug)]
+    struct FailingProvider {
+        fail_after: AtomicU64,
+        query_count: AtomicU64,
+    }
+
+    impl FailingProvider {
+        fn new(fail_after: u64) -> Self {
+            Self {
+                fail_after: AtomicU64::new(fail_after),
+                query_count: AtomicU64::new(0),
+            }
+        }
+
+        fn always_fail() -> Self {
+            Self::new(0)
+        }
+    }
+
+    #[async_trait]
+    impl ChainProvider for FailingProvider {
+        fn chain_id(&self) -> u64 {
+            1
+        }
+
+        async fn get_balance(&self, _address: Address) -> Result<U256> {
+            Ok(U256::ZERO)
+        }
+
+        async fn get_nonce(&self, _address: Address) -> Result<u64> {
+            let count = self.query_count.fetch_add(1, Ordering::SeqCst);
+            if count >= self.fail_after.load(Ordering::SeqCst) {
+                Err(crate::error::ProviderError::Connection(
+                    "simulated failure".into(),
+                ))
+            } else {
+                Ok(0)
+            }
+        }
+
+        async fn get_pending_nonce(&self, address: Address) -> Result<u64> {
+            self.get_nonce(address).await
+        }
+
+        async fn send_raw_transaction(&self, _tx: Bytes) -> Result<TxHash> {
+            Ok(TxHash::ZERO)
+        }
+
+        async fn wait_for_receipt(
+            &self,
+            tx_hash: TxHash,
+            _timeout: Duration,
+        ) -> Result<TransactionReceipt> {
+            Ok(TransactionReceipt {
+                tx_hash,
+                block_hash: B256::ZERO,
+                block_number: 1,
+                tx_index: 0,
+                from: Address::ZERO,
+                to: None,
+                contract_address: None,
+                gas_used: 21000,
+                success: true,
+                logs: vec![],
+            })
+        }
+
+        async fn gas_price(&self) -> Result<u128> {
+            Ok(1_000_000_000)
+        }
+
+        async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {
+            Ok(Bytes::new())
+        }
+    }
+
+    #[tokio::test]
+    async fn get_and_increment_propagates_provider_error() {
+        let provider = FailingProvider::always_fail();
+        let manager = LocalNonceManager::new(provider);
+
+        let addr = Address::repeat_byte(0x09);
+
+        // Should propagate the provider error
+        let result = manager.get_and_increment(addr).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("simulated failure"));
+    }
+
+    #[tokio::test]
+    async fn sync_propagates_provider_error() {
+        let provider = FailingProvider::always_fail();
+        let manager = LocalNonceManager::new(provider);
+
+        let addr = Address::repeat_byte(0x0a);
+
+        // Should propagate the provider error
+        let result = manager.sync(addr).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("simulated failure"));
     }
 }

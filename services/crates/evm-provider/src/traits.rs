@@ -68,7 +68,7 @@ use crate::types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 /// - [`get_pending_nonce`](Self::get_pending_nonce) - Includes mempool (default: same as get_nonce)
 /// - [`get_token_balance`](Self::get_token_balance) - ERC20 balance (default: uses call)
 #[async_trait]
-pub trait ChainProvider: Send + Sync + 'static {
+pub trait ChainProvider: Send + Sync + std::fmt::Debug + 'static {
     /// Chain identifier (e.g., 1 for Ethereum mainnet, 6343 for MegaETH testnet).
     fn chain_id(&self) -> u64;
 
@@ -143,6 +143,10 @@ pub trait ChainProvider: Send + Sync + 'static {
     /// MegaETH gas estimation is unreliable - the `MegaEthProvider` overrides
     /// this to use a fixed gas limit.
     async fn estimate_gas(&self, _tx: &TransactionRequest) -> Result<u64> {
+        tracing::debug!(
+            gas = 500_000,
+            "Using default gas estimate - override estimate_gas() for accurate estimates"
+        );
         Ok(500_000)
     }
 
@@ -169,6 +173,13 @@ pub trait ChainProvider: Send + Sync + 'static {
     ///
     /// Default implementation uses [`call`](Self::call) with the standard
     /// `balanceOf(address)` selector.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - The token address is not a contract
+    /// - The contract doesn't implement `balanceOf(address)`
+    /// - The contract returns malformed data
     async fn get_token_balance(&self, token: Address, account: Address) -> Result<U256> {
         // ERC20 balanceOf(address) selector: 0x70a08231
         let selector = [0x70, 0xa0, 0x82, 0x31];
@@ -184,10 +195,19 @@ pub trait ChainProvider: Send + Sync + 'static {
         let result = self.call(&request).await?;
 
         // Parse U256 from 32-byte result
+        if result.is_empty() {
+            return Err(ProviderError::InvalidResponse(format!(
+                "balanceOf({account}) on {token} returned no data - \
+                 contract may not exist or may not implement ERC20"
+            )));
+        }
+
         if result.len() < 32 {
-            return Err(ProviderError::InvalidResponse(
-                "balanceOf returned less than 32 bytes".into(),
-            ));
+            return Err(ProviderError::InvalidResponse(format!(
+                "balanceOf({account}) on {token} returned {} bytes, expected 32 - \
+                 contract may not be ERC20 compliant",
+                result.len()
+            )));
         }
 
         Ok(U256::from_be_slice(&result[..32]))
@@ -358,11 +378,23 @@ pub trait NonceManager: Send + Sync {
     ///
     /// * `address` - The address to set the nonce for
     /// * `nonce` - The nonce value to set
+    ///
+    /// # Warning
+    ///
+    /// This is a synchronous method. Some implementations (like [`LocalNonceManager`](crate::LocalNonceManager))
+    /// use blocking locks internally. If called from within an async runtime while
+    /// another task holds the lock, it may deadlock. Use async alternatives when available.
     fn set(&self, address: Address, nonce: u64);
 
     /// Get the current nonce without incrementing.
     ///
     /// Useful for checking the current state without consuming a nonce.
+    ///
+    /// # Warning
+    ///
+    /// This is a synchronous method. Some implementations (like [`LocalNonceManager`](crate::LocalNonceManager))
+    /// use blocking locks internally. If called from within an async runtime while
+    /// another task holds the lock, it may deadlock. Use async alternatives when available.
     fn peek(&self, address: Address) -> Option<u64>;
 }
 
@@ -450,6 +482,7 @@ mod tests {
     use super::*;
 
     // Mock provider for testing
+    #[derive(Debug)]
     struct MockProvider {
         chain_id: u64,
     }
@@ -531,5 +564,156 @@ mod tests {
 
         let balance = provider.get_balance(Address::ZERO).await.unwrap();
         assert_eq!(balance, U256::from(1_000_000_000_000_000_000u64));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // get_token_balance tests
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    /// Mock that captures the call request for verification
+    #[derive(Debug)]
+    struct CallCapturingProvider {
+        last_call: std::sync::Mutex<Option<TransactionRequest>>,
+        response: Bytes,
+    }
+
+    impl CallCapturingProvider {
+        fn new(response: Bytes) -> Self {
+            Self {
+                last_call: std::sync::Mutex::new(None),
+                response,
+            }
+        }
+
+        fn empty_response() -> Self {
+            Self::new(Bytes::new())
+        }
+
+        fn short_response() -> Self {
+            Self::new(Bytes::from(vec![0u8; 16])) // Only 16 bytes
+        }
+
+        fn valid_response(value: U256) -> Self {
+            Self::new(Bytes::from(value.to_be_bytes_vec()))
+        }
+
+        fn last_call(&self) -> Option<TransactionRequest> {
+            self.last_call.lock().ok().and_then(|guard| guard.clone())
+        }
+    }
+
+    #[async_trait]
+    impl ChainProvider for CallCapturingProvider {
+        fn chain_id(&self) -> u64 {
+            1
+        }
+
+        async fn get_balance(&self, _: Address) -> Result<U256> {
+            Ok(U256::ZERO)
+        }
+
+        async fn get_nonce(&self, _: Address) -> Result<u64> {
+            Ok(0)
+        }
+
+        async fn send_raw_transaction(&self, _: Bytes) -> Result<TxHash> {
+            Ok(TxHash::ZERO)
+        }
+
+        async fn wait_for_receipt(&self, hash: TxHash, _: Duration) -> Result<TransactionReceipt> {
+            Ok(TransactionReceipt {
+                tx_hash: hash,
+                block_hash: alloy::primitives::B256::ZERO,
+                block_number: 1,
+                tx_index: 0,
+                from: Address::ZERO,
+                to: None,
+                contract_address: None,
+                gas_used: 21000,
+                success: true,
+                logs: vec![],
+            })
+        }
+
+        async fn gas_price(&self) -> Result<u128> {
+            Ok(1_000_000_000)
+        }
+
+        async fn call(&self, tx: &TransactionRequest) -> Result<Bytes> {
+            if let Ok(mut guard) = self.last_call.lock() {
+                *guard = Some(tx.clone());
+            }
+            Ok(self.response.clone())
+        }
+    }
+
+    #[tokio::test]
+    async fn get_token_balance_encodes_calldata_correctly() {
+        let provider = CallCapturingProvider::valid_response(U256::from(1000));
+
+        let token: Address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            .parse()
+            .unwrap();
+        let account: Address = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .parse()
+            .unwrap();
+
+        let balance = provider.get_token_balance(token, account).await.unwrap();
+        assert_eq!(balance, U256::from(1000));
+
+        // Verify the call was made correctly
+        let call = provider.last_call().expect("call should have been made");
+        assert_eq!(call.to, Some(token));
+
+        // Verify calldata: selector (4 bytes) + padded address (32 bytes)
+        let data = call.data.expect("data should be set");
+        assert_eq!(data.len(), 36); // 4 + 32
+
+        // Check selector is balanceOf(address) = 0x70a08231
+        assert_eq!(&data[0..4], &[0x70, 0xa0, 0x82, 0x31]);
+
+        // Check address is properly padded (12 zero bytes + 20 address bytes)
+        assert_eq!(&data[4..16], &[0u8; 12]); // padding
+        assert_eq!(&data[16..36], account.as_slice()); // address
+    }
+
+    #[tokio::test]
+    async fn get_token_balance_returns_error_on_empty_response() {
+        let provider = CallCapturingProvider::empty_response();
+
+        let token: Address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            .parse()
+            .unwrap();
+        let account: Address = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .parse()
+            .unwrap();
+
+        let result = provider.get_token_balance(token, account).await;
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("returned no data"), "error: {msg}");
+        assert!(msg.contains("may not exist"), "error: {msg}");
+    }
+
+    #[tokio::test]
+    async fn get_token_balance_returns_error_on_short_response() {
+        let provider = CallCapturingProvider::short_response();
+
+        let token: Address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            .parse()
+            .unwrap();
+        let account: Address = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            .parse()
+            .unwrap();
+
+        let result = provider.get_token_balance(token, account).await;
+        assert!(result.is_err());
+
+        let err = result.unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("16 bytes"), "error: {msg}");
+        assert!(msg.contains("expected 32"), "error: {msg}");
     }
 }

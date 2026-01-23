@@ -180,10 +180,18 @@ impl ProviderError {
 impl From<alloy::transports::TransportError> for ProviderError {
     fn from(err: alloy::transports::TransportError) -> Self {
         // Parse the error to categorize it
+        // Note: This is string-based because alloy doesn't expose structured error types
         let msg = err.to_string();
-        if msg.contains("timeout") {
-            Self::Timeout(Duration::from_secs(30)) // Approximate
-        } else if msg.contains("connection") {
+        let msg_lower = msg.to_lowercase();
+
+        if msg_lower.contains("timeout") || msg_lower.contains("timed out") {
+            // Use Connection variant to preserve the original message since we
+            // don't know the actual timeout duration
+            Self::Connection(format!("request timed out: {msg}"))
+        } else if msg_lower.contains("connection")
+            || msg_lower.contains("connect")
+            || msg_lower.contains("refused")
+        {
             Self::Connection(msg)
         } else {
             Self::Other(msg)
