@@ -19,6 +19,7 @@ This prevents re-learning the same lessons.
 | [001](./001-prevrandao-megaeth.md) | prevrandao on MegaETH | Smart Contracts | `block.prevrandao` stays constant for ~60s on MegaETH, unlike Ethereum. Mitigated with lock period. |
 | [004](./004-timescaledb-hypertable-entity-antipattern.md) | Hypertables for Entities is Antipattern | Database/TimescaleDB | Entity tables with updates (positions) should NOT be hypertables. Append-only event tables (deaths) SHOULD be. |
 | [005](./005-token-amount-bigdecimal-scale-mismatch.md) | TokenAmount BigDecimal Scale Mismatch | Database/Rust | `to_bigdecimal()` must convert human units to wei when schema uses `NUMERIC(78, 0)` (integers). |
+| [2026-01-23](./2026-01-23-megaeth-foundry-deployment.md) | MegaETH Foundry Deployment | Smart Contracts/MegaETH | MegaEVM has different gas costs. Use `--skip-simulation --gas-limit 10000000 --legacy` for all Foundry deployments. |
 
 ## Template
 

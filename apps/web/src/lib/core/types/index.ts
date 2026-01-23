@@ -16,6 +16,9 @@ export * from './market';
 // Re-export duel types
 export * from './duel';
 
+// Re-export arcade game types
+export * from './arcade';
+
 // ════════════════════════════════════════════════════════════════
 // ENUMS & CONSTANTS
 // ════════════════════════════════════════════════════════════════

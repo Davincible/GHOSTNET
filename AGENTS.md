@@ -604,6 +604,36 @@ See `apps/web/docs/guides/SvelteBestPractices/28-Web3Integration.md` for the com
 3. **Linker configuration** - macOS uses default linker; Linux uses mold
 4. **Don't override RUSTC_WRAPPER** - Nix shell sets this to sccache automatically
 
+### MegaETH Deployment (CRITICAL)
+
+MegaETH uses MegaEVM which has different gas costs than vanilla EVM. **Local toolchain gas estimation will fail.**
+
+1. **Always use `--skip-simulation`** for Foundry deployments and scripts:
+   ```bash
+   # ❌ WRONG - Will fail with "intrinsic gas too low"
+   forge script Deploy.s.sol --rpc-url $MEGAETH_RPC --broadcast
+   
+   # ✅ CORRECT - Skip local simulation
+   forge script Deploy.s.sol --rpc-url $MEGAETH_RPC --broadcast \
+     --skip-simulation --gas-limit 10000000 --legacy
+   ```
+
+2. **Use `--legacy` flag** - MegaETH works best with legacy transactions
+
+3. **Set higher gas limits** - Use `--gas-limit 10000000` or higher for complex deployments
+
+4. **For `cast send` commands**, also use higher gas limits:
+   ```bash
+   # ✅ Use sufficient gas for transactions
+   cast send $CONTRACT "function()" --gas-limit 200000 --legacy \
+     --private-key $KEY --rpc-url https://carrot.megaeth.com/rpc
+   ```
+
+5. **Testnet RPC**: `https://carrot.megaeth.com/rpc` (Chain ID: 6343)
+6. **Mainnet RPC**: `https://mainnet.megaeth.com/rpc` (Chain ID: 4326, whitelisted only)
+
+See `docs/MEGAETH.md` for complete MegaETH developer guide.
+
 ---
 
 ## Notes for AI Assistants

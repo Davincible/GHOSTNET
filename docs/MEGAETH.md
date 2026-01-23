@@ -268,6 +268,27 @@ forge script Deploy.s.sol --rpc-url $MEGAETH_RPC --broadcast \
 - **MegaEVM Source**: https://github.com/megaeth-labs/mega-evm
 - **mega-evme Debugger**: https://github.com/megaeth-labs/mega-evm/blob/main/bin/mega-evme/README.md
 
+#### High Gas Limits ≠ High Costs
+
+**Important:** The high gas limits do NOT mean expensive transactions. MegaETH is extremely cheap:
+
+| Metric | MegaETH | Ethereum | Comparison |
+|--------|---------|----------|------------|
+| Base fee | ~0.001 gwei | ~30 gwei | **30,000x cheaper** |
+| Simple transfer | $0.0001 | $3-5 | |
+| Token swap | $0.001 | $10-30 | |
+| Complex deployment | $0.01 | $50-200 | |
+
+You only pay for gas actually used — unused gas is refunded:
+
+```
+You Set:       --gas-limit 10,000,000
+Contract Uses: ~500,000 gas  
+You Pay For:   500,000 × 0.001 gwei = 0.0000005 ETH ≈ $0.0015
+```
+
+**Real-world example:** Full contract deployment + game testing session = **$0.016** (less than 2 cents)
+
 ### 2. `block.timestamp` Returns EVM Block Time, Not Mini Block Time
 
 ```solidity
