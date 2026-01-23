@@ -19,11 +19,11 @@ contract FutureBlockRandomnessTest is Test {
     // ══════════════════════════════════════════════════════════════════════════════
 
     function test_DefaultSeedBlockDelay() public view {
-        assertEq(randomness.DEFAULT_SEED_BLOCK_DELAY(), 10, "Default seed block delay should be 10");
+        assertEq(randomness.DEFAULT_SEED_BLOCK_DELAY(), 2, "Default seed block delay should be 2");
     }
 
     function test_MinSeedBlockDelay() public view {
-        assertEq(randomness.MIN_SEED_BLOCK_DELAY(), 5, "Minimum seed block delay should be 5");
+        assertEq(randomness.MIN_SEED_BLOCK_DELAY(), 1, "Minimum seed block delay should be 1");
     }
 
     function test_MaxBlockAge() public view {
@@ -47,7 +47,7 @@ contract FutureBlockRandomnessTest is Test {
         assertFalse(randomness.isSeedRevealed(roundId), "Seed should not be revealed");
 
         uint256 seedBlock = randomness.getSeedBlock(roundId);
-        assertEq(seedBlock, block.number + 10, "Seed block should be current + default delay (10)");
+        assertEq(seedBlock, block.number + 2, "Seed block should be current + default delay (2)");
     }
 
     function test_CommitSeed_RevertWhen_ZeroRoundId() public {
@@ -188,9 +188,9 @@ contract FutureBlockRandomnessTest is Test {
         uint256 seedBlock = randomness.getSeedBlock(1);
 
         // Before seed block - should return full window + remaining to seed
-        // Default delay is now 10 blocks
+        // Default delay is now 2 blocks
         uint256 remaining = randomness.getRemainingRevealWindow(1);
-        assertEq(remaining, 256 + 10, "Should have full window plus default delay (10)");
+        assertEq(remaining, 256 + 2, "Should have full window plus default delay (2)");
 
         // At seed block
         vm.roll(seedBlock);

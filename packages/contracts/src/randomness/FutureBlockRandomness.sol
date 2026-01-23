@@ -44,14 +44,16 @@ abstract contract FutureBlockRandomness {
     // ══════════════════════════════════════════════════════════════════════════════
 
     /// @notice Default blocks to wait before seed is ready
-    /// @dev 10 blocks = 1 second on MegaETH (100ms blocks).
+    /// @dev Block time varies by network:
+    ///      - MegaETH mainnet: 100ms blocks → 2 blocks = 200ms
+    ///      - MegaETH testnet: ~1s blocks → 2 blocks = ~2 seconds
     ///      Games can override via _seedBlockDelay() for different security/UX tradeoffs.
-    uint256 public constant DEFAULT_SEED_BLOCK_DELAY = 10;
+    uint256 public constant DEFAULT_SEED_BLOCK_DELAY = 2;
 
     /// @notice Minimum allowed seed block delay (safety floor)
-    /// @dev Prevents games from using dangerously short delays.
-    ///      5 blocks = 0.5 seconds minimum entropy accumulation.
-    uint256 public constant MIN_SEED_BLOCK_DELAY = 5;
+    /// @dev Must be at least 1 block to ensure future block hash is used.
+    ///      1 block provides minimum unpredictability guarantee.
+    uint256 public constant MIN_SEED_BLOCK_DELAY = 1;
 
     /// @notice Maximum blocks before native blockhash() returns 0 (EVM hard limit)
     /// @dev On MegaETH: 256 blocks = 25.6 seconds reveal window

@@ -54,8 +54,11 @@ contract HashCrash is IArcadeGame, FutureBlockRandomness, Ownable2Step, Pausable
     uint256 public constant MAX_PLAYERS_PER_ROUND = 50;
 
     /// @notice Blocks to wait for seed (overrides FutureBlockRandomness default)
-    /// @dev 10 blocks = ~1 second on MegaETH. Good balance of security and UX for crash games.
-    uint256 public constant HASH_CRASH_SEED_DELAY = 10;
+    /// @dev Block time varies by network:
+    ///      - MegaETH mainnet (100ms): 3 blocks = 300ms
+    ///      - MegaETH testnet (~1s): 3 blocks = ~3 seconds
+    ///      Slightly higher than minimum for added security margin.
+    uint256 public constant HASH_CRASH_SEED_DELAY = 3;
 
     /// @notice House edge in basis points (400 = 4%)
     /// @dev This creates ~96% expected value for players
