@@ -208,6 +208,39 @@
 			{#if !isValidTarget && targetValue !== ''}
 				<p class="error-text">Target must be {MIN_TARGET}x-{MAX_TARGET}x</p>
 			{/if}
+		{:else if currentBet && phase === 'betting'}
+			<!-- Bet placed, waiting for betting to close -->
+			<div class="bet-placed">
+				<div class="countdown" class:critical={isCritical}>
+					<span class="countdown-label">BETTING CLOSES IN</span>
+					<span class="countdown-value">{timeDisplay}</span>
+				</div>
+
+				<div class="bet-confirmed">
+					<span class="confirmed-icon">✓</span>
+					<span class="confirmed-text">BET LOCKED IN</span>
+				</div>
+
+				<div class="bet-info">
+					<span class="label">YOUR BET</span>
+					<span class="value">{formatData(currentBet)} $DATA</span>
+				</div>
+				<div class="bet-info target">
+					<span class="label">YOUR TARGET</span>
+					<span class="value">{targetMultiplier ? formatMultiplier(targetMultiplier) : '-'}</span>
+				</div>
+
+				<div class="outcome-preview">
+					<div class="outcome-row win">
+						<span class="outcome-label">IF WIN</span>
+						<span class="outcome-value">+{formatData(potentialPayout - currentBet)} $DATA</span>
+					</div>
+					<div class="outcome-row lose">
+						<span class="outcome-label">IF LOSE</span>
+						<span class="outcome-value">-{formatData(currentBet)} $DATA</span>
+					</div>
+				</div>
+			</div>
 		{:else if currentBet && phase && ['locked', 'revealed', 'animating'].includes(phase)}
 			<!-- Waiting for reveal / Watching animation -->
 			<div class="bet-placed">
@@ -445,6 +478,30 @@
 
 	.outcome-row.probability .outcome-value {
 		color: var(--color-cyan);
+	}
+
+	/* Bet confirmed indicator */
+	.bet-confirmed {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		background: rgba(0, 229, 204, 0.1);
+		border: var(--border-width) solid var(--color-accent);
+	}
+
+	.confirmed-icon {
+		color: var(--color-accent);
+		font-size: var(--text-lg);
+	}
+
+	.confirmed-text {
+		color: var(--color-accent);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-wider);
 	}
 
 	/* Bet placed display */
