@@ -315,24 +315,22 @@
 
 				<!-- Calendar Tab -->
 				<div class="content-column calendar-column" class:hidden={activeTab !== 'calendar'}>
-					<section class="section calendar-section">
+					<section class="section">
 						<Box title="STREAK CALENDAR">
-							<div class="calendar-wrapper">
-								<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
+							<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
 
-								<div class="calendar-stats">
-									<div class="stat">
-										<span class="stat-label">STREAK</span>
-										<span class="stat-value">{streak?.currentStreak ?? 0}</span>
-									</div>
-									<div class="stat">
-										<span class="stat-label">BEST</span>
-										<span class="stat-value">{streak?.longestStreak ?? 0}</span>
-									</div>
-									<div class="stat">
-										<span class="stat-label">TOTAL</span>
-										<span class="stat-value">{streak?.totalMissionsCompleted?.toString() ?? '0'}</span>
-									</div>
+							<div class="calendar-stats">
+								<div class="stat">
+									<span class="stat-label">STREAK</span>
+									<span class="stat-value">{streak?.currentStreak ?? 0}</span>
+								</div>
+								<div class="stat">
+									<span class="stat-label">BEST</span>
+									<span class="stat-value">{streak?.longestStreak ?? 0}</span>
+								</div>
+								<div class="stat">
+									<span class="stat-label">TOTAL</span>
+									<span class="stat-value">{streak?.totalMissionsCompleted?.toString() ?? '0'}</span>
 								</div>
 							</div>
 						</Box>
@@ -561,6 +559,13 @@
 
 	.calendar-column {
 		grid-column: 1 / -1;
+		display: flex;
+		justify-content: center;
+	}
+
+	.calendar-column .section {
+		max-width: 400px;
+		width: 100%;
 	}
 
 	.section {
@@ -622,21 +627,11 @@
 		color: var(--color-accent);
 	}
 
-	/* Calendar Section */
-	.calendar-wrapper {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-4);
-	}
-
 	/* Calendar Stats */
 	.calendar-stats {
 		display: flex;
 		justify-content: center;
 		gap: var(--space-6);
-		width: 100%;
-		max-width: 320px;
 		margin-top: var(--space-3);
 		padding-top: var(--space-3);
 		border-top: 1px solid var(--color-border-subtle);
