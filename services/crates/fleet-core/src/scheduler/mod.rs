@@ -25,7 +25,7 @@
 //! println!("Next action at: {}", next);
 //! ```
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 
@@ -87,14 +87,15 @@ impl Scheduler {
     /// and off-hours probability.
     #[must_use]
     pub fn should_act_now(&mut self, profile: &BehaviorProfile) -> bool {
-        let hour = Utc::now().format("%H").to_string().parse::<u8>().unwrap_or(12);
+        let hour = Self::current_hour();
         profile.should_act_now(hour, &mut self.rng)
     }
 
-    /// Get the current hour in UTC.
+    /// Get the current hour in UTC (0-23).
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)] // hour() returns 0-23, always fits in u8
     pub fn current_hour() -> u8 {
-        Utc::now().format("%H").to_string().parse::<u8>().unwrap_or(12)
+        Utc::now().hour() as u8
     }
 }
 

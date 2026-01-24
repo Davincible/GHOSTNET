@@ -331,7 +331,7 @@ mod tests {
             .unwrap();
 
         assert!(receipt.success);
-        assert_eq!(receipt.transaction_hash, tx_hash);
+        assert_eq!(receipt.tx_hash, tx_hash);
     }
 
     #[tokio::test]

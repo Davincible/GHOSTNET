@@ -37,7 +37,7 @@
 //! assert_eq!(metrics.successful_actions(), 1);
 //! ```
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use chrono::{DateTime, Utc};
 
@@ -128,12 +128,12 @@ pub struct FleetMetrics {
     by_wallet: HashMap<String, u64>,
 
     /// Recent action durations (for percentile calculation).
-    /// Limited to last 1000 entries.
-    recent_durations: Vec<u64>,
+    /// Limited to last 1000 entries. Uses `VecDeque` for O(1) front removal.
+    recent_durations: VecDeque<u64>,
 
     /// Recent gas usage.
-    /// Limited to last 1000 entries.
-    recent_gas: Vec<u64>,
+    /// Limited to last 1000 entries. Uses `VecDeque` for O(1) front removal.
+    recent_gas: VecDeque<u64>,
 }
 
 impl FleetMetrics {
@@ -157,18 +157,18 @@ impl FleetMetrics {
         *self.by_action.entry(metrics.action_id).or_insert(0) += 1;
         *self.by_wallet.entry(metrics.wallet_id).or_insert(0) += 1;
 
-        // Keep recent durations (ring buffer)
+        // Keep recent durations (ring buffer with O(1) operations)
         if self.recent_durations.len() >= 1000 {
-            self.recent_durations.remove(0);
+            self.recent_durations.pop_front();
         }
-        self.recent_durations.push(metrics.duration_ms);
+        self.recent_durations.push_back(metrics.duration_ms);
 
-        // Keep recent gas usage
+        // Keep recent gas usage (ring buffer with O(1) operations)
         if let Some(gas) = metrics.gas_used {
             if self.recent_gas.len() >= 1000 {
-                self.recent_gas.remove(0);
+                self.recent_gas.pop_front();
             }
-            self.recent_gas.push(gas);
+            self.recent_gas.push_back(gas);
         }
     }
 
@@ -228,19 +228,19 @@ impl FleetMetrics {
     /// Get p50 (median) action duration in milliseconds.
     #[must_use]
     pub fn p50_duration_ms(&self) -> u64 {
-        percentile(&self.recent_durations, 50)
+        percentile_deque(&self.recent_durations, 50)
     }
 
     /// Get p95 action duration in milliseconds.
     #[must_use]
     pub fn p95_duration_ms(&self) -> u64 {
-        percentile(&self.recent_durations, 95)
+        percentile_deque(&self.recent_durations, 95)
     }
 
     /// Get p99 action duration in milliseconds.
     #[must_use]
     pub fn p99_duration_ms(&self) -> u64 {
-        percentile(&self.recent_durations, 99)
+        percentile_deque(&self.recent_durations, 99)
     }
 
     /// Get average gas used per action.
@@ -276,13 +276,13 @@ impl FleetMetrics {
     }
 }
 
-/// Calculate percentile of a dataset.
-fn percentile(data: &[u64], p: usize) -> u64 {
+/// Calculate percentile of a dataset stored in a `VecDeque`.
+fn percentile_deque(data: &VecDeque<u64>, p: usize) -> u64 {
     if data.is_empty() {
         return 0;
     }
 
-    let mut sorted = data.to_vec();
+    let mut sorted: Vec<u64> = data.iter().copied().collect();
     sorted.sort_unstable();
 
     let idx = (p * sorted.len() / 100).min(sorted.len() - 1);
