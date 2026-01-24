@@ -38,6 +38,16 @@ use crate::traits::{ChainProvider, ExtendedChainProvider};
 use crate::types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SAFETY DEFAULTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Default maximum logs to fetch in a single operation.
+///
+/// This provides memory safety - at ~300 bytes per log, 100,000 logs ≈ 30MB.
+/// Can be overridden via [`MegaEthProvider::with_config`].
+pub const DEFAULT_MAX_LOGS: usize = 100_000;
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MEGAETH PROVIDER
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -77,6 +87,18 @@ use crate::types::{LogFilter, LogsPage, TransactionReceipt, TransactionRequest};
 ///     // Fall back to polling
 /// }
 /// ```
+///
+/// # Memory Safety
+///
+/// Log fetching operations have built-in limits to prevent memory exhaustion:
+///
+/// | Limit | Default | Purpose |
+/// |-------|---------|---------|
+/// | `max_logs` | 100,000 | Memory cap (~30MB) |
+/// | `max_cursor_batches` | 100 | RPC call limit |
+///
+/// Use [`with_config`](Self::with_config) with a custom [`ClientConfig`](MegaEthConfig)
+/// to adjust these limits for your use case.
 #[derive(Debug)]
 pub struct MegaEthProvider {
     /// Standard EVM provider for basic operations.
@@ -99,6 +121,14 @@ impl MegaEthProvider {
     /// 2. Query the chain ID
     /// 3. Detect available MegaETH features (realtime API, cursor pagination)
     ///
+    /// # Safety Defaults
+    ///
+    /// Uses safe defaults for memory protection:
+    /// - `max_logs`: 100,000 (~30MB memory)
+    /// - `max_cursor_batches`: 100
+    ///
+    /// Use [`with_config`](Self::with_config) to customize these limits.
+    ///
     /// # Arguments
     ///
     /// * `rpc_url` - The MegaETH RPC endpoint URL
@@ -110,7 +140,8 @@ impl MegaEthProvider {
     /// - Connection to the RPC endpoint fails
     /// - Chain ID query fails
     pub async fn new(rpc_url: &str) -> Result<Self> {
-        Self::with_config(rpc_url, Duration::from_secs(30), MegaEthConfig::default()).await
+        let config = MegaEthConfig::default().with_max_logs(DEFAULT_MAX_LOGS);
+        Self::with_config(rpc_url, Duration::from_secs(30), config).await
     }
 
     /// Create a new provider with custom configuration.
