@@ -303,7 +303,9 @@ contract DailyOps is AccessControlDefaultAdminRules, ReentrancyGuard {
         return uint64(block.timestamp / DAY_DURATION);
     }
 
-    /// @notice Check if player has claimed for a specific day
+    /// @notice Check if player's last claim was on a specific day
+    /// @dev This checks if `day` was the MOST RECENT claim day, not if the day was ever claimed.
+    ///      For preventing double-claims, the contract uses nonces in signature validation.
     function hasClaimedDay(address player, uint64 day) external view returns (bool) {
         return streaks[player].lastClaimDay == day;
     }
@@ -400,10 +402,12 @@ contract DailyOps is AccessControlDefaultAdminRules, ReentrancyGuard {
         // Check if shield protects a gap
         bool shieldProtects = false;
         if (!isConsecutive && streak.shieldExpiryDay > 0) {
-            // Shield protects if the gap days are within shield period
-            // and we're claiming within a reasonable window
+            // Shield protects if all gap days fall within shield period
+            // Example: Last claim day 10, claim day 13, shield expires day 14
+            // Gap days are 11, 12 - both must be < expiry (14) for protection
+            // We check: lastClaim + gapDays <= shieldExpiryDay (inclusive of expiry day)
             uint64 gapDays = claimDay - lastClaim - 1;
-            if (gapDays > 0 && lastClaim + gapDays < streak.shieldExpiryDay) {
+            if (gapDays > 0 && lastClaim + gapDays <= streak.shieldExpiryDay) {
                 shieldProtects = true;
                 emit ShieldUsed(player, claimDay);
             }

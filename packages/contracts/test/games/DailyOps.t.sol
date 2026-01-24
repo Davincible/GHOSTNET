@@ -659,4 +659,60 @@ contract DailyOpsTest is Test {
         _claimForPlayer(player1, newCurrentDay, DEFAULT_REWARD);
         assertEq(dailyOps.getStreak(player1).currentStreak, 2);
     }
+
+    function test_PurchaseShield_ProtectsOnExactExpiryDay() public {
+        uint64 startDay = _getCurrentDay();
+
+        // Build a 3-day streak
+        for (uint256 i = 0; i < 3; i++) {
+            _claimForPlayer(player1, startDay + uint64(i), DEFAULT_REWARD);
+            vm.warp(block.timestamp + 1 days);
+        }
+        assertEq(dailyOps.getStreak(player1).currentStreak, 3);
+
+        // Buy 1-day shield on day 3 (expires day 4)
+        vm.prank(player1);
+        dailyOps.purchaseShield(1);
+
+        uint64 purchaseDay = _getCurrentDay();
+        assertEq(dailyOps.getStreak(player1).shieldExpiryDay, purchaseDay + 1);
+
+        // Skip day 3 (don't claim), advance to day 4 (exactly on expiry)
+        vm.warp(block.timestamp + 1 days);
+
+        // Claim on day 4 - shield should protect the 1-day gap
+        // Gap day is day 3, shield expires day 4, so day 3 <= day 4 -> protected
+        _claimForPlayer(player1, _getCurrentDay(), DEFAULT_REWARD);
+
+        // Streak should continue (3 -> 4)
+        assertEq(dailyOps.getStreak(player1).currentStreak, 4);
+    }
+
+    function test_PurchaseShield_DoesNotProtectAfterExpiry() public {
+        uint64 startDay = _getCurrentDay();
+
+        // Build a 3-day streak (days 0, 1, 2)
+        for (uint256 i = 0; i < 3; i++) {
+            _claimForPlayer(player1, startDay + uint64(i), DEFAULT_REWARD);
+            vm.warp(block.timestamp + 1 days);
+        }
+        // Now at day 3
+        assertEq(dailyOps.getStreak(player1).currentStreak, 3);
+
+        // Buy 1-day shield on day 3 (expires day 4)
+        vm.prank(player1);
+        dailyOps.purchaseShield(1);
+
+        // Skip 3 days (days 3, 4, 5) to land on day 6
+        // Shield only covers day 4, but we're missing days 3, 4, 5
+        vm.warp(block.timestamp + 3 days);
+
+        // Claim on day 6 - shield should NOT protect (gap days 3,4,5 > shield coverage)
+        // lastClaim=2, claimDay=6, gapDays=3, shieldExpiry=4
+        // Check: 2 + 3 <= 4 => 5 <= 4 => false -> NOT protected
+        _claimForPlayer(player1, _getCurrentDay(), DEFAULT_REWARD);
+
+        // Streak should be broken and reset to 1
+        assertEq(dailyOps.getStreak(player1).currentStreak, 1);
+    }
 }
