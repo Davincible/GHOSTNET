@@ -1,0 +1,221 @@
+# Ghost Fleet Example Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Copy this file and customize for your deployment:
+#   cp example.toml production.toml
+#
+# Run with:
+#   ghost-fleet --config config/production.toml
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SERVICE SETTINGS
+# ───────────────────────────────────────────────────────────────────────────────
+
+[service]
+# Service name (for logging)
+name = "ghost-fleet"
+
+# Main loop tick interval in milliseconds
+# Lower = more responsive, higher = less CPU usage
+tick_interval_ms = 1000
+
+# Health check HTTP port (0 to disable)
+health_port = 8080
+
+# ───────────────────────────────────────────────────────────────────────────────
+# CHAIN CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────────────
+
+[chain]
+# Chain ID
+# MegaETH Testnet: 6343
+# MegaETH Mainnet: 4326
+chain_id = 6343
+
+# RPC URL
+rpc_url = "https://carrot.megaeth.com/rpc"
+
+# Chain type: "standard", "megaeth", or "mock" (for testing)
+chain_type = "megaeth"
+
+# Gas limit override (optional, for chains with unreliable estimation)
+# gas_limit_override = 500000
+
+# Use MegaETH realtime API if available
+use_realtime = true
+
+# ───────────────────────────────────────────────────────────────────────────────
+# PLUGINS
+# ───────────────────────────────────────────────────────────────────────────────
+
+[plugins]
+# List of enabled plugins
+enabled = ["ghostnet"]
+
+# GHOSTNET plugin configuration
+[plugins.ghostnet]
+# Contract addresses (replace with actual deployed addresses)
+ghost_core = "0x0000000000000000000000000000000000000001"
+hash_crash = "0x0000000000000000000000000000000000000002"
+arcade_core = "0x0000000000000000000000000000000000000003"
+data_token = "0x0000000000000000000000000000000000000004"
+
+# Minimum stake amount in wei (1 DATA = 1e18 wei)
+min_stake = "1000000000000000000"
+
+# Enable HashCrash arcade game
+hashcrash_enabled = true
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SAFETY SETTINGS
+# ───────────────────────────────────────────────────────────────────────────────
+
+[safety]
+# Maximum consecutive errors before circuit breaker trips
+max_consecutive_errors = 5
+
+# Cooldown period in seconds before auto-reset
+cooldown_secs = 3600  # 1 hour
+
+# Maximum actions per wallet per hour
+max_actions_per_hour = 20
+
+# Global pause switch (set to true to stop all operations)
+global_pause = false
+
+# ───────────────────────────────────────────────────────────────────────────────
+# BEHAVIOR PROFILES
+# ───────────────────────────────────────────────────────────────────────────────
+# 
+# Each profile defines a behavioral archetype:
+# - risk_tolerance: 0.0 (conservative) to 1.0 (aggressive)
+# - activity_level: Actions per hour (average)
+# - patience: 0.0 (impatient) to 1.0 (patient) - affects extraction timing
+#
+# Active hours are in UTC (0-23)
+
+[profiles.whale]
+# Conservative, patient, large positions
+risk_tolerance = 0.3
+activity_level = 2.0
+patience = 0.8
+action_interval_secs = 7200      # 2 hours between actions
+action_interval_jitter_pct = 30  # +/- 30% variation
+active_hours_start = 8
+active_hours_end = 22
+off_hours_factor = 0.2           # 20% activity outside active hours
+afk_probability = 0.15           # 15% chance to go AFK after action
+afk_min_hours = 8
+afk_max_hours = 48
+
+[profiles.grinder]
+# Steady, consistent, medium activity
+risk_tolerance = 0.5
+activity_level = 5.0
+patience = 0.5
+action_interval_secs = 3600      # 1 hour between actions
+action_interval_jitter_pct = 50
+active_hours_start = 6
+active_hours_end = 23
+off_hours_factor = 0.4
+afk_probability = 0.1
+afk_min_hours = 4
+afk_max_hours = 24
+
+[profiles.degen]
+# High risk, high activity
+risk_tolerance = 0.8
+activity_level = 15.0
+patience = 0.2
+action_interval_secs = 900       # 15 minutes between actions
+action_interval_jitter_pct = 60
+active_hours_start = 0           # Active 24/7
+active_hours_end = 23
+off_hours_factor = 0.8
+afk_probability = 0.05
+afk_min_hours = 1
+afk_max_hours = 8
+
+[profiles.casual]
+# Low activity, conservative
+risk_tolerance = 0.2
+activity_level = 1.0
+patience = 0.9
+action_interval_secs = 14400     # 4 hours between actions
+action_interval_jitter_pct = 40
+active_hours_start = 10
+active_hours_end = 20
+off_hours_factor = 0.1
+afk_probability = 0.3
+afk_min_hours = 12
+afk_max_hours = 72
+
+[profiles.sniper]
+# Very patient, strikes when conditions are right
+risk_tolerance = 0.6
+activity_level = 3.0
+patience = 0.95
+action_interval_secs = 1800      # 30 minutes check interval
+action_interval_jitter_pct = 70
+active_hours_start = 0           # Always watching
+active_hours_end = 23
+off_hours_factor = 1.0           # No reduction
+afk_probability = 0.0            # Never AFK
+afk_min_hours = 0
+afk_max_hours = 0
+
+# ───────────────────────────────────────────────────────────────────────────────
+# WALLETS
+# ───────────────────────────────────────────────────────────────────────────────
+#
+# Each wallet needs:
+# - id: Unique identifier for logging
+# - address: Ethereum address
+# - profile: Name of behavior profile to use
+# - private_key: Hex-encoded private key (NEVER commit real keys!)
+#
+# For production, use keyfile instead of private_key
+
+[[wallets]]
+id = "whale_1"
+address = "0x1111111111111111111111111111111111111111"
+profile = "whale"
+# Use keyfile in production:
+# keyfile = "/path/to/encrypted/keyfile.json"
+# For testing only:
+private_key = "0x0000000000000000000000000000000000000000000000000000000000000001"
+enabled = true
+
+[[wallets]]
+id = "grinder_1"
+address = "0x2222222222222222222222222222222222222222"
+profile = "grinder"
+private_key = "0x0000000000000000000000000000000000000000000000000000000000000002"
+enabled = true
+
+[[wallets]]
+id = "degen_1"
+address = "0x3333333333333333333333333333333333333333"
+profile = "degen"
+private_key = "0x0000000000000000000000000000000000000000000000000000000000000003"
+enabled = false  # Disabled by default - high risk!
+
+# ───────────────────────────────────────────────────────────────────────────────
+# NOTES
+# ───────────────────────────────────────────────────────────────────────────────
+#
+# Security:
+# - NEVER commit real private keys to version control
+# - Use encrypted keyfiles in production
+# - Set restrictive file permissions (chmod 600)
+# - Use environment variables for sensitive values
+#
+# Environment variable overrides:
+# - GHOST_FLEET_CONFIG: Config file path
+# - GHOST_FLEET_LOG_LEVEL: Log level (trace, debug, info, warn, error)
+# - GHOST_FLEET_DRY_RUN: Enable dry run mode
+#
+# Monitoring:
+# - Health check available at http://localhost:{health_port}/health
+# - Logs include structured wallet_id fields for filtering
+# - Use --json-logs for machine-parseable output

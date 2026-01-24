@@ -21,7 +21,7 @@ members = [
 
     # Services
     "ghostnet-indexer",
-    # "ghost-fleet",           # WIP: needs engine.rs, service.rs modules
+    "ghost-fleet",
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
