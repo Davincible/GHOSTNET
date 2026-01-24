@@ -29,7 +29,7 @@ PHASE 3A GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
 01. HASH CRASH (Casino)                                         [██████████░░] FRONTEND DONE
 02. CODE DUEL (Competitive)                                     [░░░░░░░░░░░░] NOT STARTED
-03. DAILY OPS (Progression)                                     [░░░░░░░░░░░░] NOT STARTED
+03. DAILY OPS (Progression)                                     [██████░░░░░░] CONTRACT DONE
 
 PHASE 3B GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ PHASE 3C GAMES                                                  STATUS
 09. SHADOW PROTOCOL (Meta)                                      [░░░░░░░░░░░░] NOT STARTED
 
 ══════════════════════════════════════════════════════════════════════════════
-OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1070 Tests Passing
+OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1172 Tests Passing
 ══════════════════════════════════════════════════════════════════════════════
 ```
 
@@ -284,21 +284,21 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 **Spec:** [games/03-daily-ops.md](./games/03-daily-ops.md)  
 **Category:** Progression | **Entry:** Free | **Burn:** Streak rewards  
 **Dependencies:** Game Engine only  
-**Status:** NOT STARTED
+**Status:** CONTRACT COMPLETE (36 tests)
 
 | Task | Status | Notes |
 |------|--------|-------|
 | **Smart Contract** | | |
-| Implement `DailyOps.sol` | ⬜ | |
-| Mission tracking | ⬜ | |
-| Streak management | ⬜ | |
-| Reward distribution | ⬜ | |
-| Contract tests | ⬜ | |
+| Implement `DailyOps.sol` | ✅ | Signature-based claims, streak tracking |
+| Mission tracking | ✅ | Server-signed mission completion |
+| Streak management | ✅ | Consecutive days, milestone bonuses, shields |
+| Reward distribution | ✅ | Treasury-funded, token transfers |
+| Contract tests | ✅ | 36 tests (fuzz, integration, edge cases) |
 | **Frontend** | | |
-| Create `daily-ops/` feature | ⬜ | |
+| Create `daily-ops/` feature | 🔄 | Basic scaffolding exists |
 | Mission list UI | ⬜ | |
 | Progress tracking | ⬜ | |
-| Streak display | ⬜ | |
+| Streak display | 🔄 | StreakProgress.svelte exists |
 | Reward claim UI | ⬜ | |
 | Calendar/history view | ⬜ | |
 | Sound integration | ⬜ | |
@@ -381,6 +381,35 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 ---
 
 ## Completed Work Log
+
+### 2026-01-24: Daily Ops Smart Contract
+
+**DailyOps.sol Implementation (`packages/contracts/src/arcade/games/DailyOps.sol`):**
+- ✅ Server-signed mission claim verification (ECDSA + EIP-191)
+- ✅ Streak tracking (current, longest, consecutive days)
+- ✅ Streak shields (1-day: 50 DATA, 7-day: 200 DATA, burned)
+- ✅ Milestone bonuses (7/21/30/90 days with token rewards)
+- ✅ Badge system (WEEK_WARRIOR, DEDICATED_OPERATOR, LEGEND)
+- ✅ Death rate reduction calculation (3%/5%/8%/10% based on streak)
+- ✅ Treasury-funded rewards with safety caps
+- ✅ AccessControlDefaultAdminRules for admin management
+
+**Key Design Decisions:**
+- Mission verification is off-chain (server detects completion, signs claim)
+- Streak state is on-chain (verifiable, transparent)
+- Death rate reduction via GhostCore boost pattern (server signs after claim)
+- Shield protects gaps in streak (if missed day falls within shield period)
+- Milestones only claimable once (even if streak breaks and rebuilds)
+
+**Tests (`packages/contracts/test/games/DailyOps.t.sol`):**
+- ✅ 36 tests passing (claims, streaks, milestones, shields, fuzz)
+- ✅ Signature validation tests
+- ✅ Edge cases (streak break, shield protection, past day claims)
+- ✅ 180-day streak death rate reduction test
+
+**Total Contract Tests: 1172 (up from 1070)**
+
+---
 
 ### 2026-01-24: Hash Crash Contract Integration
 

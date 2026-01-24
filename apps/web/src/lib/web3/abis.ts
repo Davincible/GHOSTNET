@@ -16,6 +16,7 @@ import TeamVestingAbi from '$lib/contracts/abis/TeamVesting.json';
 // Arcade contracts
 import ArcadeCoreAbi from '$lib/contracts/abis/ArcadeCore.json';
 import HashCrashAbi from '$lib/contracts/abis/HashCrash.json';
+import DailyOpsAbi from '$lib/contracts/abis/DailyOps.json';
 
 // ════════════════════════════════════════════════════════════════
 // ABI EXPORTS
@@ -32,6 +33,7 @@ export const teamVestingAbi = TeamVestingAbi as typeof TeamVestingAbi;
 // Arcade contracts
 export const arcadeCoreAbi = ArcadeCoreAbi as typeof ArcadeCoreAbi;
 export const hashCrashAbi = HashCrashAbi as typeof HashCrashAbi;
+export const dailyOpsAbi = DailyOpsAbi as typeof DailyOpsAbi;
 
 // ════════════════════════════════════════════════════════════════
 // CONTRACT ADDRESSES
@@ -55,6 +57,7 @@ export const CONTRACT_ADDRESSES = {
 		// Arcade contracts
 		arcadeCore: '0xC65338Eda8F8AEaDf89bA95042b99116dD899BD0' as `0x${string}`,
 		hashCrash: '0x037e0554f10e5447e08e4EDdbB16d8D8F402F785' as `0x${string}`,
+		dailyOps: '' as `0x${string}`, // TODO: Deploy and update
 	},
 	// MegaETH Mainnet (4326)
 	4326: {
@@ -68,6 +71,7 @@ export const CONTRACT_ADDRESSES = {
 		// Arcade contracts
 		arcadeCore: '' as `0x${string}`,
 		hashCrash: '' as `0x${string}`,
+		dailyOps: '' as `0x${string}`,
 	},
 	// Localhost (31337)
 	31337: {
@@ -81,6 +85,7 @@ export const CONTRACT_ADDRESSES = {
 		// Arcade contracts
 		arcadeCore: '' as `0x${string}`,
 		hashCrash: '' as `0x${string}`,
+		dailyOps: '' as `0x${string}`,
 	},
 } as const;
 

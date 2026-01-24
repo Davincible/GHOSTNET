@@ -4,13 +4,120 @@
  * Type definitions for daily check-ins, streaks, and missions.
  *
  * The daily operations system encourages consistent engagement through:
- * - Daily check-in streaks with escalating rewards
- * - Random daily missions with various objectives
- * - Time-limited modifiers as rewards
+ * - Daily mission completion streaks (on-chain via DailyOps contract)
+ * - Milestone bonuses at 7, 21, 30, 90 day streaks
+ * - Persistent death rate reduction while streak is active
+ * - Shield protection to prevent streak loss
+ *
+ * Architecture:
+ * - Mission selection/verification: Off-chain (server)
+ * - Streak state & rewards: On-chain (DailyOps.sol)
+ * - Death rate application: Via GhostCore boost
  */
 
 // ════════════════════════════════════════════════════════════════
-// DAILY CHECK-IN & STREAKS
+// ON-CHAIN TYPES (match DailyOps.sol contract)
+// ════════════════════════════════════════════════════════════════
+
+/** On-chain streak data from DailyOps contract */
+export interface PlayerStreak {
+	/** Current consecutive day streak */
+	currentStreak: number;
+	/** Highest streak ever achieved */
+	longestStreak: number;
+	/** UTC day number of last claim (0 = never claimed) */
+	lastClaimDay: bigint;
+	/** UTC day number when shield expires (0 = no shield) */
+	shieldExpiryDay: bigint;
+	/** Total DATA tokens claimed */
+	totalClaimed: bigint;
+	/** Total missions ever completed */
+	totalMissionsCompleted: bigint;
+}
+
+/** Badge earned for achievements */
+export interface Badge {
+	/** Badge identifier (keccak256 hash) */
+	badgeId: `0x${string}`;
+	/** Timestamp when earned */
+	earnedAt: bigint;
+}
+
+/** Known badge identifiers */
+export const BADGE_IDS = {
+	WEEK_WARRIOR: '0xbb05be1ac4f343cb5102c7e25b9859c60618ac81e9df70e923e36becfbf8bdec' as const,
+	DEDICATED_OPERATOR: '0x9a2f36ab377f4ac4df22fa4e7beae925f4a0eb6bde8b03dce28fcea99a8c2cf0' as const,
+	LEGEND: '0x68c4ba3f9a5a3ff0c0e5b6ef4f3f51ad96e5c9adb3e5c5e1b2a3f4d5e6f7a8b9' as const,
+} as const;
+
+/** Human-readable badge info */
+export const BADGE_INFO: Record<string, { name: string; description: string }> = {
+	[BADGE_IDS.WEEK_WARRIOR]: {
+		name: 'WEEK WARRIOR',
+		description: 'Completed a 7-day streak',
+	},
+	[BADGE_IDS.DEDICATED_OPERATOR]: {
+		name: 'DEDICATED OPERATOR',
+		description: 'Completed a 30-day streak',
+	},
+	[BADGE_IDS.LEGEND]: {
+		name: 'LEGEND',
+		description: 'Completed a 90-day streak',
+	},
+};
+
+/** Streak milestone thresholds and rewards */
+export const STREAK_MILESTONES = [
+	{ days: 3, deathRateReduction: 300, bonus: 0n, badge: null },
+	{ days: 7, deathRateReduction: 300, bonus: 500n * 10n ** 18n, badge: BADGE_IDS.WEEK_WARRIOR },
+	{ days: 14, deathRateReduction: 500, bonus: 0n, badge: null },
+	{ days: 21, deathRateReduction: 500, bonus: 1000n * 10n ** 18n, badge: null },
+	{
+		days: 30,
+		deathRateReduction: 500,
+		bonus: 5000n * 10n ** 18n,
+		badge: BADGE_IDS.DEDICATED_OPERATOR,
+	},
+	{ days: 60, deathRateReduction: 800, bonus: 0n, badge: null },
+	{ days: 90, deathRateReduction: 800, bonus: 15000n * 10n ** 18n, badge: BADGE_IDS.LEGEND },
+	{ days: 180, deathRateReduction: 1000, bonus: 0n, badge: null },
+] as const;
+
+/** Shield pricing (in wei) */
+export const SHIELD_COSTS = {
+	ONE_DAY: 50n * 10n ** 18n, // 50 DATA
+	SEVEN_DAY: 200n * 10n ** 18n, // 200 DATA
+} as const;
+
+/** Get death rate reduction for a streak (in basis points) */
+export function getDeathRateReduction(streak: number): number {
+	if (streak >= 180) return 1000; // -10%
+	if (streak >= 60) return 800; // -8%
+	if (streak >= 14) return 500; // -5%
+	if (streak >= 3) return 300; // -3%
+	return 0;
+}
+
+/** Calculate current UTC day number */
+export function getCurrentDay(): bigint {
+	return BigInt(Math.floor(Date.now() / 86400000));
+}
+
+/** Convert UTC day number to Date */
+export function dayToDate(day: bigint): Date {
+	return new Date(Number(day) * 86400000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// LEGACY TYPES (for mock provider compatibility)
+// ════════════════════════════════════════════════════════════════
+
+// Note: These types are used by the existing mock provider and UI components.
+// They represent a 7-day rotating reward system, which differs from the
+// on-chain contract that uses unlimited streaks with milestone bonuses.
+
+// ════════════════════════════════════════════════════════════════
+// DAILY CHECK-IN & STREAKS (Legacy)
 // ════════════════════════════════════════════════════════════════
 
 /** Type of reward granted for daily activities */
@@ -109,7 +216,7 @@ export const DAILY_REWARDS: DailyReward[] = [
 ];
 
 // ════════════════════════════════════════════════════════════════
-// DAILY MISSIONS
+// DAILY MISSIONS (GDD-aligned types)
 // ════════════════════════════════════════════════════════════════
 
 /** Type of mission objective */
