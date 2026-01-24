@@ -185,3 +185,108 @@ jobs:
 
       - name: Deep fuzz testing
         run: forge test --fuzz-runs 10000
+
+  # ============================================================================
+  # RUST SERVICES JOBS
+  # ============================================================================
+
+  services-build-test:
+    name: Services - Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.85"
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('services/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --exclude ghostnet-indexer -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace --exclude ghostnet-indexer
+
+      - name: Run tests
+        run: cargo test --workspace --exclude ghostnet-indexer
+
+  services-security:
+    name: Services - Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.85"
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+
+      - name: Run cargo deny
+        run: cargo deny check
+
+  services-ghost-fleet:
+    name: Services - Ghost Fleet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.85"
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            services/target
+          key: ${{ runner.os }}-cargo-ghost-fleet-${{ hashFiles('services/**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-ghost-fleet-
+            ${{ runner.os }}-cargo-
+
+      - name: Build ghost-fleet (release)
+        run: cargo build --release -p ghost-fleet
+
+      - name: Test ghost-fleet
+        run: cargo test -p ghost-fleet
+
+      - name: Clippy ghost-fleet
+        run: cargo clippy -p ghost-fleet -- -D warnings
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghost-fleet-linux-x64
+          path: services/target/release/ghost-fleet
+          retention-days: 7

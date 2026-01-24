@@ -1,0 +1,108 @@
+# cargo-deny configuration for Ghost Fleet services workspace
+# Run with: cargo deny check
+# Docs: https://embarkstudios.github.io/cargo-deny/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ADVISORIES - Security vulnerability checks
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[advisories]
+version = 2
+# List of advisory IDs to ignore (use sparingly, document reason)
+ignore = [
+    # RUSTSEC-2023-0071: rsa timing sidechannel
+    # Only affects ghostnet-indexer via sqlx-mysql, not ghost-fleet
+    # No fix available upstream yet
+    { id = "RUSTSEC-2023-0071", reason = "only in ghostnet-indexer via sqlx-mysql, not in ghost-fleet" },
+    
+    # RUSTSEC-2025-0111: tokio-tar file smuggling  
+    # Only in testcontainers (dev dependency), not production code
+    { id = "RUSTSEC-2025-0111", reason = "only in testcontainers dev dependency" },
+]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LICENSES - Allowed open source licenses
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[licenses]
+version = 2
+# List of explicitly allowed licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "0BSD",
+    "ISC",
+    "MPL-2.0",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+    "BSL-1.0",
+    "Unlicense",
+    "OpenSSL",
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+
+# Clarify licenses for crates that cargo-deny has trouble detecting
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BANS - Dependency restrictions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[bans]
+# Lint level for multiple versions of the same crate
+multiple-versions = "warn"
+# Lint level for crates with wildcard dependencies
+wildcards = "deny"
+# Highlight all duplicate crates
+highlight = "all"
+# Allow specific workspace crates to be used
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+# Deny specific problematic crates
+deny = [
+    # Prefer rustls over OpenSSL for TLS (pure Rust, no C dependencies)
+    { name = "openssl", wrappers = [] },
+    { name = "openssl-sys", wrappers = [] },
+]
+
+# Skip version checks for crates that commonly have multiple versions
+# due to ecosystem fragmentation (document why each is here)
+skip = [
+    # alloy ecosystem is rapidly evolving, multiple versions expected
+    # { crate = "alloy-primitives", reason = "alloy ecosystem version churn" },
+]
+
+# Tree of crates to skip entirely (use sparingly)
+skip-tree = []
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SOURCES - Allowed dependency sources
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[sources]
+# Lint level for crates from unknown registries
+unknown-registry = "deny"
+# Lint level for crates from unknown git repositories
+unknown-git = "deny"
+# List of allowed registries
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# List of allowed git repositories (use sparingly, prefer crates.io)
+allow-git = []
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OUTPUT - Reporting configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[output]
+# Output format: human, json, or sarif
+feature-depth = 1
