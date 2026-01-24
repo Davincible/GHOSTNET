@@ -44,6 +44,35 @@ import {
 import { STREAK_MILESTONES, BADGE_INFO } from '$lib/core/types/daily';
 
 // ════════════════════════════════════════════════════════════════
+// ERROR PARSING
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * Parse contract errors into user-friendly messages
+ */
+function parseError(err: unknown, fallback: string): string {
+	if (!(err instanceof Error)) return fallback;
+
+	const msg = err.message;
+
+	// DailyOps-specific errors
+	if (msg.includes('InvalidSignature')) return 'Invalid mission signature';
+	if (msg.includes('NonceAlreadyUsed')) return 'This claim has already been processed';
+	if (msg.includes('InvalidClaimDay')) return 'Cannot claim for this day';
+	if (msg.includes('RewardTooLarge')) return 'Reward amount exceeds limit';
+	if (msg.includes('ShieldAlreadyActive')) return 'Shield is already active';
+	if (msg.includes('InvalidShieldDuration')) return 'Invalid shield duration';
+	if (msg.includes('InsufficientTreasuryBalance')) return 'Insufficient rewards in treasury';
+
+	// Common errors
+	if (msg.includes('insufficient funds')) return 'Insufficient DATA balance';
+	if (msg.includes('user rejected')) return 'Transaction rejected';
+	if (msg.includes('User denied')) return 'Transaction rejected';
+
+	return fallback;
+}
+
+// ════════════════════════════════════════════════════════════════
 // TYPES
 // ════════════════════════════════════════════════════════════════
 
@@ -227,6 +256,9 @@ export function createDailyOpsProvider(): DailyOpsProvider {
 
 		const range = nextMilestone.days - prevMilestoneDay;
 		const progress = currentStreak - prevMilestoneDay;
+
+		// Guard against divide-by-zero (shouldn't happen with valid milestone data)
+		if (range <= 0) return 100;
 
 		return Math.min(100, Math.round((progress / range) * 100));
 	});
@@ -438,9 +470,7 @@ export function createDailyOpsProvider(): DailyOpsProvider {
 			// Refresh after tx
 			await poll();
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : 'Failed to claim reward';
-			state = { ...state, error: errorMessage };
-			throw err;
+			state = { ...state, error: parseError(err, 'Failed to claim reward') };
 		} finally {
 			state = { ...state, isLoading: false, pendingTx: null };
 		}
@@ -458,9 +488,7 @@ export function createDailyOpsProvider(): DailyOpsProvider {
 			// Refresh after tx
 			await poll();
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : 'Failed to purchase shield';
-			state = { ...state, error: errorMessage };
-			throw err;
+			state = { ...state, error: parseError(err, 'Failed to purchase shield') };
 		} finally {
 			state = { ...state, isLoading: false, pendingTx: null };
 		}

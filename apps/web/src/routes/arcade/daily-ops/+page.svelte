@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	import { Box, Shell } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
