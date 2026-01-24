@@ -1,24 +1,52 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
 	import { Box, Shell } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
 	import { wallet } from '$lib/web3/wallet.svelte';
 	import { createDailyOpsProvider } from '$lib/features/daily/contractProvider.svelte';
+	import { createMockDailyOpsProvider } from '$lib/features/daily/mockProvider.svelte';
 	import StreakDisplay from '$lib/features/daily/StreakDisplay.svelte';
 	import BadgeDisplay from '$lib/features/daily/BadgeDisplay.svelte';
 	import ShieldPurchase from '$lib/features/daily/ShieldPurchase.svelte';
 	import { formatTimeUntilReset } from '$lib/features/daily/contracts';
 
-	// Create provider
-	const provider = createDailyOpsProvider();
+	// Check for mock mode from URL params
+	let isMockMode = $derived($page.url.searchParams.get('mock') === 'true');
+
+	// Parse mock options from URL
+	let mockOptions = $derived.by(() => {
+		if (!isMockMode) return {};
+		const params = $page.url.searchParams;
+		return {
+			streak: params.has('streak') ? parseInt(params.get('streak')!, 10) : undefined,
+			claimed: params.get('claimed') === 'true',
+			shield: params.has('shield') ? parseInt(params.get('shield')!, 10) : undefined,
+			badges: params.has('badges') ? parseInt(params.get('badges')!, 10) : undefined,
+		};
+	});
+
+	// Create provider (mock or real based on URL param)
+	const realProvider = createDailyOpsProvider();
+	let mockProvider = $state<ReturnType<typeof createMockDailyOpsProvider> | null>(null);
+
+	// Initialize mock provider when options change
+	$effect(() => {
+		if (isMockMode) {
+			mockProvider = createMockDailyOpsProvider(mockOptions);
+		}
+	});
+
+	// Use the appropriate provider
+	let provider = $derived(isMockMode && mockProvider ? mockProvider : realProvider);
 
 	// Time until reset (updates every second)
 	let timeUntilReset = $state('--:--:--');
 	let resetInterval: ReturnType<typeof setInterval> | null = null;
 
 	onMount(() => {
-		// Connect provider
+		// Connect provider (mock connects instantly)
 		const disconnect = provider.connect();
 
 		// Update reset timer
@@ -59,6 +87,9 @@
 		const remaining = Number(streak.shieldExpiryDay) - Number(provider.state.currentDay);
 		return remaining > 0 ? remaining : undefined;
 	});
+
+	// Check if we should show the main content
+	let showContent = $derived(isMockMode || (wallet.isConnected && provider.state.isConnected));
 </script>
 
 <svelte:head>
@@ -70,16 +101,25 @@
 		<header class="page-header">
 			<h1 class="page-title">DAILY OPS</h1>
 			<p class="page-subtitle">Complete missions. Build your streak. Reduce your death rate.</p>
+			{#if isMockMode}
+				<div class="mock-banner">
+					<span class="mock-icon">⚠</span>
+					<span class="mock-text">MOCK MODE - Using simulated data</span>
+				</div>
+			{/if}
 		</header>
 
-		{#if !wallet.isConnected}
+		{#if !isMockMode && !wallet.isConnected}
 			<Box title="CONNECTION REQUIRED">
 				<div class="connect-prompt">
 					<p>Connect your wallet to view your daily progress.</p>
 					<Button variant="primary" onclick={() => wallet.connect()}>CONNECT WALLET</Button>
+					<p class="mock-hint">
+						Or try <a href="?mock=true">mock mode</a> to preview the UI
+					</p>
 				</div>
 			</Box>
-		{:else if !provider.state.isConnected}
+		{:else if !showContent}
 			<Box title="LOADING">
 				<div class="loading">
 					<span class="loading-text">Connecting to contract...</span>
@@ -181,6 +221,30 @@
 				</Stack>
 			</Box>
 		</section>
+
+		<!-- Mock Mode Instructions (only shown in mock mode) -->
+		{#if isMockMode}
+			<section class="info-section">
+				<Box title="MOCK MODE OPTIONS">
+					<Stack gap={2}>
+						<p class="mock-instructions">Customize the mock data via URL parameters:</p>
+						<ul class="mock-params">
+							<li><code>?mock=true&streak=45</code> - Set streak to 45 days</li>
+							<li><code>?mock=true&claimed=true</code> - Mark today as claimed</li>
+							<li><code>?mock=true&shield=3</code> - Set 3 days of shield</li>
+							<li><code>?mock=true&badges=2</code> - Show 2 badges</li>
+							<li><code>?mock=true&streak=100&badges=3</code> - Combine options</li>
+						</ul>
+						<div class="mock-examples">
+							<a href="?mock=true&streak=5">New Player</a>
+							<a href="?mock=true&streak=25&badges=1">Week Warrior</a>
+							<a href="?mock=true&streak=45&badges=2&shield=5">Dedicated Operator</a>
+							<a href="?mock=true&streak=100&badges=3&claimed=true">Legend</a>
+						</div>
+					</Stack>
+				</Box>
+			</section>
+		{/if}
 	</div>
 </Shell>
 
@@ -212,6 +276,28 @@
 		margin: var(--space-2) 0 0;
 	}
 
+	/* Mock mode banner */
+	.mock-banner {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+		padding: var(--space-2) var(--space-4);
+		background: rgba(255, 193, 7, 0.15);
+		border: 1px solid var(--color-warning);
+	}
+
+	.mock-icon {
+		color: var(--color-warning);
+	}
+
+	.mock-text {
+		font-size: var(--text-xs);
+		color: var(--color-warning);
+		letter-spacing: var(--tracking-wide);
+	}
+
 	.connect-prompt {
 		display: flex;
 		flex-direction: column;
@@ -223,6 +309,16 @@
 
 	.connect-prompt p {
 		color: var(--color-text-secondary);
+	}
+
+	.mock-hint {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+	}
+
+	.mock-hint a {
+		color: var(--color-accent);
+		text-decoration: underline;
 	}
 
 	.loading {
@@ -366,6 +462,53 @@
 
 	.info-text strong {
 		color: var(--color-text-primary);
+	}
+
+	/* Mock mode instructions */
+	.mock-instructions {
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.mock-params {
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.mock-params li {
+		margin: var(--space-1) 0;
+	}
+
+	.mock-params code {
+		background: var(--color-bg-tertiary);
+		padding: var(--space-0-5) var(--space-1);
+		font-family: var(--font-mono);
+		color: var(--color-accent);
+	}
+
+	.mock-examples {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+
+	.mock-examples a {
+		font-size: var(--text-xs);
+		color: var(--color-accent);
+		background: var(--color-bg-tertiary);
+		padding: var(--space-1) var(--space-2);
+		text-decoration: none;
+		border: 1px solid var(--color-border-default);
+	}
+
+	.mock-examples a:hover {
+		background: var(--color-bg-hover);
+		border-color: var(--color-accent);
 	}
 
 	/* Mobile */
