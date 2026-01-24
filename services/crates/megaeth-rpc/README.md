@@ -2,6 +2,66 @@
 
 MegaETH-specific JSON-RPC client with cursor pagination and realtime API support.
 
+## Where This Crate Fits
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Ghost Fleet Services                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐   │
+│  │  ghost-fleet    │     │ ghostnet-actions│     │ghostnet-indexer │   │
+│  │  (orchestrator) │     │    (plugin)     │     │   (indexer)     │   │
+│  └────────┬────────┘     └────────┬────────┘     └────────┬────────┘   │
+│           │                       │                       │             │
+│           └───────────────┬───────┴───────────────────────┘             │
+│                           │                                              │
+│                           ▼                                              │
+│           ┌───────────────────────────────┐                             │
+│           │         fleet-core            │                             │
+│           │  (wallets, plugins, safety)   │                             │
+│           └───────────────┬───────────────┘                             │
+│                           │                                              │
+│                           ▼                                              │
+│           ┌───────────────────────────────┐                             │
+│           │        evm-provider           │  ◄── Chain abstraction      │
+│           │   (ChainProvider trait)       │      layer                  │
+│           └───────────────┬───────────────┘                             │
+│                           │                                              │
+│              ┌────────────┴────────────┐                                │
+│              │                         │                                 │
+│              ▼                         ▼                                 │
+│  ┌───────────────────┐     ┌───────────────────┐                        │
+│  │ StandardEvmProvider│    │  MegaEthProvider  │                        │
+│  │    (uses alloy)   │     │                   │                        │
+│  └───────────────────┘     └─────────┬─────────┘                        │
+│                                      │                                   │
+│                                      ▼                                   │
+│                          ╔═══════════════════════╗                      │
+│                          ║    megaeth-rpc        ║  ◄── YOU ARE HERE    │
+│                          ║  (MegaETH RPC client) ║                      │
+│                          ╚═══════════════════════╝                      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**This crate is the lowest layer** - a specialized RPC client that handles MegaETH's
+unique JSON-RPC extensions. It is used by:
+
+- **`evm-provider`**: Wraps `MegaEthClient` in `MegaEthProvider` to implement the
+  `ChainProvider` trait, enabling chain-agnostic application code
+- **`ghostnet-indexer`**: Uses cursor pagination directly for efficient event indexing
+
+**When to use this crate directly:**
+- Building a custom indexer that needs low-level cursor control
+- Implementing a new provider in `evm-provider`
+- Direct RPC access without the abstraction layer
+
+**When to use `evm-provider` instead:**
+- Building application logic that should work on any EVM chain
+- You want automatic feature detection and fallbacks
+- You need the `ChainProvider` trait for dependency injection
+
 ## Overview
 
 This crate provides `MegaEthClient`, a specialized RPC client for MegaETH's extended JSON-RPC API. It handles the unique characteristics of MegaETH:
@@ -9,6 +69,29 @@ This crate provides `MegaEthClient`, a specialized RPC client for MegaETH's exte
 - **High throughput**: MegaETH processes ~1000 TPS, generating massive data volumes
 - **Cursor pagination**: `eth_getLogsWithCursor` for efficient large-range queries
 - **Realtime API**: `realtime_sendRawTransaction` for instant receipts (~10ms)
+
+## MegaETH's Dual Block Model
+
+Understanding why this crate exists requires understanding MegaETH's architecture:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      TIME FLOW →                             │
+├─────────────────────────────────────────────────────────────┤
+│ Mini Blocks:  [M1][M2][M3]...[M99][M100]  (10ms each)       │
+│                        ↓                                     │
+│ EVM Block:    [═══════════ B1 ═══════════]  (1s total)      │
+│                                                              │
+│ • Mini blocks: instant preconfirmation, Realtime API        │
+│ • EVM blocks:  standard EVM compatibility, finality         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key insight**: The sequencer commits to mini blocks just as strongly as EVM blocks.
+Results from the Realtime API have the same preconfirmation guarantees as standard RPC.
+
+**Standard RPC** queries against EVM blocks (1s latency).
+**Realtime API** queries against mini blocks (10ms latency).
 
 ## Why This Crate?
 
@@ -94,6 +177,21 @@ if client.supports_realtime_api().await {
 }
 ```
 
+**How it works:**
+```
+Traditional flow:
+  eth_sendRawTransaction → hash
+  eth_getTransactionReceipt (poll) → null
+  eth_getTransactionReceipt (poll) → null  
+  eth_getTransactionReceipt (poll) → receipt
+  
+MegaETH Realtime:
+  realtime_sendRawTransaction → receipt  (one call, ~10ms)
+```
+
+**Important**: The method times out after 10 seconds. If timeout occurs, fall back to
+polling `eth_getTransactionReceipt`. The transaction may still succeed.
+
 ### Configuration
 
 Customize client behavior:
@@ -109,6 +207,24 @@ let config = ClientConfig::default()
 
 let client = MegaEthClient::with_config("https://carrot.megaeth.com/rpc", config)?;
 ```
+
+### How Cursor Pagination Works
+
+The cursor is an **opaque string** derived from `(blockNumber, logIndex)` of the last log
+returned. You should treat it as opaque — don't parse or construct cursors manually.
+
+```
+Request 1: fromBlock=100, toBlock=1000, cursor=None
+  → Server processes blocks 100-400, hits limit
+  → Returns 5000 logs + cursor="0x0001900000000005"
+  
+Request 2: fromBlock=100, toBlock=1000, cursor="0x0001900000000005"  
+  → Server resumes from block 400, log index 5
+  → Returns 3000 logs + cursor=None (complete)
+```
+
+**Important**: Always pass the same filter parameters when continuing with a cursor.
+The server uses the cursor to resume, but still validates against the original filter.
 
 ### Memory Considerations
 
@@ -206,6 +322,25 @@ Error type with helpful methods:
 |---------|---------|----------|
 | Testnet | `https://carrot.megaeth.com/rpc` | 6343 |
 | Mainnet | `https://mainnet.megaeth.com/rpc` | 4326 |
+
+## Related Crates
+
+| Crate | Relationship | Description |
+|-------|--------------|-------------|
+| [`evm-provider`](../evm-provider) | **Uses this** | Chain abstraction layer; wraps `MegaEthClient` in `MegaEthProvider` |
+| [`fleet-core`](../fleet-core) | Upstream | Wallet management, plugins, safety; uses `evm-provider` |
+| [`ghostnet-indexer`](../../ghostnet-indexer) | **Uses this** | Event indexer; uses cursor pagination directly |
+
+## Versioning
+
+This crate follows [SemVer](https://semver.org/). The public API includes:
+
+- `MegaEthClient` and all its public methods
+- `ClientConfig` and its builder methods
+- `FetchStats`, `LogsWithCursorResponse`, `RealtimeResponse` types
+- `MegaEthError` and its helper methods
+
+Internal implementation details (private modules, internal types) may change without notice.
 
 ## License
 

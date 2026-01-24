@@ -110,6 +110,18 @@ impl TransactionRequest {
         self
     }
 
+    /// Set the recipient address (alias for `to`).
+    #[must_use]
+    pub const fn with_to(self, to: Address) -> Self {
+        self.to(to)
+    }
+
+    /// Set the transaction data (alias for `data`).
+    #[must_use]
+    pub fn with_data(self, data: Bytes) -> Self {
+        self.data(data)
+    }
+
     /// Set the gas limit.
     #[must_use]
     pub const fn gas_limit(mut self, gas_limit: u64) -> Self {

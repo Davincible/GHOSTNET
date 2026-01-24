@@ -7,6 +7,38 @@
 //! - **Cursor pagination**: `eth_getLogsWithCursor` for efficient large-range queries
 //! - **Realtime API**: `realtime_sendRawTransaction` for instant receipts (~10ms)
 //!
+//! # Crate Relationships
+//!
+//! This is a **low-level crate** in the Ghost Fleet stack:
+//!
+//! ```text
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  Application Layer (ghost-fleet, ghostnet-indexer)       │
+//! └────────────────────────────┬─────────────────────────────┘
+//!                              │
+//!                              ▼
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  Abstraction Layer (evm-provider)                        │
+//! │  └─ MegaEthProvider wraps this crate                     │
+//! └────────────────────────────┬─────────────────────────────┘
+//!                              │
+//!                              ▼
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  RPC Layer (megaeth-rpc) ◄── YOU ARE HERE                │
+//! │  └─ Direct MegaETH JSON-RPC access                       │
+//! └──────────────────────────────────────────────────────────┘
+//! ```
+//!
+//! **Use this crate directly when:**
+//! - Building a custom indexer needing low-level cursor control
+//! - Implementing a new provider in `evm-provider`
+//! - You need direct RPC access without abstraction
+//!
+//! **Use `evm-provider` instead when:**
+//! - Building application logic that should work on any EVM chain
+//! - You want the `ChainProvider` trait for dependency injection
+//! - You need automatic feature detection and safe defaults
+//!
 //! # Quick Start
 //!
 //! ```ignore

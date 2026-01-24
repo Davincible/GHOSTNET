@@ -46,8 +46,9 @@ use crate::traits::{ChainProvider, NonceManager};
 ///
 /// # Thread Safety
 ///
-/// All operations are thread-safe. Multiple tasks can call [`get_and_increment`]
-/// concurrently and will receive unique nonces.
+/// All operations are thread-safe. Multiple tasks can call
+/// [`get_and_increment`](NonceManager::get_and_increment) concurrently and will
+/// receive unique nonces.
 ///
 /// # Example
 ///

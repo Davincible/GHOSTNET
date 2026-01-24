@@ -21,7 +21,7 @@ members = [
 
     # Services
     "ghostnet-indexer",
-    # "ghost-fleet",           # Phase 5
+    # "ghost-fleet",           # WIP: needs engine.rs, service.rs modules
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -63,6 +63,7 @@ tracing = "0.1"
 # ERROR HANDLING
 # ───────────────────────────────────────────────────────────────────────────────
 thiserror = "2"
+anyhow = "1"
 
 # ───────────────────────────────────────────────────────────────────────────────
 # UTILITIES
@@ -71,6 +72,8 @@ hex = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.9"
 dashmap = "6"
+clap = { version = "4", features = ["derive", "env"] }
+toml = "0.8"
 
 # ───────────────────────────────────────────────────────────────────────────────
 # TESTING

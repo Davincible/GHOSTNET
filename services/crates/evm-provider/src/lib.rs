@@ -3,6 +3,48 @@
 //! This crate provides a unified interface for interacting with EVM chains,
 //! abstracting away chain-specific quirks and providing a consistent API.
 //!
+//! # Crate Relationships
+//!
+//! This is the **chain abstraction layer** in the Ghost Fleet stack:
+//!
+//! ```text
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  Application Layer                                        │
+//! │  └─ ghost-fleet, fleet-core, ghostnet-indexer            │
+//! │  └─ Uses ChainProvider trait, not concrete types         │
+//! └────────────────────────────┬─────────────────────────────┘
+//!                              │
+//!                              ▼
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  Abstraction Layer (evm-provider) ◄── YOU ARE HERE       │
+//! │  └─ ChainProvider, ExtendedChainProvider traits          │
+//! │  └─ StandardEvmProvider (any EVM chain)                  │
+//! │  └─ MegaEthProvider (MegaETH-specific, wraps megaeth-rpc)│
+//! └────────────────────────────┬─────────────────────────────┘
+//!                              │
+//!                              ▼
+//! ┌──────────────────────────────────────────────────────────┐
+//! │  RPC Layer (megaeth-rpc)                                  │
+//! │  └─ Low-level MegaETH JSON-RPC client                    │
+//! │  └─ Cursor pagination, realtime API implementation       │
+//! └──────────────────────────────────────────────────────────┘
+//! ```
+//!
+//! **This crate provides:**
+//! - Traits for chain-agnostic code (`ChainProvider`, `ExtendedChainProvider`)
+//! - Thread-safe nonce management (`NonceManager`, `LocalNonceManager`)
+//! - Provider implementations for different chains
+//!
+//! **Use this crate when:**
+//! - Building application logic that should work on any EVM chain
+//! - You want dependency injection via traits (easy mocking for tests)
+//! - You need automatic feature detection and safe defaults
+//!
+//! **Use `megaeth-rpc` directly when:**
+//! - Building a custom indexer needing low-level cursor control
+//! - Implementing a new provider type
+//! - You need direct RPC access without abstraction
+//!
 //! # Overview
 //!
 //! The core of this crate is the [`ChainProvider`] trait, which defines basic
@@ -85,6 +127,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 pub mod error;
+pub mod mock;
 pub mod nonce;
 pub mod standard;
 pub mod traits;

@@ -2,6 +2,71 @@
 
 Chain abstraction layer for EVM-compatible blockchains.
 
+## Where This Crate Fits
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Ghost Fleet Services                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐   │
+│  │  ghost-fleet    │     │ ghostnet-actions│     │ghostnet-indexer │   │
+│  │  (orchestrator) │     │    (plugin)     │     │   (indexer)     │   │
+│  └────────┬────────┘     └────────┬────────┘     └────────┬────────┘   │
+│           │                       │                       │             │
+│           └───────────────┬───────┴───────────────────────┘             │
+│                           │                                              │
+│                           ▼                                              │
+│           ┌───────────────────────────────┐                             │
+│           │         fleet-core            │                             │
+│           │  (wallets, plugins, safety)   │                             │
+│           └───────────────┬───────────────┘                             │
+│                           │                                              │
+│                           ▼                                              │
+│           ╔═══════════════════════════════╗                             │
+│           ║        evm-provider           ║  ◄── YOU ARE HERE           │
+│           ║   (ChainProvider trait)       ║                             │
+│           ╚═══════════════╤═══════════════╝                             │
+│                           │                                              │
+│              ┌────────────┴────────────┐                                │
+│              │                         │                                 │
+│              ▼                         ▼                                 │
+│  ┌───────────────────┐     ┌───────────────────┐                        │
+│  │ StandardEvmProvider│    │  MegaEthProvider  │                        │
+│  │    (uses alloy)   │     │ (uses megaeth-rpc)│                        │
+│  └───────────────────┘     └─────────┬─────────┘                        │
+│                                      │                                   │
+│                                      ▼                                   │
+│                          ┌───────────────────────┐                      │
+│                          │    megaeth-rpc        │                      │
+│                          │  (MegaETH RPC client) │                      │
+│                          └───────────────────────┘                      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**This crate is the chain abstraction layer** - it defines traits that hide chain-specific
+details, allowing application code to work with any EVM chain.
+
+**Key relationships:**
+
+| Crate | Relationship | Purpose |
+|-------|--------------|---------|
+| [`megaeth-rpc`](../megaeth-rpc) | **Dependency** (optional) | Low-level MegaETH RPC client; wrapped by `MegaEthProvider` |
+| `fleet-core` | **Consumer** | Uses `ChainProvider` trait for wallet operations |
+| `ghostnet-indexer` | **Consumer** | Uses providers for event indexing |
+
+**When to use this crate:**
+- Building application logic that should work on any EVM chain
+- You want dependency injection via the `ChainProvider` trait
+- You need automatic feature detection (realtime API, cursor pagination)
+- You want safe defaults (gas limits, memory protection)
+
+**When to use `megaeth-rpc` directly:**
+- Building a custom indexer needing low-level cursor control
+- Implementing a new provider type
+- Direct RPC access without abstraction
+
 ## Overview
 
 This crate provides a unified interface for interacting with EVM chains, abstracting away chain-specific quirks while supporting extended features like MegaETH's realtime API.
@@ -158,29 +223,115 @@ match result {
 | `default` | Core traits and types only |
 | `megaeth` | Enables `MegaEthProvider` implementation |
 
+## Provider Implementations
+
+### `StandardEvmProvider`
+
+Works with any EVM chain via [alloy](https://github.com/alloy-rs/alloy). Good default for
+Ethereum, Arbitrum, Optimism, Base, etc.
+
+```rust
+use evm_provider::StandardEvmProvider;
+
+let provider = StandardEvmProvider::new("https://eth.llamarpc.com").await?;
+let balance = provider.get_balance(address).await?;
+```
+
+### `MegaEthProvider` (requires `megaeth` feature)
+
+Wraps [`megaeth-rpc`](../megaeth-rpc) to provide MegaETH-specific features through the
+standard `ChainProvider` interface.
+
+```rust
+use evm_provider::MegaEthProvider;
+
+let provider = MegaEthProvider::new("https://carrot.megaeth.com/rpc", 6343)?;
+
+// Use standard ChainProvider methods
+let balance = provider.get_balance(address).await?;
+
+// Or extended features (via ExtendedChainProvider)
+if provider.supports_realtime() {
+    let receipt = provider.send_realtime(signed_tx).await?;
+}
+```
+
+**What `MegaEthProvider` adds:**
+- **Fixed gas limit** (10M) — MegaETH gas estimation is unreliable
+- **Realtime API** — `send_realtime()` returns receipt in ~10ms
+- **Cursor pagination** — `get_logs_with_cursor()` for large log ranges
+- **Automatic feature detection** — checks endpoint capabilities on connect
+
+**Why wrap instead of using megaeth-rpc directly?**
+- Your application code uses `ChainProvider` trait, not concrete types
+- Easy to swap providers for testing (mock) or multi-chain support
+- Consistent error handling via `ProviderError`
+- Memory safety defaults (max logs, max batches)
+
 ## Architecture
 
+This crate follows the **ports-and-adapters** (hexagonal) pattern:
+
 ```
-┌─────────────────────────────────────────────────┐
-│              Your Application                    │
-└─────────────────────────────────────────────────┘
-                       │
-                       │ uses
-                       ▼
-┌─────────────────────────────────────────────────┐
-│           ChainProvider trait (Port)            │
-└─────────────────────────────────────────────────┘
-                       │
-         ┌─────────────┴─────────────┐
-         │                           │
-         ▼                           ▼
-┌─────────────────┐       ┌─────────────────────┐
-│ StandardEvm     │       │ MegaEthProvider     │
-│ Provider        │       │                     │
-│                 │       │ + realtime API      │
-│ uses: alloy     │       │ + cursor pagination │
-└─────────────────┘       └─────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Your Application                          │
+│  (fleet-core, ghostnet-indexer, etc.)                       │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ depends on trait, not concrete type
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│              ChainProvider / ExtendedChainProvider          │
+│                         (PORT)                               │
+│                                                              │
+│  • Chain-agnostic interface                                 │
+│  • Easy to mock for testing                                 │
+│  • Swap implementations without changing app code           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+              ▼                           ▼
+┌──────────────────────┐     ┌──────────────────────────────┐
+│  StandardEvmProvider │     │      MegaEthProvider         │
+│      (ADAPTER)       │     │        (ADAPTER)             │
+│                      │     │                              │
+│  • Uses alloy        │     │  • Wraps megaeth-rpc         │
+│  • Any EVM chain     │     │  • Realtime API support      │
+│  • Standard features │     │  • Cursor pagination         │
+└──────────────────────┘     │  • Fixed gas limits          │
+                             └──────────────────────────────┘
+                                          │
+                                          │ uses
+                                          ▼
+                             ┌──────────────────────────────┐
+                             │        megaeth-rpc           │
+                             │   (MegaETH-specific crate)   │
+                             │                              │
+                             │  • Low-level RPC client      │
+                             │  • Cursor pagination impl    │
+                             │  • Realtime transaction API  │
+                             └──────────────────────────────┘
 ```
+
+## Related Crates
+
+| Crate | Relationship | Description |
+|-------|--------------|-------------|
+| [`megaeth-rpc`](../megaeth-rpc) | **Dependency** | MegaETH RPC client; wrapped by `MegaEthProvider` |
+| `fleet-core` | **Consumer** | Wallet management, plugins; uses `ChainProvider` trait |
+| `ghostnet-indexer` | **Consumer** | Event indexer; uses providers for chain access |
+| `ghost-fleet` | **Consumer** | Main service; creates providers based on config |
+
+## Versioning
+
+This crate follows [SemVer](https://semver.org/). The public API includes:
+
+- `ChainProvider`, `ExtendedChainProvider`, `NonceManager` traits
+- `StandardEvmProvider`, `MegaEthProvider` (with `megaeth` feature)
+- `LocalNonceManager` implementation
+- All types in `types` module (`TransactionRequest`, `TransactionReceipt`, etc.)
+- `ProviderError` and its variants
 
 ## License
 
