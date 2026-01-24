@@ -30,7 +30,7 @@ use std::time::Duration;
 use alloy::primitives::{Address, Bytes, TxHash, U256};
 use async_trait::async_trait;
 use megaeth_rpc::{ClientConfig as MegaEthConfig, MegaEthClient};
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument};
 
 use crate::error::{ProviderError, Result};
 use crate::standard::StandardEvmProvider;
@@ -313,6 +313,15 @@ impl ExtendedChainProvider for MegaEthProvider {
     /// Get logs with cursor-based pagination.
     ///
     /// Uses MegaETH's `eth_getLogsWithCursor` for efficient large-range queries.
+    ///
+    /// # Note
+    ///
+    /// This implementation does not support cursor continuation (passing a cursor
+    /// from a previous page). The underlying `MegaEthClient` handles pagination
+    /// internally and returns all matching logs. Use [`get_all_logs`](ExtendedChainProvider::get_all_logs)
+    /// instead, which is the intended API for fetching all logs in a range.
+    ///
+    /// Passing a `cursor` value will return an error.
     #[instrument(skip(self, filter), fields(chain_id = self.chain_id()))]
     async fn get_logs_with_cursor(
         &self,
@@ -323,17 +332,19 @@ impl ExtendedChainProvider for MegaEthProvider {
             return Err(ProviderError::unsupported("cursor pagination"));
         }
 
-        let from_block = filter.from_block.unwrap_or(0);
-        let to_block = filter.to_block.unwrap_or(u64::MAX);
-        let addresses = Self::extract_addresses(filter);
-
-        // If cursor provided, we need to use single-batch mode
-        // The megaeth-rpc crate handles cursors internally, but we need to expose
-        // single-page access for the trait. For now, fetch all and return as single page.
-        // TODO: Expose single-batch API in megaeth-rpc for proper cursor handling
+        // Cursor continuation is not supported - the underlying MegaEthClient
+        // handles pagination internally. Callers should use get_all_logs() instead.
         if cursor.is_some() {
-            warn!("Cursor continuation not fully supported yet - fetching all logs");
+            return Err(ProviderError::unsupported(
+                "cursor continuation - use get_all_logs() for paginated fetching",
+            ));
         }
+
+        let from_block = filter.from_block.unwrap_or(0);
+        let to_block = filter.to_block.ok_or_else(|| {
+            ProviderError::InvalidConfig("to_block is required for cursor pagination".into())
+        })?;
+        let addresses = Self::extract_addresses(filter);
 
         let (logs, stats) = self
             .megaeth
@@ -408,8 +419,29 @@ mod tests {
     }
 
     #[test]
-    fn test_gas_limit_configuration() {
-        // Just test the builder pattern compiles
-        // Can't test actual value without async context
+    fn test_extract_addresses_empty() {
+        let filter = LogFilter::new(0, 100);
+        assert!(MegaEthProvider::extract_addresses(&filter).is_none());
+    }
+
+    #[test]
+    fn test_extract_addresses_with_addresses() {
+        let addr: Address = "0x1234567890123456789012345678901234567890"
+            .parse()
+            .expect("valid address");
+        let filter = LogFilter::new(0, 100).with_address(addr);
+        let extracted = MegaEthProvider::extract_addresses(&filter);
+        assert!(extracted.is_some());
+        assert_eq!(extracted.unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_parse_hex_u64() {
+        assert_eq!(parse_hex_u64("0x100"), Some(256));
+        assert_eq!(parse_hex_u64("100"), Some(256));
+        assert_eq!(parse_hex_u64("0x0"), Some(0));
+        assert_eq!(parse_hex_u64("0xffffffffffffffff"), Some(u64::MAX));
+        assert_eq!(parse_hex_u64("invalid"), None);
+        assert_eq!(parse_hex_u64(""), None);
     }
 }
