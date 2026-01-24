@@ -1,7 +1,7 @@
 # Phase 3 Implementation Overview
 
 > Master tracking document for the GHOSTNET Arcade expansion.  
-> Last updated: 2026-01-23
+> Last updated: 2026-01-24
 
 ---
 
@@ -28,7 +28,7 @@ Randomness Integration (Future Block Hash)                      [█████
 PHASE 3A GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
 01. HASH CRASH (Casino)                                         [██████████░░] FRONTEND DONE
-02. CODE DUEL (Competitive)                                     [░░░░░░░░░░░░] NOT STARTED
+02. CODE DUEL (Competitive)                                     [██████░░░░░░] CONTRACT DONE
 03. DAILY OPS (Progression)                                     [██████░░░░░░] CONTRACT DONE
 
 PHASE 3B GAMES                                                  STATUS
@@ -44,7 +44,7 @@ PHASE 3C GAMES                                                  STATUS
 09. SHADOW PROTOCOL (Meta)                                      [░░░░░░░░░░░░] NOT STARTED
 
 ══════════════════════════════════════════════════════════════════════════════
-OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1172 Tests Passing
+OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1273 Tests Passing
 ══════════════════════════════════════════════════════════════════════════════
 ```
 
@@ -250,18 +250,19 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 **Spec:** [games/02-code-duel.md](./games/02-code-duel.md)  
 **Category:** Competitive | **Entry:** 50-500 $DATA | **Burn:** 10%  
 **Dependencies:** Game Engine, Contracts Core, Matchmaking Service  
-**Status:** NOT STARTED
+**Status:** CONTRACT COMPLETE (99 tests, 94.74% branch coverage)
 
 | Task | Status | Notes |
 |------|--------|-------|
 | **Smart Contract** | | |
-| Implement `DuelEscrow.sol` | ⬜ | |
-| Wager escrow mechanics | ⬜ | |
-| Result submission (oracle) | ⬜ | |
-| Payout distribution | ⬜ | |
-| Contract tests | ⬜ | |
+| Implement `DuelEscrow.sol` | ✅ | Full 1v1 escrow with oracle-based results |
+| Wager escrow mechanics | ✅ | Stake tiers (50/150/300/500 DATA), match creation |
+| Result submission (oracle) | ✅ | ECDSA-signed results with nonce replay protection |
+| Payout distribution | ✅ | Win/Tie/Forfeit/Timeout outcomes, pull-payment |
+| Contract tests | ✅ | 99 tests (42 base + 57 security tests) |
+| Security tests | ✅ | Replay attacks, griefing, oracle compromise, state machine |
 | **Backend** | | |
-| 1v1 matchmaking queue | ⬜ | |
+| 1v1 matchmaking queue | ⬜ | Needs `arcade-coordinator` service |
 | Ready check system | ⬜ | |
 | Game state synchronization | ⬜ | |
 | Result verification | ⬜ | |
@@ -276,7 +277,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Victory/defeat screens | ⬜ | |
 | Sound integration | ⬜ | |
 | **Testing** | | |
-| Unit tests | ⬜ | |
+| Unit tests | ✅ | 42 Solidity tests |
 | E2E tests | ⬜ | |
 | Latency testing | ⬜ | |
 
@@ -382,6 +383,39 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 ## Completed Work Log
 
+### 2026-01-24: CODE DUEL Smart Contract
+
+**DuelEscrow.sol Implementation (`packages/contracts/src/arcade/games/DuelEscrow.sol`):**
+- ✅ 1v1 match escrow with stake tiers (Bronze 50, Silver 150, Gold 300, Diamond 500 DATA)
+- ✅ Oracle-signed match creation (prevents unauthorized match creation)
+- ✅ Oracle-signed result submission with nonce replay protection
+- ✅ Four match outcomes: WIN, TIE, FORFEIT, TIMEOUT
+- ✅ Pull-payment pattern via ArcadeCore (winner withdraws)
+- ✅ Match expiry (5 min to join) and timeout (3 min for result)
+- ✅ Emergency cancel and refund mechanisms
+
+**Key Design Decisions:**
+- Match creation requires oracle signature (backend matchmaking controls matches)
+- Both players must explicitly join (no force-joining opponents)
+- WIN/FORFEIT: Winner gets entire prize pool (loser's contribution included)
+- TIE: 45%/45% split with 10% additional burn
+- TIMEOUT: Treated as cancelled, both players can refund
+- Refunds return NET amount (after rake already taken)
+
+**Tests (`packages/contracts/test/games/DuelEscrow.t.sol` + `DuelEscrow.Security.t.sol`):**
+- ✅ 99 tests passing (42 base + 57 security tests)
+- ✅ Full fuzz testing for stake tiers and multiple matches
+- ✅ Edge cases (expired matches, invalid signatures, unauthorized access)
+- ✅ Integration tests (full match flow with withdrawals)
+- ✅ Security tests: signature replay, cross-chain replay, oracle compromise
+- ✅ State machine tests: all state transitions covered
+- ✅ Griefing prevention: non-joining opponent, double claim prevention
+- ✅ Branch coverage: 94.74% (54/57 branches)
+
+**Total Contract Tests: 1273 (up from 1216)**
+
+---
+
 ### 2026-01-24: Daily Ops Smart Contract
 
 **DailyOps.sol Implementation (`packages/contracts/src/arcade/games/DailyOps.sol`):**
@@ -407,7 +441,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - ✅ Edge cases (streak break, shield protection, past day claims)
 - ✅ 180-day streak death rate reduction test
 
-**Total Contract Tests: 1172 (up from 1070)**
+**Contract Tests at time: 1172 (up from 1070)**
 
 ---
 

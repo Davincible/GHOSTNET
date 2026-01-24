@@ -227,7 +227,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-2);
-		max-width: 320px;
 		width: 100%;
 	}
 
@@ -299,8 +298,8 @@
 		gap: 1px;
 		background: var(--color-bg-tertiary);
 		border: 1px solid transparent;
-		height: 32px;
-		padding: 2px;
+		padding: var(--space-1) var(--space-0-5);
+		min-height: 32px;
 	}
 
 	.day-cell.empty {
@@ -424,14 +423,6 @@
 
 	/* Smaller screens */
 	@media (max-width: 360px) {
-		.streak-calendar {
-			max-width: 280px;
-		}
-
-		.day-cell {
-			height: 28px;
-		}
-
 		.day-number {
 			font-size: 9px;
 		}

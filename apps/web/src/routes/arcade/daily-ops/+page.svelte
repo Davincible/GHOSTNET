@@ -278,7 +278,7 @@
 					</section>
 				</div>
 
-				<!-- Missions Tab / Desktop Right Column -->
+				<!-- Missions + Calendar / Desktop Right Column -->
 				<div class="content-column missions-column" class:hidden={activeTab !== 'missions'}>
 					<section class="section missions-section">
 						<Box title="TODAY'S MISSIONS">
@@ -311,28 +311,20 @@
 							</Stack>
 						</Box>
 					</section>
+
+					<!-- Calendar below missions on desktop, separate tab on mobile -->
+					<section class="section calendar-section desktop-only">
+						<Box title="STREAK CALENDAR">
+							<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
+						</Box>
+					</section>
 				</div>
 
-				<!-- Calendar Tab -->
-				<div class="content-column calendar-column" class:hidden={activeTab !== 'calendar'}>
+				<!-- Calendar Tab (Mobile only) -->
+				<div class="content-column calendar-column mobile-only" class:hidden={activeTab !== 'calendar'}>
 					<section class="section">
 						<Box title="STREAK CALENDAR">
 							<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
-
-							<div class="calendar-stats">
-								<div class="stat">
-									<span class="stat-label">STREAK</span>
-									<span class="stat-value">{streak?.currentStreak ?? 0}</span>
-								</div>
-								<div class="stat">
-									<span class="stat-label">BEST</span>
-									<span class="stat-value">{streak?.longestStreak ?? 0}</span>
-								</div>
-								<div class="stat">
-									<span class="stat-label">TOTAL</span>
-									<span class="stat-value">{streak?.totalMissionsCompleted?.toString() ?? '0'}</span>
-								</div>
-							</div>
 						</Box>
 					</section>
 				</div>
@@ -547,113 +539,25 @@
 	/* Main Content - Desktop: 2 columns, Mobile: tabs */
 	.main-content {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		gap: var(--space-4);
+		align-items: start; /* Don't stretch columns to match heights */
 	}
 
 	.content-column {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		min-width: 0; /* Allow shrinking below content size */
 	}
 
-	.calendar-column {
-		grid-column: 1 / -1;
-		display: flex;
-		justify-content: center;
-	}
-
-	.calendar-column .section {
-		max-width: 400px;
-		width: 100%;
-	}
-
-	.section {
-		width: 100%;
-	}
-
-	/* Missions */
-	.missions-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: var(--space-3);
-		padding-bottom: var(--space-2);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.missions-count {
-		font-size: var(--text-xs);
-		color: var(--color-text-tertiary);
-	}
-
-	.claimable-badge {
-		padding: var(--space-0-5) var(--space-1);
-		background: var(--color-accent-glow);
-		border: 1px solid var(--color-accent);
-		font-size: var(--text-2xs);
-		color: var(--color-accent);
-		font-weight: var(--font-medium);
-		letter-spacing: var(--tracking-wide);
-		animation: pulse-glow 2s ease-in-out infinite;
-	}
-
-	@keyframes pulse-glow {
-		0%,
-		100% {
-			box-shadow: 0 0 4px var(--color-accent-glow);
-		}
-		50% {
-			box-shadow: 0 0 8px var(--color-accent);
-		}
-	}
-
-	.no-missions {
-		text-align: center;
-		padding: var(--space-6);
-		color: var(--color-text-tertiary);
-	}
-
-	.no-missions .hint {
-		font-size: var(--text-xs);
-		color: var(--color-text-muted);
-		margin-top: var(--space-2);
-	}
-
-	.no-missions code {
-		background: var(--color-bg-tertiary);
-		padding: var(--space-0-5) var(--space-1);
-		font-family: var(--font-mono);
-		color: var(--color-accent);
-	}
-
-	/* Calendar Stats */
-	.calendar-stats {
-		display: flex;
-		justify-content: center;
-		gap: var(--space-6);
-		margin-top: var(--space-3);
-		padding-top: var(--space-3);
-		border-top: 1px solid var(--color-border-subtle);
-	}
-
-	.calendar-stats .stat {
-		text-align: center;
-	}
-
-	.calendar-stats .stat-label {
+	/* Desktop/Mobile visibility */
+	.desktop-only {
 		display: block;
-		font-size: var(--text-2xs);
-		color: var(--color-text-muted);
-		letter-spacing: var(--tracking-wider);
-		margin-bottom: var(--space-1);
 	}
 
-	.calendar-stats .stat-value {
-		font-size: var(--text-base);
-		font-family: var(--font-mono);
-		color: var(--color-accent);
-		font-weight: var(--font-medium);
+	.mobile-only {
+		display: none;
 	}
 
 	/* Reset section */
@@ -837,9 +741,13 @@
 			display: none;
 		}
 
-		.calendar-stats {
-			flex-direction: column;
-			gap: var(--space-2);
+		/* Flip visibility for mobile */
+		.desktop-only {
+			display: none;
+		}
+
+		.mobile-only {
+			display: block;
 		}
 	}
 </style>
