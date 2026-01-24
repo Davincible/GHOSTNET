@@ -1,0 +1,70 @@
+# GHOSTNET Actions Plugin
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Protocol-specific action plugin for GHOSTNET. Implements the ActionPlugin trait
+# from fleet-core to enable wallet automation for:
+#
+# - GhostCore: jackIn, addStake, extract, claimRewards
+# - HashCrash: placeBet (arcade game)
+#
+# This crate is used by the ghost-fleet service to automate wallet interactions
+# with the GHOSTNET protocol.
+
+[package]
+name = "ghostnet-actions"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+description = "GHOSTNET protocol action plugin for Ghost Fleet"
+keywords = ["ghostnet", "plugin", "automation", "defi"]
+categories = ["cryptography::cryptocurrencies"]
+
+[dependencies]
+# ───────────────────────────────────────────────────────────────────────────────
+# WORKSPACE CRATES
+# ───────────────────────────────────────────────────────────────────────────────
+fleet-core = { workspace = true }
+evm-provider = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ETHEREUM
+# ───────────────────────────────────────────────────────────────────────────────
+alloy = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ASYNC
+# ───────────────────────────────────────────────────────────────────────────────
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# SERIALIZATION
+# ───────────────────────────────────────────────────────────────────────────────
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# OBSERVABILITY
+# ───────────────────────────────────────────────────────────────────────────────
+tracing = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# ERROR HANDLING
+# ───────────────────────────────────────────────────────────────────────────────
+thiserror = { workspace = true }
+
+# ───────────────────────────────────────────────────────────────────────────────
+# UTILITIES
+# ───────────────────────────────────────────────────────────────────────────────
+chrono = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[lints]
+workspace = true

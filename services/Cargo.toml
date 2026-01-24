@@ -14,11 +14,13 @@ members = [
     # Shared crates
     "crates/megaeth-rpc",
     "crates/evm-provider",
-    # "crates/fleet-core",     # Phase 3
+    "crates/fleet-core",
+
+    # Plugin crates
+    "ghostnet-actions",
 
     # Services
     "ghostnet-indexer",
-    # "ghostnet-actions",      # Phase 4
     # "ghost-fleet",           # Phase 5
 ]
 
@@ -66,6 +68,9 @@ thiserror = "2"
 # UTILITIES
 # ───────────────────────────────────────────────────────────────────────────────
 hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.9"
+dashmap = "6"
 
 # ───────────────────────────────────────────────────────────────────────────────
 # TESTING
@@ -77,6 +82,9 @@ tokio-test = "0.4"
 # WORKSPACE CRATES (path dependencies)
 # ───────────────────────────────────────────────────────────────────────────────
 megaeth-rpc = { path = "crates/megaeth-rpc" }
+evm-provider = { path = "crates/evm-provider" }
+fleet-core = { path = "crates/fleet-core" }
+ghostnet-actions = { path = "ghostnet-actions" }
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # WORKSPACE LINTS

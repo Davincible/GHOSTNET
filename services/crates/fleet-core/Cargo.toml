@@ -1,0 +1,42 @@
+# fleet-core - Orchestration primitives for Ghost Fleet
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# This crate provides chain-agnostic building blocks for wallet management,
+# behavior profiles, plugin systems, and safety mechanisms.
+#
+# It uses the ChainProvider trait from evm-provider but knows nothing about
+# specific protocols (GHOSTNET, etc.) - those are implemented as plugins.
+
+[package]
+name = "fleet-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Orchestration primitives for Ghost Fleet - wallets, plugins, profiles, safety"
+keywords = ["ethereum", "evm", "wallet", "orchestration"]
+categories = ["cryptography::cryptocurrencies"]
+
+[dependencies]
+# ───────────────────────────────────────────────────────────────────────────────
+# Workspace dependencies
+# ───────────────────────────────────────────────────────────────────────────────
+evm-provider = { workspace = true }
+alloy = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+rand = { workspace = true }
+dashmap = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[lints]
+workspace = true
