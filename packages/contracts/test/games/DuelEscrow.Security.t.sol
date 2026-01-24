@@ -897,6 +897,28 @@ contract DuelEscrowSecurityTest is Test {
         game.claimRefund(matchId);
     }
 
+    function test_Security_TieOutcome_RevertWhen_NonZeroWinner() public {
+        uint256 matchId = _createAndStartMatch();
+
+        // TIE outcome must have winner == address(0)
+        bytes32 nonce = keccak256("tie_nonzero");
+        bytes memory sig = _signSubmitResult(matchId, player1, DuelEscrow.MatchOutcome.TIE, nonce);
+
+        vm.expectRevert(DuelEscrow.InvalidWinner.selector);
+        game.submitResult(matchId, player1, DuelEscrow.MatchOutcome.TIE, sig, nonce);
+    }
+
+    function test_Security_TimeoutOutcome_RevertWhen_NonZeroWinner() public {
+        uint256 matchId = _createAndStartMatch();
+
+        // TIMEOUT outcome must have winner == address(0)
+        bytes32 nonce = keccak256("timeout_nonzero");
+        bytes memory sig = _signSubmitResult(matchId, player2, DuelEscrow.MatchOutcome.TIMEOUT, nonce);
+
+        vm.expectRevert(DuelEscrow.InvalidWinner.selector);
+        game.submitResult(matchId, player2, DuelEscrow.MatchOutcome.TIMEOUT, sig, nonce);
+    }
+
     // ══════════════════════════════════════════════════════════════════════════════
     // VIEW FUNCTION TESTS (Coverage for getSessionState branches)
     // ══════════════════════════════════════════════════════════════════════════════

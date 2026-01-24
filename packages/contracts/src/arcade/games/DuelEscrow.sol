@@ -363,8 +363,11 @@ contract DuelEscrow is IArcadeGame, Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Submit match result (oracle only)
     /// @dev Called by backend after the typing battle concludes.
+    ///      INTENTIONALLY NOT PAUSABLE: Allows resolution of in-progress matches
+    ///      during emergency pause, preventing funds from being locked indefinitely.
+    ///      The oracle signature requirement prevents unauthorized submissions.
     /// @param matchId Match to resolve
-    /// @param winner Winner address (address(0) for tie)
+    /// @param winner Winner address (address(0) for tie/timeout)
     /// @param outcome How the match ended
     /// @param signature Oracle signature
     /// @param nonce Unique nonce
@@ -398,9 +401,13 @@ contract DuelEscrow is IArcadeGame, Ownable2Step, Pausable, ReentrancyGuard {
         address signer = ethSignedHash.recover(signature);
         if (signer != oracle) revert InvalidSignature();
 
-        // Validate winner
+        // Validate winner based on outcome
         if (outcome == MatchOutcome.WIN || outcome == MatchOutcome.FORFEIT) {
+            // Winner must be a participant
             if (winner != m.player1 && winner != m.player2) revert InvalidWinner();
+        } else if (outcome == MatchOutcome.TIE || outcome == MatchOutcome.TIMEOUT) {
+            // No winner for tie/timeout - winner must be address(0)
+            if (winner != address(0)) revert InvalidWinner();
         }
 
         // Process result
