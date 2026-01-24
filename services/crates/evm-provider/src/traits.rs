@@ -155,6 +155,11 @@ pub trait ChainProvider: Send + Sync + std::fmt::Debug + 'static {
     /// For EIP-1559 chains, this typically returns the suggested max fee.
     async fn gas_price(&self) -> Result<u128>;
 
+    /// Get the current block number.
+    ///
+    /// Returns the number of the most recently mined block.
+    async fn get_block_number(&self) -> Result<u64>;
+
     /// Execute a read-only call against the chain.
     ///
     /// This does not create a transaction - it simulates execution and returns
@@ -316,6 +321,79 @@ pub trait ExtendedChainProvider: ChainProvider {
 
         Ok(all_logs)
     }
+
+    /// Fetch the most recent logs for a contract, up to `limit`.
+    ///
+    /// This is a convenience method for the common use case of fetching recent
+    /// activity. It works backwards from the latest block, fetching in chunks
+    /// until `limit` logs are collected or block 0 is reached.
+    ///
+    /// # Arguments
+    ///
+    /// * `address` - Contract address to fetch logs for
+    /// * `limit` - Maximum number of logs to return
+    ///
+    /// # Returns
+    ///
+    /// Logs in chronological order (oldest first), up to `limit` entries.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// // Get the last 1000 events from a contract
+    /// let logs = provider.get_recent_logs(contract_address, 1000).await?;
+    /// for log in logs {
+    ///     println!("Event at block {}", log.block_number.unwrap_or_default());
+    /// }
+    /// ```
+    async fn get_recent_logs(
+        &self,
+        address: Address,
+        limit: usize,
+    ) -> Result<Vec<alloy::rpc::types::Log>> {
+        use alloy::rpc::types::Log;
+
+        // Fetch in chunks, working backwards from latest block
+        const CHUNK_SIZE: u64 = 50_000;
+
+        if !self.supports_cursor_pagination() {
+            return Err(ProviderError::unsupported("cursor pagination required for get_recent_logs"));
+        }
+
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+
+        let latest_block = self.get_block_number().await?;
+
+        let mut all_logs: Vec<Log> = Vec::new();
+        let mut to_block = latest_block;
+
+        while all_logs.len() < limit && to_block > 0 {
+            let from_block = to_block.saturating_sub(CHUNK_SIZE);
+
+            let filter = LogFilter::new(from_block, to_block).with_address(address);
+
+            let page = self.get_logs_with_cursor(&filter, None).await?;
+            all_logs.extend(page.logs);
+
+            if from_block == 0 {
+                break;
+            }
+            to_block = from_block.saturating_sub(1);
+        }
+
+        // Sort by block number (oldest first) and truncate to limit
+        all_logs.sort_by_key(|log| log.block_number.unwrap_or_default());
+
+        // Take the most recent `limit` logs
+        if all_logs.len() > limit {
+            // We want the LAST `limit` logs (most recent)
+            all_logs = all_logs.split_off(all_logs.len() - limit);
+        }
+
+        Ok(all_logs)
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -441,6 +519,10 @@ impl<T: ChainProvider + ?Sized> ChainProvider for std::sync::Arc<T> {
         (**self).gas_price().await
     }
 
+    async fn get_block_number(&self) -> Result<u64> {
+        (**self).get_block_number().await
+    }
+
     async fn call(&self, tx: &TransactionRequest) -> Result<Bytes> {
         (**self).call(tx).await
     }
@@ -526,6 +608,10 @@ mod tests {
 
         async fn gas_price(&self) -> Result<u128> {
             Ok(1_000_000_000)
+        }
+
+        async fn get_block_number(&self) -> Result<u64> {
+            Ok(100)
         }
 
         async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {
@@ -637,6 +723,10 @@ mod tests {
 
         async fn gas_price(&self) -> Result<u128> {
             Ok(1_000_000_000)
+        }
+
+        async fn get_block_number(&self) -> Result<u64> {
+            Ok(1)
         }
 
         async fn call(&self, tx: &TransactionRequest) -> Result<Bytes> {

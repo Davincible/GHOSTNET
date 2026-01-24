@@ -314,6 +314,10 @@ mod tests {
             Ok(1_000_000_000)
         }
 
+        async fn get_block_number(&self) -> Result<u64> {
+            Ok(100)
+        }
+
         async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {
             Ok(Bytes::new())
         }
@@ -531,6 +535,10 @@ mod tests {
 
         async fn gas_price(&self) -> Result<u128> {
             Ok(1_000_000_000)
+        }
+
+        async fn get_block_number(&self) -> Result<u64> {
+            Ok(100)
         }
 
         async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {

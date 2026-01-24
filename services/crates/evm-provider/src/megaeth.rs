@@ -274,6 +274,10 @@ impl ChainProvider for MegaEthProvider {
         self.standard.gas_price().await
     }
 
+    async fn get_block_number(&self) -> Result<u64> {
+        self.standard.get_block_number().await
+    }
+
     async fn call(&self, tx: &TransactionRequest) -> Result<Bytes> {
         self.standard.call(tx).await
     }

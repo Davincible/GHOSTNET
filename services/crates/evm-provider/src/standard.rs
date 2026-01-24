@@ -299,6 +299,14 @@ impl ChainProvider for StandardEvmProvider {
             .map_err(ProviderError::from)
     }
 
+    #[instrument(skip(self), fields(chain_id = self.chain_id))]
+    async fn get_block_number(&self) -> Result<u64> {
+        self.provider
+            .get_block_number()
+            .await
+            .map_err(ProviderError::from)
+    }
+
     #[instrument(skip(self, tx), fields(chain_id = self.chain_id))]
     async fn call(&self, tx: &TransactionRequest) -> Result<Bytes> {
         let alloy_tx = Self::to_alloy_request(tx);
