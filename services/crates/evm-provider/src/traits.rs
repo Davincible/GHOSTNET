@@ -72,6 +72,19 @@ pub trait ChainProvider: Send + Sync + std::fmt::Debug + 'static {
     /// Chain identifier (e.g., 1 for Ethereum mainnet, 6343 for MegaETH testnet).
     fn chain_id(&self) -> u64;
 
+    /// Returns self as `Any` for downcasting.
+    ///
+    /// This allows converting `dyn ChainProvider` back to a concrete type when needed.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// if let Some(mock) = provider.as_any().downcast_ref::<MockProvider>() {
+    ///     mock.set_balance(address, balance);
+    /// }
+    /// ```
+    fn as_any(&self) -> &dyn std::any::Any;
+
     /// Get native token balance (ETH) for an address.
     ///
     /// # Arguments
@@ -487,6 +500,12 @@ impl<T: ChainProvider + ?Sized> ChainProvider for std::sync::Arc<T> {
         (**self).chain_id()
     }
 
+    fn as_any(&self) -> &dyn std::any::Any {
+        // For Arc<T>, we return self as Any
+        // This allows checking if the Arc wraps a specific type
+        self
+    }
+
     async fn get_balance(&self, address: Address) -> Result<U256> {
         (**self).get_balance(address).await
     }
@@ -573,6 +592,10 @@ mod tests {
     impl ChainProvider for MockProvider {
         fn chain_id(&self) -> u64 {
             self.chain_id
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
 
         async fn get_balance(&self, _address: Address) -> Result<U256> {
@@ -692,6 +715,10 @@ mod tests {
     impl ChainProvider for CallCapturingProvider {
         fn chain_id(&self) -> u64 {
             1
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
 
         async fn get_balance(&self, _: Address) -> Result<U256> {

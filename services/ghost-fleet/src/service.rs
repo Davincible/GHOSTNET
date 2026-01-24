@@ -3,7 +3,7 @@
 //! The [`FleetService`] is the core orchestrator that ties together:
 //! - Wallet management and state tracking
 //! - Plugin registration and action coordination
-//! - Safety mechanisms (circuit breakers)
+//! - Safety mechanisms (circuit breakers, rate limiting)
 //! - Scheduling with profile-based timing
 
 use std::collections::HashMap;
@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use evm_provider::mock::MockProvider;
 use evm_provider::ChainProvider;
 use fleet_core::plugins::PluginRegistry;
@@ -19,11 +20,68 @@ use fleet_core::safety::CircuitBreaker;
 use fleet_core::scheduler::Scheduler;
 use fleet_core::wallet::WalletState;
 use ghostnet_actions::{GhostnetConfig, GhostnetPlugin};
+use tokio::sync::watch;
 use tokio::time::interval;
 use tracing::{debug, error, info, instrument, warn};
 
 use crate::config::Settings;
 use crate::engine::BehaviorEngine;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RATE LIMITER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Tracks action counts per wallet for rate limiting.
+#[derive(Debug, Default)]
+struct RateLimiter {
+    /// Action timestamps per wallet (for sliding window).
+    action_times: HashMap<String, Vec<DateTime<Utc>>>,
+    /// Maximum actions per hour.
+    max_per_hour: u32,
+}
+
+impl RateLimiter {
+    /// Create a new rate limiter.
+    fn new(max_per_hour: u32) -> Self {
+        Self {
+            action_times: HashMap::new(),
+            max_per_hour,
+        }
+    }
+
+    /// Check if the wallet would exceed the rate limit.
+    fn would_exceed(&self, wallet_id: &str) -> bool {
+        let Some(times) = self.action_times.get(wallet_id) else {
+            return false;
+        };
+
+        let one_hour_ago = Utc::now() - chrono::Duration::hours(1);
+        let recent_count = times.iter().filter(|t| **t > one_hour_ago).count();
+
+        recent_count >= self.max_per_hour as usize
+    }
+
+    /// Record an action for rate limiting.
+    fn record_action(&mut self, wallet_id: &str) {
+        let times = self.action_times.entry(wallet_id.to_string()).or_default();
+        times.push(Utc::now());
+
+        // Prune old entries (older than 1 hour)
+        let one_hour_ago = Utc::now() - chrono::Duration::hours(1);
+        times.retain(|t| *t > one_hour_ago);
+    }
+
+    /// Get current action count in the last hour.
+    #[allow(dead_code)] // Used in tests
+    fn action_count(&self, wallet_id: &str) -> usize {
+        let Some(times) = self.action_times.get(wallet_id) else {
+            return 0;
+        };
+
+        let one_hour_ago = Utc::now() - chrono::Duration::hours(1);
+        times.iter().filter(|t| **t > one_hour_ago).count()
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // FLEET SERVICE
@@ -37,22 +95,33 @@ use crate::engine::BehaviorEngine;
 /// # Main Loop
 ///
 /// The service runs a tick-based loop:
-/// 1. Check global pause flag
-/// 2. Check circuit breaker auto-reset
-/// 3. Get wallets due for action
-/// 4. For each due wallet:
-///    a. Refresh state from chain
-///    b. Check circuit breaker
-///    c. Consult plugins for action decision
-///    d. Execute action if decided
-///    e. Schedule next action
+/// 1. Check shutdown signal
+/// 2. Check global pause flag
+/// 3. Check circuit breaker auto-reset
+/// 4. Get wallets due for action
+/// 5. For each due wallet:
+///    a. Check rate limit
+///    b. Refresh state from chain
+///    c. Check circuit breaker
+///    d. Consult plugins for action decision
+///    e. Execute action if decided
+///    f. Schedule next action
 ///
 /// # Example
 ///
 /// ```ignore
 /// let settings = Settings::load("config.toml")?;
+/// let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
 /// let service = FleetService::new(settings, false).await?;
-/// service.run().await?;
+///
+/// // Run in a task
+/// let handle = tokio::spawn(async move {
+///     service.run(shutdown_rx).await
+/// });
+///
+/// // To stop:
+/// shutdown_tx.send(true).ok();
+/// handle.await??;
 /// ```
 #[derive(Debug)]
 pub struct FleetService {
@@ -60,10 +129,13 @@ pub struct FleetService {
     settings: Settings,
 
     /// Chain provider for blockchain interactions.
+    ///
+    /// TODO: Make this `Arc<dyn ChainProvider>` once we have real provider implementations.
+    /// Currently uses MockProvider directly since GhostnetPlugin<P> requires a concrete type.
     provider: Arc<MockProvider>,
 
     /// Plugin registry.
-    #[allow(dead_code)]
+    #[expect(dead_code, reason = "Stored for future plugin hot-reload")]
     registry: PluginRegistry,
 
     /// Behavior engine for coordinating plugins.
@@ -71,6 +143,9 @@ pub struct FleetService {
 
     /// Circuit breaker for error handling.
     circuit_breaker: CircuitBreaker,
+
+    /// Rate limiter for action throttling.
+    rate_limiter: RateLimiter,
 
     /// Scheduler for timing calculations.
     scheduler: Scheduler,
@@ -96,7 +171,7 @@ impl FleetService {
     /// # Errors
     ///
     /// Returns an error if provider initialization fails.
-    #[allow(clippy::unused_async)] // async for future provider initialization
+    #[expect(clippy::unused_async, reason = "async for future provider initialization")]
     pub async fn new(settings: Settings, dry_run: bool) -> Result<Self> {
         info!(
             chain_type = %settings.chain.chain_type,
@@ -120,6 +195,9 @@ impl FleetService {
             Duration::from_secs(settings.safety.cooldown_secs),
         );
 
+        // Create rate limiter
+        let rate_limiter = RateLimiter::new(settings.safety.max_actions_per_hour);
+
         // Create scheduler
         let scheduler = Scheduler::new();
 
@@ -133,6 +211,7 @@ impl FleetService {
             wallets = wallets.len(),
             profiles = profiles.len(),
             plugins = settings.plugins.enabled.len(),
+            max_actions_per_hour = settings.safety.max_actions_per_hour,
             "Fleet Service initialized"
         );
 
@@ -142,6 +221,7 @@ impl FleetService {
             registry,
             engine,
             circuit_breaker,
+            rate_limiter,
             scheduler,
             wallets,
             profiles,
@@ -150,6 +230,8 @@ impl FleetService {
     }
 
     /// Create the chain provider based on settings.
+    ///
+    /// TODO: Return `Arc<dyn ChainProvider>` once we have real provider implementations.
     fn create_provider(settings: &Settings) -> Result<Arc<MockProvider>> {
         match settings.chain.chain_type.as_str() {
             "mock" => {
@@ -158,7 +240,7 @@ impl FleetService {
             }
             "standard" | "megaeth" => {
                 // For now, use mock provider as placeholder
-                // In production, this would create StandardEvmProvider or MegaEthProvider
+                // TODO: Implement real providers (StandardEvmProvider, MegaEthProvider)
                 warn!(
                     chain_type = %settings.chain.chain_type,
                     "Real provider not yet implemented, using mock"
@@ -179,7 +261,8 @@ impl FleetService {
         let mut registry = PluginRegistry::new();
 
         // Register GHOSTNET plugin if enabled
-        if settings.plugins.enabled.contains(&"ghostnet".to_string())
+        // Use iter().any() to avoid string allocation, and combine conditions
+        if settings.plugins.enabled.iter().any(|s| s == "ghostnet")
             && let Some(ghostnet_config) = &settings.plugins.ghostnet
         {
             let config = GhostnetConfig::new(
@@ -192,7 +275,6 @@ impl FleetService {
 
             let plugin = GhostnetPlugin::new(config, provider);
             registry.register(Arc::new(plugin));
-
             info!("Registered GHOSTNET plugin");
         }
 
@@ -227,12 +309,17 @@ impl FleetService {
 
     /// Run the service main loop.
     ///
-    /// This method runs until cancelled or an unrecoverable error occurs.
+    /// This method runs until the shutdown signal is received or an
+    /// unrecoverable error occurs.
+    ///
+    /// # Arguments
+    ///
+    /// * `shutdown` - Watch receiver that signals shutdown when value becomes `true`
     ///
     /// # Errors
     ///
     /// Returns an error if the main loop encounters an unrecoverable error.
-    pub async fn run(mut self) -> Result<()> {
+    pub async fn run(mut self, mut shutdown: watch::Receiver<bool>) -> Result<()> {
         let tick_duration = Duration::from_millis(self.settings.service.tick_interval_ms);
         let mut tick = interval(tick_duration);
 
@@ -242,32 +329,45 @@ impl FleetService {
         );
 
         loop {
-            tick.tick().await;
-
-            // Check global pause
-            if self.settings.safety.global_pause {
-                debug!("Global pause active, skipping tick");
-                continue;
-            }
-
-            // Auto-reset circuit breakers
-            let reset_count = self.circuit_breaker.check_auto_reset();
-            if reset_count > 0 {
-                info!(count = reset_count, "Auto-reset circuit breakers");
-            }
-
-            // Get wallets due for action
-            let due_wallets = self.get_due_wallets();
-
-            if !due_wallets.is_empty() {
-                debug!(count = due_wallets.len(), "Processing due wallets");
-            }
-
-            // Process each due wallet
-            for wallet_id in due_wallets {
-                if let Err(e) = self.process_wallet(&wallet_id).await {
-                    error!(wallet = %wallet_id, error = %e, "Error processing wallet");
+            tokio::select! {
+                _ = tick.tick() => {
+                    self.process_tick().await;
                 }
+                _ = shutdown.changed() => {
+                    if *shutdown.borrow() {
+                        info!("Shutdown signal received, stopping service");
+                        return Ok(());
+                    }
+                }
+            }
+        }
+    }
+
+    /// Process a single tick of the main loop.
+    async fn process_tick(&mut self) {
+        // Check global pause
+        if self.settings.safety.global_pause {
+            debug!("Global pause active, skipping tick");
+            return;
+        }
+
+        // Auto-reset circuit breakers
+        let reset_count = self.circuit_breaker.check_auto_reset();
+        if reset_count > 0 {
+            info!(count = reset_count, "Auto-reset circuit breakers");
+        }
+
+        // Get wallets due for action
+        let due_wallets = self.get_due_wallets();
+
+        if !due_wallets.is_empty() {
+            debug!(count = due_wallets.len(), "Processing due wallets");
+        }
+
+        // Process each due wallet
+        for wallet_id in due_wallets {
+            if let Err(e) = self.process_wallet(&wallet_id).await {
+                error!(wallet = %wallet_id, error = %e, "Error processing wallet");
             }
         }
     }
@@ -286,6 +386,16 @@ impl FleetService {
     #[instrument(skip(self), fields(wallet_id = %wallet_id))]
     async fn process_wallet(&mut self, wallet_id: &str) -> Result<()> {
         debug!("Processing wallet");
+
+        // Check rate limit first
+        if self.rate_limiter.would_exceed(wallet_id) {
+            debug!(
+                wallet = %wallet_id,
+                max_per_hour = self.settings.safety.max_actions_per_hour,
+                "Rate limit would be exceeded, skipping"
+            );
+            return Ok(());
+        }
 
         // Get profile name first (clone to avoid borrow issues)
         let profile_name = {
@@ -340,6 +450,8 @@ impl FleetService {
 
                 if self.dry_run {
                     info!(action = %action.name, "DRY RUN: Would execute action");
+                    // Still record for rate limiting in dry run
+                    self.rate_limiter.record_action(wallet_id);
                 } else {
                     // Execute the action
                     let result = plugin.execute_action(&action, &wallet, wallet.nonce).await;
@@ -352,6 +464,7 @@ impl FleetService {
                                     "Action executed successfully"
                                 );
                                 self.circuit_breaker.record_success(wallet_id);
+                                self.rate_limiter.record_action(wallet_id);
                                 if let Some(w) = self.wallets.get_mut(wallet_id) {
                                     w.record_success();
                                     w.increment_nonce();
@@ -462,34 +575,34 @@ impl FleetService {
 
     /// Get current wallet states (for inspection/debugging).
     #[must_use]
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests
     pub const fn wallets(&self) -> &HashMap<String, WalletState> {
         &self.wallets
     }
 
     /// Get the circuit breaker (for inspection/debugging).
     #[must_use]
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests
     pub const fn circuit_breaker(&self) -> &CircuitBreaker {
         &self.circuit_breaker
     }
 
     /// Check if dry run mode is enabled.
     #[must_use]
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests
     pub const fn is_dry_run(&self) -> bool {
         self.dry_run
     }
 
     /// Get a reference to the provider.
     #[must_use]
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests
     pub const fn provider(&self) -> &Arc<MockProvider> {
         &self.provider
     }
 
     /// Manually trigger a wallet reset (clears circuit breaker).
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests and operations
     pub fn reset_wallet(&mut self, wallet_id: &str) {
         self.circuit_breaker.manual_reset(wallet_id);
         if let Some(w) = self.wallets.get_mut(wallet_id) {
@@ -499,14 +612,14 @@ impl FleetService {
     }
 
     /// Pause all operations.
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests and operations
     pub fn pause(&mut self) {
         self.settings.safety.global_pause = true;
         info!("Service paused");
     }
 
     /// Resume operations.
-    #[allow(dead_code)] // Public API
+    #[allow(dead_code)] // Used in tests and operations
     pub fn resume(&mut self) {
         self.settings.safety.global_pause = false;
         info!("Service resumed");
@@ -582,5 +695,60 @@ mod tests {
         // Manual reset
         service.reset_wallet("test_wallet");
         assert!(!service.circuit_breaker.is_tripped("test_wallet"));
+    }
+
+    #[tokio::test]
+    async fn shutdown_signal_stops_service() {
+        let settings = test_settings();
+        let service = FleetService::new(settings, true).await.unwrap();
+
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+        // Spawn service in a task
+        let handle = tokio::spawn(async move {
+            service.run(shutdown_rx).await
+        });
+
+        // Give it a moment to start
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        // Send shutdown signal
+        shutdown_tx.send(true).unwrap();
+
+        // Service should stop gracefully
+        let result = tokio::time::timeout(Duration::from_secs(1), handle).await;
+        assert!(result.is_ok(), "Service should stop within timeout");
+        assert!(result.unwrap().unwrap().is_ok());
+    }
+
+    #[test]
+    fn rate_limiter_tracks_actions() {
+        let mut limiter = RateLimiter::new(3);
+
+        assert!(!limiter.would_exceed("wallet_1"));
+        assert_eq!(limiter.action_count("wallet_1"), 0);
+
+        limiter.record_action("wallet_1");
+        limiter.record_action("wallet_1");
+        assert!(!limiter.would_exceed("wallet_1"));
+        assert_eq!(limiter.action_count("wallet_1"), 2);
+
+        limiter.record_action("wallet_1");
+        assert!(limiter.would_exceed("wallet_1"));
+        assert_eq!(limiter.action_count("wallet_1"), 3);
+    }
+
+    #[test]
+    fn rate_limiter_independent_per_wallet() {
+        let mut limiter = RateLimiter::new(2);
+
+        limiter.record_action("wallet_1");
+        limiter.record_action("wallet_1");
+        assert!(limiter.would_exceed("wallet_1"));
+
+        // wallet_2 should not be affected
+        assert!(!limiter.would_exceed("wallet_2"));
+        limiter.record_action("wallet_2");
+        assert!(!limiter.would_exceed("wallet_2"));
     }
 }

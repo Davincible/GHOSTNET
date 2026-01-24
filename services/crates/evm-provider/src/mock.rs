@@ -160,6 +160,10 @@ impl ChainProvider for MockProvider {
         self.chain_id
     }
 
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
     async fn get_balance(&self, address: Address) -> Result<U256> {
         Ok(self
             .balances

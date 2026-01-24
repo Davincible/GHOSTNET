@@ -16,8 +16,11 @@
 //! ghost-fleet --config config.toml --dry-run
 //! ```
 
+use std::path::Path;
+
 use anyhow::{Context, Result};
 use clap::Parser;
+use tokio::sync::watch;
 use tracing::{error, info, warn};
 
 mod config;
@@ -73,6 +76,9 @@ async fn main() -> Result<()> {
         "Starting Ghost Fleet"
     );
 
+    // Check config file permissions (security)
+    check_config_permissions(&args.config);
+
     // Load configuration
     let settings = Settings::load(&args.config)
         .with_context(|| format!("Failed to load config from {}", args.config))?;
@@ -87,26 +93,22 @@ async fn main() -> Result<()> {
     // Validate configuration
     settings.validate().context("Invalid configuration")?;
 
-    // Create and run service
+    // Create service
     let service = FleetService::new(settings, args.dry_run)
         .await
         .context("Failed to initialize service")?;
 
-    // Set up graceful shutdown
-    let shutdown = setup_shutdown_handler();
+    // Set up shutdown channel
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+    // Spawn shutdown signal handler
+    tokio::spawn(async move {
+        wait_for_shutdown_signal().await;
+        let _ = shutdown_tx.send(true);
+    });
 
     // Run service until shutdown
-    tokio::select! {
-        result = service.run() => {
-            if let Err(e) = result {
-                error!(error = %e, "Service error");
-                return Err(e);
-            }
-        }
-        () = shutdown => {
-            info!("Shutdown signal received");
-        }
-    }
+    service.run(shutdown_rx).await?;
 
     info!("Ghost Fleet stopped");
     Ok(())
@@ -141,8 +143,40 @@ fn init_logging(level: &str, json: bool) -> Result<()> {
     Ok(())
 }
 
-/// Set up graceful shutdown handler for SIGINT/SIGTERM.
-async fn setup_shutdown_handler() {
+/// Check config file permissions and warn if too permissive.
+///
+/// On Unix systems, config files containing private keys should have
+/// restrictive permissions (0600 or stricter).
+fn check_config_permissions(path: &str) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+
+        let path = Path::new(path);
+        if let Ok(metadata) = path.metadata() {
+            let mode = metadata.mode() & 0o777;
+            // Warn if group or other has any permissions
+            if mode & 0o077 != 0 {
+                warn!(
+                    path = %path.display(),
+                    mode = format!("{mode:o}"),
+                    "Config file has permissive permissions. \
+                     Consider using 'chmod 600 {}' if it contains private keys.",
+                    path.display()
+                );
+            }
+        }
+    }
+
+    // On non-Unix systems, skip the check
+    #[cfg(not(unix))]
+    {
+        let _ = path; // Suppress unused warning
+    }
+}
+
+/// Wait for shutdown signal (SIGINT or SIGTERM).
+async fn wait_for_shutdown_signal() {
     let ctrl_c = async {
         if let Err(e) = tokio::signal::ctrl_c().await {
             error!(error = %e, "Failed to install Ctrl+C handler");

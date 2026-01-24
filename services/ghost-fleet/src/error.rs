@@ -9,7 +9,7 @@ pub type Result<T> = std::result::Result<T, FleetServiceError>;
 
 /// Errors that can occur in the Ghost Fleet service.
 #[derive(Debug, Error)]
-#[allow(dead_code)] // Public API - some variants used in future
+#[expect(dead_code, reason = "public API - variants will be used as service grows")]
 pub enum FleetServiceError {
     /// Configuration error.
     #[error("Configuration error: {0}")]

@@ -46,7 +46,7 @@ impl BehaviorEngine {
 
     /// Create a behavior engine with a seeded RNG (for testing).
     #[must_use]
-    #[allow(dead_code)] // Public API for tests
+    #[expect(dead_code, reason = "public API for deterministic testing")]
     pub fn with_seed(registry: &PluginRegistry, enabled_ids: &[String], seed: u64) -> Self {
         let plugins = registry.enabled(enabled_ids);
         Self {
@@ -57,7 +57,7 @@ impl BehaviorEngine {
     }
 
     /// Set plugin-specific configuration.
-    #[allow(dead_code)] // Public API for future use
+    #[expect(dead_code, reason = "public API for plugin configuration")]
     pub fn set_plugin_config(&mut self, config: serde_json::Value) {
         self.plugin_config = config;
     }
@@ -120,7 +120,7 @@ impl BehaviorEngine {
 
     /// Get all available actions across enabled plugins.
     #[must_use]
-    #[allow(dead_code)] // Public API for future use
+    #[allow(dead_code)] // Used in tests and future API consumers
     pub fn available_actions(&self) -> Vec<fleet_core::plugins::ActionId> {
         self.plugins
             .iter()

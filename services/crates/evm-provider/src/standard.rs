@@ -316,6 +316,10 @@ impl ChainProvider for StandardEvmProvider {
             .await
             .map_err(ProviderError::from)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

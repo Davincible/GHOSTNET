@@ -129,6 +129,48 @@ impl Settings {
             ).into());
         }
 
+        // Validate profile bounds
+        for (name, profile) in &self.profiles {
+            // All probability/factor values must be 0.0..=1.0
+            if !(0.0..=1.0).contains(&profile.risk_tolerance) {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].risk_tolerance must be between 0.0 and 1.0"),
+                ).into());
+            }
+            if !(0.0..=1.0).contains(&profile.patience) {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].patience must be between 0.0 and 1.0"),
+                ).into());
+            }
+            if !(0.0..=1.0).contains(&profile.off_hours_factor) {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].off_hours_factor must be between 0.0 and 1.0"),
+                ).into());
+            }
+            if !(0.0..=1.0).contains(&profile.afk_probability) {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].afk_probability must be between 0.0 and 1.0"),
+                ).into());
+            }
+            // Hour values must be < 24
+            if profile.active_hours_start >= 24 {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].active_hours_start must be < 24"),
+                ).into());
+            }
+            if profile.active_hours_end >= 24 {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].active_hours_end must be < 24"),
+                ).into());
+            }
+            // AFK hours: min <= max
+            if profile.afk_min_hours > profile.afk_max_hours {
+                return Err(ConfigError::Validation(
+                    format!("profiles[{name}].afk_min_hours must be <= afk_max_hours"),
+                ).into());
+            }
+        }
+
         Ok(())
     }
 }

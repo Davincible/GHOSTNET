@@ -322,6 +322,10 @@ mod tests {
         async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {
             Ok(Bytes::new())
         }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
     }
 
     #[tokio::test]
@@ -544,6 +548,10 @@ mod tests {
 
         async fn call(&self, _tx: &TransactionRequest) -> Result<Bytes> {
             Ok(Bytes::new())
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
         }
     }
 
