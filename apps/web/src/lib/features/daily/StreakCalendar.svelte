@@ -226,22 +226,24 @@
 	.streak-calendar {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-2);
+		max-width: 320px;
+		width: 100%;
 	}
 
 	.calendar-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: var(--space-2) 0;
 	}
 
 	.nav-btn {
 		background: transparent;
 		border: 1px solid var(--color-border-default);
 		color: var(--color-text-secondary);
-		padding: var(--space-1) var(--space-2);
+		padding: var(--space-0-5) var(--space-1);
 		font-family: var(--font-mono);
+		font-size: var(--text-xs);
 		cursor: pointer;
 		transition: all var(--duration-fast) var(--ease-default);
 	}
@@ -257,7 +259,7 @@
 	}
 
 	.month-year {
-		font-size: var(--text-sm);
+		font-size: var(--text-xs);
 		font-weight: var(--font-medium);
 		color: var(--color-text-primary);
 		letter-spacing: var(--tracking-wider);
@@ -266,44 +268,44 @@
 	.calendar-grid {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: 2px;
 	}
 
 	.day-headers {
 		display: grid;
 		grid-template-columns: repeat(7, 1fr);
-		gap: var(--space-1);
-		margin-bottom: var(--space-1);
+		gap: 2px;
 	}
 
 	.day-header {
 		text-align: center;
-		font-size: var(--text-2xs);
+		font-size: 9px;
 		color: var(--color-text-muted);
 		letter-spacing: var(--tracking-wide);
+		padding: var(--space-0-5) 0;
 	}
 
 	.week-row {
 		display: grid;
 		grid-template-columns: repeat(7, 1fr);
-		gap: var(--space-1);
+		gap: 2px;
 	}
 
 	.day-cell {
-		aspect-ratio: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 2px;
+		gap: 1px;
 		background: var(--color-bg-tertiary);
 		border: 1px solid transparent;
-		position: relative;
-		min-height: 36px;
+		height: 32px;
+		padding: 2px;
 	}
 
 	.day-cell.empty {
 		background: transparent;
+		border: none;
 	}
 
 	.day-cell.today {
@@ -329,9 +331,10 @@
 	}
 
 	.day-number {
-		font-size: var(--text-xs);
+		font-size: 10px;
 		font-family: var(--font-mono);
 		color: var(--color-text-secondary);
+		line-height: 1;
 	}
 
 	.day-cell.today .day-number {
@@ -344,7 +347,7 @@
 	}
 
 	.day-status {
-		font-size: var(--text-2xs);
+		font-size: 8px;
 		line-height: 1;
 	}
 
@@ -381,25 +384,25 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding-top: var(--space-2);
+		padding-top: var(--space-1);
 		border-top: 1px solid var(--color-border-subtle);
+		font-size: 9px;
 	}
 
 	.legend {
 		display: flex;
-		gap: var(--space-3);
+		gap: var(--space-2);
 	}
 
 	.legend-item {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
-		font-size: var(--text-2xs);
+		gap: 2px;
 		color: var(--color-text-muted);
 	}
 
 	.legend-icon {
-		font-size: var(--text-xs);
+		font-size: 10px;
 	}
 
 	.legend-icon.completed {
@@ -415,24 +418,26 @@
 	}
 
 	.month-stats {
-		font-size: var(--text-xs);
 		font-family: var(--font-mono);
 		color: var(--color-text-secondary);
 	}
 
-	/* Mobile */
-	@media (max-width: 480px) {
+	/* Smaller screens */
+	@media (max-width: 360px) {
+		.streak-calendar {
+			max-width: 280px;
+		}
+
 		.day-cell {
-			min-height: 32px;
+			height: 28px;
 		}
 
 		.day-number {
-			font-size: var(--text-2xs);
+			font-size: 9px;
 		}
 
-		.legend {
-			flex-wrap: wrap;
-			gap: var(--space-2);
+		.day-status {
+			font-size: 7px;
 		}
 	}
 </style>
