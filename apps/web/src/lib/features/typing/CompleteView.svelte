@@ -47,12 +47,42 @@
 
 	// Result tier - Badge variants: default, success, warning, danger, info, hotkey
 	let resultTier = $derived.by(() => {
-		if (result.accuracy >= 1.0) return { label: 'PERFECT', variant: 'success' as const, isPerfect: true, colorClass: 'tier-perfect' };
-		if (result.accuracy >= 0.95) return { label: 'EXCELLENT', variant: 'success' as const, isPerfect: false, colorClass: 'tier-success' };
-		if (result.accuracy >= 0.85) return { label: 'GREAT', variant: 'success' as const, isPerfect: false, colorClass: 'tier-success' };
-		if (result.accuracy >= 0.70) return { label: 'GOOD', variant: 'info' as const, isPerfect: false, colorClass: 'tier-info' };
-		if (result.accuracy >= 0.50) return { label: 'OKAY', variant: 'warning' as const, isPerfect: false, colorClass: 'tier-warning' };
-		return { label: 'FAILED', variant: 'danger' as const, isPerfect: false, colorClass: 'tier-danger' };
+		if (result.accuracy >= 1.0)
+			return {
+				label: 'PERFECT',
+				variant: 'success' as const,
+				isPerfect: true,
+				colorClass: 'tier-perfect',
+			};
+		if (result.accuracy >= 0.95)
+			return {
+				label: 'EXCELLENT',
+				variant: 'success' as const,
+				isPerfect: false,
+				colorClass: 'tier-success',
+			};
+		if (result.accuracy >= 0.85)
+			return {
+				label: 'GREAT',
+				variant: 'success' as const,
+				isPerfect: false,
+				colorClass: 'tier-success',
+			};
+		if (result.accuracy >= 0.7)
+			return { label: 'GOOD', variant: 'info' as const, isPerfect: false, colorClass: 'tier-info' };
+		if (result.accuracy >= 0.5)
+			return {
+				label: 'OKAY',
+				variant: 'warning' as const,
+				isPerfect: false,
+				colorClass: 'tier-warning',
+			};
+		return {
+			label: 'FAILED',
+			variant: 'danger' as const,
+			isPerfect: false,
+			colorClass: 'tier-danger',
+		};
 	});
 </script>
 
@@ -100,7 +130,7 @@
 			<!-- Reward Section -->
 			<div class="reward-section">
 				<h3 class="section-title">PROTECTION ACQUIRED</h3>
-				
+
 				{#if result.reward}
 					<div class="reward-display">
 						<span class="reward-value">{result.reward.label}</span>
@@ -113,21 +143,18 @@
 								<span class="comparison-label">BASE DEATH RATE</span>
 								<PercentDisplay value={baseDeathRate * 100} />
 							</div>
-							
+
 							<div class="comparison-row">
 								<span class="comparison-label">BEFORE</span>
-								<PercentDisplay 
-									value={oldEffectiveRate * 100} 
-									trend={oldProtection < 0 ? 'down' : 'stable'} 
+								<PercentDisplay
+									value={oldEffectiveRate * 100}
+									trend={oldProtection < 0 ? 'down' : 'stable'}
 								/>
 							</div>
-							
+
 							<div class="comparison-row highlight">
 								<span class="comparison-label">AFTER</span>
-								<PercentDisplay 
-									value={newEffectiveRate * 100} 
-									trend="down" 
-								/>
+								<PercentDisplay value={newEffectiveRate * 100} trend="down" />
 							</div>
 
 							{#if hasImprovement}
@@ -161,22 +188,10 @@
 
 			<!-- Action Buttons -->
 			<Stack gap={2}>
-				<Button
-					variant="secondary"
-					size="lg"
-					fullWidth
-					onclick={onPracticeAgain}
-				>
+				<Button variant="secondary" size="lg" fullWidth onclick={onPracticeAgain}>
 					PRACTICE AGAIN
 				</Button>
-				<Button
-					variant="ghost"
-					size="md"
-					fullWidth
-					onclick={onReturn}
-				>
-					RETURN TO NETWORK
-				</Button>
+				<Button variant="ghost" size="md" fullWidth onclick={onReturn}>RETURN TO NETWORK</Button>
 			</Stack>
 		</div>
 	</Box>
@@ -235,7 +250,8 @@
 	}
 
 	@keyframes gold-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			box-shadow: 0 0 5px var(--color-gold-glow);
 		}
 		50% {

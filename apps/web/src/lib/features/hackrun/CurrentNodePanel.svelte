@@ -21,7 +21,7 @@
 		low: 'var(--color-profit)',
 		medium: 'var(--color-amber)',
 		high: 'var(--color-loss)',
-		extreme: 'var(--color-red)'
+		extreme: 'var(--color-red)',
 	};
 
 	const riskColor = $derived(RISK_COLORS[node.risk] ?? 'var(--color-text-tertiary)');
@@ -64,9 +64,7 @@
 		</div>
 
 		<!-- Start button -->
-		<Button variant="primary" fullWidth onclick={onStart}>
-			[SPACE] BEGIN INFILTRATION
-		</Button>
+		<Button variant="primary" fullWidth onclick={onStart}>[SPACE] BEGIN INFILTRATION</Button>
 
 		<!-- Warning for high-risk nodes -->
 		{#if node.risk === 'high' || node.risk === 'extreme'}

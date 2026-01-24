@@ -21,15 +21,8 @@
 		onDeadPool?: () => void;
 	}
 
-	let {
-		onJackIn,
-		onExtract,
-		onTraceEvasion,
-		onHackRun,
-		onDuels,
-		onCrew,
-		onDeadPool
-	}: Props = $props();
+	let { onJackIn, onExtract, onTraceEvasion, onHackRun, onDuels, onCrew, onDeadPool }: Props =
+		$props();
 
 	const provider = getProvider();
 
@@ -41,23 +34,11 @@
 
 <Box title="QUICK ACTIONS">
 	<Stack gap={2}>
-		<Button
-			variant="secondary"
-			hotkey="J"
-			fullWidth
-			disabled={!canJackIn}
-			onclick={onJackIn}
-		>
+		<Button variant="secondary" hotkey="J" fullWidth disabled={!canJackIn} onclick={onJackIn}>
 			{provider.position ? 'Jack In More' : 'Jack In'}
 		</Button>
 
-		<Button
-			variant="danger"
-			hotkey="E"
-			fullWidth
-			disabled={!canExtract}
-			onclick={onExtract}
-		>
+		<Button variant="danger" hotkey="E" fullWidth disabled={!canExtract} onclick={onExtract}>
 			Extract All
 		</Button>
 
@@ -73,35 +54,17 @@
 			Trace Evasion
 		</Button>
 
-		<Button
-			variant="secondary"
-			hotkey="H"
-			fullWidth
-			disabled={!canPlayGames}
-			onclick={onHackRun}
-		>
+		<Button variant="secondary" hotkey="H" fullWidth disabled={!canPlayGames} onclick={onHackRun}>
 			Hack Run
 		</Button>
 
-		<Button
-			variant="secondary"
-			hotkey="D"
-			fullWidth
-			disabled={!canPlayGames}
-			onclick={onDuels}
-		>
+		<Button variant="secondary" hotkey="D" fullWidth disabled={!canPlayGames} onclick={onDuels}>
 			PvP Duels
 		</Button>
 
 		<div class="divider"></div>
 
-		<Button
-			variant="ghost"
-			hotkey="C"
-			fullWidth
-			disabled={!provider.currentUser}
-			onclick={onCrew}
-		>
+		<Button variant="ghost" hotkey="C" fullWidth disabled={!provider.currentUser} onclick={onCrew}>
 			Crew
 		</Button>
 

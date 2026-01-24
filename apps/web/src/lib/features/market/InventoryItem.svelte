@@ -1,6 +1,11 @@
 <script lang="ts">
 	import type { OwnedConsumable, Consumable } from '$lib/core/types';
-	import { canUseConsumable, formatCooldown, getConsumable, getRarityClass } from '$lib/core/types/market';
+	import {
+		canUseConsumable,
+		formatCooldown,
+		getConsumable,
+		getRarityClass,
+	} from '$lib/core/types/market';
 	import { Button } from '$lib/ui/primitives';
 
 	interface Props {

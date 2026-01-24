@@ -16,14 +16,14 @@
 	];
 
 	// Group shortcuts by category for visual separation
-	const actionShortcuts = shortcuts.filter(s => s.category === 'action');
-	const gameShortcuts = shortcuts.filter(s => s.category === 'game');
-	const socialShortcuts = shortcuts.filter(s => s.category === 'social');
+	const actionShortcuts = shortcuts.filter((s) => s.category === 'action');
+	const gameShortcuts = shortcuts.filter((s) => s.category === 'game');
+	const socialShortcuts = shortcuts.filter((s) => s.category === 'social');
 </script>
 
 <div class="keyboard-hints" role="region" aria-label="Keyboard shortcuts">
 	<span class="hints-label">HOTKEYS:</span>
-	
+
 	<div class="hints-group">
 		{#each actionShortcuts as shortcut (shortcut.key)}
 			<span class="hint">

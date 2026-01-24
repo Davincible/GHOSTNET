@@ -1,79 +1,81 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+	import { onMount } from 'svelte';
 
-  interface Props {
-    width?: number;
-    height?: number;
-    color?: string;
-    bgColor?: string;
-    rainSpeed?: number;
-    showRain?: boolean;
-  }
+	interface Props {
+		width?: number;
+		height?: number;
+		color?: string;
+		bgColor?: string;
+		rainSpeed?: number;
+		showRain?: boolean;
+	}
 
-  let { 
-    width = 400, 
-    height = 400, 
-    color = '#00e5cc',
-    bgColor = '#00e5cc',
-    rainSpeed = 1,
-    showRain = true
-  }: Props = $props();
+	let {
+		width = 400,
+		height = 400,
+		color = '#00e5cc',
+		bgColor = '#00e5cc',
+		rainSpeed = 1,
+		showRain = true,
+	}: Props = $props();
 
-  let canvas: HTMLCanvasElement;
-  let animationId: number;
-  
-  // Store reactive RGB values for colors
-  let rabbitRgb = $state({ r: 0, g: 229, b: 204 });
-  let rainRgb = $state({ r: 0, g: 229, b: 204 });
-  
-  // Parse hex color to RGB
-  const hexToRgb = (hex: string) => {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 0, g: 229, b: 204 };
-  };
-  
-  // Update rabbit color when prop changes
-  $effect(() => {
-    if (color) {
-      rabbitRgb = hexToRgb(color);
-    }
-  });
-  
-  // Update rain (background) color when prop changes
-  $effect(() => {
-    if (bgColor) {
-      rainRgb = hexToRgb(bgColor);
-    }
-  });
+	let canvas: HTMLCanvasElement;
+	let animationId: number;
 
-  // ASCII art frames for the rabbit (multiple frames for animation)
-  const rabbitFrames = [
-    // Frame 1 - Neutral
-    `
+	// Store reactive RGB values for colors
+	let rabbitRgb = $state({ r: 0, g: 229, b: 204 });
+	let rainRgb = $state({ r: 0, g: 229, b: 204 });
+
+	// Parse hex color to RGB
+	const hexToRgb = (hex: string) => {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result
+			? {
+					r: parseInt(result[1], 16),
+					g: parseInt(result[2], 16),
+					b: parseInt(result[3], 16),
+				}
+			: { r: 0, g: 229, b: 204 };
+	};
+
+	// Update rabbit color when prop changes
+	$effect(() => {
+		if (color) {
+			rabbitRgb = hexToRgb(color);
+		}
+	});
+
+	// Update rain (background) color when prop changes
+	$effect(() => {
+		if (bgColor) {
+			rainRgb = hexToRgb(bgColor);
+		}
+	});
+
+	// ASCII art frames for the rabbit (multiple frames for animation)
+	const rabbitFrames = [
+		// Frame 1 - Neutral
+		`
        (\\(\\
        ( -.-)
        o_(")(")
     `,
-    // Frame 2 - Ear twitch
-    `
+		// Frame 2 - Ear twitch
+		`
        (\\(\\
        ( -.-)
        o_(")(")
     `,
-    // Frame 3 - Alert
-    `
+		// Frame 3 - Alert
+		`
        (\\ /)
        ( . .)
        c(")(")
-    `
-  ];
+    `,
+	];
 
-  // More detailed ASCII rabbit for the main display
-  const detailedRabbit = `
+	// More detailed ASCII rabbit for the main display
+	const detailedRabbit = `
          ,\\
          \\\\\\,_
           \\  ,\\
@@ -84,15 +86,15 @@
    \`-----\` \`--\`
   `;
 
-  // Alternative cute rabbit
-  const cuteRabbit = `
+	// Alternative cute rabbit
+	const cuteRabbit = `
    (\\__/)
    (='.'=)
    (")_(")
   `;
 
-  // Larger detailed rabbit
-  const largeRabbit = `
+	// Larger detailed rabbit
+	const largeRabbit = `
           /|      __
          / |   ,-~ /
         Y :|  //  /
@@ -113,8 +115,8 @@
   (" ~----( ~   Y.  )
   `;
 
-  // Matrix-style large rabbit with more detail
-  const matrixRabbit = `
+	// Matrix-style large rabbit with more detail
+	const matrixRabbit = `
                      /\\
                     /  \\
        (\\__/)     /    \\
@@ -131,8 +133,8 @@
        |     ||____________|__|
   `;
 
-  // Simple but iconic rabbit silhouette
-  const iconicRabbit = `
+	// Simple but iconic rabbit silhouette
+	const iconicRabbit = `
       (\\(\\           (\\(\\
       ( -.-) _______ (-.-)
      o_(")(")(     )(")_(")o
@@ -144,8 +146,8 @@
    |________________________|
   `;
 
-  // Main display rabbit - clean and recognizable
-  const mainRabbit = `
+	// Main display rabbit - clean and recognizable
+	const mainRabbit = `
 
              /\\     /\\
             {  \`---'  }
@@ -161,202 +163,206 @@
 
 `;
 
-  onMount(() => {
-    const ctx = canvas.getContext('2d')!;
-    const dpr = window.devicePixelRatio || 1;
-    
-    // Set canvas size with device pixel ratio
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
+	onMount(() => {
+		const ctx = canvas.getContext('2d')!;
+		const dpr = window.devicePixelRatio || 1;
 
-    // Matrix rain columns
-    const fontSize = 14;
-    const columns = Math.floor(width / fontSize);
-    const drops: number[] = new Array(columns).fill(0).map(() => Math.random() * -100);
-    const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF';
-    
-    // Rain color is reactive via rainRgb state (updated by $effect)
+		// Set canvas size with device pixel ratio
+		canvas.width = width * dpr;
+		canvas.height = height * dpr;
+		canvas.style.width = `${width}px`;
+		canvas.style.height = `${height}px`;
+		ctx.scale(dpr, dpr);
 
-    // Rabbit display state
-    let rabbitAlpha = 0;
-    let targetRabbitAlpha = 1;
-    let glitchOffset = 0;
-    let scanlineY = 0;
+		// Matrix rain columns
+		const fontSize = 14;
+		const columns = Math.floor(width / fontSize);
+		const drops: number[] = new Array(columns).fill(0).map(() => Math.random() * -100);
+		const chars = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF';
 
-    function animate() {
-      animationId = requestAnimationFrame(animate);
+		// Rain color is reactive via rainRgb state (updated by $effect)
 
-      // Semi-transparent black for trail effect
-      ctx.fillStyle = 'rgba(3, 3, 5, 0.1)';
-      ctx.fillRect(0, 0, width, height);
+		// Rabbit display state
+		let rabbitAlpha = 0;
+		let targetRabbitAlpha = 1;
+		let glitchOffset = 0;
+		let scanlineY = 0;
 
-      // Draw Matrix rain
-      if (showRain) {
-        ctx.font = `${fontSize}px monospace`;
-        
-        for (let i = 0; i < columns; i++) {
-          // Random character
-          const char = chars[Math.floor(Math.random() * chars.length)];
-          
-          // Calculate position
-          const x = i * fontSize;
-          const y = drops[i] * fontSize;
-          
-          // Gradient from bright to dim
-          const brightness = Math.random();
-          if (brightness > 0.95) {
-            // Bright leading character
-            ctx.fillStyle = `rgba(255, 255, 255, 0.9)`;
-          } else {
-            // Normal rain character (fixed color - doesn't change)
-            const alpha = 0.3 + brightness * 0.4;
-            ctx.fillStyle = `rgba(${rainRgb.r}, ${rainRgb.g}, ${rainRgb.b}, ${alpha})`;
-          }
-          
-          ctx.fillText(char, x, y);
-          
-          // Reset drop when it goes off screen
-          if (y > height && Math.random() > 0.975) {
-            drops[i] = 0;
-          }
-          drops[i] += rainSpeed * (0.5 + Math.random() * 0.5);
-        }
-      }
+		function animate() {
+			animationId = requestAnimationFrame(animate);
 
-      // Draw ASCII rabbit in center
-      ctx.save();
-      
-      // Glitch effect
-      const time = Date.now() * 0.001;
-      if (Math.random() > 0.97) {
-        glitchOffset = (Math.random() - 0.5) * 10;
-      } else {
-        glitchOffset *= 0.9;
-      }
-      
-      // Smooth alpha transition
-      rabbitAlpha += (targetRabbitAlpha - rabbitAlpha) * 0.05;
-      
-      // Scanline position
-      scanlineY = (scanlineY + 2) % height;
+			// Semi-transparent black for trail effect
+			ctx.fillStyle = 'rgba(3, 3, 5, 0.1)';
+			ctx.fillRect(0, 0, width, height);
 
-      // Draw rabbit
-      ctx.font = '12px "Courier New", monospace';
-      ctx.textAlign = 'center';
-      
-      const lines = mainRabbit.split('\n');
-      const lineHeight = 14;
-      const startY = (height - lines.length * lineHeight) / 2;
-      
-      lines.forEach((line, i) => {
-        const y = startY + i * lineHeight;
-        
-        // Glitch effect on random lines
-        let xOffset = glitchOffset;
-        if (Math.random() > 0.98) {
-          xOffset += (Math.random() - 0.5) * 20;
-        }
-        
-        // Color with glow effect
-        const distFromCenter = Math.abs(i - lines.length / 2) / (lines.length / 2);
-        const intensity = 1 - distFromCenter * 0.3;
-        
-        // Draw glow layer (rabbit - reactive color)
-        ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, ${0.3 * rabbitAlpha * intensity})`;
-        ctx.fillText(line, width / 2 + xOffset + 1, y + 1);
-        ctx.fillText(line, width / 2 + xOffset - 1, y - 1);
-        
-        // Draw main text (rabbit - reactive color)
-        ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, ${rabbitAlpha * intensity})`;
-        ctx.fillText(line, width / 2 + xOffset, y);
-        
-        // Bright leading edge on some characters
-        if (Math.random() > 0.95) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * rabbitAlpha})`;
-          const charIndex = Math.floor(Math.random() * line.length);
-          const char = line[charIndex];
-          if (char && char !== ' ') {
-            const charWidth = ctx.measureText(line.substring(0, charIndex)).width;
-            const lineWidth = ctx.measureText(line).width;
-            ctx.fillText(char, width / 2 + xOffset - lineWidth / 2 + charWidth, y);
-          }
-        }
-      });
+			// Draw Matrix rain
+			if (showRain) {
+				ctx.font = `${fontSize}px monospace`;
 
-      // Draw scanline effect (rabbit - reactive color)
-      ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.03)`;
-      ctx.fillRect(0, scanlineY, width, 2);
-      
-      // Draw "FOLLOW THE WHITE RABBIT" text
-      ctx.font = 'bold 10px "Courier New", monospace';
-      ctx.textAlign = 'center';
-      
-      const message = 'FOLLOW THE WHITE RABBIT';
-      const messageY = height - 40;
-      
-      // Typing effect
-      const visibleChars = Math.floor((time * 3) % (message.length + 10));
-      const displayMessage = message.substring(0, Math.min(visibleChars, message.length));
-      
-      // Glow (rabbit message - reactive color)
-      ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.4)`;
-      ctx.fillText(displayMessage, width / 2 + 1, messageY + 1);
-      ctx.fillText(displayMessage, width / 2 - 1, messageY - 1);
-      
-      // Main text (rabbit message - reactive color)
-      ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.9)`;
-      ctx.fillText(displayMessage, width / 2, messageY);
-      
-      // Cursor blink
-      if (visibleChars <= message.length && Math.floor(time * 2) % 2 === 0) {
-        const cursorX = width / 2 + ctx.measureText(displayMessage).width / 2 + 3;
-        ctx.fillRect(cursorX, messageY - 8, 6, 10);
-      }
+				for (let i = 0; i < columns; i++) {
+					// Random character
+					const char = chars[Math.floor(Math.random() * chars.length)];
 
-      ctx.restore();
+					// Calculate position
+					const x = i * fontSize;
+					const y = drops[i] * fontSize;
 
-      // CRT effect - subtle vignette
-      const gradient = ctx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, width * 0.7
-      );
-      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
+					// Gradient from bright to dim
+					const brightness = Math.random();
+					if (brightness > 0.95) {
+						// Bright leading character
+						ctx.fillStyle = `rgba(255, 255, 255, 0.9)`;
+					} else {
+						// Normal rain character (fixed color - doesn't change)
+						const alpha = 0.3 + brightness * 0.4;
+						ctx.fillStyle = `rgba(${rainRgb.r}, ${rainRgb.g}, ${rainRgb.b}, ${alpha})`;
+					}
 
-      // Horizontal scan lines (CRT effect)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      for (let y = 0; y < height; y += 3) {
-        ctx.fillRect(0, y, width, 1);
-      }
-    }
+					ctx.fillText(char, x, y);
 
-    animate();
+					// Reset drop when it goes off screen
+					if (y > height && Math.random() > 0.975) {
+						drops[i] = 0;
+					}
+					drops[i] += rainSpeed * (0.5 + Math.random() * 0.5);
+				}
+			}
 
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  });
+			// Draw ASCII rabbit in center
+			ctx.save();
+
+			// Glitch effect
+			const time = Date.now() * 0.001;
+			if (Math.random() > 0.97) {
+				glitchOffset = (Math.random() - 0.5) * 10;
+			} else {
+				glitchOffset *= 0.9;
+			}
+
+			// Smooth alpha transition
+			rabbitAlpha += (targetRabbitAlpha - rabbitAlpha) * 0.05;
+
+			// Scanline position
+			scanlineY = (scanlineY + 2) % height;
+
+			// Draw rabbit
+			ctx.font = '12px "Courier New", monospace';
+			ctx.textAlign = 'center';
+
+			const lines = mainRabbit.split('\n');
+			const lineHeight = 14;
+			const startY = (height - lines.length * lineHeight) / 2;
+
+			lines.forEach((line, i) => {
+				const y = startY + i * lineHeight;
+
+				// Glitch effect on random lines
+				let xOffset = glitchOffset;
+				if (Math.random() > 0.98) {
+					xOffset += (Math.random() - 0.5) * 20;
+				}
+
+				// Color with glow effect
+				const distFromCenter = Math.abs(i - lines.length / 2) / (lines.length / 2);
+				const intensity = 1 - distFromCenter * 0.3;
+
+				// Draw glow layer (rabbit - reactive color)
+				ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, ${0.3 * rabbitAlpha * intensity})`;
+				ctx.fillText(line, width / 2 + xOffset + 1, y + 1);
+				ctx.fillText(line, width / 2 + xOffset - 1, y - 1);
+
+				// Draw main text (rabbit - reactive color)
+				ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, ${rabbitAlpha * intensity})`;
+				ctx.fillText(line, width / 2 + xOffset, y);
+
+				// Bright leading edge on some characters
+				if (Math.random() > 0.95) {
+					ctx.fillStyle = `rgba(255, 255, 255, ${0.8 * rabbitAlpha})`;
+					const charIndex = Math.floor(Math.random() * line.length);
+					const char = line[charIndex];
+					if (char && char !== ' ') {
+						const charWidth = ctx.measureText(line.substring(0, charIndex)).width;
+						const lineWidth = ctx.measureText(line).width;
+						ctx.fillText(char, width / 2 + xOffset - lineWidth / 2 + charWidth, y);
+					}
+				}
+			});
+
+			// Draw scanline effect (rabbit - reactive color)
+			ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.03)`;
+			ctx.fillRect(0, scanlineY, width, 2);
+
+			// Draw "FOLLOW THE WHITE RABBIT" text
+			ctx.font = 'bold 10px "Courier New", monospace';
+			ctx.textAlign = 'center';
+
+			const message = 'FOLLOW THE WHITE RABBIT';
+			const messageY = height - 40;
+
+			// Typing effect
+			const visibleChars = Math.floor((time * 3) % (message.length + 10));
+			const displayMessage = message.substring(0, Math.min(visibleChars, message.length));
+
+			// Glow (rabbit message - reactive color)
+			ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.4)`;
+			ctx.fillText(displayMessage, width / 2 + 1, messageY + 1);
+			ctx.fillText(displayMessage, width / 2 - 1, messageY - 1);
+
+			// Main text (rabbit message - reactive color)
+			ctx.fillStyle = `rgba(${rabbitRgb.r}, ${rabbitRgb.g}, ${rabbitRgb.b}, 0.9)`;
+			ctx.fillText(displayMessage, width / 2, messageY);
+
+			// Cursor blink
+			if (visibleChars <= message.length && Math.floor(time * 2) % 2 === 0) {
+				const cursorX = width / 2 + ctx.measureText(displayMessage).width / 2 + 3;
+				ctx.fillRect(cursorX, messageY - 8, 6, 10);
+			}
+
+			ctx.restore();
+
+			// CRT effect - subtle vignette
+			const gradient = ctx.createRadialGradient(
+				width / 2,
+				height / 2,
+				0,
+				width / 2,
+				height / 2,
+				width * 0.7
+			);
+			gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+			gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
+			ctx.fillStyle = gradient;
+			ctx.fillRect(0, 0, width, height);
+
+			// Horizontal scan lines (CRT effect)
+			ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+			for (let y = 0; y < height; y += 3) {
+				ctx.fillRect(0, y, width, 1);
+			}
+		}
+
+		animate();
+
+		return () => {
+			cancelAnimationFrame(animationId);
+		};
+	});
 </script>
 
 <div class="rabbit-ascii" style="width: {width}px; height: {height}px;">
-  <canvas bind:this={canvas}></canvas>
+	<canvas bind:this={canvas}></canvas>
 </div>
 
 <style>
-  .rabbit-ascii {
-    position: relative;
-    background: #030305;
-    border-radius: 4px;
-    overflow: hidden;
-  }
+	.rabbit-ascii {
+		position: relative;
+		background: #030305;
+		border-radius: 4px;
+		overflow: hidden;
+	}
 
-  .rabbit-ascii canvas {
-    display: block;
-    image-rendering: pixelated;
-  }
+	.rabbit-ascii canvas {
+		display: block;
+		image-rendering: pixelated;
+	}
 </style>

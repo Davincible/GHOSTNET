@@ -25,7 +25,7 @@
 		height = 400,
 		sweepDuration = 10,
 		nodes = [],
-		currentScanProgress = 0
+		currentScanProgress = 0,
 	}: Props = $props();
 
 	let container: HTMLDivElement;
@@ -52,7 +52,7 @@
 		blackIce: 0xff3366,
 		traced: 0xff3366,
 		survived: 0x00ff88,
-		currentUser: 0xffffff
+		currentUser: 0xffffff,
 	};
 
 	const LEVEL_RADIUS: Record<SecurityLevel, number> = {
@@ -60,7 +60,7 @@
 		MAINFRAME: 0.4,
 		SUBNET: 0.6,
 		DARKNET: 0.8,
-		BLACK_ICE: 0.95
+		BLACK_ICE: 0.95,
 	};
 
 	const LEVEL_COLOR: Record<SecurityLevel, number> = {
@@ -68,7 +68,7 @@
 		MAINFRAME: COLORS.mainframe,
 		SUBNET: COLORS.subnet,
 		DARKNET: COLORS.darknet,
-		BLACK_ICE: COLORS.blackIce
+		BLACK_ICE: COLORS.blackIce,
 	};
 
 	onMount(() => {
@@ -110,7 +110,7 @@
 		const material = new THREE.MeshBasicMaterial({
 			color: COLORS.background,
 			transparent: true,
-			opacity: 0.8
+			opacity: 0.8,
 		});
 		const base = new THREE.Mesh(geometry, material);
 		base.position.z = -0.1;
@@ -121,7 +121,7 @@
 		const ringMaterial = new THREE.MeshBasicMaterial({
 			color: COLORS.ring,
 			transparent: true,
-			opacity: 0.6
+			opacity: 0.6,
 		});
 		const ring = new THREE.Mesh(ringGeometry, ringMaterial);
 		scene.add(ring);
@@ -137,18 +137,14 @@
 
 			for (let i = 0; i <= segments; i++) {
 				const theta = (i / segments) * Math.PI * 2;
-				points.push(new THREE.Vector3(
-					radius * Math.cos(theta),
-					radius * Math.sin(theta),
-					0
-				));
+				points.push(new THREE.Vector3(radius * Math.cos(theta), radius * Math.sin(theta), 0));
 			}
 
 			const geometry = new THREE.BufferGeometry().setFromPoints(points);
 			const material = new THREE.LineBasicMaterial({
 				color: LEVEL_COLOR[level],
 				transparent: true,
-				opacity: 0.3
+				opacity: 0.3,
 			});
 
 			const ring = new THREE.Line(geometry, material);
@@ -173,7 +169,7 @@
 		const material = new THREE.LineBasicMaterial({
 			color: COLORS.grid,
 			transparent: true,
-			opacity: 0.3
+			opacity: 0.3,
 		});
 
 		gridLines = new THREE.LineSegments(geometry, material);
@@ -187,7 +183,7 @@
 			color: COLORS.sweepTrail,
 			transparent: true,
 			opacity: 0.15,
-			side: THREE.DoubleSide
+			side: THREE.DoubleSide,
 		});
 		sweepTrail = new THREE.Mesh(trailGeometry, trailMaterial);
 		sweepTrail.position.z = 0.01;
@@ -201,7 +197,7 @@
 		const lineMaterial = new THREE.LineBasicMaterial({
 			color: COLORS.sweep,
 			transparent: true,
-			opacity: 0.9
+			opacity: 0.9,
 		});
 
 		sweepLine = new THREE.Line(lineGeometry, lineMaterial) as unknown as THREE.Mesh;
@@ -213,7 +209,7 @@
 		const glowMaterial = new THREE.MeshBasicMaterial({
 			color: COLORS.sweep,
 			transparent: true,
-			opacity: 0.4
+			opacity: 0.4,
 		});
 		const glow = new THREE.Mesh(glowGeometry, glowMaterial);
 		glow.position.x = 0.5;
@@ -239,7 +235,7 @@
 				level: levels[Math.floor(Math.random() * levels.length)],
 				angle: Math.random() * Math.PI * 2,
 				isCurrentUser: i === 0,
-				status: 'active'
+				status: 'active',
 			});
 		}
 
@@ -254,7 +250,7 @@
 		const material = new THREE.MeshBasicMaterial({
 			color: node.isCurrentUser ? COLORS.currentUser : LEVEL_COLOR[node.level],
 			transparent: true,
-			opacity: 0.9
+			opacity: 0.9,
 		});
 
 		const mesh = new THREE.Mesh(geometry, material);
@@ -270,7 +266,7 @@
 			const ringMaterial = new THREE.MeshBasicMaterial({
 				color: COLORS.sweep,
 				transparent: true,
-				opacity: 0.5
+				opacity: 0.5,
 			});
 			const ring = new THREE.Mesh(ringGeometry, ringMaterial);
 			mesh.add(ring);
@@ -318,7 +314,9 @@
 			fadeOut();
 		} else {
 			// Survived! Flash green
-			const originalColor = nodeData.node.isCurrentUser ? COLORS.currentUser : LEVEL_COLOR[nodeData.node.level];
+			const originalColor = nodeData.node.isCurrentUser
+				? COLORS.currentUser
+				: LEVEL_COLOR[nodeData.node.level];
 			material.color.setHex(COLORS.survived);
 			nodeData.node.status = 'survived';
 
@@ -338,7 +336,7 @@
 			const material = new THREE.MeshBasicMaterial({
 				color: COLORS.traced,
 				transparent: true,
-				opacity: 1
+				opacity: 1,
 			});
 			const particle = new THREE.Mesh(geometry, material);
 			particle.position.set(x, y, 0.04);
@@ -348,7 +346,7 @@
 
 			(particle as any).velocity = {
 				x: Math.cos(angle) * speed,
-				y: Math.sin(angle) * speed
+				y: Math.sin(angle) * speed,
 			};
 
 			scene.add(particle);
@@ -431,8 +429,12 @@
 	});
 </script>
 
-<div class="radar-sweep" bind:this={container} style:width="{width}px" style:height="{height}px">
-</div>
+<div
+	class="radar-sweep"
+	bind:this={container}
+	style:width="{width}px"
+	style:height="{height}px"
+></div>
 
 <style>
 	.radar-sweep {

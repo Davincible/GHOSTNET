@@ -20,21 +20,13 @@
 		checkingIn?: boolean;
 	}
 
-	let {
-		progress,
-		missions,
-		onCheckIn,
-		onClaimMission,
-		checkingIn = false,
-	}: Props = $props();
+	let { progress, missions, onCheckIn, onClaimMission, checkingIn = false }: Props = $props();
 
 	// Check if can claim today's reward
 	let canCheckIn = $derived(!progress.todayCheckedIn);
 
 	// Count claimable missions
-	let claimableMissions = $derived(
-		missions.filter((m) => m.completed && !m.claimed).length
-	);
+	let claimableMissions = $derived(missions.filter((m) => m.completed && !m.claimed).length);
 
 	// Count completed missions
 	let completedMissions = $derived(missions.filter((m) => m.completed).length);
@@ -69,12 +61,7 @@
 
 				{#if canCheckIn}
 					<div class="checkin-action">
-						<Button
-							variant="primary"
-							onclick={onCheckIn}
-							disabled={checkingIn}
-							fullWidth
-						>
+						<Button variant="primary" onclick={onCheckIn} disabled={checkingIn} fullWidth>
 							{checkingIn ? 'CLAIMING...' : 'CLAIM DAILY REWARD'}
 						</Button>
 					</div>

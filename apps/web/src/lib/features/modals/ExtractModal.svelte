@@ -9,7 +9,7 @@
 	import {
 		UserRejectedRequestError,
 		ContractFunctionExecutionError,
-		InsufficientFundsError
+		InsufficientFundsError,
 	} from 'viem';
 	import { wallet } from '$lib/web3/wallet.svelte';
 	import { defaultChain } from '$lib/web3/chains';
@@ -88,14 +88,14 @@
 
 		try {
 			const hash = await provider.extract();
-			
+
 			// Store hash for display
 			txHash = hash as `0x${string}`;
 			txState = 'confirming';
-			
+
 			// Wait a moment for the UI to show the hash before closing
-			await new Promise(resolve => setTimeout(resolve, 1500));
-			
+			await new Promise((resolve) => setTimeout(resolve, 1500));
+
 			txState = 'success';
 			toast.success('Successfully extracted');
 			onclose();
@@ -137,7 +137,8 @@
 	{#if position}
 		<Stack gap={3}>
 			<p class="extract-description">
-				Extract your position and return to safety. All staked tokens and earned yield will be returned to your wallet.
+				Extract your position and return to safety. All staked tokens and earned yield will be
+				returned to your wallet.
 			</p>
 
 			<Box variant="single" borderColor="cyan" padding={3}>
@@ -191,7 +192,11 @@
 
 			<!-- Transaction Status Display -->
 			{#if txState !== 'idle'}
-				<Box variant="single" borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'} padding={3}>
+				<Box
+					variant="single"
+					borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'}
+					padding={3}
+				>
 					<Stack gap={2}>
 						{#if txState === 'pending'}
 							<Row align="center" gap={2}>
@@ -207,7 +212,12 @@
 								<span class="tx-hash-label">TX:</span>
 								<span class="tx-hash-value">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
 								{#if explorerUrl}
-									<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-explorer-link">
+									<a
+										href={explorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="tx-explorer-link"
+									>
 										View on Explorer
 									</a>
 								{/if}
@@ -224,8 +234,8 @@
 
 			<Row justify="end" gap={2}>
 				<Button variant="ghost" onclick={onclose} disabled={isSubmitting}>Cancel</Button>
-				<Button 
-					variant="primary" 
+				<Button
+					variant="primary"
 					onclick={handleExtract}
 					loading={isSubmitting}
 					disabled={isSubmitting}
@@ -242,9 +252,7 @@
 		</Stack>
 	{:else}
 		<Stack gap={3}>
-			<p class="no-position">
-				You don't have an active position to extract.
-			</p>
+			<p class="no-position">You don't have an active position to extract.</p>
 			<Row justify="end">
 				<Button variant="ghost" onclick={onclose}>Close</Button>
 			</Row>

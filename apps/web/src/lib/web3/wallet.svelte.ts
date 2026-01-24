@@ -2,7 +2,7 @@
  * Wallet Connection Store
  * ========================
  * Svelte 5 runes-based wallet state management
- * 
+ *
  * SSR-SAFE: All browser APIs are guarded
  */
 
@@ -16,12 +16,9 @@ import {
 	watchChainId,
 	switchChain,
 	type GetAccountReturnType,
-	type Connector
+	type Connector,
 } from '@wagmi/core';
-import {
-	UserRejectedRequestError,
-	ChainMismatchError
-} from 'viem';
+import { UserRejectedRequestError, ChainMismatchError } from 'viem';
 import { getConfig } from './config';
 import { defaultChain, getChainById, supportedChains } from './chains';
 
@@ -79,7 +76,7 @@ function parseWalletError(err: unknown): string {
 /**
  * Creates a reactive wallet connection store.
  * Uses Svelte 5 runes for reactivity.
- * 
+ *
  * SSR-Safe: Returns a dummy store during SSR that does nothing.
  */
 export function createWalletStore() {
@@ -93,7 +90,7 @@ export function createWalletStore() {
 	let ethBalance = $state<bigint>(0n);
 	let connector = $state<Connector | null>(null);
 	let error = $state<string | null>(null);
-	
+
 	// Non-reactive flag to prevent double initialization
 	// (not $state to avoid tracking in effects)
 	let initialized = false;
@@ -102,12 +99,10 @@ export function createWalletStore() {
 	// Derived
 	// ─────────────────────────────────────────────────────────────
 
-	const chainName = $derived(chainId ? getChainById(chainId)?.name ?? 'Unknown' : null);
+	const chainName = $derived(chainId ? (getChainById(chainId)?.name ?? 'Unknown') : null);
 	const isCorrectChain = $derived(chainId === defaultChain.id);
 	const isConnected = $derived(status === 'connected' && address !== null);
-	const shortAddress = $derived(
-		address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null
-	);
+	const shortAddress = $derived(address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null);
 
 	// ─────────────────────────────────────────────────────────────
 	// Event Handlers
@@ -161,7 +156,9 @@ export function createWalletStore() {
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
-			console.error('[Wallet] Config not available during init - possible SSR leak or initialization race');
+			console.error(
+				'[Wallet] Config not available during init - possible SSR leak or initialization race'
+			);
 			return () => {};
 		}
 
@@ -171,12 +168,12 @@ export function createWalletStore() {
 
 		// Watch account changes
 		const unwatchAccount = watchAccount(config, {
-			onChange: handleAccountChange
+			onChange: handleAccountChange,
 		});
 
 		// Watch chain changes
 		const unwatchChainId = watchChainId(config, {
-			onChange: handleChainChange
+			onChange: handleChainChange,
 		});
 
 		// Check if already connected
@@ -205,7 +202,9 @@ export function createWalletStore() {
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
-			console.error('[Wallet] Config not available during connect - possible SSR leak or initialization race');
+			console.error(
+				'[Wallet] Config not available during connect - possible SSR leak or initialization race'
+			);
 			return;
 		}
 
@@ -215,16 +214,16 @@ export function createWalletStore() {
 
 			// Import injected connector dynamically to create with target
 			const { injected } = await import('@wagmi/connectors');
-			
+
 			// Create connector with specific target if provided
-			const connector = injected({ 
+			const connector = injected({
 				target: target,
-				shimDisconnect: true 
+				shimDisconnect: true,
 			});
 
 			const result = await connect(config, {
 				connector,
-				chainId: defaultChain.id
+				chainId: defaultChain.id,
 			});
 
 			address = result.accounts[0];
@@ -251,7 +250,9 @@ export function createWalletStore() {
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
-			console.error('[Wallet] Config not available during WalletConnect - possible SSR leak or initialization race');
+			console.error(
+				'[Wallet] Config not available during WalletConnect - possible SSR leak or initialization race'
+			);
 			return;
 		}
 
@@ -268,7 +269,7 @@ export function createWalletStore() {
 
 			const result = await connect(config, {
 				connector: wcConnector,
-				chainId: defaultChain.id
+				chainId: defaultChain.id,
 			});
 
 			address = result.accounts[0];
@@ -295,7 +296,9 @@ export function createWalletStore() {
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
-			console.error('[Wallet] Config not available during disconnect - possible SSR leak or initialization race');
+			console.error(
+				'[Wallet] Config not available during disconnect - possible SSR leak or initialization race'
+			);
 			return;
 		}
 
@@ -325,7 +328,9 @@ export function createWalletStore() {
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
-			console.error('[Wallet] Config not available during chain switch - possible SSR leak or initialization race');
+			console.error(
+				'[Wallet] Config not available during chain switch - possible SSR leak or initialization race'
+			);
 			return;
 		}
 
@@ -417,7 +422,7 @@ export function createWalletStore() {
 
 		// Constants
 		supportedChains,
-		defaultChain
+		defaultChain,
 	};
 }
 

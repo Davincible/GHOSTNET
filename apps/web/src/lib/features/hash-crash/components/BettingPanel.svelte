@@ -1,14 +1,8 @@
 <script lang="ts">
 	import Button from '$lib/ui/primitives/Button.svelte';
 	import Box from '$lib/ui/terminal/Box.svelte';
-	import {
-		MIN_BET,
-		MAX_BET,
-		MIN_TARGET,
-		MAX_TARGET,
-		formatMultiplier,
-		calculateWinProbability,
-	} from '../store.svelte';
+	import { MIN_BET, MAX_BET, MIN_TARGET, MAX_TARGET, formatMultiplier } from '../store.svelte';
+	import { SCANNING_MESSAGES } from '../messages';
 
 	interface Props {
 		/** Whether betting is allowed */
@@ -56,6 +50,36 @@
 	let betAmount = $state('100');
 	let targetValue = $state('2.00');
 
+	// Scanning message cycling state
+	let scanningMessageIndex = $state(0);
+	let scanningInterval: ReturnType<typeof setInterval> | null = null;
+
+	// Cycle scanning messages during locked phase
+	$effect(() => {
+		if (phase === 'locked') {
+			// Start with a random message
+			scanningMessageIndex = Math.floor(Math.random() * SCANNING_MESSAGES.length);
+
+			// Cycle every 2 seconds
+			scanningInterval = setInterval(() => {
+				scanningMessageIndex = (scanningMessageIndex + 1) % SCANNING_MESSAGES.length;
+			}, 2000);
+
+			return () => {
+				if (scanningInterval) {
+					clearInterval(scanningInterval);
+					scanningInterval = null;
+				}
+			};
+		} else if (scanningInterval) {
+			clearInterval(scanningInterval);
+			scanningInterval = null;
+		}
+	});
+
+	// Get current scanning message
+	let scanningMessage = $derived(SCANNING_MESSAGES[scanningMessageIndex]);
+
 	// Quick bet amounts
 	const quickBets = [10n, 50n, 100n, 500n, 1000n];
 
@@ -87,8 +111,8 @@
 	// Can submit bet
 	let canSubmit = $derived(canBet && isValidBet && isValidTarget);
 
-	// Win probability
-	let winProb = $derived(isValidTarget ? calculateWinProbability(targetNum) : 0);
+	// Check if a quick target is currently selected
+	let selectedTarget = $derived(quickTargets.find((t) => t.toFixed(2) === targetValue) ?? null);
 
 	// Expected payout if win
 	let expectedPayout = $derived(
@@ -131,8 +155,8 @@
 
 			<!-- Bet Amount Input -->
 			<div class="input-section">
-				<label class="input-label" for="bet-amount">BET AMOUNT</label>
-				<div class="input-wrapper">
+				<label class="input-label highlighted" for="bet-amount">BET AMOUNT</label>
+				<div class="input-wrapper snake-border">
 					<input
 						id="bet-amount"
 						type="text"
@@ -168,8 +192,16 @@
 				</div>
 				<div class="quick-buttons">
 					{#each quickTargets as target}
-						<button type="button" class="quick-btn" onclick={() => setQuickTarget(target)}>
-							{target}x
+						<button
+							type="button"
+							class="quick-btn"
+							class:selected={selectedTarget === target}
+							class:recommended={target === Math.max(...quickTargets) && selectedTarget !== target}
+							onclick={() => setQuickTarget(target)}
+						>
+							{target}x{#if target === Math.max(...quickTargets)}<span class="recommended-star"
+									>★</span
+								>{/if}
 						</button>
 					{/each}
 				</div>
@@ -178,16 +210,8 @@
 			<!-- Outcome Preview -->
 			<div class="outcome-preview">
 				<div class="outcome-row win">
-					<span class="outcome-label">IF WIN (crash > {targetValue}x)</span>
+					<span class="outcome-label">POTENTIAL PROFIT</span>
 					<span class="outcome-value">+{formatData(profitIfWin)} $DATA</span>
-				</div>
-				<div class="outcome-row lose">
-					<span class="outcome-label">IF LOSE (crash &le; {targetValue}x)</span>
-					<span class="outcome-value">-{formatData(betWei)} $DATA</span>
-				</div>
-				<div class="outcome-row probability">
-					<span class="outcome-label">WIN PROBABILITY</span>
-					<span class="outcome-value">{(winProb * 100).toFixed(0)}%</span>
 				</div>
 			</div>
 
@@ -235,10 +259,6 @@
 						<span class="outcome-label">IF WIN</span>
 						<span class="outcome-value">+{formatData(potentialPayout - currentBet)} $DATA</span>
 					</div>
-					<div class="outcome-row lose">
-						<span class="outcome-label">IF LOSE</span>
-						<span class="outcome-value">-{formatData(currentBet)} $DATA</span>
-					</div>
 				</div>
 			</div>
 		{:else if currentBet && phase && ['locked', 'revealed', 'animating'].includes(phase)}
@@ -254,50 +274,44 @@
 				</div>
 
 				{#if phase === 'locked'}
-					<div class="status-message">
-						<span class="status-icon pulse">...</span>
-						<span>Waiting for block hash...</span>
+					<div class="locked-state">
+						<!-- Animated loading bar -->
+						<div class="loading-bar">
+							<div class="loading-progress"></div>
+						</div>
+
+						<!-- Scanning status -->
+						<div class="status-message scanning">
+							<span class="scanning-text">{scanningMessage}</span>
+						</div>
+
+						<!-- Animated data stream -->
+						<div class="data-stream">
+							<span class="stream-line">0x{Math.random().toString(16).slice(2, 10)}</span>
+							<span class="stream-line">PKT:{Math.random().toString(16).slice(2, 5)}</span>
+							<span class="stream-line">[SYNC]</span>
+						</div>
+
+						<!-- Visual heartbeat -->
+						<div class="heartbeat">
+							<span class="beat"></span>
+							<span class="beat"></span>
+							<span class="beat"></span>
+						</div>
 					</div>
 				{:else if phase === 'revealed' || phase === 'animating'}
-					{#if playerResult === 'won'}
-						<div class="result-banner won">
-							<span class="result-icon">+</span>
-							<div class="result-text">
-								<span class="result-title">TARGET REACHED!</span>
-								<span class="result-detail"
-									>{targetMultiplier ? formatMultiplier(targetMultiplier) : '-'} &lt; {crashPoint
-										? formatMultiplier(crashPoint)
-										: '-'}</span
-								>
-							</div>
-						</div>
-						<div class="payout-display">
-							<span class="label">PAYOUT</span>
-							<span class="value win">{formatData(potentialPayout)} $DATA</span>
-						</div>
-					{:else if playerResult === 'lost'}
-						<div class="result-banner lost">
-							<span class="result-icon">X</span>
-							<div class="result-text">
-								<span class="result-title">CRASHED!</span>
-								<span class="result-detail"
-									>{targetMultiplier ? formatMultiplier(targetMultiplier) : '-'} &ge; {crashPoint
-										? formatMultiplier(crashPoint)
-										: '-'}</span
-								>
-							</div>
-						</div>
-						<div class="payout-display">
-							<span class="label">LOST</span>
-							<span class="value lose">-{formatData(currentBet)} $DATA</span>
-						</div>
-					{:else}
-						<!-- Still pending during animation -->
-						<div class="animation-status">
-							<span class="current-mult">{formatMultiplier(multiplier)}</span>
-							<span class="target-indicator"
-								>Target: {targetMultiplier ? formatMultiplier(targetMultiplier) : '-'}</span
-							>
+					<!-- During animation - show live status, not final result -->
+					<div class="animation-status">
+						<span class="current-mult">{formatMultiplier(multiplier)}</span>
+						<span class="target-indicator"
+							>Target: {targetMultiplier ? formatMultiplier(targetMultiplier) : '-'}</span
+						>
+					</div>
+					<!-- Show "safe" indicator when multiplier passes target (but don't spoil win/loss) -->
+					{#if targetMultiplier && multiplier >= targetMultiplier}
+						<div class="safe-indicator">
+							<span class="safe-icon">+</span>
+							<span class="safe-text">TARGET PASSED - EXIT SECURED</span>
 						</div>
 					{/if}
 				{/if}
@@ -392,11 +406,53 @@
 		letter-spacing: var(--tracking-wider);
 	}
 
+	.input-label.highlighted {
+		color: var(--color-accent);
+	}
+
 	.input-wrapper {
 		display: flex;
 		align-items: center;
 		background: var(--color-bg-void);
 		border: var(--border-width) solid var(--color-border-default);
+		transition:
+			border-color 0.3s,
+			box-shadow 0.3s;
+	}
+
+	/* Snake border animation - a highlight that sweeps around the border */
+	.input-wrapper.snake-border {
+		position: relative;
+		border: 2px solid transparent;
+		background:
+			linear-gradient(var(--color-bg-void), var(--color-bg-void)) padding-box,
+			linear-gradient(
+					90deg,
+					var(--color-bg-tertiary) 0%,
+					var(--color-accent) 25%,
+					var(--color-cyan) 50%,
+					var(--color-accent) 75%,
+					var(--color-bg-tertiary) 100%
+				)
+				border-box;
+		background-size:
+			100% 100%,
+			400% 100%;
+		animation: snake-sweep 3s ease-in-out infinite;
+	}
+
+	@keyframes snake-sweep {
+		0%,
+		100% {
+			background-position:
+				0 0,
+				100% 0;
+		}
+		50% {
+			background-position:
+				0 0,
+				0% 0;
+		}
 	}
 
 	.bet-input {
@@ -442,6 +498,50 @@
 		color: var(--color-accent);
 	}
 
+	/* Selected state - clearly shows current selection */
+	.quick-btn.selected {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		background: rgba(0, 229, 204, 0.15);
+		box-shadow: 0 0 8px rgba(0, 229, 204, 0.3);
+	}
+
+	/* Recommended button - amber/gold highlight to draw attention */
+	.quick-btn.recommended {
+		border-color: var(--color-amber);
+		color: var(--color-amber);
+		background: rgba(255, 170, 0, 0.1);
+		animation: recommended-pulse 2s ease-in-out infinite;
+	}
+
+	.quick-btn.recommended:hover {
+		border-color: var(--color-amber);
+		color: var(--color-amber);
+		background: rgba(255, 170, 0, 0.2);
+	}
+
+	/* When recommended is also selected, selected wins */
+	.quick-btn.selected.recommended {
+		animation: none;
+	}
+
+	@keyframes recommended-pulse {
+		0%,
+		100% {
+			box-shadow: 0 0 4px rgba(255, 170, 0, 0.3);
+		}
+		50% {
+			box-shadow: 0 0 12px rgba(255, 170, 0, 0.5);
+		}
+	}
+
+	/* Recommended star indicator */
+	.recommended-star {
+		margin-left: var(--space-1);
+		font-size: var(--text-xs);
+		color: var(--color-amber);
+	}
+
 	/* Outcome preview */
 	.outcome-preview {
 		display: flex;
@@ -470,14 +570,6 @@
 
 	.outcome-row.win .outcome-value {
 		color: var(--color-accent);
-	}
-
-	.outcome-row.lose .outcome-value {
-		color: var(--color-red);
-	}
-
-	.outcome-row.probability .outcome-value {
-		color: var(--color-cyan);
 	}
 
 	/* Bet confirmed indicator */
@@ -547,66 +639,68 @@
 		font-family: var(--font-mono);
 	}
 
-	.status-icon.pulse {
-		animation: pulse-text 1s ease-in-out infinite;
+	/* Scanning animation for locked phase */
+	.status-message.scanning {
+		background: var(--color-bg-tertiary);
+		border: var(--border-width) solid var(--color-border-subtle);
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
-	/* Result banner */
-	.result-banner {
+	.scanning-text {
+		color: var(--color-cyan);
+		font-size: var(--text-sm);
+		letter-spacing: var(--tracking-wide);
+		animation: text-fade 2s ease-in-out infinite;
+		text-align: center;
+	}
+
+	@keyframes text-fade {
+		0%,
+		100% {
+			opacity: 0.6;
+		}
+		50% {
+			opacity: 1;
+		}
+	}
+
+	/* Safe indicator (shown during animation when target passed) */
+	.safe-indicator {
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-3);
-		border: var(--border-width) solid;
-	}
-
-	.result-banner.won {
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
 		background: rgba(0, 229, 204, 0.1);
-		border-color: var(--color-accent);
+		border: var(--border-width) dashed var(--color-accent);
+		animation: pulse-safe 1s ease-in-out infinite;
 	}
 
-	.result-banner.lost {
-		background: rgba(255, 0, 64, 0.1);
-		border-color: var(--color-red);
-	}
-
-	.result-icon {
+	.safe-icon {
+		color: var(--color-accent);
 		font-family: var(--font-mono);
-		font-size: var(--text-2xl);
 		font-weight: var(--font-bold);
 	}
 
-	.result-banner.won .result-icon {
+	.safe-text {
 		color: var(--color-accent);
-	}
-
-	.result-banner.lost .result-icon {
-		color: var(--color-red);
-	}
-
-	.result-text {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.result-title {
-		font-size: var(--text-lg);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
 		font-weight: var(--font-bold);
-		font-family: var(--font-mono);
+		letter-spacing: var(--tracking-wider);
 	}
 
-	.result-banner.won .result-title {
-		color: var(--color-accent);
-	}
-
-	.result-banner.lost .result-title {
-		color: var(--color-red);
-	}
-
-	.result-detail {
-		font-size: var(--text-sm);
-		color: var(--color-text-secondary);
-		font-family: var(--font-mono);
+	@keyframes pulse-safe {
+		0%,
+		100% {
+			opacity: 1;
+			box-shadow: 0 0 5px rgba(0, 229, 204, 0.2);
+		}
+		50% {
+			opacity: 0.8;
+			box-shadow: 0 0 15px rgba(0, 229, 204, 0.4);
+		}
 	}
 
 	/* Payout display */
@@ -715,5 +809,123 @@
 		font-size: var(--text-sm);
 		color: var(--color-red);
 		text-align: center;
+	}
+
+	/* Locked state - scanning animation */
+	.locked-state {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		padding: var(--space-3);
+		background: var(--color-bg-tertiary);
+		border: var(--border-width) solid var(--color-border-subtle);
+	}
+
+	/* Loading bar - animated progress */
+	.loading-bar {
+		height: 4px;
+		background: var(--color-bg-void);
+		overflow: hidden;
+		position: relative;
+	}
+
+	.loading-progress {
+		position: absolute;
+		height: 100%;
+		width: 30%;
+		background: linear-gradient(
+			90deg,
+			transparent,
+			var(--color-cyan),
+			var(--color-accent),
+			var(--color-cyan),
+			transparent
+		);
+		animation: loading-sweep 1.5s ease-in-out infinite;
+	}
+
+	@keyframes loading-sweep {
+		0% {
+			left: -30%;
+		}
+		100% {
+			left: 100%;
+		}
+	}
+
+	/* Data stream - hex codes flowing */
+	.data-stream {
+		display: flex;
+		justify-content: space-around;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		opacity: 0.6;
+	}
+
+	.stream-line {
+		animation: stream-flicker 0.8s ease-in-out infinite;
+	}
+
+	.stream-line:nth-child(1) {
+		animation-delay: 0s;
+	}
+
+	.stream-line:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+
+	.stream-line:nth-child(3) {
+		animation-delay: 0.3s;
+	}
+
+	@keyframes stream-flicker {
+		0%,
+		100% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 1;
+		}
+	}
+
+	/* Heartbeat - pulsing dots */
+	.heartbeat {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-2) 0;
+	}
+
+	.beat {
+		width: 8px;
+		height: 8px;
+		background: var(--color-cyan);
+		border-radius: 0;
+		animation: heartbeat-pulse 1.2s ease-in-out infinite;
+	}
+
+	.beat:nth-child(1) {
+		animation-delay: 0s;
+	}
+
+	.beat:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+
+	.beat:nth-child(3) {
+		animation-delay: 0.4s;
+	}
+
+	@keyframes heartbeat-pulse {
+		0%,
+		100% {
+			opacity: 0.3;
+			transform: scale(0.8);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1.2);
+		}
 	}
 </style>

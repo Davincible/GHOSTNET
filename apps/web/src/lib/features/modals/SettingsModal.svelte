@@ -43,25 +43,17 @@
 		<!-- Audio Section -->
 		<div class="settings-section">
 			<h3 class="section-title">AUDIO</h3>
-			
+
 			<div class="setting-row">
-				<label class="setting-label" for="audio-enabled">
-					Sound Effects
-				</label>
+				<label class="setting-label" for="audio-enabled"> Sound Effects </label>
 				<label class="toggle">
-					<input
-						id="audio-enabled"
-						type="checkbox"
-						bind:checked={settings.audioEnabled}
-					/>
+					<input id="audio-enabled" type="checkbox" bind:checked={settings.audioEnabled} />
 					<span class="toggle-slider"></span>
 				</label>
 			</div>
 
 			<div class="setting-row" class:disabled={!settings.audioEnabled}>
-				<label class="setting-label" for="audio-volume">
-					Volume
-				</label>
+				<label class="setting-label" for="audio-volume"> Volume </label>
 				<div class="volume-control">
 					<input
 						id="audio-volume"
@@ -80,18 +72,14 @@
 		<!-- Visual Section -->
 		<div class="settings-section">
 			<h3 class="section-title">VISUAL EFFECTS</h3>
-			
+
 			<div class="setting-row">
 				<label class="setting-label" for="effects-enabled">
 					Screen Flashes
 					<span class="setting-hint">Flash on deaths, survivals, etc.</span>
 				</label>
 				<label class="toggle">
-					<input
-						id="effects-enabled"
-						type="checkbox"
-						bind:checked={settings.effectsEnabled}
-					/>
+					<input id="effects-enabled" type="checkbox" bind:checked={settings.effectsEnabled} />
 					<span class="toggle-slider"></span>
 				</label>
 			</div>
@@ -102,11 +90,7 @@
 					<span class="setting-hint">CRT monitor effect</span>
 				</label>
 				<label class="toggle">
-					<input
-						id="scanlines-enabled"
-						type="checkbox"
-						bind:checked={settings.scanlinesEnabled}
-					/>
+					<input id="scanlines-enabled" type="checkbox" bind:checked={settings.scanlinesEnabled} />
 					<span class="toggle-slider"></span>
 				</label>
 			</div>
@@ -117,11 +101,7 @@
 					<span class="setting-hint">Subtle CRT flicker (may affect motion-sensitive users)</span>
 				</label>
 				<label class="toggle">
-					<input
-						id="flicker-enabled"
-						type="checkbox"
-						bind:checked={settings.flickerEnabled}
-					/>
+					<input id="flicker-enabled" type="checkbox" bind:checked={settings.flickerEnabled} />
 					<span class="toggle-slider"></span>
 				</label>
 			</div>
@@ -129,15 +109,11 @@
 
 		<!-- Actions -->
 		<div class="settings-actions">
-			<Button variant="ghost" size="sm" onclick={handleReset}>
-				Reset to Defaults
-			</Button>
+			<Button variant="ghost" size="sm" onclick={handleReset}>Reset to Defaults</Button>
 		</div>
 
 		<Row justify="end">
-			<Button variant="primary" onclick={onclose}>
-				Done
-			</Button>
+			<Button variant="primary" onclick={onclose}>Done</Button>
 		</Row>
 	</Stack>
 </Modal>

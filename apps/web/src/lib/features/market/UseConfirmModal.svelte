@@ -18,13 +18,7 @@
 		onConfirm?: (consumableId: string) => void;
 	}
 
-	let {
-		open,
-		owned,
-		loading = false,
-		onClose,
-		onConfirm
-	}: Props = $props();
+	let { open, owned, loading = false, onClose, onConfirm }: Props = $props();
 
 	const consumable = $derived(owned ? getConsumable(owned.consumableId) : null);
 
@@ -103,15 +97,8 @@
 	{/if}
 
 	{#snippet footer()}
-		<Button variant="ghost" onclick={onClose} disabled={loading}>
-			CANCEL
-		</Button>
-		<Button
-			variant="primary"
-			onclick={handleConfirm}
-			disabled={loading || !consumable}
-			{loading}
-		>
+		<Button variant="ghost" onclick={onClose} disabled={loading}>CANCEL</Button>
+		<Button variant="primary" onclick={handleConfirm} disabled={loading || !consumable} {loading}>
 			{loading ? 'USING...' : 'USE ITEM'}
 		</Button>
 	{/snippet}

@@ -24,7 +24,7 @@
 		height = 350,
 		operators = [],
 		currentUserLevel = 'VAULT',
-		onScanPulse
+		onScanPulse,
 	}: Props = $props();
 
 	let container: HTMLDivElement;
@@ -34,7 +34,10 @@
 	let renderer: THREE.WebGLRenderer;
 	let core: THREE.Mesh;
 	let orbitRings: THREE.Line[] = [];
-	let satellites: Map<string, { mesh: THREE.Mesh; level: SecurityLevel; angle: number; speed: number }> = new Map();
+	let satellites: Map<
+		string,
+		{ mesh: THREE.Mesh; level: SecurityLevel; angle: number; speed: number }
+	> = new Map();
 	let scanPulse: THREE.Mesh | null = null;
 	let scanPulseScale = 0;
 	let isScanning = false;
@@ -51,15 +54,18 @@
 		blackIce: 0xff3366,
 		ring: 0x252532,
 		particle: 0x007a6b,
-		traced: 0xff3366
+		traced: 0xff3366,
 	};
 
-	const LEVEL_CONFIG: Record<SecurityLevel, { radius: number; speed: number; color: number; tilt: number }> = {
+	const LEVEL_CONFIG: Record<
+		SecurityLevel,
+		{ radius: number; speed: number; color: number; tilt: number }
+	> = {
 		VAULT: { radius: 1.0, speed: 0.3, color: COLORS.vault, tilt: 0 },
 		MAINFRAME: { radius: 1.4, speed: 0.4, color: COLORS.mainframe, tilt: 0.1 },
 		SUBNET: { radius: 1.8, speed: 0.55, color: COLORS.subnet, tilt: 0.15 },
 		DARKNET: { radius: 2.2, speed: 0.75, color: COLORS.darknet, tilt: 0.2 },
-		BLACK_ICE: { radius: 2.6, speed: 1.0, color: COLORS.blackIce, tilt: 0.25 }
+		BLACK_ICE: { radius: 2.6, speed: 1.0, color: COLORS.blackIce, tilt: 0.25 },
 	};
 
 	onMount(() => {
@@ -101,7 +107,7 @@
 			color: COLORS.core,
 			transparent: true,
 			opacity: 0.8,
-			wireframe: true
+			wireframe: true,
 		});
 		core = new THREE.Mesh(coreGeometry, coreMaterial);
 		scene.add(core);
@@ -111,7 +117,7 @@
 		const glowMaterial = new THREE.MeshBasicMaterial({
 			color: COLORS.core,
 			transparent: true,
-			opacity: 0.15
+			opacity: 0.15,
 		});
 		const glow = new THREE.Mesh(glowGeometry, glowMaterial);
 		scene.add(glow);
@@ -121,7 +127,7 @@
 		const innerMaterial = new THREE.MeshBasicMaterial({
 			color: COLORS.corePulse,
 			transparent: true,
-			opacity: 0.6
+			opacity: 0.6,
 		});
 		const inner = new THREE.Mesh(innerGeometry, innerMaterial);
 		scene.add(inner);
@@ -137,18 +143,16 @@
 
 			for (let i = 0; i <= segments; i++) {
 				const theta = (i / segments) * Math.PI * 2;
-				points.push(new THREE.Vector3(
-					config.radius * Math.cos(theta),
-					0,
-					config.radius * Math.sin(theta)
-				));
+				points.push(
+					new THREE.Vector3(config.radius * Math.cos(theta), 0, config.radius * Math.sin(theta))
+				);
 			}
 
 			const geometry = new THREE.BufferGeometry().setFromPoints(points);
 			const material = new THREE.LineBasicMaterial({
 				color: COLORS.ring,
 				transparent: true,
-				opacity: 0.4
+				opacity: 0.4,
 			});
 
 			const ring = new THREE.Line(geometry, material);
@@ -160,7 +164,7 @@
 			const glowMaterial = new THREE.LineBasicMaterial({
 				color: config.color,
 				transparent: true,
-				opacity: 0.1
+				opacity: 0.1,
 			});
 			const glowRing = new THREE.Line(geometry.clone(), glowMaterial);
 			glowRing.rotation.x = config.tilt;
@@ -200,7 +204,7 @@
 			vertexColors: true,
 			transparent: true,
 			opacity: 0.6,
-			blending: THREE.AdditiveBlending
+			blending: THREE.AdditiveBlending,
 		});
 
 		particles = new THREE.Points(geometry, material);
@@ -225,7 +229,7 @@
 				id: `op-${i}`,
 				level: levels[Math.floor(Math.random() * levels.length)],
 				stakedAmount: Math.random() * 10000,
-				isCurrentUser: i === 0
+				isCurrentUser: i === 0,
 			});
 		}
 
@@ -234,10 +238,10 @@
 
 	function createSatellite(operator: Operator, index: number) {
 		const config = LEVEL_CONFIG[operator.level];
-		
+
 		// Satellite size based on staked amount
 		const size = 0.03 + (operator.stakedAmount / 10000) * 0.04;
-		
+
 		const geometry = operator.isCurrentUser
 			? new THREE.OctahedronGeometry(size * 1.5, 0)
 			: new THREE.SphereGeometry(size, 8, 8);
@@ -245,14 +249,14 @@
 		const material = new THREE.MeshBasicMaterial({
 			color: operator.isCurrentUser ? 0xffffff : config.color,
 			transparent: true,
-			opacity: operator.isCurrentUser ? 1 : 0.8
+			opacity: operator.isCurrentUser ? 1 : 0.8,
 		});
 
 		const satellite = new THREE.Mesh(geometry, material);
-		
+
 		// Starting angle distributed around the orbit
 		const angle = (index / 30) * Math.PI * 2 + Math.random() * 0.5;
-		
+
 		// Position on orbit
 		satellite.position.x = config.radius * Math.cos(angle);
 		satellite.position.z = config.radius * Math.sin(angle);
@@ -266,7 +270,7 @@
 			const glowMaterial = new THREE.MeshBasicMaterial({
 				color: COLORS.core,
 				transparent: true,
-				opacity: 0.3
+				opacity: 0.3,
 			});
 			const glow = new THREE.Mesh(glowGeometry, glowMaterial);
 			satellite.add(glow);
@@ -276,7 +280,7 @@
 			mesh: satellite,
 			level: operator.level,
 			angle,
-			speed: config.speed * (0.8 + Math.random() * 0.4)
+			speed: config.speed * (0.8 + Math.random() * 0.4),
 		});
 	}
 
@@ -291,7 +295,7 @@
 			color: COLORS.core,
 			transparent: true,
 			opacity: 0.8,
-			side: THREE.DoubleSide
+			side: THREE.DoubleSide,
 		});
 
 		scanPulse = new THREE.Mesh(geometry, material);
@@ -332,7 +336,9 @@
 				// Flash the satellite
 				const mat = sat.mesh.material as THREE.MeshBasicMaterial;
 				mat.opacity = 1;
-				setTimeout(() => { mat.opacity = 0.8; }, 100);
+				setTimeout(() => {
+					mat.opacity = 0.8;
+				}, 100);
 			}
 		});
 	}
@@ -411,8 +417,12 @@
 	});
 </script>
 
-<div class="orbital-tracker" bind:this={container} style:width="{width}px" style:height="{height}px">
-</div>
+<div
+	class="orbital-tracker"
+	bind:this={container}
+	style:width="{width}px"
+	style:height="{height}px"
+></div>
 
 <style>
 	.orbital-tracker {

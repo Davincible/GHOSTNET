@@ -19,9 +19,12 @@
 
 	let statusBadge = $derived.by(() => {
 		switch (status) {
-			case 'healthy': return { variant: 'success' as const, text: 'NOMINAL', glow: true };
-			case 'warning': return { variant: 'warning' as const, text: 'ELEVATED', glow: false };
-			case 'critical': return { variant: 'danger' as const, text: 'CRITICAL', glow: true };
+			case 'healthy':
+				return { variant: 'success' as const, text: 'NOMINAL', glow: true };
+			case 'warning':
+				return { variant: 'warning' as const, text: 'ELEVATED', glow: false };
+			case 'critical':
+				return { variant: 'danger' as const, text: 'CRITICAL', glow: true };
 		}
 	});
 
@@ -55,10 +58,7 @@
 
 		<div class="viz-container">
 			{#if visualWidth > 100}
-				<HeartbeatMonitor 
-					width={visualWidth} 
-					height={visualHeight}
-				/>
+				<HeartbeatMonitor width={visualWidth} height={visualHeight} />
 			{/if}
 		</div>
 
@@ -150,10 +150,18 @@
 		border-radius: 50%;
 	}
 
-	.metric-dot.tvl { background: var(--color-accent, #00e5cc); }
-	.metric-dot.operators { background: var(--color-profit, #00ff88); }
-	.metric-dot.trace { background: var(--color-red, #ff3366); }
-	.metric-dot.yield { background: var(--color-amber, #ffb000); }
+	.metric-dot.tvl {
+		background: var(--color-accent, #00e5cc);
+	}
+	.metric-dot.operators {
+		background: var(--color-profit, #00ff88);
+	}
+	.metric-dot.trace {
+		background: var(--color-red, #ff3366);
+	}
+	.metric-dot.yield {
+		background: var(--color-amber, #ffb000);
+	}
 
 	.footer-text {
 		font-size: var(--text-xs);

@@ -195,7 +195,7 @@ export function simulateUseConsumable(
 		return {
 			inventory,
 			modifier: null,
-			result: { success: false, error: 'You don\'t own this item' },
+			result: { success: false, error: "You don't own this item" },
 		};
 	}
 
@@ -298,5 +298,3 @@ function createModifierFromEffect(
 			return null;
 	}
 }
-
-

@@ -24,33 +24,47 @@
 		borderColor = 'default',
 		glow = false,
 		padding = 3,
-		children
+		children,
 	}: Props = $props();
 
 	// Box drawing characters based on variant
 	const chars = {
 		single: {
-			tl: '┌', tr: '┐', bl: '└', br: '┘',
-			h: '─', v: '│', tDown: '┬', tUp: '┴'
+			tl: '┌',
+			tr: '┐',
+			bl: '└',
+			br: '┘',
+			h: '─',
+			v: '│',
+			tDown: '┬',
+			tUp: '┴',
 		},
 		double: {
-			tl: '╔', tr: '╗', bl: '╚', br: '╝',
-			h: '═', v: '║', tDown: '╦', tUp: '╩'
+			tl: '╔',
+			tr: '╗',
+			bl: '╚',
+			br: '╝',
+			h: '═',
+			v: '║',
+			tDown: '╦',
+			tUp: '╩',
 		},
 		rounded: {
-			tl: '╭', tr: '╮', bl: '╰', br: '╯',
-			h: '─', v: '│', tDown: '┬', tUp: '┴'
-		}
+			tl: '╭',
+			tr: '╮',
+			bl: '╰',
+			br: '╯',
+			h: '─',
+			v: '│',
+			tDown: '┬',
+			tUp: '┴',
+		},
 	};
 
 	let c = $derived(chars[variant]);
 </script>
 
-<div
-	class="box box-border-{borderColor}"
-	class:box-glow={glow}
-	style:--box-padding={padding}
->
+<div class="box box-border-{borderColor}" class:box-glow={glow} style:--box-padding={padding}>
 	<!-- Top border -->
 	<div class="box-border box-border-top">
 		<span class="box-corner">{c.tl}</span>
@@ -138,12 +152,7 @@
 		flex-grow: 1;
 		overflow: hidden;
 		/* Use repeating background for horizontal line */
-		background: linear-gradient(
-			to right,
-			currentColor 0,
-			currentColor 0.6em,
-			transparent 0.6em
-		);
+		background: linear-gradient(to right, currentColor 0, currentColor 0.6em, transparent 0.6em);
 		background-size: 0.6em 1px;
 		background-repeat: repeat-x;
 		background-position: 0 50%;

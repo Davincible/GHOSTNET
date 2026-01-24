@@ -32,7 +32,7 @@ export {
 	calculateFinalMultiplier,
 	calculateTotalLoot,
 	RUN_CONFIG,
-	MULTIPLIER_DURATION
+	MULTIPLIER_DURATION,
 } from './generators';
 
 // UI Components

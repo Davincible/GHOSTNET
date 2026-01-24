@@ -11,7 +11,7 @@
 	import {
 		UserRejectedRequestError,
 		ContractFunctionExecutionError,
-		InsufficientFundsError
+		InsufficientFundsError,
 	} from 'viem';
 	import { wallet } from '$lib/web3/wallet.svelte';
 	import { defaultChain } from '$lib/web3/chains';
@@ -73,9 +73,7 @@
 		}
 	});
 
-	let amountValid = $derived(
-		parsedAmount >= levelConfig.minStake && parsedAmount <= userBalance
-	);
+	let amountValid = $derived(parsedAmount >= levelConfig.minStake && parsedAmount <= userBalance);
 
 	let amountError = $derived.by(() => {
 		if (!amountInput) return null;
@@ -134,14 +132,14 @@
 			// The provider.jackIn handles approval internally, but we should inform the user
 			// We'll update the state as we go through the flow
 			const hash = await provider.jackIn(selectedLevel, parsedAmount);
-			
+
 			// Store hash for display (provider returns string, cast to hex type for display)
 			txHash = hash as `0x${string}`;
 			txState = 'confirming';
-			
+
 			// Wait a moment for the UI to show the hash before closing
-			await new Promise(resolve => setTimeout(resolve, 1500));
-			
+			await new Promise((resolve) => setTimeout(resolve, 1500));
+
 			txState = 'success';
 			toast.success('Successfully jacked in');
 			onclose();
@@ -191,28 +189,28 @@
 		VAULT: {
 			risk: 'NONE',
 			reward: '0% APY',
-			description: 'Safe storage. No risk, no reward.'
+			description: 'Safe storage. No risk, no reward.',
 		},
 		MAINFRAME: {
 			risk: 'MINIMAL',
 			reward: '~5% APY',
-			description: 'Corporate systems. Low risk, steady yield.'
+			description: 'Corporate systems. Low risk, steady yield.',
 		},
 		SUBNET: {
 			risk: 'MODERATE',
 			reward: '~25% APY',
-			description: 'Underground networks. Balanced risk/reward.'
+			description: 'Underground networks. Balanced risk/reward.',
 		},
 		DARKNET: {
 			risk: 'HIGH',
 			reward: '~80% APY',
-			description: 'Illegal channels. High risk, high reward.'
+			description: 'Illegal channels. High risk, high reward.',
 		},
 		BLACK_ICE: {
 			risk: 'EXTREME',
 			reward: '~200% APY',
-			description: 'Military-grade ICE. Maximum risk, maximum reward.'
-		}
+			description: 'Military-grade ICE. Maximum risk, maximum reward.',
+		},
 	};
 </script>
 
@@ -221,7 +219,8 @@
 		<!-- Level Selection -->
 		<Stack gap={3}>
 			<p class="step-description">
-				Select your security clearance level. Higher levels offer better yields but greater risk of being traced.
+				Select your security clearance level. Higher levels offer better yields but greater risk of
+				being traced.
 			</p>
 
 			<div class="level-grid">
@@ -237,14 +236,22 @@
 					>
 						<Row justify="between" align="center">
 							<LevelBadge {level} />
-							<Badge variant={level === 'BLACK_ICE' ? 'danger' : level === 'DARKNET' ? 'warning' : 'default'}>
+							<Badge
+								variant={level === 'BLACK_ICE'
+									? 'danger'
+									: level === 'DARKNET'
+										? 'warning'
+										: 'default'}
+							>
 								{desc.risk}
 							</Badge>
 						</Row>
 						<div class="level-details">
 							<span class="level-reward">{desc.reward}</span>
 							<span class="level-death">
-								{config.baseDeathRate > 0 ? `${(config.baseDeathRate * 100).toFixed(0)}% death rate` : 'No scans'}
+								{config.baseDeathRate > 0
+									? `${(config.baseDeathRate * 100).toFixed(0)}% death rate`
+									: 'No scans'}
 							</span>
 						</div>
 						<p class="level-desc">{desc.description}</p>
@@ -257,12 +264,9 @@
 
 			<Row justify="end" gap={2}>
 				<Button variant="ghost" onclick={onclose}>Cancel</Button>
-				<Button variant="primary" onclick={proceedToAmount}>
-					Continue
-				</Button>
+				<Button variant="primary" onclick={proceedToAmount}>Continue</Button>
 			</Row>
 		</Stack>
-
 	{:else if step === 'amount'}
 		<!-- Amount Input -->
 		<Stack gap={3}>
@@ -278,14 +282,14 @@
 			<div class="selected-level-display">
 				<LevelBadge level={selectedLevel} />
 				<span class="level-info">
-					{levelDescriptions[selectedLevel].reward} · {(levelConfig.baseDeathRate * 100).toFixed(0)}% death rate
+					{levelDescriptions[selectedLevel].reward} · {(levelConfig.baseDeathRate * 100).toFixed(
+						0
+					)}% death rate
 				</span>
 			</div>
 
 			<div class="amount-input-group">
-				<label class="amount-label" for="amount-input">
-					Amount to stake
-				</label>
+				<label class="amount-label" for="amount-input"> Amount to stake </label>
 				<div class="input-wrapper">
 					<input
 						id="amount-input"
@@ -316,7 +320,6 @@
 				</Button>
 			</Row>
 		</Stack>
-
 	{:else if step === 'confirm'}
 		<!-- Confirmation -->
 		<Stack gap={3}>
@@ -346,8 +349,8 @@
 					<Row justify="between">
 						<span class="confirm-label">Scan Interval</span>
 						<span class="confirm-value">
-							{levelConfig.scanIntervalHours === Infinity 
-								? 'Never' 
+							{levelConfig.scanIntervalHours === Infinity
+								? 'Never'
 								: `Every ${levelConfig.scanIntervalHours}h`}
 						</span>
 					</Row>
@@ -356,7 +359,11 @@
 
 			<!-- Transaction Status Display -->
 			{#if txState !== 'idle'}
-				<Box variant="single" borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'} padding={3}>
+				<Box
+					variant="single"
+					borderColor={txState === 'error' ? 'red' : txState === 'success' ? 'bright' : 'cyan'}
+					padding={3}
+				>
 					<Stack gap={2}>
 						{#if txState === 'approving'}
 							<Row align="center" gap={2}>
@@ -377,7 +384,12 @@
 								<span class="tx-hash-label">TX:</span>
 								<span class="tx-hash-value">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
 								{#if explorerUrl}
-									<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-explorer-link">
+									<a
+										href={explorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="tx-explorer-link"
+									>
 										View on Explorer
 									</a>
 								{/if}
@@ -394,16 +406,16 @@
 				<div class="warning-text">
 					<Badge variant="warning">WARNING</Badge>
 					<p>
-						Once jacked in, you may lose your stake if traced during a scan. 
-						Make sure you understand the risks.
+						Once jacked in, you may lose your stake if traced during a scan. Make sure you
+						understand the risks.
 					</p>
 				</div>
 			{/if}
 
 			<Row justify="end" gap={2}>
 				<Button variant="ghost" onclick={goBack} disabled={isSubmitting}>Back</Button>
-				<Button 
-					variant="primary" 
+				<Button
+					variant="primary"
 					onclick={handleJackIn}
 					loading={isSubmitting}
 					disabled={isSubmitting}

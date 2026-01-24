@@ -4,11 +4,11 @@ This guide covers connecting your SvelteKit frontend to Solidity smart contracts
 
 ## Overview
 
-| Library | Purpose |
-|---------|---------|
-| **viem** | Low-level contract interactions, transaction building |
-| **wagmi** | Wallet connections, React hooks (adaptable to Svelte) |
-| **@wagmi/core** | Framework-agnostic wagmi core |
+| Library         | Purpose                                               |
+| --------------- | ----------------------------------------------------- |
+| **viem**        | Low-level contract interactions, transaction building |
+| **wagmi**       | Wallet connections, React hooks (adaptable to Svelte) |
+| **@wagmi/core** | Framework-agnostic wagmi core                         |
 
 ## Quick Start
 
@@ -41,39 +41,39 @@ import { injected, walletConnect } from '@wagmi/connectors';
 
 // Use local Anvil for development
 const localAnvil = {
-  ...foundry,
-  id: 31337,
-  rpcUrls: {
-    default: { http: ['http://localhost:8545'] },
-  },
+	...foundry,
+	id: 31337,
+	rpcUrls: {
+		default: { http: ['http://localhost:8545'] },
+	},
 };
 
 export const config = createConfig({
-  chains: [localAnvil, sepolia, mainnet],
-  connectors: [
-    injected(),
-    walletConnect({
-      projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
-    }),
-  ],
-  transports: {
-    [localAnvil.id]: http(),
-    [sepolia.id]: http(),
-    [mainnet.id]: http(),
-  },
+	chains: [localAnvil, sepolia, mainnet],
+	connectors: [
+		injected(),
+		walletConnect({
+			projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
+		}),
+	],
+	transports: {
+		[localAnvil.id]: http(),
+		[sepolia.id]: http(),
+		[mainnet.id]: http(),
+	},
 });
 
 // Contract addresses per chain
 export const CONTRACT_ADDRESSES = {
-  [localAnvil.id]: {
-    MyContract: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as const,
-  },
-  [sepolia.id]: {
-    MyContract: '0x...' as const,
-  },
-  [mainnet.id]: {
-    MyContract: '0x...' as const,
-  },
+	[localAnvil.id]: {
+		MyContract: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as const,
+	},
+	[sepolia.id]: {
+		MyContract: '0x...' as const,
+	},
+	[mainnet.id]: {
+		MyContract: '0x...' as const,
+	},
 } as const;
 ```
 
@@ -84,60 +84,70 @@ export const CONTRACT_ADDRESSES = {
 Create a runes-based wallet store in `apps/web/src/lib/stores/wallet.svelte.ts`:
 
 ```typescript
-import { 
-  connect, 
-  disconnect, 
-  getAccount, 
-  watchAccount,
-  type GetAccountReturnType 
+import {
+	connect,
+	disconnect,
+	getAccount,
+	watchAccount,
+	type GetAccountReturnType,
 } from '@wagmi/core';
 import { injected } from '@wagmi/connectors';
 import { config } from '$lib/web3/config';
 
 export function createWalletStore() {
-  let account = $state<GetAccountReturnType>(getAccount(config));
-  let isConnecting = $state(false);
-  let error = $state<Error | null>(null);
+	let account = $state<GetAccountReturnType>(getAccount(config));
+	let isConnecting = $state(false);
+	let error = $state<Error | null>(null);
 
-  // Watch for account changes
-  $effect(() => {
-    const unwatch = watchAccount(config, {
-      onChange: (newAccount) => {
-        account = newAccount;
-      },
-    });
+	// Watch for account changes
+	$effect(() => {
+		const unwatch = watchAccount(config, {
+			onChange: (newAccount) => {
+				account = newAccount;
+			},
+		});
 
-    return () => unwatch();
-  });
+		return () => unwatch();
+	});
 
-  async function connectWallet() {
-    isConnecting = true;
-    error = null;
-    try {
-      await connect(config, { connector: injected() });
-    } catch (e) {
-      error = e instanceof Error ? e : new Error('Failed to connect');
-    } finally {
-      isConnecting = false;
-    }
-  }
+	async function connectWallet() {
+		isConnecting = true;
+		error = null;
+		try {
+			await connect(config, { connector: injected() });
+		} catch (e) {
+			error = e instanceof Error ? e : new Error('Failed to connect');
+		} finally {
+			isConnecting = false;
+		}
+	}
 
-  async function disconnectWallet() {
-    await disconnect(config);
-  }
+	async function disconnectWallet() {
+		await disconnect(config);
+	}
 
-  return {
-    // State (readonly getters)
-    get address() { return account.address; },
-    get isConnected() { return account.isConnected; },
-    get isConnecting() { return isConnecting; },
-    get chain() { return account.chain; },
-    get error() { return error; },
-    
-    // Actions
-    connect: connectWallet,
-    disconnect: disconnectWallet,
-  };
+	return {
+		// State (readonly getters)
+		get address() {
+			return account.address;
+		},
+		get isConnected() {
+			return account.isConnected;
+		},
+		get isConnecting() {
+			return isConnecting;
+		},
+		get chain() {
+			return account.chain;
+		},
+		get error() {
+			return error;
+		},
+
+		// Actions
+		connect: connectWallet,
+		disconnect: disconnectWallet,
+	};
 }
 
 // Singleton instance
@@ -148,21 +158,21 @@ export const wallet = createWalletStore();
 
 ```svelte
 <script lang="ts">
-  import { wallet } from '$lib/stores/wallet.svelte';
+	import { wallet } from '$lib/stores/wallet.svelte';
 </script>
 
 {#if wallet.isConnected}
-  <p>Connected: {wallet.address}</p>
-  <p>Chain: {wallet.chain?.name}</p>
-  <button onclick={wallet.disconnect}>Disconnect</button>
+	<p>Connected: {wallet.address}</p>
+	<p>Chain: {wallet.chain?.name}</p>
+	<button onclick={wallet.disconnect}>Disconnect</button>
 {:else}
-  <button onclick={wallet.connect} disabled={wallet.isConnecting}>
-    {wallet.isConnecting ? 'Connecting...' : 'Connect Wallet'}
-  </button>
+	<button onclick={wallet.connect} disabled={wallet.isConnecting}>
+		{wallet.isConnecting ? 'Connecting...' : 'Connect Wallet'}
+	</button>
 {/if}
 
 {#if wallet.error}
-  <p class="error">{wallet.error.message}</p>
+	<p class="error">{wallet.error.message}</p>
 {/if}
 ```
 
@@ -181,50 +191,56 @@ import MyContractAbi from '$lib/contracts/abis/MyContract.json';
 import { wallet } from './wallet.svelte';
 
 export function createContractStore() {
-  let balance = $state<bigint>(0n);
-  let isLoading = $state(false);
-  let error = $state<Error | null>(null);
+	let balance = $state<bigint>(0n);
+	let isLoading = $state(false);
+	let error = $state<Error | null>(null);
 
-  // Derive contract address from current chain
-  let contractAddress = $derived(
-    wallet.chain 
-      ? CONTRACT_ADDRESSES[wallet.chain.id]?.MyContract 
-      : undefined
-  );
+	// Derive contract address from current chain
+	let contractAddress = $derived(
+		wallet.chain ? CONTRACT_ADDRESSES[wallet.chain.id]?.MyContract : undefined
+	);
 
-  async function fetchBalance(userAddress: `0x${string}`) {
-    if (!contractAddress) return;
-    
-    isLoading = true;
-    error = null;
-    try {
-      balance = await readContract(config, {
-        address: contractAddress,
-        abi: MyContractAbi,
-        functionName: 'balances',
-        args: [userAddress],
-      });
-    } catch (e) {
-      error = e instanceof Error ? e : new Error('Failed to fetch balance');
-    } finally {
-      isLoading = false;
-    }
-  }
+	async function fetchBalance(userAddress: `0x${string}`) {
+		if (!contractAddress) return;
 
-  // Auto-fetch when wallet connects
-  $effect(() => {
-    if (wallet.isConnected && wallet.address) {
-      fetchBalance(wallet.address);
-    }
-  });
+		isLoading = true;
+		error = null;
+		try {
+			balance = await readContract(config, {
+				address: contractAddress,
+				abi: MyContractAbi,
+				functionName: 'balances',
+				args: [userAddress],
+			});
+		} catch (e) {
+			error = e instanceof Error ? e : new Error('Failed to fetch balance');
+		} finally {
+			isLoading = false;
+		}
+	}
 
-  return {
-    get balance() { return balance; },
-    get isLoading() { return isLoading; },
-    get error() { return error; },
-    get contractAddress() { return contractAddress; },
-    fetchBalance,
-  };
+	// Auto-fetch when wallet connects
+	$effect(() => {
+		if (wallet.isConnected && wallet.address) {
+			fetchBalance(wallet.address);
+		}
+	});
+
+	return {
+		get balance() {
+			return balance;
+		},
+		get isLoading() {
+			return isLoading;
+		},
+		get error() {
+			return error;
+		},
+		get contractAddress() {
+			return contractAddress;
+		},
+		fetchBalance,
+	};
 }
 ```
 
@@ -235,43 +251,48 @@ import { writeContract, waitForTransactionReceipt } from '@wagmi/core';
 import { parseEther } from 'viem';
 
 export function createDepositAction() {
-  let isPending = $state(false);
-  let txHash = $state<`0x${string}` | null>(null);
-  let error = $state<Error | null>(null);
+	let isPending = $state(false);
+	let txHash = $state<`0x${string}` | null>(null);
+	let error = $state<Error | null>(null);
 
-  async function deposit(amount: string) {
-    if (!contractAddress) throw new Error('Contract not available');
-    
-    isPending = true;
-    error = null;
-    txHash = null;
+	async function deposit(amount: string) {
+		if (!contractAddress) throw new Error('Contract not available');
 
-    try {
-      const hash = await writeContract(config, {
-        address: contractAddress,
-        abi: MyContractAbi,
-        functionName: 'deposit',
-        value: parseEther(amount),
-      });
-      
-      txHash = hash;
+		isPending = true;
+		error = null;
+		txHash = null;
 
-      // Wait for confirmation
-      await waitForTransactionReceipt(config, { hash });
-      
-    } catch (e) {
-      error = e instanceof Error ? e : new Error('Transaction failed');
-    } finally {
-      isPending = false;
-    }
-  }
+		try {
+			const hash = await writeContract(config, {
+				address: contractAddress,
+				abi: MyContractAbi,
+				functionName: 'deposit',
+				value: parseEther(amount),
+			});
 
-  return {
-    get isPending() { return isPending; },
-    get txHash() { return txHash; },
-    get error() { return error; },
-    deposit,
-  };
+			txHash = hash;
+
+			// Wait for confirmation
+			await waitForTransactionReceipt(config, { hash });
+		} catch (e) {
+			error = e instanceof Error ? e : new Error('Transaction failed');
+		} finally {
+			isPending = false;
+		}
+	}
+
+	return {
+		get isPending() {
+			return isPending;
+		},
+		get txHash() {
+			return txHash;
+		},
+		get error() {
+			return error;
+		},
+		deposit,
+	};
 }
 ```
 
@@ -279,41 +300,41 @@ export function createDepositAction() {
 
 ```svelte
 <script lang="ts">
-  import { wallet } from '$lib/stores/wallet.svelte';
-  import { createContractStore } from '$lib/stores/contract.svelte';
-  import { createDepositAction } from '$lib/stores/deposit.svelte';
-  import { formatEther } from 'viem';
+	import { wallet } from '$lib/stores/wallet.svelte';
+	import { createContractStore } from '$lib/stores/contract.svelte';
+	import { createDepositAction } from '$lib/stores/deposit.svelte';
+	import { formatEther } from 'viem';
 
-  const contract = createContractStore();
-  const depositAction = createDepositAction();
-  
-  let amount = $state('0.1');
+	const contract = createContractStore();
+	const depositAction = createDepositAction();
+
+	let amount = $state('0.1');
 </script>
 
 <div>
-  <h2>Your Balance</h2>
-  {#if contract.isLoading}
-    <p>Loading...</p>
-  {:else}
-    <p>{formatEther(contract.balance)} ETH</p>
-  {/if}
+	<h2>Your Balance</h2>
+	{#if contract.isLoading}
+		<p>Loading...</p>
+	{:else}
+		<p>{formatEther(contract.balance)} ETH</p>
+	{/if}
 
-  <h2>Deposit</h2>
-  <input type="text" bind:value={amount} placeholder="Amount in ETH" />
-  <button 
-    onclick={() => depositAction.deposit(amount)}
-    disabled={depositAction.isPending || !wallet.isConnected}
-  >
-    {depositAction.isPending ? 'Depositing...' : 'Deposit'}
-  </button>
+	<h2>Deposit</h2>
+	<input type="text" bind:value={amount} placeholder="Amount in ETH" />
+	<button
+		onclick={() => depositAction.deposit(amount)}
+		disabled={depositAction.isPending || !wallet.isConnected}
+	>
+		{depositAction.isPending ? 'Depositing...' : 'Deposit'}
+	</button>
 
-  {#if depositAction.txHash}
-    <p>TX: {depositAction.txHash}</p>
-  {/if}
+	{#if depositAction.txHash}
+		<p>TX: {depositAction.txHash}</p>
+	{/if}
 
-  {#if depositAction.error}
-    <p class="error">{depositAction.error.message}</p>
-  {/if}
+	{#if depositAction.error}
+		<p class="error">{depositAction.error.message}</p>
+	{/if}
 </div>
 ```
 
@@ -327,21 +348,21 @@ Watch for contract events:
 import { watchContractEvent } from '@wagmi/core';
 
 $effect(() => {
-  if (!contractAddress) return;
-  
-  const unwatch = watchContractEvent(config, {
-    address: contractAddress,
-    abi: MyContractAbi,
-    eventName: 'Deposited',
-    onLogs: (logs) => {
-      for (const log of logs) {
-        console.log('Deposit:', log.args.user, log.args.amount);
-        // Update local state
-      }
-    },
-  });
+	if (!contractAddress) return;
 
-  return () => unwatch();
+	const unwatch = watchContractEvent(config, {
+		address: contractAddress,
+		abi: MyContractAbi,
+		eventName: 'Deposited',
+		onLogs: (logs) => {
+			for (const log of logs) {
+				console.log('Deposit:', log.args.user, log.args.amount);
+				// Update local state
+			}
+		},
+	});
+
+	return () => unwatch();
 });
 ```
 
@@ -365,13 +386,13 @@ import { defineConfig } from '@wagmi/cli';
 import { foundry } from '@wagmi/cli/plugins';
 
 export default defineConfig({
-  out: 'src/lib/contracts/generated.ts',
-  plugins: [
-    foundry({
-      project: '../../packages/contracts',
-      include: ['MyContract.sol/**'],
-    }),
-  ],
+	out: 'src/lib/contracts/generated.ts',
+	plugins: [
+		foundry({
+			project: '../../packages/contracts',
+			include: ['MyContract.sol/**'],
+		}),
+	],
 });
 ```
 
@@ -393,10 +414,10 @@ just generate-types
 import { myContractAbi, myContractAddress } from '$lib/contracts/generated';
 
 const balance = await readContract(config, {
-  address: myContractAddress[31337], // Type-safe chain ID
-  abi: myContractAbi,               // Type-safe ABI
-  functionName: 'balances',         // Autocomplete!
-  args: [userAddress],              // Type-checked args
+	address: myContractAddress[31337], // Type-safe chain ID
+	abi: myContractAbi, // Type-safe ABI
+	functionName: 'balances', // Autocomplete!
+	args: [userAddress], // Type-checked args
 });
 ```
 
@@ -468,11 +489,13 @@ import { browser } from '$app/environment';
 let config: ReturnType<typeof createConfig> | null = null;
 
 export function getConfig() {
-  if (!browser) return null;
-  if (!config) {
-    config = createConfig({ /* ... */ });
-  }
-  return config;
+	if (!browser) return null;
+	if (!config) {
+		config = createConfig({
+			/* ... */
+		});
+	}
+	return config;
 }
 ```
 
@@ -480,14 +503,14 @@ export function getConfig() {
 
 ```svelte
 <script lang="ts">
-  import { browser } from '$app/environment';
-  import { wallet } from '$lib/stores/wallet.svelte';
+	import { browser } from '$app/environment';
+	import { wallet } from '$lib/stores/wallet.svelte';
 </script>
 
 {#if browser}
-  <WalletButton />
+	<WalletButton />
 {:else}
-  <button disabled>Connect Wallet</button>
+	<button disabled>Connect Wallet</button>
 {/if}
 ```
 
@@ -496,17 +519,17 @@ export function getConfig() {
 ```svelte
 <!-- +page.svelte -->
 <script lang="ts">
-  import { onMount } from 'svelte';
-  
-  let Web3Panel: typeof import('$components/Web3Panel.svelte').default;
-  
-  onMount(async () => {
-    Web3Panel = (await import('$components/Web3Panel.svelte')).default;
-  });
+	import { onMount } from 'svelte';
+
+	let Web3Panel: typeof import('$components/Web3Panel.svelte').default;
+
+	onMount(async () => {
+		Web3Panel = (await import('$components/Web3Panel.svelte')).default;
+	});
 </script>
 
 {#if Web3Panel}
-  <Web3Panel />
+	<Web3Panel />
 {/if}
 ```
 
@@ -516,32 +539,28 @@ export function getConfig() {
 
 Common errors and solutions:
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `ChainMismatchError` | Wrong network | Prompt user to switch chains |
-| `ConnectorNotFoundError` | No wallet | Show "Install MetaMask" message |
-| `UserRejectedRequestError` | User denied | Show retry option |
-| `ContractFunctionExecutionError` | Reverted | Parse revert reason, show to user |
+| Error                            | Cause         | Solution                          |
+| -------------------------------- | ------------- | --------------------------------- |
+| `ChainMismatchError`             | Wrong network | Prompt user to switch chains      |
+| `ConnectorNotFoundError`         | No wallet     | Show "Install MetaMask" message   |
+| `UserRejectedRequestError`       | User denied   | Show retry option                 |
+| `ContractFunctionExecutionError` | Reverted      | Parse revert reason, show to user |
 
 ```typescript
-import { 
-  ChainMismatchError,
-  UserRejectedRequestError,
-  ContractFunctionExecutionError 
-} from 'viem';
+import { ChainMismatchError, UserRejectedRequestError, ContractFunctionExecutionError } from 'viem';
 
 try {
-  await writeContract(/* ... */);
+	await writeContract(/* ... */);
 } catch (e) {
-  if (e instanceof UserRejectedRequestError) {
-    error = 'Transaction cancelled';
-  } else if (e instanceof ChainMismatchError) {
-    error = 'Please switch to the correct network';
-  } else if (e instanceof ContractFunctionExecutionError) {
-    error = e.shortMessage || 'Transaction reverted';
-  } else {
-    error = 'Unknown error';
-  }
+	if (e instanceof UserRejectedRequestError) {
+		error = 'Transaction cancelled';
+	} else if (e instanceof ChainMismatchError) {
+		error = 'Please switch to the correct network';
+	} else if (e instanceof ContractFunctionExecutionError) {
+		error = e.shortMessage || 'Transaction reverted';
+	} else {
+		error = 'Unknown error';
+	}
 }
 ```
 

@@ -31,7 +31,7 @@
 		balance,
 		loading = false,
 		onClose,
-		onConfirm
+		onConfirm,
 	}: Props = $props();
 
 	// Selected side - reset when modal opens with new round
@@ -75,7 +75,7 @@
 		over:
 			round && round.pools.over > 0n && totalPool > 0n
 				? Number(totalPool) / Number(round.pools.over)
-				: 2
+				: 2,
 	});
 
 	// Potential payout calculation
@@ -134,11 +134,7 @@
 		tabindex="-1"
 	>
 		<!-- Backdrop -->
-		<button
-			class="modal-backdrop"
-			onclick={handleClose}
-			aria-label="Close modal"
-			tabindex="-1"
+		<button class="modal-backdrop" onclick={handleClose} aria-label="Close modal" tabindex="-1"
 		></button>
 
 		<!-- Modal content -->
@@ -148,13 +144,7 @@
 					<!-- Header -->
 					<div class="modal-header">
 						<h2 id="bet-modal-title" class="modal-title">PLACE BET</h2>
-						<button
-							class="close-btn"
-							onclick={handleClose}
-							aria-label="Close"
-						>
-							[X]
-						</button>
+						<button class="close-btn" onclick={handleClose} aria-label="Close"> [X] </button>
 					</div>
 
 					<!-- Round info -->
@@ -214,9 +204,9 @@
 							/>
 							<span class="amount-suffix">$DATA</span>
 						</div>
-					<div class="presets">
-						{#each presets as preset (preset)}
-							<button class="preset-btn" onclick={() => (amountInput = preset)}>
+						<div class="presets">
+							{#each presets as preset (preset)}
+								<button class="preset-btn" onclick={() => (amountInput = preset)}>
 									{preset}
 								</button>
 							{/each}
@@ -245,9 +235,7 @@
 
 					<!-- Actions -->
 					<div class="modal-actions">
-						<Button variant="ghost" onclick={handleClose}>
-							CANCEL
-						</Button>
+						<Button variant="ghost" onclick={handleClose}>CANCEL</Button>
 						<Button variant="primary" disabled={!canSubmit} {loading} onclick={handleSubmit}>
 							{loading ? 'PLACING...' : 'CONFIRM BET'}
 						</Button>

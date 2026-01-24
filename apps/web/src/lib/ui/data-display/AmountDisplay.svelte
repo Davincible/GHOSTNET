@@ -28,7 +28,7 @@
 		format = 'compact',
 		showSign = false,
 		colorize = false,
-		displayDecimals = 2
+		displayDecimals = 2,
 	}: Props = $props();
 
 	// Convert bigint to number for display
@@ -66,7 +66,7 @@
 			default:
 				formatted = absValue.toLocaleString('en-US', {
 					minimumFractionDigits: 0,
-					maximumFractionDigits: displayDecimals
+					maximumFractionDigits: displayDecimals,
 				});
 		}
 

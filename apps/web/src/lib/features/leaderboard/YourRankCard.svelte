@@ -2,7 +2,10 @@
 	import { Panel } from '$lib/ui/terminal';
 	import type { LeaderboardData, LeaderboardCategory } from '$lib/core/types/leaderboard';
 	import { LEADERBOARD_CATEGORIES } from '$lib/core/types/leaderboard';
-	import { getRankMovement, formatPercentile } from '$lib/core/providers/mock/generators/leaderboard';
+	import {
+		getRankMovement,
+		formatPercentile,
+	} from '$lib/core/providers/mock/generators/leaderboard';
 
 	interface Props {
 		/** Complete leaderboard data (includes user entry) */
@@ -28,9 +31,7 @@
 		return getRankMovement(data.userEntry.rank, data.userEntry.previousRank);
 	});
 
-	let movementIcon = $derived(
-		movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●'
-	);
+	let movementIcon = $derived(movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●');
 </script>
 
 {#if data.userEntry || data.userRank}
@@ -41,11 +42,11 @@
 				<span class="rank-value">#{data.userRank?.toLocaleString() ?? '-'}</span>
 			</div>
 
-		{#if percentile !== null}
-			<div class="rank-percentile">
-				{formatPercentile(percentile)} of all operators
-			</div>
-		{/if}
+			{#if percentile !== null}
+				<div class="rank-percentile">
+					{formatPercentile(percentile)} of all operators
+				</div>
+			{/if}
 
 			{#if data.userEntry}
 				<div class="rank-metric">
@@ -57,7 +58,9 @@
 			{/if}
 
 			{#if positionChange !== 0 || (data.userEntry?.previousRank && data.userEntry.previousRank !== data.userEntry.rank)}
-				{@const change = positionChange || (data.userEntry?.previousRank ? data.userEntry.previousRank - data.userEntry.rank : 0)}
+				{@const change =
+					positionChange ||
+					(data.userEntry?.previousRank ? data.userEntry.previousRank - data.userEntry.rank : 0)}
 				<div class="rank-change" class:positive={change > 0} class:negative={change < 0}>
 					<span class="change-icon">{change > 0 ? '▲' : change < 0 ? '▼' : ''}</span>
 					<span class="change-text">

@@ -12,10 +12,7 @@
 		showStats?: boolean;
 	}
 
-	let {
-		operatorCount = 1247,
-		showStats = true
-	}: Props = $props();
+	let { operatorCount = 1247, showStats = true }: Props = $props();
 
 	let containerWidth = $state(0);
 	let containerEl: HTMLDivElement;
@@ -60,14 +57,14 @@
 
 		<div class="viz-container">
 			{#if globeSize > 100}
-				<NetworkGlobe 
-					width={globeSize} 
+				<NetworkGlobe
+					width={globeSize}
 					height={globeSize * 0.85}
 					particleCount={100}
 					rotationSpeed={0.0008}
 				/>
 			{/if}
-			
+
 			<!-- Overlay data -->
 			<div class="viz-overlay">
 				<div class="overlay-corner overlay-tl">
@@ -209,11 +206,21 @@
 		transition: background var(--duration-fast);
 	}
 
-	.bar:nth-child(1) { height: 4px; }
-	.bar:nth-child(2) { height: 6px; }
-	.bar:nth-child(3) { height: 8px; }
-	.bar:nth-child(4) { height: 10px; }
-	.bar:nth-child(5) { height: 12px; }
+	.bar:nth-child(1) {
+		height: 4px;
+	}
+	.bar:nth-child(2) {
+		height: 6px;
+	}
+	.bar:nth-child(3) {
+		height: 8px;
+	}
+	.bar:nth-child(4) {
+		height: 10px;
+	}
+	.bar:nth-child(5) {
+		height: 12px;
+	}
 
 	.bar-active {
 		background: var(--color-accent);

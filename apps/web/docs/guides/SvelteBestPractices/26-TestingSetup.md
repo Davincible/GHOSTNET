@@ -18,9 +18,9 @@ import { test, expect } from 'vitest';
 import { myStore } from './store.svelte';
 
 test('derived updates', () => {
-  const store = myStore();
-  store.count = 5;
-  expect(store.doubled).toBe(10); // ❌ Still returns 0!
+	const store = myStore();
+	store.count = 5;
+	expect(store.doubled).toBe(10); // ❌ Still returns 0!
 });
 ```
 
@@ -38,8 +38,8 @@ When you write:
 
 ```svelte
 <script>
-  let count = $state(0);
-  let doubled = $derived(count * 2);
+	let count = $state(0);
+	let doubled = $derived(count * 2);
 </script>
 ```
 
@@ -72,25 +72,27 @@ Tests need to be processed by the Svelte compiler. This happens automatically wh
 
 ## Testing Approaches Overview
 
-| Feature | jsdom Approach | Browser Mode |
-|---------|---------------|--------------|
-| **Speed** | Fast | Very Fast |
-| **Accuracy** | Simulated | Real Browser |
-| **Setup Complexity** | Low | Medium |
-| **Runes Support** | Partial (with config) | Full |
-| **Browser APIs** | Mocked | Real |
-| **Recommended For** | Simple tests, legacy | New projects, accuracy |
-| **Package** | `@testing-library/svelte` | `vitest-browser-svelte` |
+| Feature              | jsdom Approach            | Browser Mode            |
+| -------------------- | ------------------------- | ----------------------- |
+| **Speed**            | Fast                      | Very Fast               |
+| **Accuracy**         | Simulated                 | Real Browser            |
+| **Setup Complexity** | Low                       | Medium                  |
+| **Runes Support**    | Partial (with config)     | Full                    |
+| **Browser APIs**     | Mocked                    | Real                    |
+| **Recommended For**  | Simple tests, legacy      | New projects, accuracy  |
+| **Package**          | `@testing-library/svelte` | `vitest-browser-svelte` |
 
 ### Which Should You Choose?
 
 **Choose jsdom if:**
+
 - You have an existing test suite
 - You need quick setup
 - Your tests don't use complex browser APIs
 - You're testing mostly logic, not DOM interactions
 
 **Choose Browser Mode if:**
+
 - Starting a new project
 - You need accurate browser behavior
 - You're testing Svelte 5 runes extensively
@@ -108,18 +110,18 @@ A major testing pitfall is when server unit tests pass but production fails due 
 ```typescript
 // BRITTLE: Heavy mocking hides client-server mismatches
 describe('User Registration - WRONG WAY', () => {
-  it('should register user', async () => {
-    // This mock doesn't test real FormData behavior
-    const mockRequest = {
-      formData: vi.fn().mockResolvedValue({
-        get: vi.fn().mockReturnValue('test@example.com'),
-      }),
-    };
-    
-    const result = await registerUser(mockRequest);
-    expect(result.success).toBe(true);
-    // Passes! But what if client sends 'email' and server expects 'user_email'?
-  });
+	it('should register user', async () => {
+		// This mock doesn't test real FormData behavior
+		const mockRequest = {
+			formData: vi.fn().mockResolvedValue({
+				get: vi.fn().mockReturnValue('test@example.com'),
+			}),
+		};
+
+		const result = await registerUser(mockRequest);
+		expect(result.success).toBe(true);
+		// Passes! But what if client sends 'email' and server expects 'user_email'?
+	});
 });
 ```
 
@@ -128,27 +130,27 @@ describe('User Registration - WRONG WAY', () => {
 ```typescript
 // ROBUST: Real FormData catches actual mismatches
 describe('User Registration - CORRECT WAY', () => {
-  it('should register user with real FormData', async () => {
-    // Real FormData - catches field name mismatches
-    const formData = new FormData();
-    formData.append('email', 'test@example.com');  // Must match server expectations!
-    formData.append('password', 'secure123');
-    
-    // Real Request object - catches header/method issues
-    const request = new Request('http://localhost/register', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    // Only mock external services (database), not data structures
-    vi.mocked(database.createUser).mockResolvedValue({
-      id: '123',
-      email: 'test@example.com',
-    });
-    
-    const result = await registerUser(request);
-    expect(result.success).toBe(true);
-  });
+	it('should register user with real FormData', async () => {
+		// Real FormData - catches field name mismatches
+		const formData = new FormData();
+		formData.append('email', 'test@example.com'); // Must match server expectations!
+		formData.append('password', 'secure123');
+
+		// Real Request object - catches header/method issues
+		const request = new Request('http://localhost/register', {
+			method: 'POST',
+			body: formData,
+		});
+
+		// Only mock external services (database), not data structures
+		vi.mocked(database.createUser).mockResolvedValue({
+			id: '123',
+			email: 'test@example.com',
+		});
+
+		const result = await registerUser(request);
+		expect(result.success).toBe(true);
+	});
 });
 ```
 
@@ -166,15 +168,15 @@ describe('User Registration - CORRECT WAY', () => {
 ```typescript
 // Database operations
 vi.mock('$lib/server/database', () => ({
-  users: {
-    create: vi.fn(),
-    findByEmail: vi.fn(),
-  },
+	users: {
+		create: vi.fn(),
+		findByEmail: vi.fn(),
+	},
 }));
 
 // External APIs
 vi.mock('$lib/server/email', () => ({
-  sendWelcomeEmail: vi.fn(),
+	sendWelcomeEmail: vi.fn(),
 }));
 ```
 
@@ -187,8 +189,8 @@ formData.append('email', 'test@example.com');
 
 // Real Request/Response objects
 const request = new Request('http://localhost/api/users', {
-  method: 'POST',
-  body: formData,
+	method: 'POST',
+	body: formData,
 });
 
 // Real validation functions
@@ -236,23 +238,21 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [sveltekit()],
-  test: {
-    // Use jsdom to simulate browser environment
-    environment: 'jsdom',
-    
-    // Include test files (note the .svelte in the pattern!)
-    include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-    
-    // Setup file for jest-dom matchers
-    setupFiles: ['./vitest-setup.ts'],
-  },
-  
-  // CRITICAL: Tell Vitest to use browser entry points
-  // This is what makes runes work!
-  resolve: process.env.VITEST 
-    ? { conditions: ['browser'] } 
-    : undefined,
+	plugins: [sveltekit()],
+	test: {
+		// Use jsdom to simulate browser environment
+		environment: 'jsdom',
+
+		// Include test files (note the .svelte in the pattern!)
+		include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+
+		// Setup file for jest-dom matchers
+		setupFiles: ['./vitest-setup.ts'],
+	},
+
+	// CRITICAL: Tell Vitest to use browser entry points
+	// This is what makes runes work!
+	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
 });
 ```
 
@@ -266,9 +266,9 @@ import '@testing-library/jest-dom/vitest';
 
 ```json
 {
-  "compilerOptions": {
-    "types": ["@testing-library/jest-dom"]
-  }
+	"compilerOptions": {
+		"types": ["@testing-library/jest-dom"]
+	}
 }
 ```
 
@@ -278,15 +278,25 @@ import '@testing-library/jest-dom/vitest';
 
 ```typescript
 export function createCounter(initial = 0) {
-  let count = $state(initial);
-  
-  return {
-    get count() { return count; },
-    get doubled() { return count * 2; },
-    increment() { count++; },
-    decrement() { count--; },
-    reset() { count = initial; },
-  };
+	let count = $state(initial);
+
+	return {
+		get count() {
+			return count;
+		},
+		get doubled() {
+			return count * 2;
+		},
+		increment() {
+			count++;
+		},
+		decrement() {
+			count--;
+		},
+		reset() {
+			count = initial;
+		},
+	};
 }
 ```
 
@@ -297,24 +307,24 @@ import { describe, it, expect } from 'vitest';
 import { createCounter } from './counter.svelte';
 
 describe('createCounter', () => {
-  it('initializes with default value', () => {
-    const counter = createCounter();
-    expect(counter.count).toBe(0);
-  });
+	it('initializes with default value', () => {
+		const counter = createCounter();
+		expect(counter.count).toBe(0);
+	});
 
-  it('increments count', () => {
-    const counter = createCounter(0);
-    counter.increment();
-    expect(counter.count).toBe(1);
-  });
+	it('increments count', () => {
+		const counter = createCounter(0);
+		counter.increment();
+		expect(counter.count).toBe(1);
+	});
 
-  it('computes derived values', () => {
-    const counter = createCounter(5);
-    expect(counter.doubled).toBe(10);
-    
-    counter.increment();
-    expect(counter.doubled).toBe(12);
-  });
+	it('computes derived values', () => {
+		const counter = createCounter(5);
+		expect(counter.doubled).toBe(10);
+
+		counter.increment();
+		expect(counter.doubled).toBe(12);
+	});
 });
 ```
 
@@ -328,38 +338,38 @@ import { describe, it, expect, vi } from 'vitest';
 import Button from './Button.svelte';
 
 describe('Button', () => {
-  it('renders children', () => {
-    render(Button, { 
-      props: { children: () => 'Click me' } 
-    });
-    
-    expect(screen.getByRole('button')).toHaveTextContent('Click me');
-  });
+	it('renders children', () => {
+		render(Button, {
+			props: { children: () => 'Click me' },
+		});
 
-  it('calls onclick when clicked', async () => {
-    const handleClick = vi.fn();
-    
-    render(Button, { 
-      props: { 
-        onclick: handleClick,
-        children: () => 'Click me'
-      } 
-    });
-    
-    await fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledOnce();
-  });
+		expect(screen.getByRole('button')).toHaveTextContent('Click me');
+	});
 
-  it('can be disabled', () => {
-    render(Button, { 
-      props: { 
-        disabled: true,
-        children: () => 'Disabled'
-      } 
-    });
-    
-    expect(screen.getByRole('button')).toBeDisabled();
-  });
+	it('calls onclick when clicked', async () => {
+		const handleClick = vi.fn();
+
+		render(Button, {
+			props: {
+				onclick: handleClick,
+				children: () => 'Click me',
+			},
+		});
+
+		await fireEvent.click(screen.getByRole('button'));
+		expect(handleClick).toHaveBeenCalledOnce();
+	});
+
+	it('can be disabled', () => {
+		render(Button, {
+			props: {
+				disabled: true,
+				children: () => 'Disabled',
+			},
+		});
+
+		expect(screen.getByRole('button')).toBeDisabled();
+	});
 });
 ```
 
@@ -400,45 +410,45 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [sveltekit()],
-  test: {
-    projects: [
-      // Client-side tests (Browser Mode)
-      {
-        extends: true,
-        test: {
-          name: 'client',
-          browser: {
-            enabled: true,
-            provider: playwright(),
-            instances: [{ browser: 'chromium' }],
-          },
-          include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-          setupFiles: ['./src/vitest-setup-client.ts'],
-        },
-      },
-      
-      // Server-side tests (Node)
-      {
-        extends: true,
-        test: {
-          name: 'server',
-          environment: 'node',
-          include: ['src/**/*.server.{test,spec}.{js,ts}'],
-        },
-      },
-      
-      // SSR tests
-      {
-        extends: true,
-        test: {
-          name: 'ssr',
-          environment: 'node',
-          include: ['src/**/*.ssr.{test,spec}.{js,ts}'],
-        },
-      },
-    ],
-  },
+	plugins: [sveltekit()],
+	test: {
+		projects: [
+			// Client-side tests (Browser Mode)
+			{
+				extends: true,
+				test: {
+					name: 'client',
+					browser: {
+						enabled: true,
+						provider: playwright(),
+						instances: [{ browser: 'chromium' }],
+					},
+					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					setupFiles: ['./src/vitest-setup-client.ts'],
+				},
+			},
+
+			// Server-side tests (Node)
+			{
+				extends: true,
+				test: {
+					name: 'server',
+					environment: 'node',
+					include: ['src/**/*.server.{test,spec}.{js,ts}'],
+				},
+			},
+
+			// SSR tests
+			{
+				extends: true,
+				test: {
+					name: 'ssr',
+					environment: 'node',
+					include: ['src/**/*.ssr.{test,spec}.{js,ts}'],
+				},
+			},
+		],
+	},
 });
 ```
 
@@ -453,9 +463,9 @@ import 'vitest-browser-svelte';
 
 ```json
 {
-  "compilerOptions": {
-    "types": ["vitest-browser-svelte"]
-  }
+	"compilerOptions": {
+		"types": ["vitest-browser-svelte"]
+	}
 }
 ```
 
@@ -470,32 +480,26 @@ import { page } from 'vitest/browser';
 import Counter from './Counter.svelte';
 
 describe('Counter Component', () => {
-  it('renders with initial count', async () => {
-    render(Counter, { initialCount: 5 });
-    
-    await expect
-      .element(page.getByText('Count: 5'))
-      .toBeVisible();
-  });
+	it('renders with initial count', async () => {
+		render(Counter, { initialCount: 5 });
 
-  it('increments on button click', async () => {
-    render(Counter, { initialCount: 0 });
-    
-    const button = page.getByRole('button', { name: 'Increment' });
-    await button.click();
-    
-    await expect
-      .element(page.getByText('Count: 1'))
-      .toBeVisible();
-  });
+		await expect.element(page.getByText('Count: 5')).toBeVisible();
+	});
 
-  it('shows doubled value', async () => {
-    render(Counter, { initialCount: 3 });
-    
-    await expect
-      .element(page.getByText('Doubled: 6'))
-      .toBeVisible();
-  });
+	it('increments on button click', async () => {
+		render(Counter, { initialCount: 0 });
+
+		const button = page.getByRole('button', { name: 'Increment' });
+		await button.click();
+
+		await expect.element(page.getByText('Count: 1')).toBeVisible();
+	});
+
+	it('shows doubled value', async () => {
+		render(Counter, { initialCount: 3 });
+
+		await expect.element(page.getByText('Doubled: 6')).toBeVisible();
+	});
 });
 ```
 
@@ -514,71 +518,71 @@ import * as db from '$lib/server/database';
 vi.mock('$lib/server/database');
 
 describe('POST /api/register', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 
-  it('registers user with valid data', async () => {
-    // Real FormData - catches field name mismatches
-    const formData = new FormData();
-    formData.append('email', 'user@example.com');
-    formData.append('password', 'securePassword123');
-    
-    // Real Request object
-    const request = new Request('http://localhost/api/register', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    vi.mocked(db.createUser).mockResolvedValue({
-      id: '123',
-      email: 'user@example.com',
-    });
-    
-    const response = await POST({ request } as any);
-    
-    expect(response.status).toBe(201);
-    expect(db.createUser).toHaveBeenCalledWith({
-      email: 'user@example.com',
-      password: expect.any(String), // Hashed password
-    });
-  });
+	it('registers user with valid data', async () => {
+		// Real FormData - catches field name mismatches
+		const formData = new FormData();
+		formData.append('email', 'user@example.com');
+		formData.append('password', 'securePassword123');
 
-  it('rejects invalid email', async () => {
-    const formData = new FormData();
-    formData.append('email', 'not-an-email');
-    formData.append('password', 'securePassword123');
-    
-    const request = new Request('http://localhost/api/register', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const response = await POST({ request } as any);
-    
-    expect(response.status).toBe(400);
-    const data = await response.json();
-    expect(data.errors.email).toBeDefined();
-  });
+		// Real Request object
+		const request = new Request('http://localhost/api/register', {
+			method: 'POST',
+			body: formData,
+		});
 
-  it('handles JSON body', async () => {
-    const request = new Request('http://localhost/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'user@example.com',
-        password: 'securePassword123',
-      }),
-    });
-    
-    vi.mocked(db.createUser).mockResolvedValue({
-      id: '123',
-      email: 'user@example.com',
-    });
-    
-    const response = await POST({ request } as any);
-    expect(response.status).toBe(201);
-  });
+		vi.mocked(db.createUser).mockResolvedValue({
+			id: '123',
+			email: 'user@example.com',
+		});
+
+		const response = await POST({ request } as any);
+
+		expect(response.status).toBe(201);
+		expect(db.createUser).toHaveBeenCalledWith({
+			email: 'user@example.com',
+			password: expect.any(String), // Hashed password
+		});
+	});
+
+	it('rejects invalid email', async () => {
+		const formData = new FormData();
+		formData.append('email', 'not-an-email');
+		formData.append('password', 'securePassword123');
+
+		const request = new Request('http://localhost/api/register', {
+			method: 'POST',
+			body: formData,
+		});
+
+		const response = await POST({ request } as any);
+
+		expect(response.status).toBe(400);
+		const data = await response.json();
+		expect(data.errors.email).toBeDefined();
+	});
+
+	it('handles JSON body', async () => {
+		const request = new Request('http://localhost/api/register', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				email: 'user@example.com',
+				password: 'securePassword123',
+			}),
+		});
+
+		vi.mocked(db.createUser).mockResolvedValue({
+			id: '123',
+			email: 'user@example.com',
+		});
+
+		const response = await POST({ request } as any);
+		expect(response.status).toBe(201);
+	});
 });
 ```
 
@@ -586,31 +590,31 @@ describe('POST /api/register', () => {
 
 ### Key Differences from Testing Library
 
-| Testing Library | Browser Mode |
-|-----------------|--------------|
-| `screen.getByRole()` | `page.getByRole()` |
-| `fireEvent.click()` | `await button.click()` |
+| Testing Library                 | Browser Mode                                  |
+| ------------------------------- | --------------------------------------------- |
+| `screen.getByRole()`            | `page.getByRole()`                            |
+| `fireEvent.click()`             | `await button.click()`                        |
 | `expect(element).toBeVisible()` | `await expect.element(locator).toBeVisible()` |
-| Requires `act()` for updates | Auto-retries built-in |
-| `render()` returns `container` | `render()` returns screen with locators |
+| Requires `act()` for updates    | Auto-retries built-in                         |
+| `render()` returns `container`  | `render()` returns screen with locators       |
 
 ### Locator Best Practices
 
 ```typescript
 // BEST: Semantic queries
-page.getByRole('button', { name: 'Submit' })
-page.getByLabel('Email address')
-page.getByRole('heading', { level: 1 })
+page.getByRole('button', { name: 'Submit' });
+page.getByLabel('Email address');
+page.getByRole('heading', { level: 1 });
 
 // GOOD: Text content
-page.getByText('Welcome back')
-page.getByPlaceholder('Enter your email')
+page.getByText('Welcome back');
+page.getByPlaceholder('Enter your email');
 
 // FALLBACK: Test IDs (when semantics aren't enough)
-page.getByTestId('submit-button')
+page.getByTestId('submit-button');
 
 // AVOID: CSS selectors
-page.locator('.btn-primary')  // Brittle!
+page.locator('.btn-primary'); // Brittle!
 ```
 
 ### Handling Multiple Elements
@@ -643,49 +647,49 @@ A strategic approach to test planning: start with a complete test structure usin
 
 ```typescript
 describe('TodoManager Component', () => {
-  describe('Initial Rendering', () => {
-    it('should render empty state', async () => {
-      render(TodoManager);
-      await expect.element(page.getByText('No todos yet')).toBeInTheDocument();
-    });
-    
-    it.skip('should render with initial todos', async () => {
-      // TODO: Test with pre-populated data
-    });
-  });
+	describe('Initial Rendering', () => {
+		it('should render empty state', async () => {
+			render(TodoManager);
+			await expect.element(page.getByText('No todos yet')).toBeInTheDocument();
+		});
 
-  describe('User Interactions', () => {
-    it('should add new todo', async () => {
-      render(TodoManager);
-      await page.getByLabel('New todo').fill('Buy groceries');
-      await page.getByRole('button', { name: 'Add' }).click();
-      await expect.element(page.getByText('Buy groceries')).toBeInTheDocument();
-    });
-    
-    it.skip('should edit existing todo', async () => {
-      // TODO: Test inline editing
-    });
-    
-    it.skip('should delete todo', async () => {
-      // TODO: Test deletion flow
-    });
-  });
+		it.skip('should render with initial todos', async () => {
+			// TODO: Test with pre-populated data
+		});
+	});
 
-  describe('Edge Cases', () => {
-    it.skip('should handle empty input gracefully', async () => {
-      // TODO: Test validation
-    });
-    
-    it.skip('should handle very long todo text', async () => {
-      // TODO: Test text truncation
-    });
-  });
+	describe('User Interactions', () => {
+		it('should add new todo', async () => {
+			render(TodoManager);
+			await page.getByLabel('New todo').fill('Buy groceries');
+			await page.getByRole('button', { name: 'Add' }).click();
+			await expect.element(page.getByText('Buy groceries')).toBeInTheDocument();
+		});
 
-  describe('Accessibility', () => {
-    it.skip('should support keyboard navigation', async () => {
-      // TODO: Test tab order and shortcuts
-    });
-  });
+		it.skip('should edit existing todo', async () => {
+			// TODO: Test inline editing
+		});
+
+		it.skip('should delete todo', async () => {
+			// TODO: Test deletion flow
+		});
+	});
+
+	describe('Edge Cases', () => {
+		it.skip('should handle empty input gracefully', async () => {
+			// TODO: Test validation
+		});
+
+		it.skip('should handle very long todo text', async () => {
+			// TODO: Test text truncation
+		});
+	});
+
+	describe('Accessibility', () => {
+		it.skip('should support keyboard navigation', async () => {
+			// TODO: Test tab order and shortcuts
+		});
+	});
 });
 ```
 
@@ -717,25 +721,25 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
-    
+
     # Use Playwright's official Docker image for faster CI
     container:
       image: mcr.microsoft.com/playwright:v1.52.0-noble
       options: --user 1001
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      
+
       - name: Install dependencies
         run: bun install
-      
+
       - name: Run unit tests
         run: bun test:unit
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         if: always()
@@ -745,20 +749,20 @@ jobs:
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      
+
       - name: Install dependencies
         run: bun install
-      
+
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
-      
+
       - name: Run E2E tests
         run: bun test:e2e
 ```
@@ -767,15 +771,15 @@ jobs:
 
 ```json
 {
-  "scripts": {
-    "test": "vitest",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest",
-    "test:unit:ui": "vitest --ui",
-    "test:unit:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
-  }
+	"scripts": {
+		"test": "vitest",
+		"test:unit": "vitest run",
+		"test:unit:watch": "vitest",
+		"test:unit:ui": "vitest --ui",
+		"test:unit:coverage": "vitest run --coverage",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui"
+	}
 }
 ```
 
@@ -803,27 +807,27 @@ bunx playwright install chromium
 ```typescript
 // Before
 export default defineConfig({
-  plugins: [sveltekit()],
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest-setup.ts'],
-  },
+	plugins: [sveltekit()],
+	test: {
+		environment: 'jsdom',
+		setupFiles: ['./vitest-setup.ts'],
+	},
 });
 
 // After
 import { playwright } from '@vitest/browser-playwright';
 
 export default defineConfig({
-  plugins: [sveltekit()],
-  test: {
-    browser: {
-      enabled: true,
-      provider: playwright(),
-      instances: [{ browser: 'chromium' }],
-    },
-    include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-    setupFiles: ['vitest-browser-svelte'],
-  },
+	plugins: [sveltekit()],
+	test: {
+		browser: {
+			enabled: true,
+			provider: playwright(),
+			instances: [{ browser: 'chromium' }],
+		},
+		include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+		setupFiles: ['vitest-browser-svelte'],
+	},
 });
 ```
 
@@ -857,7 +861,9 @@ await expect.element(page.getByText('Clicked')).toBeVisible();
 ```typescript
 // Before - needed act() for updates
 import { act } from '@testing-library/svelte';
-await act(() => { /* update state */ });
+await act(() => {
+	/* update state */
+});
 
 // After - locators auto-retry
 await page.getByText('Updated').click();
@@ -868,13 +874,13 @@ await expect.element(page.getByText('Result')).toBeVisible();
 
 ## Version Compatibility
 
-| Package | Minimum Version | Notes |
-|---------|-----------------|-------|
-| Svelte | 5.x | Runes require Svelte 5 |
-| Vitest | 4.0.0 | Required for vitest-browser-svelte 1.0+ |
-| vitest-browser-svelte | 1.0.0 | Stable release |
-| Playwright | 1.40+ | For browser testing |
-| @testing-library/svelte | 5.0.0 | For Svelte 5 support |
+| Package                 | Minimum Version | Notes                                   |
+| ----------------------- | --------------- | --------------------------------------- |
+| Svelte                  | 5.x             | Runes require Svelte 5                  |
+| Vitest                  | 4.0.0           | Required for vitest-browser-svelte 1.0+ |
+| vitest-browser-svelte   | 1.0.0           | Stable release                          |
+| Playwright              | 1.40+           | For browser testing                     |
+| @testing-library/svelte | 5.0.0           | For Svelte 5 support                    |
 
 ---
 

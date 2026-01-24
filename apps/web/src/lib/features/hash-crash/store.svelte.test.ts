@@ -24,6 +24,7 @@ import {
 	MIN_TARGET,
 	MAX_TARGET,
 	GROWTH_RATE,
+	SIMULATION_BETTING_DURATION,
 } from './store.svelte';
 
 // ============================================================================
@@ -240,16 +241,16 @@ describe('createHashCrashStore', () => {
 		it('updates timeRemaining from countdown', () => {
 			store._simulateRound(5);
 
-			// Initial - should have ~10 seconds (simulation uses 10s betting)
+			// Initial - should have full betting duration
 			const initial = untrack(() => store.timeRemaining);
-			expect(initial).toBeGreaterThan(9000);
-			expect(initial).toBeLessThanOrEqual(10000);
+			expect(initial).toBeGreaterThan(SIMULATION_BETTING_DURATION - 1000);
+			expect(initial).toBeLessThanOrEqual(SIMULATION_BETTING_DURATION);
 
 			// Advance time
 			vi.advanceTimersByTime(3000);
 			const after3s = untrack(() => store.timeRemaining);
 			expect(after3s).toBeLessThan(initial);
-			expect(after3s).toBeGreaterThan(6000);
+			expect(after3s).toBeGreaterThan(SIMULATION_BETTING_DURATION - 4000);
 		});
 
 		it('calculates winProbability based on target', () => {
@@ -291,8 +292,8 @@ describe('simulation mode', () => {
 	it('transitions from betting to locked after betting period', () => {
 		store._simulateRound(5);
 
-		// Advance past betting period (10 seconds in simulation)
-		vi.advanceTimersByTime(10_100);
+		// Advance past betting period
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100);
 
 		const state = untrack(() => store.state);
 		expect(state.round?.state).toBe('locked');
@@ -300,7 +301,7 @@ describe('simulation mode', () => {
 
 	it('transitions from locked to revealed/animating', () => {
 		store._simulateRound(5);
-		vi.advanceTimersByTime(10_100); // Past betting to locked
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting to locked
 
 		// Advance past lock phase (2 seconds)
 		vi.advanceTimersByTime(2100);
@@ -334,7 +335,7 @@ describe('simulation mode', () => {
 	it('animates and settles at crash point', () => {
 		const crashPoint = 3.0;
 		store._simulateRound(crashPoint);
-		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting
 		vi.advanceTimersByTime(2100); // Past lock to reveal/animate
 
 		// Calculate animation duration: t = ln(crashPoint) / GROWTH_RATE
@@ -350,7 +351,7 @@ describe('simulation mode', () => {
 
 	it('records crash points in history', () => {
 		store._simulateRound(2.5);
-		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting
 		vi.advanceTimersByTime(2100); // Past lock to reveal
 
 		const state = untrack(() => store.state);
@@ -362,7 +363,7 @@ describe('simulation mode', () => {
 		expect(untrack(() => store.state.round?.roundId)).toBe(1);
 
 		// Complete the round
-		vi.advanceTimersByTime(10_100 + 2100);
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100 + 2100);
 		const crashTime1 = (Math.log(2) / GROWTH_RATE) * 1000;
 		vi.advanceTimersByTime(crashTime1 + 100);
 
@@ -454,7 +455,7 @@ describe('edge cases', () => {
 
 	it('handles very low crash points (instant crash)', () => {
 		store._simulateRound(1.01); // Very low crash point
-		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting
 		vi.advanceTimersByTime(2100); // Past lock to reveal
 
 		// Should crash almost immediately
@@ -467,17 +468,18 @@ describe('edge cases', () => {
 
 	it('handles high crash points', () => {
 		store._simulateRound(100); // Very high crash point
-		vi.advanceTimersByTime(10_100); // Past betting
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting
 		vi.advanceTimersByTime(2100); // Past lock to reveal
 
 		// Should still be animating for a while
-		vi.advanceTimersByTime(10_000);
+		const midAnimationTime = 10_000;
+		vi.advanceTimersByTime(midAnimationTime);
 		const state = untrack(() => store.state);
 		expect(state.round?.state).toBe('animating');
 
 		// Eventually settles
 		const crashTime = (Math.log(100) / GROWTH_RATE) * 1000;
-		vi.advanceTimersByTime(crashTime - 10_000 + 100);
+		vi.advanceTimersByTime(crashTime - midAnimationTime + 100);
 
 		const finalState = untrack(() => store.state);
 		expect(finalState.round?.state).toBe('settled');
@@ -495,7 +497,7 @@ describe('edge cases', () => {
 
 	it('cannot place bet after betting phase closes', async () => {
 		store._simulateRound(5);
-		vi.advanceTimersByTime(10_100); // Past betting phase
+		vi.advanceTimersByTime(SIMULATION_BETTING_DURATION + 100); // Past betting phase
 
 		expect(untrack(() => store.canBet)).toBe(false);
 

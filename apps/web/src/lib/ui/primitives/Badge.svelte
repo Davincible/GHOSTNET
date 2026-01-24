@@ -19,7 +19,7 @@
 		glow = false,
 		pulse = false,
 		compact = false,
-		children
+		children,
 	}: Props = $props();
 </script>
 
@@ -114,7 +114,8 @@
 	}
 
 	@keyframes badge-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {

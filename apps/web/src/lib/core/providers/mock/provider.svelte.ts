@@ -20,14 +20,19 @@ import type {
 	TypingResult,
 	ConnectionStatus,
 	OwnedConsumable,
-	UseConsumableResult
+	UseConsumableResult,
 } from '../../types';
 import { LEVEL_CONFIG, getConsumable } from '../../types';
 import { generateMockFeedEvents, generateRandomFeedEvent } from './generators/feed';
 import { generateMockNetworkState, updateNetworkState } from './generators/network';
 import { generateMockPosition, updatePositionYield, createPosition } from './generators/position';
 import { getRandomCommand, getCommandDifficulty, getDifficultyReward } from './data/commands';
-import { generateMockInventory, simulatePurchase, simulateUseConsumable, calculateBulkPrice } from './generators/market';
+import {
+	generateMockInventory,
+	simulatePurchase,
+	simulateUseConsumable,
+	calculateBulkPrice,
+} from './generators/market';
 
 // ════════════════════════════════════════════════════════════════
 // MOCK PROVIDER FACTORY
@@ -88,7 +93,7 @@ export function createMockProvider(): DataProvider {
 		currentUser = {
 			address: '0x7a3f9c2d8b1e4a5f6c7d8e9f0a1b2c3d4e5f6789',
 			tokenBalance: 10000n * 10n ** 18n, // 10,000 $DATA
-			ethBalance: 5n * 10n ** 18n // 5 ETH
+			ethBalance: 5n * 10n ** 18n, // 5 ETH
 		};
 
 		// Generate a position for the user
@@ -102,7 +107,7 @@ export function createMockProvider(): DataProvider {
 				type: 'death_rate',
 				value: -0.15,
 				expiresAt: position.nextScanTimestamp,
-				label: 'Trace Evasion -15%'
+				label: 'Trace Evasion -15%',
 			},
 			{
 				id: '2',
@@ -110,8 +115,8 @@ export function createMockProvider(): DataProvider {
 				type: 'yield_multiplier',
 				value: 1.1,
 				expiresAt: null,
-				label: 'Crew Bonus +10%'
-			}
+				label: 'Crew Bonus +10%',
+			},
 		];
 
 		// Initialize inventory with starter items
@@ -150,7 +155,7 @@ export function createMockProvider(): DataProvider {
 			type: 'JACK_IN',
 			address: currentUser.address,
 			level,
-			amount
+			amount,
 		});
 
 		// Start position simulation
@@ -172,13 +177,13 @@ export function createMockProvider(): DataProvider {
 			type: 'EXTRACT',
 			address: currentUser.address,
 			amount,
-			gain
+			gain,
 		});
 
 		// Update user balance
 		currentUser = {
 			...currentUser,
-			tokenBalance: currentUser.tokenBalance + amount
+			tokenBalance: currentUser.tokenBalance + amount,
 		};
 
 		position = null;
@@ -200,7 +205,7 @@ export function createMockProvider(): DataProvider {
 			totalStaked: BigInt(Math.floor(Math.random() * 100000)) * 10n ** 18n,
 			baseDeathRate: config.baseDeathRate,
 			effectiveDeathRate: config.baseDeathRate * 0.92, // Network modifier
-			nextScanTimestamp: networkState.traceScanTimestamps[level]
+			nextScanTimestamp: networkState.traceScanTimestamps[level],
 		};
 	}
 
@@ -218,7 +223,7 @@ export function createMockProvider(): DataProvider {
 			id: crypto.randomUUID(),
 			type: data.type,
 			timestamp: Date.now(),
-			data
+			data,
 		};
 
 		feedEvents = [event, ...feedEvents].slice(0, 100);
@@ -235,7 +240,7 @@ export function createMockProvider(): DataProvider {
 		return {
 			command,
 			difficulty,
-			timeLimit: difficulty === 'easy' ? 30 : difficulty === 'medium' ? 45 : 60
+			timeLimit: difficulty === 'easy' ? 30 : difficulty === 'medium' ? 45 : 60,
 		};
 	}
 
@@ -255,8 +260,8 @@ export function createMockProvider(): DataProvider {
 					type: 'death_rate',
 					value: result.reward.value,
 					expiresAt: position.nextScanTimestamp,
-					label: result.reward.label
-				}
+					label: result.reward.label,
+				},
 			];
 		}
 	}
@@ -304,7 +309,7 @@ export function createMockProvider(): DataProvider {
 		ownedConsumables = result.inventory;
 		currentUser = {
 			...currentUser,
-			tokenBalance: currentUser.tokenBalance - totalCost
+			tokenBalance: currentUser.tokenBalance - totalCost,
 		};
 
 		const txHash = `0x${Math.random().toString(16).slice(2)}`;
@@ -335,7 +340,8 @@ export function createMockProvider(): DataProvider {
 		if (result.modifier) {
 			// Remove any existing modifier from same consumable
 			modifiers = modifiers.filter(
-				(m) => !(m.source === 'consumable' && m.label.includes(getConsumable(consumableId)?.name ?? ''))
+				(m) =>
+					!(m.source === 'consumable' && m.label.includes(getConsumable(consumableId)?.name ?? ''))
 			);
 
 			// Add new modifier
@@ -458,7 +464,7 @@ export function createMockProvider(): DataProvider {
 			return ownedConsumables;
 		},
 		purchaseConsumable,
-		useConsumable
+		useConsumable,
 	};
 }
 

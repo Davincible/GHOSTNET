@@ -12,5 +12,5 @@ export {
 	formatElapsed,
 	calculateWPM,
 	calculateAccuracy,
-	formatPercent
+	formatPercent,
 } from './format';

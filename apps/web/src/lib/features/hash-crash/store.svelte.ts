@@ -22,11 +22,17 @@ import { createFrameLoop, createCountdown } from '$lib/features/arcade/engine';
 // CONFIGURATION
 // ============================================================================
 
-/** Betting phase duration in ms */
+/** Betting phase duration in ms (production) */
 export const BETTING_DURATION = 60_000;
 
-/** Delay between rounds in ms */
-export const ROUND_DELAY = 5_000;
+/** Betting phase duration in ms (simulation/demo) */
+export const SIMULATION_BETTING_DURATION = 30_000;
+
+/** Delay between rounds in ms (after loss or no bet) */
+export const ROUND_DELAY = 4_000;
+
+/** Delay between rounds in ms (after win - show longer for celebration) */
+export const WIN_ROUND_DELAY = 5_000;
 
 /** Multiplier growth rate (e^(rate * seconds)) */
 export const GROWTH_RATE = 0.06;
@@ -450,7 +456,7 @@ export function createHashCrashStore(): HashCrashStore {
 				seedHash: null,
 				crashPoint: null,
 				startTime: 0,
-				bettingEndsAt: Date.now() + 10_000, // 10 second betting for simulation
+				bettingEndsAt: Date.now() + SIMULATION_BETTING_DURATION,
 			},
 			multiplier: 1.0,
 			playerBet: null,
@@ -458,7 +464,7 @@ export function createHashCrashStore(): HashCrashStore {
 			players: [],
 		};
 
-		bettingCountdown.start(10_000);
+		bettingCountdown.start(SIMULATION_BETTING_DURATION);
 
 		// After betting, transition to locked, then reveal
 		setTimeout(() => {
@@ -491,7 +497,7 @@ export function createHashCrashStore(): HashCrashStore {
 				// Start animation (purely cosmetic)
 				startAnimation(crashPoint);
 			}, 2000);
-		}, 10_000);
+		}, SIMULATION_BETTING_DURATION);
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────

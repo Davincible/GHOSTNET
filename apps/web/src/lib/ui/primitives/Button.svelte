@@ -192,10 +192,18 @@
 	}
 
 	@keyframes spin-chars {
-		0% { content: '|'; }
-		25% { content: '/'; }
-		50% { content: '-'; }
-		75% { content: '\\'; }
+		0% {
+			content: '|';
+		}
+		25% {
+			content: '/';
+		}
+		50% {
+			content: '-';
+		}
+		75% {
+			content: '\\';
+		}
 	}
 
 	/* Loading state */

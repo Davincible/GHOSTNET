@@ -17,29 +17,29 @@
 
 ```svelte
 <script>
-  import { browser } from '$app/environment';
-  
-  // ✅ Safe: Check browser before using browser APIs
-  let width = $state(0);
-  
-  $effect(() => {
-    if (browser) {
-      width = window.innerWidth;
-      
-      const handleResize = () => {
-        width = window.innerWidth;
-      };
-      
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-  });
-  
-  // ✅ Safe: Use $effect for client-only code
-  $effect(() => {
-    // This only runs in browser
-    document.title = 'My Page';
-  });
+	import { browser } from '$app/environment';
+
+	// ✅ Safe: Check browser before using browser APIs
+	let width = $state(0);
+
+	$effect(() => {
+		if (browser) {
+			width = window.innerWidth;
+
+			const handleResize = () => {
+				width = window.innerWidth;
+			};
+
+			window.addEventListener('resize', handleResize);
+			return () => window.removeEventListener('resize', handleResize);
+		}
+	});
+
+	// ✅ Safe: Use $effect for client-only code
+	$effect(() => {
+		// This only runs in browser
+		document.title = 'My Page';
+	});
 </script>
 ```
 
@@ -48,13 +48,13 @@
 ```svelte
 <script>
   import { browser } from '$app/environment';
-  
+
   // ❌ WRONG: Different values on server vs client
   let time = new Date().toLocaleTimeString(); // Different every render!
-  
+
   // ✅ CORRECT: Initialize consistently
   let time = $state('--:--:--');
-  
+
   $effect(() => {
     // Update only in browser
     const update = () => {
@@ -69,7 +69,7 @@
 <script>
   // ❌ WRONG: Random IDs
   const id = Math.random().toString(36);
-  
+
   // ✅ CORRECT: Use $props.id()
   const id = $props.id();
 </script>
@@ -77,7 +77,7 @@
 <script>
   // ❌ WRONG: Browser-only globals
   const screenWidth = window.innerWidth; // Error on server!
-  
+
   // ✅ CORRECT: Check browser first
   import { browser } from '$app/environment';
   const screenWidth = browser ? window.innerWidth : 0;
@@ -90,11 +90,11 @@ For client-only data like localStorage, the standard pattern causes a flash:
 
 ```svelte
 <script>
-  import { browser } from '$app/environment';
-  
-  // ❌ WRONG - flickers on hydration
-  // Server renders 'light', then client switches to 'dark'
-  let theme = $state(browser ? localStorage.getItem('theme') : 'light');
+	import { browser } from '$app/environment';
+
+	// ❌ WRONG - flickers on hydration
+	// Server renders 'light', then client switches to 'dark'
+	let theme = $state(browser ? localStorage.getItem('theme') : 'light');
 </script>
 
 <div class={theme}>...</div>
@@ -108,39 +108,39 @@ Set the class before any rendering occurs:
 <!-- src/app.html -->
 <!doctype html>
 <html lang="en">
-  <head>
-    <script>
-      // Runs before any rendering - no flicker
-      const theme = localStorage.getItem('theme') || 'light';
-      document.documentElement.classList.add(theme);
-    </script>
-    %sveltekit.head%
-  </head>
-  <body data-sveltekit-preload-data="hover">
-    <div style="display: contents">%sveltekit.body%</div>
-  </body>
+	<head>
+		<script>
+			// Runs before any rendering - no flicker
+			const theme = localStorage.getItem('theme') || 'light';
+			document.documentElement.classList.add(theme);
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
 </html>
 ```
 
 ```svelte
 <!-- Component reads from what app.html set -->
 <script>
-  import { browser } from '$app/environment';
-  
-  let theme = $state('light');
-  
-  if (browser) {
-    // Read from DOM class that was set before hydration
-    theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-  }
-  
-  function toggleTheme() {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    theme = newTheme;
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(newTheme);
-    localStorage.setItem('theme', newTheme);
-  }
+	import { browser } from '$app/environment';
+
+	let theme = $state('light');
+
+	if (browser) {
+		// Read from DOM class that was set before hydration
+		theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+	}
+
+	function toggleTheme() {
+		const newTheme = theme === 'light' ? 'dark' : 'light';
+		theme = newTheme;
+		document.documentElement.classList.remove('light', 'dark');
+		document.documentElement.classList.add(newTheme);
+		localStorage.setItem('theme', newTheme);
+	}
 </script>
 ```
 
@@ -149,21 +149,21 @@ Set the class before any rendering occurs:
 ```svelte
 <!-- Chart.svelte -->
 <script>
-  import { browser } from '$app/environment';
-  
-  let mounted = $state(false);
-  
-  $effect(() => {
-    mounted = true;
-  });
+	import { browser } from '$app/environment';
+
+	let mounted = $state(false);
+
+	$effect(() => {
+		mounted = true;
+	});
 </script>
 
 {#if mounted}
-  <!-- Only render on client -->
-  <canvas bind:this={canvas}></canvas>
+	<!-- Only render on client -->
+	<canvas bind:this={canvas}></canvas>
 {:else}
-  <!-- Server placeholder -->
-  <div class="chart-placeholder">Loading chart...</div>
+	<!-- Server placeholder -->
+	<div class="chart-placeholder">Loading chart...</div>
 {/if}
 ```
 
@@ -174,31 +174,35 @@ Set the class before any rendering occurs:
 import { browser } from '$app/environment';
 
 export function createLocalStorage<T>(key: string, initial: T) {
-  let value = $state<T>(initial);
-  
-  // Hydrate from localStorage on client
-  $effect(() => {
-    if (browser) {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        try {
-          value = JSON.parse(stored);
-        } catch {}
-      }
-    }
-  });
-  
-  // Persist changes
-  $effect(() => {
-    if (browser) {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-  });
-  
-  return {
-    get value() { return value; },
-    set value(v: T) { value = v; }
-  };
+	let value = $state<T>(initial);
+
+	// Hydrate from localStorage on client
+	$effect(() => {
+		if (browser) {
+			const stored = localStorage.getItem(key);
+			if (stored) {
+				try {
+					value = JSON.parse(stored);
+				} catch {}
+			}
+		}
+	});
+
+	// Persist changes
+	$effect(() => {
+		if (browser) {
+			localStorage.setItem(key, JSON.stringify(value));
+		}
+	});
+
+	return {
+		get value() {
+			return value;
+		},
+		set value(v: T) {
+			value = v;
+		},
+	};
 }
 ```
 
@@ -208,15 +212,15 @@ Use `<svelte:boundary>` for declarative error handling:
 
 ```svelte
 <svelte:boundary onerror={(e) => console.error(e)}>
-  {#snippet failed(error)}
-    <div class="error-fallback">
-      <h2>Something went wrong</h2>
-      <p>{error.message}</p>
-      <button onclick={() => location.reload()}>Reload</button>
-    </div>
-  {/snippet}
-  
-  <RiskyComponent />
+	{#snippet failed(error)}
+		<div class="error-fallback">
+			<h2>Something went wrong</h2>
+			<p>{error.message}</p>
+			<button onclick={() => location.reload()}>Reload</button>
+		</div>
+	{/snippet}
+
+	<RiskyComponent />
 </svelte:boundary>
 ```
 

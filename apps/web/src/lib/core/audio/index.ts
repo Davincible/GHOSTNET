@@ -1,7 +1,7 @@
-export { 
-	getAudioManager, 
+export {
+	getAudioManager,
 	createAudioManager,
-	initAudio, 
+	initAudio,
 	type SoundName,
-	type AudioManager 
+	type AudioManager,
 } from './manager.svelte';

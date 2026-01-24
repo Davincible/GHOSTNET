@@ -43,7 +43,7 @@
 					level: data.level,
 					amount: data.amount,
 					color: 'text-green',
-					icon: null
+					icon: null,
 				};
 
 			case 'EXTRACT':
@@ -54,7 +54,7 @@
 					amount: data.amount,
 					gain: data.gain,
 					color: 'text-profit',
-					icon: null
+					icon: null,
 				};
 
 			case 'TRACED':
@@ -65,7 +65,7 @@
 					level: data.level,
 					amount: data.amountLost,
 					color: 'text-red',
-					icon: null
+					icon: null,
 				};
 
 			case 'SURVIVED':
@@ -75,7 +75,7 @@
 					level: data.level,
 					streak: data.streak,
 					color: 'text-green-mid',
-					icon: null
+					icon: null,
 				};
 
 			case 'TRACE_SCAN_WARNING':
@@ -86,7 +86,7 @@
 					warning: true,
 					seconds: data.secondsUntil,
 					color: 'text-amber',
-					icon: null
+					icon: null,
 				};
 
 			case 'TRACE_SCAN_START':
@@ -96,7 +96,7 @@
 					level: data.level,
 					scanning: true,
 					color: 'text-amber',
-					icon: null
+					icon: null,
 				};
 
 			case 'TRACE_SCAN_COMPLETE':
@@ -107,7 +107,7 @@
 					survivors: data.survivors,
 					traced: data.traced,
 					color: 'text-cyan',
-					icon: null
+					icon: null,
 				};
 
 			case 'CASCADE':
@@ -118,7 +118,7 @@
 					burned: data.burned,
 					distributed: data.distributed,
 					color: 'text-amber',
-					icon: null
+					icon: null,
 				};
 
 			case 'WHALE_ALERT':
@@ -128,7 +128,7 @@
 					level: data.level,
 					amount: data.amount,
 					color: 'text-gold',
-					icon: null
+					icon: null,
 				};
 
 			case 'SYSTEM_RESET_WARNING':
@@ -138,7 +138,7 @@
 					seconds: data.secondsUntil,
 					critical: true,
 					color: 'text-red',
-					icon: null
+					icon: null,
 				};
 
 			case 'SYSTEM_RESET':
@@ -148,7 +148,7 @@
 					penalty: data.penaltyPercent,
 					winner: data.jackpotWinner,
 					color: 'text-red',
-					icon: null
+					icon: null,
 				};
 
 			case 'CREW_EVENT':
@@ -156,7 +156,7 @@
 					prefix: '>',
 					text: `[${data.crewName}] ${data.message}`,
 					color: 'text-cyan',
-					icon: null
+					icon: null,
 				};
 
 			case 'MINIGAME_RESULT':
@@ -164,7 +164,7 @@
 					prefix: '>',
 					text: `${formatAddress(data.address)} ${data.game}: ${data.result}`,
 					color: 'text-cyan',
-					icon: null
+					icon: null,
 				};
 
 			case 'JACKPOT':
@@ -175,7 +175,7 @@
 					amount: data.amount,
 					jackpot: true,
 					color: 'text-gold',
-					icon: null
+					icon: null,
 				};
 
 			default:
@@ -183,7 +183,7 @@
 					prefix: '>',
 					text: 'Unknown event',
 					color: 'text-green-dim',
-					icon: null
+					icon: null,
 				};
 		}
 	});
@@ -259,7 +259,8 @@
 			<AmountDisplay amount={display.amount} format="compact" />
 		{/if}
 		{#if 'gain' in display && display.gain}
-			<span class="feed-gain">[+<AmountDisplay amount={display.gain} format="compact" /> gain]</span>
+			<span class="feed-gain">[+<AmountDisplay amount={display.gain} format="compact" /> gain]</span
+			>
 		{/if}
 		{#if 'streak' in display && display.streak}
 			<span class="feed-streak">streak: {display.streak}</span>

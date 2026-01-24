@@ -23,7 +23,7 @@ export {
 	feeRouterAbi,
 	teamVestingAbi,
 	CONTRACT_ADDRESSES,
-	getContractAddress
+	getContractAddress,
 } from './abis';
 
 // Contract Interactions
@@ -54,5 +54,5 @@ export {
 	claimWinnings,
 	// Types
 	type Position,
-	type LevelConfig
+	type LevelConfig,
 } from './contracts';

@@ -81,11 +81,14 @@
 	}
 
 	@keyframes pulse-glow {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: 0 0 20px rgba(0, 229, 204, 0.5);
 		}
 		50% {
-			text-shadow: 0 0 40px rgba(0, 229, 204, 0.8), 0 0 60px rgba(0, 229, 204, 0.3);
+			text-shadow:
+				0 0 40px rgba(0, 229, 204, 0.8),
+				0 0 60px rgba(0, 229, 204, 0.3);
 		}
 	}
 
@@ -98,8 +101,13 @@
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 
 	.tips {

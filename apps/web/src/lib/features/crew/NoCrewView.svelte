@@ -17,13 +17,8 @@
 		onDeclineInvite: (invite: CrewInvite) => void;
 	}
 
-	let {
-		pendingInvites,
-		onCreateCrew,
-		onBrowseCrews,
-		onAcceptInvite,
-		onDeclineInvite,
-	}: Props = $props();
+	let { pendingInvites, onCreateCrew, onBrowseCrews, onAcceptInvite, onDeclineInvite }: Props =
+		$props();
 
 	// Format inviter display
 	function formatInviter(invite: CrewInvite): string {

@@ -30,42 +30,45 @@ export type Level = 'VAULT' | 'MAINFRAME' | 'SUBNET' | 'DARKNET' | 'BLACK_ICE';
 export const LEVELS: Level[] = ['VAULT', 'MAINFRAME', 'SUBNET', 'DARKNET', 'BLACK_ICE'];
 
 /** Level configuration */
-export const LEVEL_CONFIG: Record<Level, {
-	baseDeathRate: number;
-	scanIntervalHours: number;
-	minStake: bigint;
-	color: string;
-}> = {
+export const LEVEL_CONFIG: Record<
+	Level,
+	{
+		baseDeathRate: number;
+		scanIntervalHours: number;
+		minStake: bigint;
+		color: string;
+	}
+> = {
 	VAULT: {
 		baseDeathRate: 0,
 		scanIntervalHours: Infinity,
 		minStake: 100n * 10n ** 18n,
-		color: 'var(--color-level-vault)'
+		color: 'var(--color-level-vault)',
 	},
 	MAINFRAME: {
 		baseDeathRate: 0.02,
 		scanIntervalHours: 24,
 		minStake: 50n * 10n ** 18n,
-		color: 'var(--color-level-mainframe)'
+		color: 'var(--color-level-mainframe)',
 	},
 	SUBNET: {
 		baseDeathRate: 0.15,
 		scanIntervalHours: 8,
 		minStake: 25n * 10n ** 18n,
-		color: 'var(--color-level-subnet)'
+		color: 'var(--color-level-subnet)',
 	},
 	DARKNET: {
-		baseDeathRate: 0.40,
+		baseDeathRate: 0.4,
 		scanIntervalHours: 2,
 		minStake: 10n * 10n ** 18n,
-		color: 'var(--color-level-darknet)'
+		color: 'var(--color-level-darknet)',
 	},
 	BLACK_ICE: {
-		baseDeathRate: 0.90,
+		baseDeathRate: 0.9,
 		scanIntervalHours: 0.5,
 		minStake: 5n * 10n ** 18n,
-		color: 'var(--color-level-black-ice)'
-	}
+		color: 'var(--color-level-black-ice)',
+	},
 };
 
 /** Connection status for WebSocket/provider */
@@ -203,7 +206,7 @@ export const FEED_EVENT_PRIORITY: Record<FeedEventType, number> = {
 	CREW_EVENT: 3,
 	MINIGAME_RESULT: 3,
 	SURVIVED: 2,
-	JACK_IN: 1
+	JACK_IN: 1,
 };
 
 // ════════════════════════════════════════════════════════════════

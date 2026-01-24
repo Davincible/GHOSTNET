@@ -48,7 +48,7 @@
 		isTyping,
 		onStartNode,
 		onNodeComplete,
-		onAbort
+		onAbort,
 	}: Props = $props();
 
 	// Get current node index from progress
@@ -74,9 +74,10 @@
 
 			// Calculate rewards based on node
 			const multiplierGained = success ? currentNode.reward.value : 0;
-			const lootGained = success && currentNode.reward.type === 'loot'
-				? BigInt(currentNode.reward.value) * 10n ** 18n
-				: 0n;
+			const lootGained =
+				success && currentNode.reward.type === 'loot'
+					? BigInt(currentNode.reward.value) * 10n ** 18n
+					: 0n;
 
 			const result: NodeResult = {
 				success,
@@ -84,7 +85,7 @@
 				wpm,
 				timeElapsed: elapsed,
 				lootGained,
-				multiplierGained
+				multiplierGained,
 			};
 
 			onNodeComplete?.(result);
@@ -117,9 +118,7 @@
 					<AmountDisplay amount={totalLoot} format="compact" />
 				</span>
 			</div>
-			<Button variant="danger" size="sm" onclick={onAbort}>
-				ABORT
-			</Button>
+			<Button variant="danger" size="sm" onclick={onAbort}>ABORT</Button>
 		</div>
 		<div class="timer-bar">
 			<ProgressBar value={timePercent} variant={progressVariant} />
@@ -146,8 +145,8 @@
 										class="char"
 										class:correct={typed[i] === char}
 										class:incorrect={typed[i] !== undefined && typed[i] !== char}
-										class:current={i === typed.length}
-									>{char}</span>
+										class:current={i === typed.length}>{char}</span
+									>
 								{/each}
 							</div>
 						</div>
@@ -155,11 +154,17 @@
 						<div class="typing-stats">
 							<span class="typing-stat">
 								<span class="typing-label">ACCURACY:</span>
-								<span class="typing-value">{Math.round(calculateAccuracy(typed, currentNode.challenge.command) * 100)}%</span>
+								<span class="typing-value"
+									>{Math.round(
+										calculateAccuracy(typed, currentNode.challenge.command) * 100
+									)}%</span
+								>
 							</span>
 							<span class="typing-stat">
 								<span class="typing-label">WPM:</span>
-								<span class="typing-value">{calculateWPM(typed.length, Date.now() - typingStartTime)}</span>
+								<span class="typing-value"
+									>{calculateWPM(typed.length, Date.now() - typingStartTime)}</span
+								>
 							</span>
 						</div>
 

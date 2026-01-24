@@ -13,7 +13,11 @@
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
-	import { generateMockDailyState, simulateCheckIn, claimMission } from '$lib/core/providers/mock/generators/daily';
+	import {
+		generateMockDailyState,
+		simulateCheckIn,
+		claimMission,
+	} from '$lib/core/providers/mock/generators/daily';
 	import type { DailyProgress, DailyMission } from '$lib/core/types';
 
 	import { browser } from '$app/environment';
@@ -124,12 +128,12 @@
 			// Update mission state
 			dailyState = {
 				...dailyState,
-				missions: dailyState.missions.map((m) =>
-					m.id === missionId ? claimMission(m) : m
-				),
+				missions: dailyState.missions.map((m) => (m.id === missionId ? claimMission(m) : m)),
 			};
 
-			toast.success(`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`);
+			toast.success(
+				`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`
+			);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to claim mission';
 			toast.error(message);
@@ -238,7 +242,7 @@
 				</div>
 
 				<!-- Live Feed with built-in expand/collapse -->
-				<FeedPanel 
+				<FeedPanel
 					collapsedCount={isMobile ? 4 : 6}
 					expandedCount={isMobile ? 12 : 20}
 					collapsedHeight={isMobile ? '200px' : '280px'}

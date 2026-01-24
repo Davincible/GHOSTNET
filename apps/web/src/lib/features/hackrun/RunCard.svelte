@@ -22,7 +22,7 @@
 	> = {
 		easy: { label: 'ROUTINE', color: 'var(--color-profit)', borderColor: 'cyan' },
 		medium: { label: 'COMPLEX', color: 'var(--color-amber)', borderColor: 'amber' },
-		hard: { label: 'CRITICAL', color: 'var(--color-loss)', borderColor: 'red' }
+		hard: { label: 'CRITICAL', color: 'var(--color-loss)', borderColor: 'red' },
 	};
 
 	const config = $derived(DIFFICULTY_CONFIG[run.difficulty]);
@@ -66,9 +66,7 @@
 		</div>
 
 		<!-- Select button -->
-		<Button variant="primary" fullWidth onclick={onSelect}>
-			INITIATE
-		</Button>
+		<Button variant="primary" fullWidth onclick={onSelect}>INITIATE</Button>
 	</Stack>
 </Box>
 

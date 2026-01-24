@@ -8,17 +8,18 @@
 
 The GHOSTNET web application demonstrates **strong overall type safety**. The codebase follows TypeScript best practices with well-defined interfaces, proper use of generics, and comprehensive discriminated unions for event types.
 
-| Metric | Count | Assessment |
-|--------|-------|------------|
-| `any` type usage | 4 (in test files only) | Acceptable |
-| `as` type assertions | ~40 | Mostly justified |
-| `@ts-ignore`/`@ts-expect-error` | 0 | Excellent |
-| Component props typing | 91/91 | All typed |
-| Missing function return types | 0 critical | Good |
-| **Missing type exports** | **4** | **Needs fix** |
-| **Missing interface methods** | **3** | **Needs fix** |
+| Metric                          | Count                  | Assessment       |
+| ------------------------------- | ---------------------- | ---------------- |
+| `any` type usage                | 4 (in test files only) | Acceptable       |
+| `as` type assertions            | ~40                    | Mostly justified |
+| `@ts-ignore`/`@ts-expect-error` | 0                      | Excellent        |
+| Component props typing          | 91/91                  | All typed        |
+| Missing function return types   | 0 critical             | Good             |
+| **Missing type exports**        | **4**                  | **Needs fix**    |
+| **Missing interface methods**   | **3**                  | **Needs fix**    |
 
 **Key Findings:**
+
 - No `any` usage in production code - all instances are in test files where mocking requires it
 - Type assertions are used appropriately, primarily for:
   - Contract ABI return type narrowing (justified)
@@ -29,6 +30,7 @@ The GHOSTNET web application demonstrates **strong overall type safety**. The co
 - Error handling uses proper `unknown` type for catch clauses
 
 **Issues Requiring Attention:**
+
 - Several types (`DailyProgress`, `DailyMission`, `Consumable`, `OwnedConsumable`) are not exported from `$lib/core/types`
 - `DataProvider` interface is missing consumable-related methods
 - These cause compile-time TypeScript errors
@@ -37,10 +39,10 @@ The GHOSTNET web application demonstrates **strong overall type safety**. The co
 
 ### Count by File
 
-| File | `any` Count | Justified | Location |
-|------|-------------|-----------|----------|
-| `wallet.svelte.test.ts` | 4 | Yes | Test mocks |
-| Production code | 0 | N/A | N/A |
+| File                    | `any` Count | Justified | Location   |
+| ----------------------- | ----------- | --------- | ---------- |
+| `wallet.svelte.test.ts` | 4           | Yes       | Test mocks |
+| Production code         | 0           | N/A       | N/A        |
 
 ### Detailed Findings
 
@@ -66,6 +68,7 @@ vi.mocked(mockGetBalance).mockResolvedValue({ value: 1000000000000000000n } as a
 ### Word "any" in Comments (Not Issues)
 
 The grep results included several matches that are not type safety issues - they are natural English usage of "any" in comments:
+
 - "pick any opponent" (comment in duel.ts)
 - "Remove any existing modifier" (comment in provider.svelte.ts)
 - "undefined for any" (documentation in wallet.svelte.ts)
@@ -76,15 +79,15 @@ These are correctly **not** type annotations.
 
 ### Assessment Summary
 
-| Category | Count | Risk Level |
-|----------|-------|------------|
-| Contract return narrowing | 5 | Low - Justified |
-| ZzFX parameter arrays | 24 | Low - Justified |
-| Empty record initialization | 1 | Low - Justified |
-| Crew activity creation | 1 | Low - Justified |
-| SSR config workaround | 1 | Medium - Documented |
-| Chain ID narrowing | 1 | Low - Justified |
-| Node progress update | 1 | Low - Type narrowing |
+| Category                    | Count | Risk Level           |
+| --------------------------- | ----- | -------------------- |
+| Contract return narrowing   | 5     | Low - Justified      |
+| ZzFX parameter arrays       | 24    | Low - Justified      |
+| Empty record initialization | 1     | Low - Justified      |
+| Crew activity creation      | 1     | Low - Justified      |
+| SSR config workaround       | 1     | Medium - Documented  |
+| Chain ID narrowing          | 1     | Low - Justified      |
+| Node progress update        | 1     | Low - Type narrowing |
 
 ### Contract Return Type Assertions
 
@@ -126,6 +129,7 @@ export const config = browser ? getConfig()! : (null as unknown as Config);
 **Risk Assessment**: **Medium** - This is a double assertion that bypasses type checking.
 
 **Justification**: This is an intentional SSR workaround. During SSR, the config is truly `null`, but code that runs only in the browser expects a `Config` type. The alternative approaches are:
+
 1. Make all consumers handle `null` (verbose, error-prone)
 2. Throw during SSR (breaks SSR)
 3. This workaround (documents the constraint)
@@ -204,42 +208,46 @@ const addresses = CONTRACT_ADDRESSES[chainId as ChainId];
 ### Positive Examples
 
 **Button.svelte** - Extends HTML attributes:
+
 ```typescript
 interface Props extends HTMLButtonAttributes {
-  variant?: Variant;
-  size?: Size;
-  hotkey?: string;
-  loading?: boolean;
-  fullWidth?: boolean;
-  children: Snippet;
+	variant?: Variant;
+	size?: Size;
+	hotkey?: string;
+	loading?: boolean;
+	fullWidth?: boolean;
+	children: Snippet;
 }
 ```
 
 **FeedItem.svelte** - Clear prop documentation:
+
 ```typescript
 interface Props {
-  /** The feed event to display */
-  event: FeedEvent;
-  /** Current user's address for highlighting */
-  currentUserAddress?: `0x${string}` | null;
-  /** Whether this is a new event (for animation) */
-  isNew?: boolean;
+	/** The feed event to display */
+	event: FeedEvent;
+	/** Current user's address for highlighting */
+	currentUserAddress?: `0x${string}` | null;
+	/** Whether this is a new event (for animation) */
+	isNew?: boolean;
 }
 ```
 
 **ActiveRunView.svelte** - Complex props with callbacks:
+
 ```typescript
 interface Props {
-  state: HackRunState;
-  onStartNode: () => void;
-  onComplete: (result: NodeResult) => void;
-  // ... more props
+	state: HackRunState;
+	onStartNode: () => void;
+	onComplete: (result: NodeResult) => void;
+	// ... more props
 }
 ```
 
 ### Pattern Consistency
 
 All components follow the same pattern:
+
 1. Define `Props` interface
 2. Destructure with default values
 3. Use `$props()` with type annotation
@@ -253,6 +261,7 @@ This consistency makes the codebase predictable and maintainable.
 All functions in utility modules have explicit return types:
 
 **format.ts** - All 8 functions typed:
+
 ```typescript
 export function formatCountdown(ms: number): string { ... }
 export function formatDuration(ms: number): string { ... }
@@ -272,7 +281,7 @@ Error-related functions properly use `unknown`:
 // contracts.ts
 export function parseContractError(err: unknown): string { ... }
 
-// wallet.svelte.ts  
+// wallet.svelte.ts
 function parseWalletError(err: unknown): string { ... }
 
 // errors.ts
@@ -292,6 +301,7 @@ This is excellent - using `unknown` instead of `any` for caught errors forces pr
 **Assessment**: Excellent
 
 **Strengths**:
+
 - Well-documented with JSDoc comments
 - Proper use of const arrays for ordered data: `LEVELS`, `FEED_EVENT_PRIORITY`
 - Discriminated unions for `FeedEventData` - each variant has a `type` field
@@ -300,12 +310,13 @@ This is excellent - using `unknown` instead of `any` for caught errors forces pr
 - Clear separation of concerns with sub-modules
 
 **Example of excellent discriminated union**:
+
 ```typescript
 export type FeedEventData =
-  | { type: 'JACK_IN'; address: `0x${string}`; level: Level; amount: bigint }
-  | { type: 'EXTRACT'; address: `0x${string}`; amount: bigint; gain: bigint }
-  | { type: 'TRACED'; address: `0x${string}`; level: Level; amountLost: bigint }
-  // ... 11 more variants
+	| { type: 'JACK_IN'; address: `0x${string}`; level: Level; amount: bigint }
+	| { type: 'EXTRACT'; address: `0x${string}`; amount: bigint; gain: bigint }
+	| { type: 'TRACED'; address: `0x${string}`; level: Level; amountLost: bigint };
+// ... 11 more variants
 ```
 
 This enables exhaustive switch statements with TypeScript's control flow analysis.
@@ -315,6 +326,7 @@ This enables exhaustive switch statements with TypeScript's control flow analysi
 **Assessment**: Excellent
 
 **Strengths**:
+
 - Custom `GhostnetError` class with proper error chaining
 - Error codes as string literal union
 - Factory functions for common errors
@@ -326,6 +338,7 @@ This enables exhaustive switch statements with TypeScript's control flow analysi
 **Assessment**: Excellent
 
 **Strengths**:
+
 - Discriminated union for `HackRunState` with different shapes per status
 - Proper use of `as const` for configuration objects
 - Optional fields marked with `?`
@@ -335,6 +348,7 @@ This enables exhaustive switch statements with TypeScript's control flow analysi
 **Assessment**: Good
 
 **Strengths**:
+
 - Proper global type augmentation for `window.ethereum`
 - EIP-1193 provider interface correctly typed
 - Optional wallet detection flags
@@ -343,14 +357,14 @@ This enables exhaustive switch statements with TypeScript's control flow analysi
 
 ## Third-Party Library Types
 
-| Library | Has Types | Source | Issues |
-|---------|-----------|--------|--------|
-| viem | Yes | Built-in | None |
-| @wagmi/core | Yes | Built-in | None |
-| @wagmi/connectors | Yes | Built-in | None |
-| svelte | Yes | Built-in | None |
-| @sveltejs/kit | Yes | Built-in | None |
-| vitest | Yes | Built-in | None |
+| Library           | Has Types | Source   | Issues |
+| ----------------- | --------- | -------- | ------ |
+| viem              | Yes       | Built-in | None   |
+| @wagmi/core       | Yes       | Built-in | None   |
+| @wagmi/connectors | Yes       | Built-in | None   |
+| svelte            | Yes       | Built-in | None   |
+| @sveltejs/kit     | Yes       | Built-in | None   |
+| vitest            | Yes       | Built-in | None   |
 
 All dependencies have proper TypeScript support. No `@types/*` packages are needed.
 
@@ -390,13 +404,13 @@ The `store.svelte.ts` uses proper discriminated union narrowing:
 
 ```typescript
 const currentMultiplier = $derived.by(() => {
-  if (state.status === 'idle' || state.status === 'selecting') {
-    return 0;
-  }
-  if (state.status === 'complete') {
-    return state.result.finalMultiplier; // TypeScript knows state has result
-  }
-  // ...
+	if (state.status === 'idle' || state.status === 'selecting') {
+		return 0;
+	}
+	if (state.status === 'complete') {
+		return state.result.finalMultiplier; // TypeScript knows state has result
+	}
+	// ...
 });
 ```
 
@@ -451,15 +465,16 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 
 ### Severity Assessment
 
-| Issue | Severity | Impact |
-|-------|----------|--------|
-| Missing type exports | High | Compile-time errors |
-| Missing provider methods | High | Compile-time errors |
-| Implicit `any` | Medium | Type safety gap |
+| Issue                    | Severity | Impact              |
+| ------------------------ | -------- | ------------------- |
+| Missing type exports     | High     | Compile-time errors |
+| Missing provider methods | High     | Compile-time errors |
+| Implicit `any`           | Medium   | Type safety gap     |
 
 **Root Cause**: These appear to be integration issues where feature implementation proceeded faster than interface updates. The types and implementations exist but the interface contracts are incomplete.
 
-**Recommendation**: 
+**Recommendation**:
+
 1. Verify `DailyProgress`, `DailyMission` are exported from `daily.ts`
 2. Verify `Consumable`, `OwnedConsumable` are exported from `market.ts`
 3. Update `DataProvider` interface to include consumable-related methods
@@ -467,15 +482,15 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 
 ## Summary
 
-| Category | Count | Severity |
-|----------|-------|----------|
-| `any` usage | 4 | Low (test files only) |
-| Unsafe casts | 1 | Medium (documented SSR workaround) |
-| Justified assertions | ~35 | N/A |
-| Missing type exports | 4 | High (compile errors) |
-| Missing interface methods | 3 | High (compile errors) |
-| Implicit `any` (cascading) | 1 | Medium |
-| Untyped props | 0 | N/A |
+| Category                   | Count | Severity                           |
+| -------------------------- | ----- | ---------------------------------- |
+| `any` usage                | 4     | Low (test files only)              |
+| Unsafe casts               | 1     | Medium (documented SSR workaround) |
+| Justified assertions       | ~35   | N/A                                |
+| Missing type exports       | 4     | High (compile errors)              |
+| Missing interface methods  | 3     | High (compile errors)              |
+| Implicit `any` (cascading) | 1     | Medium                             |
+| Untyped props              | 0     | N/A                                |
 
 ## Recommendations
 
@@ -490,12 +505,13 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 2. **Update DataProvider interface**
 
    Add missing consumable methods to the provider interface:
+
    ```typescript
    interface DataProvider {
-     // ... existing properties
-     ownedConsumables: OwnedConsumable[];
-     purchaseConsumable(id: string, quantity: number): Promise<void>;
-     useConsumable(id: string): Promise<UseConsumableResult>;
+   	// ... existing properties
+   	ownedConsumables: OwnedConsumable[];
+   	purchaseConsumable(id: string, quantity: number): Promise<void>;
+   	useConsumable(id: string): Promise<UseConsumableResult>;
    }
    ```
 
@@ -504,6 +520,7 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 1. **Add exhaustive checking to FeedItem switch**
 
    Consider adding a compile-time exhaustiveness check:
+
    ```typescript
    default: {
      // Uncomment in development to catch missing cases:
@@ -521,6 +538,7 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 1. **Consider mock types for tests**
 
    Create reusable mock type helpers to reduce `as any` in test files:
+
    ```typescript
    // test-utils/mocks.ts
    type MockChain = Pick<Chain, 'id' | 'name'>;
@@ -534,6 +552,7 @@ const owned = ownedConsumables.find((o) => o.consumableId === consumableId);
 ### Type System Improvements Already Implemented
 
 The codebase already implements several best practices:
+
 - Branded types for addresses (`\`0x${string}\``)
 - Discriminated unions for complex state
 - Proper use of `unknown` for error handling
@@ -546,12 +565,14 @@ The codebase already implements several best practices:
 The GHOSTNET web application demonstrates **strong type safety practices** in its core architecture. The development team has clearly prioritized type correctness, using TypeScript's advanced features (discriminated unions, branded types, proper `unknown` usage) appropriately without over-engineering.
 
 **Strengths:**
+
 - No `any` in production code
 - Well-designed type definitions with discriminated unions
 - Consistent component props typing pattern
 - Proper error handling with `unknown`
 
 **Areas for Improvement:**
+
 - Type exports and interface definitions are incomplete for the market/daily features
 - These gaps cause compile-time errors that should be resolved
 
@@ -561,4 +582,4 @@ The absence of `any` in production code is particularly noteworthy - this indica
 
 ---
 
-*Note: The high-priority issues identified (missing type exports, incomplete interface) are straightforward fixes that don't require architectural changes. Once resolved, this codebase would merit an A grade.*
+_Note: The high-priority issues identified (missing type exports, incomplete interface) are straightforward fixes that don't require architectural changes. Once resolved, this codebase would merit an A grade._

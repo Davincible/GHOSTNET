@@ -82,8 +82,19 @@ export interface TypingGameResult {
 export type GameState =
 	| { status: 'idle' }
 	| { status: 'countdown'; secondsLeft: number; currentRound: number; totalRounds: number }
-	| { status: 'active'; challenge: TypingChallenge; progress: TypingProgress; currentRound: number; totalRounds: number }
-	| { status: 'roundComplete'; lastRoundResult: RoundResult; currentRound: number; totalRounds: number }
+	| {
+			status: 'active';
+			challenge: TypingChallenge;
+			progress: TypingProgress;
+			currentRound: number;
+			totalRounds: number;
+	  }
+	| {
+			status: 'roundComplete';
+			lastRoundResult: RoundResult;
+			currentRound: number;
+			totalRounds: number;
+	  }
 	| { status: 'complete'; result: TypingGameResult };
 
 // ════════════════════════════════════════════════════════════════
@@ -93,25 +104,22 @@ export type GameState =
 /** Reward tiers based on accuracy */
 const ACCURACY_TIERS = [
 	{ minAccuracy: 1.0, reduction: -0.25, label: 'PERFECT -25%' },
-	{ minAccuracy: 0.95, reduction: -0.20, label: 'Excellent -20%' },
+	{ minAccuracy: 0.95, reduction: -0.2, label: 'Excellent -20%' },
 	{ minAccuracy: 0.85, reduction: -0.15, label: 'Great -15%' },
-	{ minAccuracy: 0.70, reduction: -0.10, label: 'Good -10%' },
-	{ minAccuracy: 0.50, reduction: -0.05, label: 'Okay -5%' }
+	{ minAccuracy: 0.7, reduction: -0.1, label: 'Good -10%' },
+	{ minAccuracy: 0.5, reduction: -0.05, label: 'Okay -5%' },
 ] as const;
 
 /** Speed bonus tiers */
 const SPEED_BONUSES = [
-	{ minWpm: 100, minAccuracy: 0.95, bonus: -0.10, label: '+Speed Master -10%' },
-	{ minWpm: 80, minAccuracy: 0.95, bonus: -0.05, label: '+Speed Bonus -5%' }
+	{ minWpm: 100, minAccuracy: 0.95, bonus: -0.1, label: '+Speed Master -10%' },
+	{ minWpm: 80, minAccuracy: 0.95, bonus: -0.05, label: '+Speed Bonus -5%' },
 ] as const;
 
 /**
  * Calculate reward based on accuracy and WPM
  */
-export function calculateReward(
-	accuracy: number,
-	wpm: number
-): TypingGameResult['reward'] {
+export function calculateReward(accuracy: number, wpm: number): TypingGameResult['reward'] {
 	// Find accuracy tier
 	const tier = ACCURACY_TIERS.find((t) => accuracy >= t.minAccuracy);
 	if (!tier) return null;
@@ -120,9 +128,7 @@ export function calculateReward(
 	let label: string = tier.label;
 
 	// Check for speed bonus
-	const speedBonus = SPEED_BONUSES.find(
-		(b) => wpm >= b.minWpm && accuracy >= b.minAccuracy
-	);
+	const speedBonus = SPEED_BONUSES.find((b) => wpm >= b.minWpm && accuracy >= b.minAccuracy);
 	if (speedBonus) {
 		totalReduction += speedBonus.bonus;
 		label = `${tier.label} ${speedBonus.label}`;
@@ -131,7 +137,7 @@ export function calculateReward(
 	return {
 		type: 'death_rate_reduction',
 		value: totalReduction,
-		label
+		label,
 	};
 }
 
@@ -248,7 +254,7 @@ export function createTypingGameStore(): TypingGameStore {
 			status: 'countdown',
 			secondsLeft: 3,
 			currentRound,
-			totalRounds
+			totalRounds,
 		};
 
 		countdownInterval = setInterval(() => {
@@ -262,7 +268,7 @@ export function createTypingGameStore(): TypingGameStore {
 			} else {
 				state = {
 					...state,
-					secondsLeft: state.secondsLeft - 1
+					secondsLeft: state.secondsLeft - 1,
 				};
 			}
 		}, 1000);
@@ -294,8 +300,8 @@ export function createTypingGameStore(): TypingGameStore {
 				correctChars: 0,
 				errorChars: 0,
 				startTime: now,
-				currentTime: now
-			}
+				currentTime: now,
+			},
 		};
 
 		// Time tracking interval
@@ -315,8 +321,8 @@ export function createTypingGameStore(): TypingGameStore {
 					...state,
 					progress: {
 						...state.progress,
-						currentTime: Date.now()
-					}
+						currentTime: Date.now(),
+					},
 				};
 			}
 		}, 100);
@@ -349,8 +355,8 @@ export function createTypingGameStore(): TypingGameStore {
 					typed: progress.typed.slice(0, -1),
 					correctChars: wasCorrect ? progress.correctChars - 1 : progress.correctChars,
 					errorChars: wasCorrect ? progress.errorChars : progress.errorChars - 1,
-					currentTime: Date.now()
-				}
+					currentTime: Date.now(),
+				},
 			};
 			return;
 		}
@@ -371,8 +377,8 @@ export function createTypingGameStore(): TypingGameStore {
 				typed: newTyped,
 				correctChars: progress.correctChars + (isCorrect ? 1 : 0),
 				errorChars: progress.errorChars + (isCorrect ? 0 : 1),
-				currentTime: Date.now()
-			}
+				currentTime: Date.now(),
+			},
 		};
 
 		// Check if round complete
@@ -402,7 +408,7 @@ export function createTypingGameStore(): TypingGameStore {
 			timeElapsed,
 			correctChars: progress.correctChars,
 			totalChars,
-			completed
+			completed,
 		};
 		roundResults.push(roundResult);
 		totalTimeElapsed += timeElapsed;
@@ -416,7 +422,7 @@ export function createTypingGameStore(): TypingGameStore {
 				status: 'roundComplete',
 				lastRoundResult: roundResult,
 				currentRound,
-				totalRounds
+				totalRounds,
 			};
 
 			// Auto-advance to next round after delay
@@ -440,7 +446,9 @@ export function createTypingGameStore(): TypingGameStore {
 		const totalCorrectChars = roundResults.reduce((sum, r) => sum + r.correctChars, 0);
 		const totalChars = roundResults.reduce((sum, r) => sum + r.totalChars, 0);
 		const avgAccuracy = calculateAccuracy(totalCorrectChars, totalChars);
-		const avgWpm = Math.round(roundResults.reduce((sum, r) => sum + r.wpm, 0) / roundResults.length);
+		const avgWpm = Math.round(
+			roundResults.reduce((sum, r) => sum + r.wpm, 0) / roundResults.length
+		);
 		const allCompleted = roundResults.every((r) => r.completed);
 
 		const reward = calculateReward(avgAccuracy, avgWpm);
@@ -455,8 +463,8 @@ export function createTypingGameStore(): TypingGameStore {
 				roundsCompleted: roundResults.filter((r) => r.completed).length,
 				totalRounds: challenges.length,
 				roundResults,
-				reward
-			}
+				reward,
+			},
 		};
 	}
 
@@ -482,7 +490,7 @@ export function createTypingGameStore(): TypingGameStore {
 			accuracy: state.result.accuracy,
 			wpm: state.result.wpm,
 			timeElapsed: state.result.timeElapsed,
-			reward: state.result.reward
+			reward: state.result.reward,
 		};
 	}
 
@@ -497,6 +505,6 @@ export function createTypingGameStore(): TypingGameStore {
 		start,
 		handleKey,
 		reset,
-		getResult
+		getResult,
 	};
 }

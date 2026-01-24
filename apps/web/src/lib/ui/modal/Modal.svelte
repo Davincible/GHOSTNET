@@ -29,7 +29,7 @@
 		closeOnEscape = true,
 		onclose,
 		children,
-		footer
+		footer,
 	}: Props = $props();
 
 	let dialogEl = $state<HTMLDialogElement | null>(null);
@@ -89,7 +89,7 @@
 	oncancel={handleCancel}
 >
 	<div class="modal-container">
-		<Box title={title} variant="double" borderColor="bright" glow padding={0}>
+		<Box {title} variant="double" borderColor="bright" glow padding={0}>
 			<div class="modal-content">
 				{@render children()}
 			</div>

@@ -2,7 +2,7 @@
  * Toast Store
  * ===========
  * Simple notification system for GHOSTNET.
- * 
+ *
  * Uses Svelte context for SSR safety - state is isolated per request.
  */
 
@@ -57,13 +57,9 @@ const TOAST_CONTEXT_KEY = Symbol('toast-store');
 export function createToastStore(): ToastStore {
 	let toasts = $state<Toast[]>([]);
 
-	function add(
-		message: string,
-		type: ToastType = 'info',
-		duration: number = 3000
-	): string {
+	function add(message: string, type: ToastType = 'info', duration: number = 3000): string {
 		const id = crypto.randomUUID();
-		
+
 		toasts = [...toasts, { id, message, type, duration }];
 
 		// Auto-remove after duration
@@ -95,7 +91,7 @@ export function createToastStore(): ToastStore {
 		info: (message: string, duration?: number) => add(message, 'info', duration),
 		success: (message: string, duration?: number) => add(message, 'success', duration),
 		warning: (message: string, duration?: number) => add(message, 'warning', duration),
-		error: (message: string, duration?: number) => add(message, 'error', duration)
+		error: (message: string, duration?: number) => add(message, 'error', duration),
 	};
 }
 

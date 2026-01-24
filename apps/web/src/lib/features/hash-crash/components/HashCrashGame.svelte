@@ -7,8 +7,16 @@
 	import RecentCrashes from './RecentCrashes.svelte';
 	import CrashChart from './CrashChart.svelte';
 	import { NetworkPenetrationTheme } from './themes/NetworkPenetration';
-	import { createHashCrashStore, type HashCrashStore } from '../store.svelte';
+	import {
+		createHashCrashStore,
+		type HashCrashStore,
+		ROUND_DELAY,
+		WIN_ROUND_DELAY,
+	} from '../store.svelte';
 	import { createThemeStore, type HashCrashTheme } from '../theme.svelte';
+	import { getSettings } from '$lib/core/settings';
+	import { createAudioManager } from '$lib/core/audio';
+	import { createHashCrashAudio } from '../audio';
 
 	interface Props {
 		/** Optional external store (for testing) */
@@ -28,15 +36,20 @@
 	// Theme store for persisting selection (initialTheme used if no saved preference)
 	const themeStore = createThemeStore(initialTheme);
 
+	// Audio setup
+	const settings = getSettings();
+	const audioManager = createAudioManager(settings);
+	const audio = createHashCrashAudio(audioManager);
+
 	// Create or use provided store
 	function getStore(): HashCrashStore {
 		return externalStore ?? createHashCrashStore();
 	}
 	const store = getStore();
 
-	// Reactive state from store
-	let state = $derived(store.state);
-	let round = $derived(state.round);
+	// Reactive state from store (using 'gameState' to avoid conflict with $state rune)
+	let gameState = $derived(store.state);
+	let round = $derived(gameState.round);
 	let phase = $derived(round?.state ?? null);
 	let isCrashed = $derived(phase === 'settled');
 	let isAnimating = $derived(phase === 'animating');
@@ -74,10 +87,70 @@
 	// Auto-start next simulation round when settled
 	$effect(() => {
 		if (simulate && phase === 'settled') {
+			// Show win state longer for celebration
+			const delay = gameState.playerResult === 'won' ? WIN_ROUND_DELAY : ROUND_DELAY;
 			setTimeout(() => {
 				startSimulation();
-			}, 3000);
+			}, delay);
 		}
+	});
+
+	// ═══════════════════════════════════════════════════════════════
+	// AUDIO EFFECTS
+	// ═══════════════════════════════════════════════════════════════
+
+	// Track previous values for detecting transitions (avoid 'state' name collision)
+	let lastPhase: string | null = $state(null);
+	let lastMultiplier = $state(1);
+	let lastPlayerResult = $state('pending');
+
+	// Play sounds on phase transitions
+	$effect(() => {
+		const currentPhase = phase;
+
+		// Only play on actual transitions
+		if (currentPhase === lastPhase) return;
+
+		if (currentPhase === 'betting' && lastPhase !== 'betting') {
+			audio.bettingStart();
+		} else if (currentPhase === 'locked') {
+			audio.bettingEnd();
+		} else if (currentPhase === 'animating' || currentPhase === 'revealed') {
+			audio.launch();
+		} else if (currentPhase === 'settled') {
+			// Crash sound
+			audio.crash();
+		}
+
+		lastPhase = currentPhase;
+	});
+
+	// Play multiplier tick sounds during animation (throttled in audio helper)
+	$effect(() => {
+		if (phase !== 'animating') return;
+
+		const mult = gameState.multiplier;
+		// Only play ticks when multiplier increases significantly
+		if (mult - lastMultiplier >= 0.1) {
+			audio.multiplierTick(mult);
+			lastMultiplier = mult;
+		}
+	});
+
+	// Play win/loss sound when result changes
+	$effect(() => {
+		const result = gameState.playerResult;
+		if (result === lastPlayerResult) return;
+
+		if (result === 'won') {
+			// Play win sound based on target multiplier achieved
+			const targetMult = gameState.playerBet?.targetMultiplier ?? 1;
+			audio.win(targetMult);
+		} else if (result === 'lost' && lastPlayerResult === 'pending') {
+			audio.loss();
+		}
+
+		lastPlayerResult = result;
 	});
 </script>
 
@@ -108,8 +181,8 @@
 				IDLE
 			{/if}
 		</div>
-		<div class="connection-status" class:connected={state.isConnected || simulate}>
-			{state.isConnected || simulate ? '+ CONNECTED' : '- DISCONNECTED'}
+		<div class="connection-status" class:connected={gameState.isConnected || simulate}>
+			{gameState.isConnected || simulate ? '+ CONNECTED' : '- DISCONNECTED'}
 		</div>
 	</header>
 
@@ -120,11 +193,11 @@
 			{#if themeStore.theme === 'network-penetration'}
 				<!-- Network Penetration Theme -->
 				<NetworkPenetrationTheme
-					depth={state.multiplier}
-					exitPoint={state.playerBet?.targetMultiplier ?? null}
+					depth={gameState.multiplier}
+					exitPoint={gameState.playerBet?.targetMultiplier ?? null}
 					{phase}
 					traced={isCrashed}
-					playerResult={state.playerResult}
+					playerResult={gameState.playerResult}
 					roundId={round?.roundId}
 				/>
 			{:else}
@@ -132,24 +205,24 @@
 				<Box
 					title="Multiplier"
 					variant="double"
-					borderColor={isCrashed ? 'red' : state.playerResult === 'won' ? 'bright' : 'default'}
-					glow={isAnimating || state.playerResult === 'won'}
+					borderColor={isCrashed ? 'red' : gameState.playerResult === 'won' ? 'bright' : 'default'}
+					glow={isAnimating || gameState.playerResult === 'won'}
 				>
 					<div class="multiplier-area">
 						<MultiplierDisplay
-							multiplier={state.multiplier}
-							targetMultiplier={state.playerBet?.targetMultiplier ?? null}
-							playerResult={state.playerResult}
+							multiplier={gameState.multiplier}
+							targetMultiplier={gameState.playerBet?.targetMultiplier ?? null}
+							playerResult={gameState.playerResult}
 							crashed={isCrashed}
 							crashPoint={round?.crashPoint ?? null}
 						/>
-						<CrashChart multiplier={state.multiplier} crashed={isCrashed} />
+						<CrashChart multiplier={gameState.multiplier} crashed={isCrashed} />
 					</div>
 				</Box>
 			{/if}
 
 			<!-- Recent crashes strip -->
-			<RecentCrashes crashPoints={state.recentCrashPoints} />
+			<RecentCrashes crashPoints={gameState.recentCrashPoints} />
 		</div>
 
 		<!-- Right: Betting panel and players -->
@@ -157,20 +230,20 @@
 			<BettingPanel
 				canBet={store.canBet}
 				{phase}
-				multiplier={state.multiplier}
-				targetMultiplier={state.playerBet?.targetMultiplier ?? null}
-				currentBet={state.playerBet?.amount ?? null}
+				multiplier={gameState.multiplier}
+				targetMultiplier={gameState.playerBet?.targetMultiplier ?? null}
+				currentBet={gameState.playerBet?.amount ?? null}
 				potentialPayout={store.potentialPayout}
-				playerResult={state.playerResult}
+				playerResult={gameState.playerResult}
 				crashPoint={round?.crashPoint ?? null}
 				timeDisplay={store.timeDisplay}
 				isCritical={store.isCritical}
-				isLoading={state.isLoading}
+				isLoading={gameState.isLoading}
 				onPlaceBet={handlePlaceBet}
 			/>
 
 			<LivePlayersPanel
-				players={state.players}
+				players={gameState.players}
 				crashPoint={round?.crashPoint ?? null}
 				isActive={isAnimating}
 			/>
@@ -178,10 +251,10 @@
 	</div>
 
 	<!-- Error display -->
-	{#if state.error}
+	{#if gameState.error}
 		<div class="error-banner">
 			<span class="error-icon">[!]</span>
-			<span>{state.error}</span>
+			<span>{gameState.error}</span>
 		</div>
 	{/if}
 </div>

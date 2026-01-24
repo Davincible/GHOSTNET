@@ -16,7 +16,7 @@ export {
 	type TypingGameResult,
 	type RoundResult,
 	type GameState,
-	type TypingGameStore
+	type TypingGameStore,
 } from './store.svelte';
 
 // Components

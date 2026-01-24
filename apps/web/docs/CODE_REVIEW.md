@@ -38,12 +38,12 @@ let parsedAmount = $derived.by(() => {
 import { parseUnits } from 'viem';
 
 let parsedAmount = $derived.by(() => {
-  if (!amountInput || isNaN(Number(amountInput))) return 0n;
-  try {
-    return parseUnits(amountInput, 18);
-  } catch {
-    return 0n;
-  }
+	if (!amountInput || isNaN(Number(amountInput))) return 0n;
+	try {
+		return parseUnits(amountInput, 18);
+	} catch {
+		return 0n;
+	}
 });
 ```
 
@@ -55,10 +55,10 @@ let parsedAmount = $derived.by(() => {
 
 ```typescript
 async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
-  if (!browser) return;  // Silent return - no error feedback
-  const config = getConfig();
-  if (!config) return;   // Silent return - no error feedback
-  // ...
+	if (!browser) return; // Silent return - no error feedback
+	const config = getConfig();
+	if (!config) return; // Silent return - no error feedback
+	// ...
 }
 ```
 
@@ -68,9 +68,9 @@ async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
 
 ```typescript
 if (!config) {
-  error = 'Wallet configuration not available';
-  console.error('[Wallet] Config not available - possible SSR leak');
-  return;
+	error = 'Wallet configuration not available';
+	console.error('[Wallet] Config not available - possible SSR leak');
+	return;
 }
 ```
 
@@ -82,15 +82,15 @@ if (!config) {
 
 ```typescript
 async function handleJackIn() {
-  // ...
-  try {
-    await provider.jackIn(selectedLevel, parsedAmount);
-    onclose();
-  } catch (error) {
-    console.error('Jack In failed:', error);
-    // Could show error toast here  <- This comment is not implemented
-  }
-  // ...
+	// ...
+	try {
+		await provider.jackIn(selectedLevel, parsedAmount);
+		onclose();
+	} catch (error) {
+		console.error('Jack In failed:', error);
+		// Could show error toast here  <- This comment is not implemented
+	}
+	// ...
 }
 ```
 
@@ -131,22 +131,19 @@ const hash = await writeContract(config, request as any);
 
 ```typescript
 const { request } = await simulateContract(config, {
-  address: tokenAddress,
-  abi: dataTokenAbi,
-  functionName: 'approve',
-  args: [ghostCoreAddress, amount]
+	address: tokenAddress,
+	abi: dataTokenAbi,
+	functionName: 'approve',
+	args: [ghostCoreAddress, amount],
 });
-const hash = await writeContract(config, request);  // Should work with proper generics
+const hash = await writeContract(config, request); // Should work with proper generics
 ```
 
 If wagmi types genuinely don't align, create a helper:
 
 ```typescript
-function writeSimulated<T extends WriteContractParameters>(
-  config: Config,
-  request: T
-) {
-  return writeContract(config, request);
+function writeSimulated<T extends WriteContractParameters>(config: Config, request: T) {
+	return writeContract(config, request);
 }
 ```
 
@@ -158,10 +155,10 @@ function writeSimulated<T extends WriteContractParameters>(
 
 ```typescript
 function handleWatchFeed() {
-  const feedElement = document.querySelector('.column-left');
-  if (feedElement) {
-    feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+	const feedElement = document.querySelector('.column-left');
+	if (feedElement) {
+		feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 }
 ```
 
@@ -199,16 +196,16 @@ All contract addresses are empty strings:
 
 ```typescript
 export function getContractAddress(chainId: number, contract: ContractName): `0x${string}` | null {
-  const addresses = CONTRACT_ADDRESSES[chainId as ChainId];
-  if (!addresses) return null;
-  const addr = addresses[contract];
-  if (!addr || addr.length < 3) {
-    if (import.meta.env.DEV) {
-      console.warn(`[Contracts] ${contract} not deployed on chain ${chainId}`);
-    }
-    return null;
-  }
-  return addr;
+	const addresses = CONTRACT_ADDRESSES[chainId as ChainId];
+	if (!addresses) return null;
+	const addr = addresses[contract];
+	if (!addr || addr.length < 3) {
+		if (import.meta.env.DEV) {
+			console.warn(`[Contracts] ${contract} not deployed on chain ${chainId}`);
+		}
+		return null;
+	}
+	return addr;
 }
 ```
 
@@ -248,13 +245,13 @@ cleanup(): void
 
 ```typescript
 switch (event.type) {
-  case 'JACK_IN':
-    audio.jackIn();
-    break;
-  case 'EXTRACT':
-    audio.extract();
-    break;
-  // ... 6 more cases
+	case 'JACK_IN':
+		audio.jackIn();
+		break;
+	case 'EXTRACT':
+		audio.extract();
+		break;
+	// ... 6 more cases
 }
 ```
 
@@ -262,13 +259,13 @@ switch (event.type) {
 
 ```typescript
 const audioHandlers: Partial<Record<FeedEventType, () => void>> = {
-  JACK_IN: () => audio.jackIn(),
-  EXTRACT: () => audio.extract(),
-  TRACED: () => audio.traced(),
-  SURVIVED: () => audio.survived(),
-  JACKPOT: () => audio.jackpot(),
-  TRACE_SCAN_WARNING: () => audio.scanWarning(),
-  TRACE_SCAN_START: () => audio.scanStart(),
+	JACK_IN: () => audio.jackIn(),
+	EXTRACT: () => audio.extract(),
+	TRACED: () => audio.traced(),
+	SURVIVED: () => audio.survived(),
+	JACKPOT: () => audio.jackpot(),
+	TRACE_SCAN_WARNING: () => audio.scanWarning(),
+	TRACE_SCAN_START: () => audio.scanStart(),
 };
 
 const handler = audioHandlers[event.type];
@@ -285,9 +282,9 @@ Several tests only verify function existence:
 
 ```typescript
 describe('connect', () => {
-  it('exists as a function', () => {
-    expect(typeof store.connect).toBe('function');
-  });
+	it('exists as a function', () => {
+		expect(typeof store.connect).toBe('function');
+	});
 });
 ```
 
@@ -304,11 +301,11 @@ describe('connect', () => {
 ```typescript
 const settingsButton = page.getByRole('button', { name: /settings|gear|cog/i });
 
-if (await settingsButton.count() === 0) {
-  const settingsIcon = page.locator('button:has-text("???"), [aria-label*="settings" i]').first();
-  if (await settingsIcon.count() > 0) {
-    await settingsIcon.click();
-  }
+if ((await settingsButton.count()) === 0) {
+	const settingsIcon = page.locator('button:has-text("???"), [aria-label*="settings" i]').first();
+	if ((await settingsIcon.count()) > 0) {
+		await settingsIcon.click();
+	}
 }
 ```
 
@@ -364,7 +361,7 @@ rpcUrls: {
 **Suggestion:** Consider environment variables for production flexibility:
 
 ```typescript
-http: [import.meta.env.VITE_MEGAETH_RPC || 'https://carrot.megaeth.com/rpc']
+http: [import.meta.env.VITE_MEGAETH_RPC || 'https://carrot.megaeth.com/rpc'];
 ```
 
 ---
@@ -398,12 +395,12 @@ http: [import.meta.env.VITE_MEGAETH_RPC || 'https://carrot.megaeth.com/rpc']
 
 ## Recommendations Summary
 
-| Priority | Count | Category |
-|----------|-------|----------|
-| Critical | 3 | Correctness/UX bugs |
-| High | 3 | Type safety, maintainability |
-| Medium | 4 | Code quality, testing |
-| Low | 3 | Suggestions |
+| Priority | Count | Category                     |
+| -------- | ----- | ---------------------------- |
+| Critical | 3     | Correctness/UX bugs          |
+| High     | 3     | Type safety, maintainability |
+| Medium   | 4     | Code quality, testing        |
+| Low      | 3     | Suggestions                  |
 
 ---
 

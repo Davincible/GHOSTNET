@@ -29,7 +29,9 @@
 				{#if result.success}
 					<div class="status-icon success" aria-hidden="true">[OK]</div>
 					<h2 class="status-title">INFILTRATION COMPLETE</h2>
-					<p class="status-subtitle">Successfully extracted from {run.difficulty.toUpperCase()} network</p>
+					<p class="status-subtitle">
+						Successfully extracted from {run.difficulty.toUpperCase()} network
+					</p>
 				{:else}
 					<div class="status-icon failure" aria-hidden="true">[XX]</div>
 					<h2 class="status-title">INFILTRATION FAILED</h2>
@@ -88,12 +90,8 @@
 
 			<!-- Actions -->
 			<div class="actions">
-				<Button variant="secondary" onclick={onExit}>
-					[ESC] EXIT
-				</Button>
-				<Button variant="primary" onclick={onNewRun}>
-					[SPACE] NEW RUN
-				</Button>
+				<Button variant="secondary" onclick={onExit}>[ESC] EXIT</Button>
+				<Button variant="primary" onclick={onNewRun}>[SPACE] NEW RUN</Button>
 			</div>
 		</Stack>
 	</Box>

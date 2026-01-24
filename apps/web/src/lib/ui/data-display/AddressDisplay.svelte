@@ -19,7 +19,7 @@
 		truncate = true,
 		chars = 4,
 		copyable = true,
-		showFullOnHover = true
+		showFullOnHover = true,
 	}: Props = $props();
 
 	let copied = $state(false);
@@ -60,10 +60,7 @@
 		</span>
 	</button>
 {:else}
-	<span
-		class="address"
-		title={showFullOnHover ? address : undefined}
-	>
+	<span class="address" title={showFullOnHover ? address : undefined}>
 		<span class="address-text">{displayAddress}</span>
 	</span>
 {/if}

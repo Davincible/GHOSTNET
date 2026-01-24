@@ -4,16 +4,16 @@
 
 ```svelte
 <script>
-  let count = $state(0);
-  
-  // ❌ WRONG
-  let doubled = $state(0);
-  $effect(() => {
-    doubled = count * 2;
-  });
-  
-  // ✅ CORRECT
-  const doubled = $derived(count * 2);
+	let count = $state(0);
+
+	// ❌ WRONG
+	let doubled = $state(0);
+	$effect(() => {
+		doubled = count * 2;
+	});
+
+	// ✅ CORRECT
+	const doubled = $derived(count * 2);
 </script>
 ```
 
@@ -21,19 +21,23 @@
 
 ```svelte
 <script>
-  // ❌ WRONG - Compile error
-  function createCounter() {
-    return $state(0);
-  }
-  
-  // ✅ CORRECT - Return object with reactive properties
-  function createCounter() {
-    let count = $state(0);
-    return {
-      get count() { return count; },
-      increment() { count++; }
-    };
-  }
+	// ❌ WRONG - Compile error
+	function createCounter() {
+		return $state(0);
+	}
+
+	// ✅ CORRECT - Return object with reactive properties
+	function createCounter() {
+		let count = $state(0);
+		return {
+			get count() {
+				return count;
+			},
+			increment() {
+				count++;
+			},
+		};
+	}
 </script>
 ```
 
@@ -41,13 +45,13 @@
 
 ```svelte
 <script>
-  // ❌ WRONG - Compile error
-  if (condition) {
-    let count = $state(0);
-  }
-  
-  // ✅ CORRECT
-  let count = $state(condition ? initialValue : 0);
+	// ❌ WRONG - Compile error
+	if (condition) {
+		let count = $state(0);
+	}
+
+	// ✅ CORRECT
+	let count = $state(condition ? initialValue : 0);
 </script>
 ```
 
@@ -55,17 +59,17 @@
 
 ```svelte
 <script>
-  let count = $state(0);
-  
-  // ❌ WRONG - Creates new signal, breaks reactivity
-  function reset() {
-    count = $state(0);
-  }
-  
-  // ✅ CORRECT
-  function reset() {
-    count = 0;
-  }
+	let count = $state(0);
+
+	// ❌ WRONG - Creates new signal, breaks reactivity
+	function reset() {
+		count = $state(0);
+	}
+
+	// ✅ CORRECT
+	function reset() {
+		count = 0;
+	}
 </script>
 ```
 
@@ -73,18 +77,18 @@
 
 ```svelte
 <script>
-  let { items } = $props();
-  
-  // ❌ WRONG - Parent won't see changes
-  function addItem(item) {
-    items.push(item);
-  }
-  
-  // ✅ CORRECT - Use callbacks
-  let { items, onAdd } = $props();
-  function addItem(item) {
-    onAdd?.(item);
-  }
+	let { items } = $props();
+
+	// ❌ WRONG - Parent won't see changes
+	function addItem(item) {
+		items.push(item);
+	}
+
+	// ✅ CORRECT - Use callbacks
+	let { items, onAdd } = $props();
+	function addItem(item) {
+		onAdd?.(item);
+	}
 </script>
 ```
 
@@ -92,25 +96,25 @@
 
 ```svelte
 <script>
-  let count = $state(0);
-  
-  // ❌ WRONG - Infinite loop
-  $effect(() => {
-    count = count + 1;
-  });
-  
-  // ❌ WRONG - Array mutation triggers itself
-  let items = $state([]);
-  $effect(() => {
-    items.push(Date.now());
-  });
-  
-  // ✅ CORRECT - Use untrack
-  import { untrack } from 'svelte';
-  $effect(() => {
-    const current = untrack(() => count);
-    // Use current without creating dependency
-  });
+	let count = $state(0);
+
+	// ❌ WRONG - Infinite loop
+	$effect(() => {
+		count = count + 1;
+	});
+
+	// ❌ WRONG - Array mutation triggers itself
+	let items = $state([]);
+	$effect(() => {
+		items.push(Date.now());
+	});
+
+	// ✅ CORRECT - Use untrack
+	import { untrack } from 'svelte';
+	$effect(() => {
+		const current = untrack(() => count);
+		// Use current without creating dependency
+	});
 </script>
 ```
 
@@ -118,13 +122,13 @@
 
 ```svelte
 <script>
-  // ❌ WRONG - Mixed syntax
-  let count = $state(0);
-  $: doubled = count * 2;  // Svelte 4 syntax!
-  
-  // ✅ CORRECT - Consistent Svelte 5
-  let count = $state(0);
-  const doubled = $derived(count * 2);
+	// ❌ WRONG - Mixed syntax
+	let count = $state(0);
+	$: doubled = count * 2; // Svelte 4 syntax!
+
+	// ✅ CORRECT - Consistent Svelte 5
+	let count = $state(0);
+	const doubled = $derived(count * 2);
 </script>
 ```
 
@@ -138,8 +142,12 @@ export const userStore = $state({ user: null });
 import { setContext, getContext } from 'svelte';
 
 export function createUserContext() {
-  let user = $state(null);
-  setContext('user', { get user() { return user; } });
+	let user = $state(null);
+	setContext('user', {
+		get user() {
+			return user;
+		},
+	});
 }
 ```
 
@@ -148,7 +156,7 @@ export function createUserContext() {
 ```svelte
 <script>
   let userId = $state('123');
-  
+
   // ❌ WRONG - Use load functions instead
   let user = $state(null);
   $effect(() => {
@@ -181,30 +189,30 @@ export async function load({ params }) {
 
 ```svelte
 <script>
-  // ❌ WRONG - Memory leak
-  $effect(() => {
-    window.addEventListener('resize', handleResize);
-  });
-  
-  // ✅ CORRECT - Return cleanup
-  $effect(() => {
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  });
+	// ❌ WRONG - Memory leak
+	$effect(() => {
+		window.addEventListener('resize', handleResize);
+	});
+
+	// ✅ CORRECT - Return cleanup
+	$effect(() => {
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	});
 </script>
 ```
 
 ## Heavy Computations in Templates
 
 ```svelte
+<!-- ✅ CORRECT - Cache with $derived -->
+<script>
+	const total = $derived(items.reduce((a, b) => a + b, 0));
+</script>
+
 <!-- ❌ WRONG - Recalculates on every render -->
 <p>Total: {items.reduce((a, b) => a + b, 0)}</p>
 <p>Average: {items.reduce((a, b) => a + b, 0) / items.length}</p>
-
-<!-- ✅ CORRECT - Cache with $derived -->
-<script>
-  const total = $derived(items.reduce((a, b) => a + b, 0));
-</script>
 <p>Total: {total}</p>
 <p>Average: {total / items.length}</p>
 ```
@@ -217,7 +225,7 @@ When refactoring, **never** replace `$derived` with getter functions called in t
 ```svelte
 <script>
   let { value } = $props();
-  
+
   // ❌ CATASTROPHIC - Looks like a reasonable refactor, but...
   const type = () => getType(value);
   const formatted = () => expensiveFormat(value);
@@ -244,14 +252,15 @@ When refactoring, **never** replace `$derived` with getter functions called in t
 
 For a JSON tree viewer with 10,000 nodes, where each node has 5 computed properties:
 
-| Pattern | Computations per render |
-|---------|------------------------|
-| `$derived` (cached) | 50,000 once, then 0 |
-| Getter functions | 50,000 × every render pass |
+| Pattern             | Computations per render    |
+| ------------------- | -------------------------- |
+| `$derived` (cached) | 50,000 once, then 0        |
+| Getter functions    | 50,000 × every render pass |
 
 Real-world impact:
+
 - **Before (with `$derived`):** 36ms render time
-- **After (getter functions):** 6,697ms render time  
+- **After (getter functions):** 6,697ms render time
 - **Regression:** 197× slower
 
 ## Forgetting Keys in Each Blocks
@@ -259,12 +268,12 @@ Real-world impact:
 ```svelte
 <!-- ❌ WRONG - Inefficient, bugs with state -->
 {#each items as item}
-  <Item data={item} />
+	<Item data={item} />
 {/each}
 
 <!-- ✅ CORRECT - Efficient updates -->
 {#each items as item (item.id)}
-  <Item data={item} />
+	<Item data={item} />
 {/each}
 ```
 

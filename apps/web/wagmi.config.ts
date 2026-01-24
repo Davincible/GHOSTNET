@@ -12,31 +12,31 @@ export default defineConfig({
 	contracts: [
 		{
 			name: 'DataToken',
-			abi: DataTokenAbi as readonly unknown[]
+			abi: DataTokenAbi as readonly unknown[],
 		},
 		{
 			name: 'GhostCore',
-			abi: GhostCoreAbi as readonly unknown[]
+			abi: GhostCoreAbi as readonly unknown[],
 		},
 		{
 			name: 'TraceScan',
-			abi: TraceScanAbi as readonly unknown[]
+			abi: TraceScanAbi as readonly unknown[],
 		},
 		{
 			name: 'DeadPool',
-			abi: DeadPoolAbi as readonly unknown[]
+			abi: DeadPoolAbi as readonly unknown[],
 		},
 		{
 			name: 'RewardsDistributor',
-			abi: RewardsDistributorAbi as readonly unknown[]
+			abi: RewardsDistributorAbi as readonly unknown[],
 		},
 		{
 			name: 'FeeRouter',
-			abi: FeeRouterAbi as readonly unknown[]
+			abi: FeeRouterAbi as readonly unknown[],
 		},
 		{
 			name: 'TeamVesting',
-			abi: TeamVestingAbi as readonly unknown[]
-		}
-	]
+			abi: TeamVestingAbi as readonly unknown[],
+		},
+	],
 });

@@ -303,7 +303,10 @@ function pickRandomLevel(): Level {
  * @param category - The leaderboard category for context
  * @returns Formatted string for display
  */
-export function formatLeaderboardValue(value: bigint | number, category: LeaderboardCategory): string {
+export function formatLeaderboardValue(
+	value: bigint | number,
+	category: LeaderboardCategory
+): string {
 	if (category === 'ghost_streak') {
 		return `${value}`;
 	}
@@ -398,7 +401,7 @@ export function generateLeaderboardEntry(
 
 	// Optionally assign ENS name (30% chance, higher for top ranks)
 	const ensChance = rank <= 10 ? 0.6 : 0.3;
-	const ensName = Math.random() < ensChance ? pickRandom(ENS_NAMES) ?? undefined : undefined;
+	const ensName = Math.random() < ensChance ? (pickRandom(ENS_NAMES) ?? undefined) : undefined;
 
 	// Level for context
 	const level = pickRandomLevel();
@@ -687,7 +690,10 @@ export function getAchievementTemplates(): Omit<Achievement, 'unlockedAt' | 'pro
 }
 
 /** Get rank movement indicator */
-export function getRankMovement(current: number, previous: number | null): 'up' | 'down' | 'same' | 'new' {
+export function getRankMovement(
+	current: number,
+	previous: number | null
+): 'up' | 'down' | 'same' | 'new' {
 	if (previous === null) return 'new';
 	if (current < previous) return 'up';
 	if (current > previous) return 'down';

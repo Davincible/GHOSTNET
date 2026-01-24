@@ -1,0 +1,1360 @@
+[
+	{
+		"type": "constructor",
+		"inputs": [
+			{
+				"name": "_arcadeCore",
+				"type": "address",
+				"internalType": "address"
+			},
+			{
+				"name": "_owner",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "BETTING_DURATION",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "DEFAULT_SEED_BLOCK_DELAY",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "EXTENDED_HISTORY_WINDOW",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "HASH_CRASH_SEED_DELAY",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "HOUSE_EDGE_BPS",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MAX_BLOCK_AGE",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MAX_CRASH_MULTIPLIER",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MAX_PLAYERS_PER_ROUND",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MAX_TARGET_MULTIPLIER",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MIN_CRASH_MULTIPLIER",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MIN_SEED_BLOCK_DELAY",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MIN_TARGET_MULTIPLIER",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "MULTIPLIER_PRECISION",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "acceptOwnership",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "arcadeCore",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "address",
+				"internalType": "contract IArcadeCore"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "claimExpiredRefund",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "currentSessionId",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "id",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "emergencyCancel",
+		"inputs": [
+			{
+				"name": "sessionId",
+				"type": "uint256",
+				"internalType": "uint256"
+			},
+			{
+				"name": "reason",
+				"type": "string",
+				"internalType": "string"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "gameId",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "id",
+				"type": "bytes32",
+				"internalType": "bytes32"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getGameInfo",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "info",
+				"type": "tuple",
+				"internalType": "struct IArcadeTypes.GameInfo",
+				"components": [
+					{
+						"name": "gameId",
+						"type": "bytes32",
+						"internalType": "bytes32"
+					},
+					{
+						"name": "name",
+						"type": "string",
+						"internalType": "string"
+					},
+					{
+						"name": "description",
+						"type": "string",
+						"internalType": "string"
+					},
+					{
+						"name": "category",
+						"type": "uint8",
+						"internalType": "enum IArcadeTypes.GameCategory"
+					},
+					{
+						"name": "minPlayers",
+						"type": "uint8",
+						"internalType": "uint8"
+					},
+					{
+						"name": "maxPlayers",
+						"type": "uint8",
+						"internalType": "uint8"
+					},
+					{
+						"name": "isActive",
+						"type": "bool",
+						"internalType": "bool"
+					},
+					{
+						"name": "launchedAt",
+						"type": "uint64",
+						"internalType": "uint64"
+					}
+				]
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getPlayerBet",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"outputs": [
+			{
+				"name": "bet",
+				"type": "tuple",
+				"internalType": "struct HashCrash.PlayerBet",
+				"components": [
+					{
+						"name": "amount",
+						"type": "uint128",
+						"internalType": "uint128"
+					},
+					{
+						"name": "grossAmount",
+						"type": "uint128",
+						"internalType": "uint128"
+					},
+					{
+						"name": "targetMultiplier",
+						"type": "uint128",
+						"internalType": "uint128"
+					},
+					{
+						"name": "settled",
+						"type": "bool",
+						"internalType": "bool"
+					}
+				]
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getRemainingRevealWindow",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "remaining",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getRound",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "round",
+				"type": "tuple",
+				"internalType": "struct HashCrash.Round",
+				"components": [
+					{
+						"name": "state",
+						"type": "uint8",
+						"internalType": "enum IArcadeTypes.SessionState"
+					},
+					{
+						"name": "bettingEndTime",
+						"type": "uint64",
+						"internalType": "uint64"
+					},
+					{
+						"name": "prizePool",
+						"type": "uint256",
+						"internalType": "uint256"
+					},
+					{
+						"name": "crashMultiplier",
+						"type": "uint256",
+						"internalType": "uint256"
+					},
+					{
+						"name": "totalPaidOut",
+						"type": "uint256",
+						"internalType": "uint256"
+					},
+					{
+						"name": "playerCount",
+						"type": "uint256",
+						"internalType": "uint256"
+					}
+				]
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getRoundPlayers",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "players",
+				"type": "address[]",
+				"internalType": "address[]"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getSeedInfo",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "seedInfo",
+				"type": "tuple",
+				"internalType": "struct FutureBlockRandomness.RoundSeed",
+				"components": [
+					{
+						"name": "seedBlock",
+						"type": "uint64",
+						"internalType": "uint64"
+					},
+					{
+						"name": "commitBlock",
+						"type": "uint64",
+						"internalType": "uint64"
+					},
+					{
+						"name": "committed",
+						"type": "bool",
+						"internalType": "bool"
+					},
+					{
+						"name": "revealed",
+						"type": "bool",
+						"internalType": "bool"
+					},
+					{
+						"name": "usedExtendedHistory",
+						"type": "bool",
+						"internalType": "bool"
+					},
+					{
+						"name": "blockHash",
+						"type": "bytes32",
+						"internalType": "bytes32"
+					},
+					{
+						"name": "seed",
+						"type": "uint256",
+						"internalType": "uint256"
+					}
+				]
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getSessionPrizePool",
+		"inputs": [
+			{
+				"name": "sessionId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "prizePool",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "getSessionState",
+		"inputs": [
+			{
+				"name": "sessionId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "state",
+				"type": "uint8",
+				"internalType": "enum IArcadeTypes.SessionState"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "handleExpiredRound",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "isPaused",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "isPlayerInSession",
+		"inputs": [
+			{
+				"name": "sessionId",
+				"type": "uint256",
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"outputs": [
+			{
+				"name": "inSession",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "isSeedExpired",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "expired",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "isSeedReady",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [
+			{
+				"name": "ready",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "lockRound",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "owner",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "pause",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "paused",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "pendingOwner",
+		"inputs": [],
+		"outputs": [
+			{
+				"name": "",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"stateMutability": "view"
+	},
+	{
+		"type": "function",
+		"name": "placeBet",
+		"inputs": [
+			{
+				"name": "amount",
+				"type": "uint256",
+				"internalType": "uint256"
+			},
+			{
+				"name": "targetMultiplier",
+				"type": "uint256",
+				"internalType": "uint256"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "renounceOwnership",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "revealCrash",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "setActive",
+		"inputs": [
+			{
+				"name": "active",
+				"type": "bool",
+				"internalType": "bool"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "settle",
+		"inputs": [
+			{
+				"name": "player",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "settleAll",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "startRound",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "transferOwnership",
+		"inputs": [
+			{
+				"name": "newOwner",
+				"type": "address",
+				"internalType": "address"
+			}
+		],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "function",
+		"name": "unpause",
+		"inputs": [],
+		"outputs": [],
+		"stateMutability": "nonpayable"
+	},
+	{
+		"type": "event",
+		"name": "BetPlaced",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "amount",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "netAmount",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "targetMultiplier",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "BetPlaced",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "amount",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "netAmount",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "CrashPointRevealed",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "crashMultiplier",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "seed",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "GameActiveStatusChanged",
+		"inputs": [
+			{
+				"name": "isActive",
+				"type": "bool",
+				"indexed": false,
+				"internalType": "bool"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "OwnershipTransferStarted",
+		"inputs": [
+			{
+				"name": "previousOwner",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "newOwner",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "OwnershipTransferred",
+		"inputs": [
+			{
+				"name": "previousOwner",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "newOwner",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "Paused",
+		"inputs": [
+			{
+				"name": "account",
+				"type": "address",
+				"indexed": false,
+				"internalType": "address"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "PlayerLost",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "targetMultiplier",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "crashMultiplier",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "PlayerPaidOut",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "payout",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "won",
+				"type": "bool",
+				"indexed": false,
+				"internalType": "bool"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "PlayerWon",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "player",
+				"type": "address",
+				"indexed": true,
+				"internalType": "address"
+			},
+			{
+				"name": "targetMultiplier",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "payout",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "RoundCancelled",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "reason",
+				"type": "string",
+				"indexed": false,
+				"internalType": "string"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "RoundResolved",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "seed",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "outcome",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "RoundStarted",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "seedBlock",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "timestamp",
+				"type": "uint64",
+				"indexed": false,
+				"internalType": "uint64"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "SeedCommitted",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "seedBlock",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "deadline",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "SeedExpiredEvent",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "seedBlock",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "expiredAtBlock",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "SeedRevealed",
+		"inputs": [
+			{
+				"name": "roundId",
+				"type": "uint256",
+				"indexed": true,
+				"internalType": "uint256"
+			},
+			{
+				"name": "blockHash",
+				"type": "bytes32",
+				"indexed": false,
+				"internalType": "bytes32"
+			},
+			{
+				"name": "seed",
+				"type": "uint256",
+				"indexed": false,
+				"internalType": "uint256"
+			},
+			{
+				"name": "usedExtendedHistory",
+				"type": "bool",
+				"indexed": false,
+				"internalType": "bool"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "event",
+		"name": "Unpaused",
+		"inputs": [
+			{
+				"name": "account",
+				"type": "address",
+				"indexed": false,
+				"internalType": "address"
+			}
+		],
+		"anonymous": false
+	},
+	{
+		"type": "error",
+		"name": "ActionNotAllowed",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "AlreadySettled",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "BettingClosed",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "BettingNotEnded",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "EnforcedPause",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "ExpectedPause",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidAddress",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidArcadeCore",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidBetAmount",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidRoundId",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidSessionState",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "InvalidTargetMultiplier",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "NoBetPlaced",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "NotRevealed",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "OwnableInvalidOwner",
+		"inputs": [
+			{
+				"name": "owner",
+				"type": "address",
+				"internalType": "address"
+			}
+		]
+	},
+	{
+		"type": "error",
+		"name": "OwnableUnauthorizedAccount",
+		"inputs": [
+			{
+				"name": "account",
+				"type": "address",
+				"internalType": "address"
+			}
+		]
+	},
+	{
+		"type": "error",
+		"name": "PlayerAlreadyInSession",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "PlayerNotInSession",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "ReentrancyGuardReentrantCall",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "RoundExpired",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "RoundFull",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "RoundInProgress",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "RoundNotReady",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SeedAlreadyCommitted",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SeedAlreadyRevealed",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SeedExpired",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SeedNotCommitted",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SeedNotReady",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SessionAlreadyExists",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "SessionDoesNotExist",
+		"inputs": []
+	},
+	{
+		"type": "error",
+		"name": "ZeroBetAmount",
+		"inputs": []
+	}
+]

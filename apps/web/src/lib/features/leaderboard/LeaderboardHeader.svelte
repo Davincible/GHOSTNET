@@ -27,14 +27,24 @@
 				{#if userRankings.ghostStreak}
 					<div class="rank-item">
 						<span class="rank-category">STREAK:</span>
-						<span class="rank-value">{formatRank(userRankings.ghostStreak.rank, userRankings.ghostStreak.percentile)}</span>
+						<span class="rank-value"
+							>{formatRank(
+								userRankings.ghostStreak.rank,
+								userRankings.ghostStreak.percentile
+							)}</span
+						>
 					</div>
 				{/if}
 
 				{#if userRankings.totalExtracted}
 					<div class="rank-item">
 						<span class="rank-category">EXTRACT:</span>
-						<span class="rank-value">{formatRank(userRankings.totalExtracted.rank, userRankings.totalExtracted.percentile)}</span>
+						<span class="rank-value"
+							>{formatRank(
+								userRankings.totalExtracted.rank,
+								userRankings.totalExtracted.percentile
+							)}</span
+						>
 					</div>
 				{/if}
 

@@ -101,12 +101,8 @@
 			{/if}
 
 			<div class="error-actions">
-				<Button variant="secondary" onclick={() => history.back()}>
-					&lt; GO BACK
-				</Button>
-				<Button variant="primary" onclick={() => (location.href = '/')}>
-					RETURN TO BASE
-				</Button>
+				<Button variant="secondary" onclick={() => history.back()}>&lt; GO BACK</Button>
+				<Button variant="primary" onclick={() => (location.href = '/')}>RETURN TO BASE</Button>
 			</div>
 
 			<div class="error-hint">

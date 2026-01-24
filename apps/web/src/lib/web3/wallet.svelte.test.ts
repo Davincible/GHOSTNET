@@ -229,10 +229,17 @@ describe('wallet operations', () => {
 			// Mock connect to be slow so we can observe the connecting state
 			const { connect: mockConnect } = await import('@wagmi/core');
 			vi.mocked(mockConnect).mockImplementation(
-				() => new Promise((resolve) => setTimeout(() => resolve({
-					accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
-					chainId: 1
-				}), 100))
+				() =>
+					new Promise((resolve) =>
+						setTimeout(
+							() =>
+								resolve({
+									accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+									chainId: 1,
+								}),
+							100
+						)
+					)
 			);
 
 			const connectPromise = store.connect();
@@ -271,10 +278,17 @@ describe('wallet operations', () => {
 
 			// Second call starts - error should clear
 			vi.mocked(mockConnect).mockImplementation(
-				() => new Promise((resolve) => setTimeout(() => resolve({
-					accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
-					chainId: 1
-				}), 50))
+				() =>
+					new Promise((resolve) =>
+						setTimeout(
+							() =>
+								resolve({
+									accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+									chainId: 1,
+								}),
+							50
+						)
+					)
 			);
 
 			const connectPromise = store.connect();
@@ -357,7 +371,7 @@ describe('wallet operations', () => {
 			const { connect: mockConnect, getBalance: mockGetBalance } = await import('@wagmi/core');
 			vi.mocked(mockConnect).mockResolvedValueOnce({
 				accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
-				chainId: 1
+				chainId: 1,
 			});
 			vi.mocked(mockGetBalance).mockResolvedValue({ value: 1000000000000000000n } as any);
 
@@ -372,7 +386,7 @@ describe('wallet operations', () => {
 			const { connect: mockConnect, getBalance: mockGetBalance } = await import('@wagmi/core');
 			vi.mocked(mockConnect).mockResolvedValueOnce({
 				accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
-				chainId: 1
+				chainId: 1,
 			});
 			vi.mocked(mockGetBalance).mockRejectedValueOnce(new Error('RPC error'));
 

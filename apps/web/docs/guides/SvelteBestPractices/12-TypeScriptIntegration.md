@@ -4,54 +4,54 @@
 
 ```svelte
 <script lang="ts">
-  import type { Snippet } from 'svelte';
-  import type { HTMLAttributes } from 'svelte/elements';
-  
-  interface Props extends HTMLAttributes<HTMLDivElement> {
-    // Required props
-    title: string;
-    items: Item[];
-    
-    // Optional props with defaults
-    variant?: 'primary' | 'secondary';
-    disabled?: boolean;
-    
-    // Callbacks
-    onSelect?: (item: Item) => void;
-    onClose?: () => void;
-    
-    // Snippets
-    children?: Snippet;
-    header?: Snippet<[title: string]>;
-    footer?: Snippet;
-  }
-  
-  let {
-    title,
-    items,
-    variant = 'primary',
-    disabled = false,
-    onSelect,
-    onClose,
-    children,
-    header,
-    footer,
-    ...rest
-  }: Props = $props();
+	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
+
+	interface Props extends HTMLAttributes<HTMLDivElement> {
+		// Required props
+		title: string;
+		items: Item[];
+
+		// Optional props with defaults
+		variant?: 'primary' | 'secondary';
+		disabled?: boolean;
+
+		// Callbacks
+		onSelect?: (item: Item) => void;
+		onClose?: () => void;
+
+		// Snippets
+		children?: Snippet;
+		header?: Snippet<[title: string]>;
+		footer?: Snippet;
+	}
+
+	let {
+		title,
+		items,
+		variant = 'primary',
+		disabled = false,
+		onSelect,
+		onClose,
+		children,
+		header,
+		footer,
+		...rest
+	}: Props = $props();
 </script>
 
 <div class="container {variant}" {...rest}>
-  {#if header}
-    {@render header(title)}
-  {:else}
-    <h2>{title}</h2>
-  {/if}
-  
-  {@render children?.()}
-  
-  {#if footer}
-    {@render footer()}
-  {/if}
+	{#if header}
+		{@render header(title)}
+	{:else}
+		<h2>{title}</h2>
+	{/if}
+
+	{@render children?.()}
+
+	{#if footer}
+		{@render footer()}
+	{/if}
 </div>
 ```
 
@@ -61,21 +61,21 @@
 <!-- Select.svelte -->
 <script lang="ts" generics="T extends { id: string; label: string }">
   import type { Snippet } from 'svelte';
-  
+
   interface Props {
     options: T[];
     value?: T | null;
     onSelect?: (option: T) => void;
     optionSnippet?: Snippet<[option: T]>;
   }
-  
-  let { 
-    options, 
-    value = $bindable(null), 
+
+  let {
+    options,
+    value = $bindable(null),
     onSelect,
-    optionSnippet 
+    optionSnippet
   }: Props = $props();
-  
+
   function select(option: T) {
     value = option;
     onSelect?.(option);
@@ -84,7 +84,7 @@
 
 <div class="select">
   {#each options as option (option.id)}
-    <button 
+    <button
       class:selected={value?.id === option.id}
       onclick={() => select(option)}
     >
@@ -105,17 +105,17 @@
     flag: string;
     population: number;
   }
-  
+
   let countries: Country[] = [
     { id: 'us', label: 'United States', flag: '🇺🇸', population: 331000000 },
     { id: 'uk', label: 'United Kingdom', flag: '🇬🇧', population: 67000000 }
   ];
-  
+
   let selected: Country | null = $state(null);
 </script>
 
-<Select 
-  options={countries} 
+<Select
+  options={countries}
   bind:value={selected}
   onSelect={(country) => console.log('Selected:', country.label)}
 >
@@ -130,38 +130,38 @@
 
 ```svelte
 <script lang="ts">
-  // Standard DOM events
-  function handleClick(e: MouseEvent) {
-    console.log(e.clientX, e.clientY);
-  }
-  
-  // Form input with typed currentTarget
-  function handleInput(e: Event & { currentTarget: HTMLInputElement }) {
-    const value = e.currentTarget.value;
-    const name = e.currentTarget.name;
-  }
-  
-  // Keyboard events
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      submit();
-    }
-  }
-  
-  // Form submit
-  function handleSubmit(e: SubmitEvent) {
-    e.preventDefault();
-    const form = e.currentTarget as HTMLFormElement;
-    const data = new FormData(form);
-  }
-  
-  // Custom event handler type
-  type InputHandler = (e: Event & { currentTarget: HTMLInputElement }) => void;
-  
-  const onEmailChange: InputHandler = (e) => {
-    email = e.currentTarget.value;
-  };
+	// Standard DOM events
+	function handleClick(e: MouseEvent) {
+		console.log(e.clientX, e.clientY);
+	}
+
+	// Form input with typed currentTarget
+	function handleInput(e: Event & { currentTarget: HTMLInputElement }) {
+		const value = e.currentTarget.value;
+		const name = e.currentTarget.name;
+	}
+
+	// Keyboard events
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			submit();
+		}
+	}
+
+	// Form submit
+	function handleSubmit(e: SubmitEvent) {
+		e.preventDefault();
+		const form = e.currentTarget as HTMLFormElement;
+		const data = new FormData(form);
+	}
+
+	// Custom event handler type
+	type InputHandler = (e: Event & { currentTarget: HTMLInputElement }) => void;
+
+	const onEmailChange: InputHandler = (e) => {
+		email = e.currentTarget.value;
+	};
 </script>
 ```
 
@@ -182,8 +182,8 @@ let DynamicComponent: Component<{ name: string }>;
 import type { Component } from 'svelte';
 
 type ListComponent<T> = Component<{
-  items: T[];
-  renderItem: (item: T) => string;
+	items: T[];
+	renderItem: (item: T) => string;
 }>;
 ```
 
@@ -192,18 +192,24 @@ type ListComponent<T> = Component<{
 ```typescript
 // Type-safe store factory
 interface StoreState {
-  count: number;
-  items: string[];
+	count: number;
+	items: string[];
 }
 
 function createStore<T>(initial: T) {
-  let state = $state<T>(initial);
-  
-  return {
-    get state() { return state; },
-    set(value: T) { state = value; },
-    update(fn: (current: T) => T) { state = fn(state); }
-  };
+	let state = $state<T>(initial);
+
+	return {
+		get state() {
+			return state;
+		},
+		set(value: T) {
+			state = value;
+		},
+		update(fn: (current: T) => T) {
+			state = fn(state);
+		},
+	};
 }
 
 const store = createStore<StoreState>({ count: 0, items: [] });
@@ -214,20 +220,20 @@ const store = createStore<StoreState>({ count: 0, items: [] });
 ```typescript
 // app.d.ts
 declare global {
-  namespace App {
-    interface Locals {
-      user: User | null;
-    }
-    
-    interface PageData {
-      title?: string;
-    }
-    
-    interface Error {
-      message: string;
-      code?: string;
-    }
-  }
+	namespace App {
+		interface Locals {
+			user: User | null;
+		}
+
+		interface PageData {
+			title?: string;
+		}
+
+		interface Error {
+			message: string;
+			code?: string;
+		}
+	}
 }
 
 export {};

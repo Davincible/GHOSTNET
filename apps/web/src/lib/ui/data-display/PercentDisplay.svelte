@@ -26,7 +26,7 @@
 		decimals = 0,
 		showPercent = true,
 		urgentAbove,
-		urgentBelow
+		urgentBelow,
 	}: Props = $props();
 
 	// Format the value
@@ -35,10 +35,14 @@
 	// Determine trend arrow
 	let trendArrow = $derived.by(() => {
 		switch (trend) {
-			case 'up': return '▲';
-			case 'down': return '▼';
-			case 'stable': return '─';
-			default: return '';
+			case 'up':
+				return '▲';
+			case 'down':
+				return '▼';
+			case 'stable':
+				return '─';
+			default:
+				return '';
 		}
 	});
 
@@ -59,14 +63,11 @@
 	// Check if urgent
 	let isUrgent = $derived(
 		(urgentAbove !== undefined && value >= urgentAbove) ||
-		(urgentBelow !== undefined && value <= urgentBelow)
+			(urgentBelow !== undefined && value <= urgentBelow)
 	);
 </script>
 
-<span
-	class="percent {colorClass}"
-	class:percent-urgent={isUrgent}
->
+<span class="percent {colorClass}" class:percent-urgent={isUrgent}>
 	<span class="percent-value">{displayValue}</span>
 	{#if trendArrow}
 		<span class="percent-trend">{trendArrow}</span>
@@ -107,11 +108,14 @@
 	}
 
 	@keyframes urgent-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: 0 0 5px currentColor;
 		}
 		50% {
-			text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+			text-shadow:
+				0 0 15px currentColor,
+				0 0 25px currentColor;
 		}
 	}
 </style>

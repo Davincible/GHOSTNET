@@ -1,3 +1,12 @@
+<script lang="ts" module>
+	function calculateScanProgress(entryTimestamp: number, nextScanTimestamp: number): number {
+		const now = Date.now();
+		const total = nextScanTimestamp - entryTimestamp;
+		const elapsed = now - entryTimestamp;
+		return Math.min(100, Math.max(0, (elapsed / total) * 100));
+	}
+</script>
+
 <script lang="ts">
 	import { Box } from '$lib/ui/terminal';
 	import { Button, Badge, Countdown, ProgressBar } from '$lib/ui/primitives';
@@ -40,13 +49,15 @@
 
 	// Calculate total value (staked + earned)
 	let totalValue = $derived(
-		provider.position
-			? provider.position.stakedAmount + provider.position.earnedYield
-			: 0n
+		provider.position ? provider.position.stakedAmount + provider.position.earnedYield : 0n
 	);
 </script>
 
-<Box title={provider.currentUser ? `OPERATOR: ${provider.currentUser.address.slice(0, 6)}...${provider.currentUser.address.slice(-4)}` : 'YOUR STATUS'}>
+<Box
+	title={provider.currentUser
+		? `OPERATOR: ${provider.currentUser.address.slice(0, 6)}...${provider.currentUser.address.slice(-4)}`
+		: 'YOUR STATUS'}
+>
 	{#if provider.currentUser}
 		{#if provider.position}
 			<Stack gap={3}>
@@ -85,10 +96,7 @@
 				<!-- Next Scan Countdown -->
 				<Row justify="between" align="center">
 					<span class="label">NEXT SCAN</span>
-					<Countdown
-						targetTime={provider.position.nextScanTimestamp}
-						urgentThreshold={120}
-					/>
+					<Countdown targetTime={provider.position.nextScanTimestamp} urgentThreshold={120} />
 				</Row>
 
 				<!-- Ghost Streak -->
@@ -97,7 +105,9 @@
 					<span class="streak-value">
 						{provider.position.ghostStreak}
 						{#if provider.position.ghostStreak > 0}
-							<span class="streak-fire" aria-label="fire">{''.repeat(Math.min(provider.position.ghostStreak, 5))}</span>
+							<span class="streak-fire" aria-label="fire"
+								>{''.repeat(Math.min(provider.position.ghostStreak, 5))}</span
+							>
 						{/if}
 					</span>
 				</Row>
@@ -105,8 +115,15 @@
 				<!-- Progress to next scan -->
 				<div class="scan-progress">
 					<ProgressBar
-						value={calculateScanProgress(provider.position.entryTimestamp, provider.position.nextScanTimestamp)}
-						variant={effectiveDeathRate > 0.5 ? 'danger' : effectiveDeathRate > 0.2 ? 'warning' : 'default'}
+						value={calculateScanProgress(
+							provider.position.entryTimestamp,
+							provider.position.nextScanTimestamp
+						)}
+						variant={effectiveDeathRate > 0.5
+							? 'danger'
+							: effectiveDeathRate > 0.2
+								? 'warning'
+								: 'default'}
 					/>
 				</div>
 
@@ -131,9 +148,7 @@
 					<span class="label">BALANCE</span>
 					<AmountDisplay amount={provider.currentUser.tokenBalance} />
 				</Row>
-				<Button variant="primary" hotkey="J" fullWidth>
-					Jack In
-				</Button>
+				<Button variant="primary" hotkey="J" fullWidth>Jack In</Button>
 			</Stack>
 		{/if}
 	{:else}
@@ -146,15 +161,6 @@
 		</Stack>
 	{/if}
 </Box>
-
-<script lang="ts" module>
-	function calculateScanProgress(entryTimestamp: number, nextScanTimestamp: number): number {
-		const now = Date.now();
-		const total = nextScanTimestamp - entryTimestamp;
-		const elapsed = now - entryTimestamp;
-		return Math.min(100, Math.max(0, (elapsed / total) * 100));
-	}
-</script>
 
 <style>
 	.label {

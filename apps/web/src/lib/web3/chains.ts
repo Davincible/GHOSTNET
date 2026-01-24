@@ -16,20 +16,20 @@ export const megaethTestnet = defineChain({
 	nativeCurrency: {
 		decimals: 18,
 		name: 'Ether',
-		symbol: 'ETH'
+		symbol: 'ETH',
 	},
 	rpcUrls: {
 		default: {
-			http: ['https://carrot.megaeth.com/rpc']
-		}
+			http: ['https://carrot.megaeth.com/rpc'],
+		},
 	},
 	blockExplorers: {
 		default: {
 			name: 'Blockscout',
-			url: 'https://megaeth-testnet-v2.blockscout.com'
-		}
+			url: 'https://megaeth-testnet-v2.blockscout.com',
+		},
 	},
-	testnet: true
+	testnet: true,
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -42,20 +42,20 @@ export const megaethMainnet = defineChain({
 	nativeCurrency: {
 		decimals: 18,
 		name: 'Ether',
-		symbol: 'ETH'
+		symbol: 'ETH',
 	},
 	rpcUrls: {
 		default: {
-			http: ['https://mainnet.megaeth.com/rpc']
-		}
+			http: ['https://mainnet.megaeth.com/rpc'],
+		},
 	},
 	blockExplorers: {
 		default: {
 			name: 'Blockscout',
-			url: 'https://megaeth.blockscout.com'
-		}
+			url: 'https://megaeth.blockscout.com',
+		},
 	},
-	testnet: false
+	testnet: false,
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -68,14 +68,14 @@ export const localhost = defineChain({
 	nativeCurrency: {
 		decimals: 18,
 		name: 'Ether',
-		symbol: 'ETH'
+		symbol: 'ETH',
 	},
 	rpcUrls: {
 		default: {
-			http: ['http://127.0.0.1:8545']
-		}
+			http: ['http://127.0.0.1:8545'],
+		},
 	},
-	testnet: true
+	testnet: true,
 });
 
 // ════════════════════════════════════════════════════════════════

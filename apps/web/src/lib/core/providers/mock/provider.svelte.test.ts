@@ -321,7 +321,7 @@ describe('createMockProvider', () => {
 					accuracy: 0.4,
 					wpm: 20,
 					timeElapsed: 30000,
-					reward: null
+					reward: null,
 				});
 
 				// Now submit with reward
@@ -332,8 +332,8 @@ describe('createMockProvider', () => {
 					reward: {
 						type: 'death_rate_reduction',
 						value: -0.15,
-						label: 'Great -15%'
-					}
+						label: 'Great -15%',
+					},
 				});
 
 				const typingModifiers = provider.modifiers.filter((m) => m.source === 'typing');
@@ -350,8 +350,8 @@ describe('createMockProvider', () => {
 					reward: {
 						type: 'death_rate_reduction',
 						value: -0.15,
-						label: 'Great -15%'
-					}
+						label: 'Great -15%',
+					},
 				});
 
 				// Submit second result
@@ -362,8 +362,8 @@ describe('createMockProvider', () => {
 					reward: {
 						type: 'death_rate_reduction',
 						value: -0.25,
-						label: 'PERFECT -25%'
-					}
+						label: 'PERFECT -25%',
+					},
 				});
 
 				const typingModifiers = provider.modifiers.filter((m) => m.source === 'typing');
@@ -388,7 +388,7 @@ describe('createMockProvider', () => {
 					accuracy: 0.4,
 					wpm: 20,
 					timeElapsed: 30000,
-					reward: null
+					reward: null,
 				});
 
 				const typingModifiers = provider.modifiers.filter((m) => m.source === 'typing');

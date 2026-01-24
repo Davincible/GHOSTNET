@@ -20,7 +20,7 @@
 		height = 400,
 		particleCount = 120,
 		rotationSpeed = 0.001,
-		interactive = true
+		interactive = true,
 	}: Props = $props();
 
 	let container: HTMLDivElement;
@@ -42,7 +42,7 @@
 		accentDim: 0x007a6b,
 		red: 0xff3366,
 		amber: 0xffb000,
-		background: 0x030305
+		background: 0x030305,
 	};
 
 	onMount(() => {
@@ -77,7 +77,7 @@
 		// Renderer
 		renderer = new THREE.WebGLRenderer({
 			antialias: true,
-			alpha: true
+			alpha: true,
 		});
 		renderer.setSize(width, height);
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -139,7 +139,7 @@
 			transparent: true,
 			opacity: 0.9,
 			sizeAttenuation: true,
-			blending: THREE.AdditiveBlending
+			blending: THREE.AdditiveBlending,
 		});
 
 		particles = new THREE.Points(geometry, material);
@@ -165,17 +165,19 @@
 				const y2 = positions[j * 3 + 1];
 				const z2 = positions[j * 3 + 2];
 
-				const distance = Math.sqrt(
-					(x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
-				);
+				const distance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2);
 
 				if (distance < maxDistance) {
 					connectionPositions.push(x1, y1, z1, x2, y2, z2);
 					// Fade based on distance
 					const alpha = 1 - distance / maxDistance;
 					connectionColors.push(
-						color.r * alpha, color.g * alpha, color.b * alpha,
-						color.r * alpha, color.g * alpha, color.b * alpha
+						color.r * alpha,
+						color.g * alpha,
+						color.b * alpha,
+						color.r * alpha,
+						color.g * alpha,
+						color.b * alpha
 					);
 				}
 			}
@@ -189,7 +191,7 @@
 			vertexColors: true,
 			transparent: true,
 			opacity: 0.3,
-			blending: THREE.AdditiveBlending
+			blending: THREE.AdditiveBlending,
 		});
 
 		connections = new THREE.LineSegments(geometry, material);
@@ -215,7 +217,7 @@
 		const material = new THREE.LineBasicMaterial({
 			color: COLORS.accentDim,
 			transparent: true,
-			opacity: 0.4
+			opacity: 0.4,
 		});
 
 		outerRing = new THREE.LineLoop(geometry, material);
@@ -237,7 +239,7 @@
 		const material = new THREE.LineBasicMaterial({
 			color: COLORS.accent,
 			transparent: true,
-			opacity: 0.15
+			opacity: 0.15,
 		});
 
 		innerSphere = new THREE.LineSegments(wireframe, material);
@@ -286,7 +288,7 @@
 		if (particles && Math.random() > 0.98) {
 			const colors = particles.geometry.attributes.color.array as Float32Array;
 			const randomIndex = Math.floor(Math.random() * particleCount) * 3;
-			
+
 			// Random pulse color (mostly teal, sometimes red for "traced")
 			if (Math.random() > 0.85) {
 				// Red pulse - traced
@@ -326,8 +328,12 @@
 	});
 </script>
 
-<div class="network-globe" bind:this={container} style:width="{width}px" style:height="{height}px">
-</div>
+<div
+	class="network-globe"
+	bind:this={container}
+	style:width="{width}px"
+	style:height="{height}px"
+></div>
 
 <style>
 	.network-globe {

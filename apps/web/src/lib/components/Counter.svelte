@@ -7,7 +7,7 @@
 
 	// Track the initial value for reset functionality
 	let initialValue = $derived(initialCount);
-	
+
 	// Current count state, initialized via effect to properly track prop changes
 	let count = $state(0);
 	let doubled = $derived(count * 2);

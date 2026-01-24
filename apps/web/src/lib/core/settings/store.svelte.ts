@@ -2,7 +2,7 @@
  * Settings Store
  * ===============
  * Manages user preferences with localStorage persistence.
- * 
+ *
  * Uses Svelte context for SSR safety - state is isolated per request.
  */
 
@@ -44,7 +44,7 @@ const DEFAULT_SETTINGS: Settings = {
 	audioVolume: 0.5,
 	effectsEnabled: true,
 	scanlinesEnabled: true,
-	flickerEnabled: true
+	flickerEnabled: true,
 };
 
 const STORAGE_KEY = 'ghostnet_settings';
@@ -134,7 +134,7 @@ export function createSettingsStore(): SettingsStore {
 		reset() {
 			settings = { ...DEFAULT_SETTINGS };
 			saveSettings(settings);
-		}
+		},
 	};
 }
 

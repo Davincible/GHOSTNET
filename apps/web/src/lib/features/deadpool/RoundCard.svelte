@@ -20,13 +20,9 @@
 	const totalPool = $derived(round.pools.under + round.pools.over);
 	const odds = $derived({
 		under:
-			round.pools.under > 0n && totalPool > 0n
-				? Number(totalPool) / Number(round.pools.under)
-				: 2,
+			round.pools.under > 0n && totalPool > 0n ? Number(totalPool) / Number(round.pools.under) : 2,
 		over:
-			round.pools.over > 0n && totalPool > 0n
-				? Number(totalPool) / Number(round.pools.over)
-				: 2
+			round.pools.over > 0n && totalPool > 0n ? Number(totalPool) / Number(round.pools.over) : 2,
 	});
 
 	// Time tracking
@@ -77,11 +73,7 @@
 	const canBet = $derived(round.status === 'betting' && timeUntilLock > 0);
 </script>
 
-<Box
-	variant="single"
-	borderColor={round.userBet ? 'cyan' : 'default'}
-	padding={3}
->
+<Box variant="single" borderColor={round.userBet ? 'cyan' : 'default'} padding={3}>
 	<div class="round-card">
 		<!-- Header: Round number, type, level -->
 		<div class="round-header">
@@ -124,9 +116,7 @@
 			</div>
 
 			{#if canBet && !round.userBet}
-				<Button variant="primary" size="sm" onclick={onBet}>
-					PLACE BET
-				</Button>
+				<Button variant="primary" size="sm" onclick={onBet}>PLACE BET</Button>
 			{:else if round.userBet}
 				<div class="user-bet-indicator" aria-label="Your bet: {round.userBet.side}">
 					<span class="bet-side">{round.userBet.side.toUpperCase()}</span>

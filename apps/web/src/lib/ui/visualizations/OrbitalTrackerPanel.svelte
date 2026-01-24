@@ -46,10 +46,7 @@
 
 		<div class="viz-container">
 			{#if visualSize > 100}
-				<OrbitalTracker 
-					width={visualSize} 
-					height={visualSize * 0.85}
-				/>
+				<OrbitalTracker width={visualSize} height={visualSize * 0.85} />
 			{/if}
 		</div>
 
@@ -122,11 +119,21 @@
 		padding: 0 var(--space-1);
 	}
 
-	.legend-item.vault { color: var(--color-level-vault, #00e5cc); }
-	.legend-item.mainframe { color: var(--color-level-mainframe, #00e5ff); }
-	.legend-item.subnet { color: var(--color-level-subnet, #ffb000); }
-	.legend-item.darknet { color: var(--color-level-darknet, #ff6633); }
-	.legend-item.blackice { color: var(--color-level-black-ice, #ff3366); }
+	.legend-item.vault {
+		color: var(--color-level-vault, #00e5cc);
+	}
+	.legend-item.mainframe {
+		color: var(--color-level-mainframe, #00e5ff);
+	}
+	.legend-item.subnet {
+		color: var(--color-level-subnet, #ffb000);
+	}
+	.legend-item.darknet {
+		color: var(--color-level-darknet, #ff6633);
+	}
+	.legend-item.blackice {
+		color: var(--color-level-black-ice, #ff3366);
+	}
 
 	.footer-text {
 		font-size: var(--text-xs);

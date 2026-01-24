@@ -31,14 +31,14 @@
 		prefix = '',
 		suffix = '',
 		showSign = false,
-		colorize = false
+		colorize = false,
 	}: Props = $props();
 
 	// Tweened store for smooth animation
 	// Initialize with 0 to avoid capturing prop value at creation time
 	const displayValue = tweened(0, {
 		duration: 300,
-		easing: cubicOut
+		easing: cubicOut,
 	});
 
 	// Initialize and update when value or duration changes
@@ -54,7 +54,7 @@
 			case 'currency':
 				formatted = val.toLocaleString('en-US', {
 					minimumFractionDigits: decimals,
-					maximumFractionDigits: decimals
+					maximumFractionDigits: decimals,
 				});
 				break;
 
@@ -75,7 +75,7 @@
 			default:
 				formatted = val.toLocaleString('en-US', {
 					minimumFractionDigits: decimals,
-					maximumFractionDigits: decimals
+					maximumFractionDigits: decimals,
 				});
 		}
 
@@ -89,13 +89,7 @@
 
 	// Determine color class based on value
 	let colorClass = $derived(
-		colorize
-			? value > 0
-				? 'text-profit'
-				: value < 0
-					? 'text-loss'
-					: ''
-			: ''
+		colorize ? (value > 0 ? 'text-profit' : value < 0 ? 'text-loss' : '') : ''
 	);
 </script>
 

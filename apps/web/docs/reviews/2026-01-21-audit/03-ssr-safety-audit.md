@@ -42,6 +42,7 @@ let availableWallets = $derived.by(() => {
 ```
 
 **Impact**: The `detect()` functions check `typeof window !== 'undefined'` which is safe, but the pattern is fragile. The `$derived.by` runs during SSR, meaning these detect functions execute on the server. Currently safe due to the guard, but:
+
 1. If someone removes the `typeof window` check, it crashes
 2. The `availableWallets` will be empty on server, potentially different on client (hydration risk)
 
@@ -51,30 +52,32 @@ let availableWallets = $derived.by(() => {
 
 ```svelte
 <script lang="ts">
-  import { browser } from '$app/environment';
-  
-  const wallets = [/* static wallet definitions without detect */];
-  
-  let availableWallets = $state<typeof wallets>([]);
-  
-  $effect(() => {
-    if (!browser) return;
-    
-    availableWallets = wallets.filter(w => {
-      switch (w.id) {
-        case 'metamask':
-          return window.ethereum?.isMetaMask === true;
-        case 'coinbase':
-          return window.ethereum?.isCoinbaseWallet === true;
-        case 'injected':
-          return window.ethereum !== undefined;
-        case 'walletconnect':
-          return hasWalletConnect;
-        default:
-          return false;
-      }
-    });
-  });
+	import { browser } from '$app/environment';
+
+	const wallets = [
+		/* static wallet definitions without detect */
+	];
+
+	let availableWallets = $state<typeof wallets>([]);
+
+	$effect(() => {
+		if (!browser) return;
+
+		availableWallets = wallets.filter((w) => {
+			switch (w.id) {
+				case 'metamask':
+					return window.ethereum?.isMetaMask === true;
+				case 'coinbase':
+					return window.ethereum?.isCoinbaseWallet === true;
+				case 'injected':
+					return window.ethereum !== undefined;
+				case 'walletconnect':
+					return hasWalletConnect;
+				default:
+					return false;
+			}
+		});
+	});
 </script>
 ```
 
@@ -88,8 +91,8 @@ let availableWallets = $derived.by(() => {
 
 ```svelte
 <div class="error-log">
-  <span class="log-prefix">&gt;</span>
-  <span class="log-text">Timestamp: {new Date().toISOString()}</span>
+	<span class="log-prefix">&gt;</span>
+	<span class="log-text">Timestamp: {new Date().toISOString()}</span>
 </div>
 ```
 
@@ -101,11 +104,11 @@ let availableWallets = $derived.by(() => {
 
 ```svelte
 <script lang="ts">
-  let timestamp = $state('...');
-  
-  $effect(() => {
-    timestamp = new Date().toISOString();
-  });
+	let timestamp = $state('...');
+
+	$effect(() => {
+		timestamp = new Date().toISOString();
+	});
 </script>
 
 <!-- In template -->
@@ -144,8 +147,8 @@ async function copyToClipboard() {
 
 ```typescript
 async function copyToClipboard() {
-  if (!copyable || !browser) return;
-  // ... rest of function
+	if (!copyable || !browser) return;
+	// ... rest of function
 }
 ```
 
@@ -161,15 +164,15 @@ async function copyToClipboard() {
 
 ```typescript
 function formatTime(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date(); // <- Different on server vs client
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
+	const date = new Date(timestamp);
+	const now = new Date(); // <- Different on server vs client
+	const diffMs = now.getTime() - date.getTime();
+	const diffMins = Math.floor(diffMs / 60000);
+	const diffHours = Math.floor(diffMins / 60);
 
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return date.toLocaleDateString();
+	if (diffMins < 60) return `${diffMins}m ago`;
+	if (diffHours < 24) return `${diffHours}h ago`;
+	return date.toLocaleDateString();
 }
 ```
 
@@ -181,15 +184,15 @@ function formatTime(timestamp: number): string {
 
 ```svelte
 <script lang="ts">
-  import { browser } from '$app/environment';
-  
-  function formatTime(timestamp: number): string {
-    if (!browser) return '...'; // Consistent placeholder during SSR
-    
-    const now = Date.now();
-    const diffMs = now - timestamp;
-    // ... rest of logic
-  }
+	import { browser } from '$app/environment';
+
+	function formatTime(timestamp: number): string {
+		if (!browser) return '...'; // Consistent placeholder during SSR
+
+		const now = Date.now();
+		const diffMs = now - timestamp;
+		// ... rest of logic
+	}
 </script>
 ```
 
@@ -203,12 +206,12 @@ function formatTime(timestamp: number): string {
 
 ```typescript
 const getColor = () => {
-  const temp = document.createElement('div');
-  temp.style.color = color;
-  document.body.appendChild(temp);
-  const computed = getComputedStyle(temp).color;
-  document.body.removeChild(temp);
-  return computed;
+	const temp = document.createElement('div');
+	temp.style.color = color;
+	document.body.appendChild(temp);
+	const computed = getComputedStyle(temp).color;
+	document.body.removeChild(temp);
+	return computed;
 };
 ```
 
@@ -228,7 +231,7 @@ const getColor = () => {
 
 ```typescript
 const interval = setInterval(() => {
-  glitchOffset = Math.random() * 100;
+	glitchOffset = Math.random() * 100;
 }, 2000);
 ```
 
@@ -240,14 +243,14 @@ const interval = setInterval(() => {
 
 ## Web3 SSR Safety Assessment
 
-| File | Browser Guarded | Status | Notes |
-|------|-----------------|--------|-------|
-| `wallet.svelte.ts` | **Yes** | PASS | All actions check `browser`, returns no-op during SSR |
-| `config.ts` | **Yes** | PASS | `getConfig()` returns null during SSR, singleton created lazily |
-| `contracts.ts` | **Yes** | PASS | All functions check `browser` or call `requireBrowser()` |
-| `chains.ts` | N/A | PASS | Pure data definitions, no browser APIs |
-| `abis.ts` | N/A | PASS | Pure data imports and exports |
-| `index.ts` | N/A | PASS | Re-exports only |
+| File               | Browser Guarded | Status | Notes                                                           |
+| ------------------ | --------------- | ------ | --------------------------------------------------------------- |
+| `wallet.svelte.ts` | **Yes**         | PASS   | All actions check `browser`, returns no-op during SSR           |
+| `config.ts`        | **Yes**         | PASS   | `getConfig()` returns null during SSR, singleton created lazily |
+| `contracts.ts`     | **Yes**         | PASS   | All functions check `browser` or call `requireBrowser()`        |
+| `chains.ts`        | N/A             | PASS   | Pure data definitions, no browser APIs                          |
+| `abis.ts`          | N/A             | PASS   | Pure data imports and exports                                   |
+| `index.ts`         | N/A             | PASS   | Re-exports only                                                 |
 
 **Summary**: The Web3 layer is well-protected. Key patterns observed:
 
@@ -264,6 +267,7 @@ export const wallet = createWalletStore();
 ```
 
 This is acceptable because:
+
 1. Wallet state is inherently client-only (no user session on server)
 2. The store's `init()` method does nothing during SSR
 3. All methods are guarded
@@ -274,17 +278,17 @@ However, if this pattern were applied to user-specific data that should differ p
 
 ## Global State Analysis
 
-| Store File | SSR Safe | Pattern | Notes |
-|------------|----------|---------|-------|
-| `settings/store.svelte.ts` | **Yes** | Context | Uses `setContext`/`getContext`, isolated per request |
-| `stores/index.svelte.ts` | **Yes** | Context | Provider initialized per layout render |
-| `stores/counter.svelte.ts` | **Yes** | Factory | Pure factory function, no module-level state |
-| `ui/toast/store.svelte.ts` | **Yes** | Context | Uses `setContext`/`getContext` |
-| `features/typing/store.svelte.ts` | **Yes** | Factory | Returns new store instance per call |
-| `features/duels/store.svelte.ts` | **Yes** | Factory | Returns new store instance per call |
-| `features/hackrun/store.svelte.ts` | **Yes** | Factory | Returns new store instance per call |
-| `core/providers/mock/provider.svelte.ts` | **Yes** | Factory | Created fresh via `createMockProvider()` |
-| `core/audio/manager.svelte.ts` | **Partial** | Singleton | Module-level `settingsRef` and `audioInitialized` flags |
+| Store File                               | SSR Safe    | Pattern   | Notes                                                   |
+| ---------------------------------------- | ----------- | --------- | ------------------------------------------------------- |
+| `settings/store.svelte.ts`               | **Yes**     | Context   | Uses `setContext`/`getContext`, isolated per request    |
+| `stores/index.svelte.ts`                 | **Yes**     | Context   | Provider initialized per layout render                  |
+| `stores/counter.svelte.ts`               | **Yes**     | Factory   | Pure factory function, no module-level state            |
+| `ui/toast/store.svelte.ts`               | **Yes**     | Context   | Uses `setContext`/`getContext`                          |
+| `features/typing/store.svelte.ts`        | **Yes**     | Factory   | Returns new store instance per call                     |
+| `features/duels/store.svelte.ts`         | **Yes**     | Factory   | Returns new store instance per call                     |
+| `features/hackrun/store.svelte.ts`       | **Yes**     | Factory   | Returns new store instance per call                     |
+| `core/providers/mock/provider.svelte.ts` | **Yes**     | Factory   | Created fresh via `createMockProvider()`                |
+| `core/audio/manager.svelte.ts`           | **Partial** | Singleton | Module-level `settingsRef` and `audioInitialized` flags |
 
 ### Audio Manager Advisory
 
@@ -298,6 +302,7 @@ let settingsRef: SettingsStore | null = null;
 ```
 
 **Impact**: In a serverless environment with module caching, this state could theoretically persist across requests. However:
+
 1. Audio is inherently client-only
 2. `audioInitialized` is only set in `initAudio()` which checks `browser`
 3. `settingsRef` is reset each time `createAudioManager()` is called
@@ -321,27 +326,28 @@ All visualization components (`HeartbeatMonitor.svelte`, `RadarSweep.svelte`, `N
 
 ## Routes Analysis
 
-| Route | SSR Safe | Notes |
-|-------|----------|-------|
-| `+layout.svelte` | **Yes** | Document listeners in `onMount()`, properly cleaned up |
-| `+page.svelte` (index) | **Yes** | `window.matchMedia` in `$effect` with `browser` guard |
-| `+error.svelte` | **No** | `new Date()` in template (see Finding 2) |
-| `/typing/+page.svelte` | **Yes** | `window.addEventListener` in `$effect` |
-| `/games/hackrun/+page.svelte` | **Yes** | `window.addEventListener` in `$effect` |
-| `/games/duels/+page.svelte` | **Yes** | `window.addEventListener` in `$effect` |
+| Route                         | SSR Safe | Notes                                                  |
+| ----------------------------- | -------- | ------------------------------------------------------ |
+| `+layout.svelte`              | **Yes**  | Document listeners in `onMount()`, properly cleaned up |
+| `+page.svelte` (index)        | **Yes**  | `window.matchMedia` in `$effect` with `browser` guard  |
+| `+error.svelte`               | **No**   | `new Date()` in template (see Finding 2)               |
+| `/typing/+page.svelte`        | **Yes**  | `window.addEventListener` in `$effect`                 |
+| `/games/hackrun/+page.svelte` | **Yes**  | `window.addEventListener` in `$effect`                 |
+| `/games/duels/+page.svelte`   | **Yes**  | `window.addEventListener` in `$effect`                 |
 
 ---
 
 ## Summary
 
-| Category | Count | Severity |
-|----------|-------|----------|
-| Unguarded browser APIs | 1 | Low (navigator.clipboard in click handler) |
-| Hydration mismatch risks | 2 | Low (error page timestamp, relative time) |
-| Fragile detection pattern | 1 | Low-Medium (WalletModal window checks) |
-| Module-level mutable state | 2 | Advisory (wallet singleton, audio state) |
+| Category                   | Count | Severity                                   |
+| -------------------------- | ----- | ------------------------------------------ |
+| Unguarded browser APIs     | 1     | Low (navigator.clipboard in click handler) |
+| Hydration mismatch risks   | 2     | Low (error page timestamp, relative time)  |
+| Fragile detection pattern  | 1     | Low-Medium (WalletModal window checks)     |
+| Module-level mutable state | 2     | Advisory (wallet singleton, audio state)   |
 
 **Overall Assessment**: The codebase demonstrates good SSR awareness. The development team has consistently used:
+
 - `browser` import from `$app/environment`
 - `onMount()` for browser-only initialization
 - `$effect()` for client-side reactive code
@@ -356,7 +362,6 @@ The violations found are minor and unlikely to cause production issues.
 ### High Priority
 
 1. **Fix `+error.svelte` timestamp** - Easy fix, eliminates guaranteed hydration mismatch
-   
 2. **Refactor `WalletModal.svelte` detection** - Move to `$effect` for cleaner pattern and prevent future accidents
 
 ### Low Priority
@@ -393,4 +398,4 @@ grep -rn "export const.*=" apps/web/src/lib/**/store*.ts apps/web/src/lib/**/*.s
 
 ---
 
-*End of SSR Safety Audit*
+_End of SSR Safety Audit_

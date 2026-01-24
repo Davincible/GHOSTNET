@@ -8,7 +8,7 @@
 		getHackRunStore,
 		RunSelectionView,
 		ActiveRunView,
-		RunCompleteView
+		RunCompleteView,
 	} from '$lib/features/hackrun';
 	import type { HackRun, HackRunNode, NodeResult } from '$lib/core/types/hackrun';
 
@@ -199,7 +199,13 @@
 		<!-- Header -->
 		<header class="page-header">
 			<button class="back-button" onclick={() => goto('/')} aria-label="Return to network">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					aria-hidden="true"
+				>
 					<line x1="19" y1="12" x2="5" y2="12"></line>
 					<polyline points="12 19 5 12 12 5"></polyline>
 				</svg>
@@ -233,7 +239,7 @@
 				<ActiveRunView
 					run={store.state.run}
 					progress={store.state.progress}
-					currentNode={currentNode}
+					{currentNode}
 					timeRemaining={store.state.timeRemaining}
 					currentMultiplier={store.currentMultiplier}
 					totalLoot={store.totalLoot}

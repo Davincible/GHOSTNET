@@ -101,7 +101,7 @@ export const DAILY_REWARDS: DailyReward[] = [
 	{
 		day: 7,
 		type: 'death_rate',
-		value: -0.10,
+		value: -0.1,
 		duration: 24 * 60 * 60 * 1000,
 		description: '-10% death rate (24h) + 50 $DATA',
 		bonusTokens: 50,
@@ -193,7 +193,7 @@ export const MISSION_TEMPLATES: MissionTemplate[] = [
 		title: 'ORACLE',
 		descriptionTemplate: 'Win {target} Dead Pool bet(s)',
 		targetRange: [1, 2],
-		reward: { type: 'yield', value: 0.10, duration: 4 * 60 * 60 * 1000 },
+		reward: { type: 'yield', value: 0.1, duration: 4 * 60 * 60 * 1000 },
 		weight: 2,
 	},
 	{

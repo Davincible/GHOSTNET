@@ -6,10 +6,7 @@
 		enabled?: boolean;
 	}
 
-	let {
-		opacity = 0.03,
-		enabled = true
-	}: Props = $props();
+	let { opacity = 0.03, enabled = true }: Props = $props();
 </script>
 
 {#if enabled}

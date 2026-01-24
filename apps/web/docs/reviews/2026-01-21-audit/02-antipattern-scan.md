@@ -22,8 +22,10 @@ The codebase is generally well-structured and follows Svelte 5 best practices. T
 The pattern `$derived(() => expr)` creates a function that returns a value, **not** a reactive derived value. This means the value is recalculated on every access rather than being cached. In templates, this becomes a getter function call pattern - one of the catastrophic antipatterns documented.
 
 #### Instance 1
+
 **File**: `src/routes/games/duels/+page.svelte`  
 **Lines**: 96-101
+
 ```svelte
 const wagerAmount = $derived(() => {
     if (customWager) {
@@ -32,9 +34,11 @@ const wagerAmount = $derived(() => {
     return DUEL_TIERS[selectedTier].minWager;
 });
 ```
+
 **Problem**: `$derived()` takes an expression, not a function. This creates a function that must be called with `wagerAmount()` - and if called in a template, recalculates every render.
 
 **Fix**:
+
 ```svelte
 const wagerAmount = $derived.by(() => {
     if (customWager) {
@@ -45,15 +49,19 @@ const wagerAmount = $derived.by(() => {
 ```
 
 #### Instance 2
+
 **File**: `src/routes/games/duels/+page.svelte`  
 **Lines**: 103-106
+
 ```svelte
 const potentialPayout = $derived(() => {
     const { payout } = calculateDuelWinnings(wagerAmount());
     return payout;
 });
 ```
+
 **Fix**:
+
 ```svelte
 const potentialPayout = $derived.by(() => {
     const { payout } = calculateDuelWinnings(wagerAmount);
@@ -62,8 +70,10 @@ const potentialPayout = $derived.by(() => {
 ```
 
 #### Instance 3
+
 **File**: `src/routes/games/duels/+page.svelte`  
 **Lines**: 109-113
+
 ```svelte
 const userProgressPercent = $derived(() => {
     if (store.state.status !== 'active') return 0;
@@ -71,7 +81,9 @@ const userProgressPercent = $derived(() => {
     return Math.min(100, (yourProgress.correctChars / duel.challenge.command.length) * 100);
 });
 ```
+
 **Fix**:
+
 ```svelte
 const userProgressPercent = $derived.by(() => {
     if (store.state.status !== 'active') return 0;
@@ -81,8 +93,10 @@ const userProgressPercent = $derived.by(() => {
 ```
 
 #### Instance 4
+
 **File**: `src/routes/games/duels/+page.svelte`  
 **Lines**: 115-121
+
 ```svelte
 const userWpm = $derived(() => {
     if (store.state.status !== 'active') return 0;
@@ -92,7 +106,9 @@ const userWpm = $derived(() => {
     return Math.round((yourProgress.correctChars / 5 / elapsed) * 60000);
 });
 ```
+
 **Fix**:
+
 ```svelte
 const userWpm = $derived.by(() => {
     if (store.state.status !== 'active') return 0;
@@ -104,8 +120,10 @@ const userWpm = $derived.by(() => {
 ```
 
 #### Instance 5
+
 **File**: `src/routes/games/duels/+page.svelte`  
 **Lines**: 123-128
+
 ```svelte
 const timeRemaining = $derived(() => {
     if (store.state.status !== 'active') return 0;
@@ -114,7 +132,9 @@ const timeRemaining = $derived(() => {
     return Math.max(0, duel.challenge.timeLimit * 1000 - elapsed);
 });
 ```
+
 **Fix**:
+
 ```svelte
 const timeRemaining = $derived.by(() => {
     if (store.state.status !== 'active') return 0;
@@ -136,128 +156,174 @@ const timeRemaining = $derived.by(() => {
 Missing keys in `{#each}` blocks cause inefficient DOM updates and can lead to subtle bugs when components have internal state.
 
 #### Instance 1
+
 **File**: `src/lib/features/market/PurchaseModal.svelte`  
 **Line**: 104
+
 ```svelte
 {#each presets as preset}
 ```
+
 **Fix**:
+
 ```svelte
 {#each presets as preset (preset)}
 ```
 
 #### Instance 2
+
 **File**: `src/lib/features/deadpool/BetModal.svelte`  
 **Line**: 213
+
 ```svelte
 {#each presets as preset}
 ```
+
 **Fix**:
+
 ```svelte
 {#each presets as preset (preset)}
 ```
 
 #### Instance 3
+
 **File**: `src/lib/features/modals/JackInModal.svelte`  
 **Line**: 166
+
 ```svelte
 {#each LEVELS as level}
 ```
+
 **Fix**:
+
 ```svelte
 {#each LEVELS as level (level)}
 ```
 
 #### Instance 4
+
 **File**: `src/routes/rabbit/+page.svelte`  
 **Line**: 52
+
 ```svelte
 {#each rabbits as rabbit}
 ```
+
 **Fix**:
+
 ```svelte
 {#each rabbits as rabbit (rabbit.id)}
 ```
 
 #### Instance 5
+
 **File**: `src/routes/rabbit/+page.svelte`  
 **Line**: 65
+
 ```svelte
 {#each colors as c}
 ```
+
 **Fix**:
+
 ```svelte
 {#each colors as c (c.value)}
 ```
 
 #### Instance 6
+
 **File**: `src/routes/rabbit/+page.svelte`  
 **Line**: 78
+
 ```svelte
 {#each colors as c}
 ```
+
 **Fix**:
+
 ```svelte
 {#each colors as c (c.value)}
 ```
 
 #### Instance 7
+
 **File**: `src/routes/rabbit/+page.svelte`  
 **Line**: 92
+
 ```svelte
 {#each rabbits as rabbit}
 ```
+
 **Fix**:
+
 ```svelte
 {#each rabbits as rabbit (rabbit.id)}
 ```
 
 #### Instance 8
+
 **File**: `src/lib/features/typing/IdleView.svelte`  
 **Line**: 111
+
 ```svelte
 {#each rewardTiers as tier}
 ```
+
 **Fix**:
+
 ```svelte
 {#each rewardTiers as tier, i (i)}
 ```
+
 Or if tiers have unique properties:
+
 ```svelte
 {#each rewardTiers as tier (tier.accuracy)}
 ```
 
 #### Instance 9
+
 **File**: `src/lib/features/typing/IdleView.svelte`  
 **Line**: 133
+
 ```svelte
 {#each speedBonuses as bonus}
 ```
+
 **Fix**:
+
 ```svelte
 {#each speedBonuses as bonus, i (i)}
 ```
 
 #### Instance 10
+
 **File**: `src/lib/features/leaderboard/CategoryTabs.svelte`  
 **Line**: 25
+
 ```svelte
 {#each categories as category}
 ```
+
 **Fix**:
+
 ```svelte
 {#each categories as category (category)}
 ```
 
 #### Instance 11
+
 **File**: `src/lib/features/header/KeyboardHints.svelte`  
 **Lines**: 28, 45, 62
+
 ```svelte
 {#each actionShortcuts as shortcut}
 {#each gameShortcuts as shortcut}
 {#each socialShortcuts as shortcut}
 ```
+
 **Fix**:
+
 ```svelte
 {#each actionShortcuts as shortcut (shortcut.key)}
 {#each gameShortcuts as shortcut (shortcut.key)}
@@ -274,12 +340,15 @@ Or if tiers have unique properties:
 The wallet store creates a singleton at module level. While this is guarded with `browser` checks, it creates global state that persists across HMR and could cause issues in SSR contexts.
 
 #### Instance 1
+
 **File**: `src/lib/web3/wallet.svelte.ts`  
 **Line**: 429
+
 ```typescript
 /** Global wallet store instance */
 export const wallet = createWalletStore();
 ```
+
 **Current Mitigations**: The store has proper `browser` guards throughout and doesn't export raw `$state` values (uses getters instead).
 
 **Assessment**: This is an intentional design choice for wallet state that needs to persist across navigation. The implementation is SSR-safe due to the guards. **No immediate fix needed**, but document the intention.
@@ -294,12 +363,16 @@ export const wallet = createWalletStore();
 These are minor and don't require changes, but worth documenting for awareness.
 
 #### Instance 1
+
 **File**: `src/lib/features/hackrun/ActiveRunView.svelte`  
 **Lines**: 158-162
 
 The template calls `calculateAccuracy()` and `calculateWPM()` directly:
+
 ```svelte
-<span class="typing-value">{Math.round(calculateAccuracy(typed, currentNode.challenge.command) * 100)}%</span>
+<span class="typing-value"
+	>{Math.round(calculateAccuracy(typed, currentNode.challenge.command) * 100)}%</span
+>
 ...
 <span class="typing-value">{calculateWPM(typed.length, Date.now() - typingStartTime)}</span>
 ```
@@ -307,29 +380,28 @@ The template calls `calculateAccuracy()` and `calculateWPM()` directly:
 **Assessment**: These calculations are simple O(1) operations and the component re-renders frequently during typing anyway. Using `$derived` here would add complexity without meaningful benefit. **No fix needed**.
 
 #### Instance 2
+
 **File**: `src/lib/features/typing/ActiveView.svelte`  
 **Lines**: 36-45
 
 Uses `$derived` correctly for computed values:
+
 ```svelte
-let accuracy = $derived(
-    calculateAccuracy(progress.correctChars, progress.typed.length)
-);
-let wpm = $derived(
-    calculateWpm(progress.correctChars, timeElapsed)
-);
+let accuracy = $derived( calculateAccuracy(progress.correctChars, progress.typed.length) ); let wpm
+= $derived( calculateWpm(progress.correctChars, timeElapsed) );
 ```
+
 **Assessment**: Correct pattern. **No fix needed**.
 
 ---
 
 ## Summary Table
 
-| Antipattern | Count | Severity | Files Affected |
-|-------------|-------|----------|----------------|
-| `$derived(() => ...)` instead of `$derived.by()` | 5 | Critical | `routes/games/duels/+page.svelte` |
-| Missing `{#each}` keys | 11 | High | 6 files |
-| Module-level singleton | 1 | Moderate | `lib/web3/wallet.svelte.ts` |
+| Antipattern                                      | Count | Severity | Files Affected                    |
+| ------------------------------------------------ | ----- | -------- | --------------------------------- |
+| `$derived(() => ...)` instead of `$derived.by()` | 5     | Critical | `routes/games/duels/+page.svelte` |
+| Missing `{#each}` keys                           | 11    | High     | 6 files                           |
+| Module-level singleton                           | 1     | Moderate | `lib/web3/wallet.svelte.ts`       |
 
 ---
 
@@ -338,6 +410,7 @@ let wpm = $derived(
 The following files were scanned and found to follow Svelte 5 best practices:
 
 ### Stores (`.svelte.ts` files)
+
 - `src/lib/features/duels/store.svelte.ts` - Correct factory pattern with getters
 - `src/lib/core/providers/mock/provider.svelte.ts` - Correct factory pattern with getters
 - `src/lib/features/hackrun/store.svelte.ts` - Excellent: uses `$derived.by()` correctly, proper cleanup
@@ -349,6 +422,7 @@ The following files were scanned and found to follow Svelte 5 best practices:
 - `src/lib/stores/counter.svelte.ts` - Correct example pattern
 
 ### Route Components
+
 - `src/routes/+layout.svelte` - Correct effect cleanup, proper context initialization
 - `src/routes/+page.svelte` - Proper effect cleanup for media queries
 - `src/routes/typing/+page.svelte` - Correct effect cleanup
@@ -358,6 +432,7 @@ The following files were scanned and found to follow Svelte 5 best practices:
 - `src/routes/crew/+page.svelte` - No antipatterns
 
 ### Feature Components (Verified Clean)
+
 - `src/lib/features/feed/FeedPanel.svelte` - Correct `$derived` usage, proper keys
 - `src/lib/features/feed/FeedItem.svelte` - Correct `$derived.by()` usage
 - `src/lib/features/position/PositionPanel.svelte` - Correct `$derived.by()` usage
@@ -366,6 +441,7 @@ The following files were scanned and found to follow Svelte 5 best practices:
 - `src/lib/features/typing/ActiveView.svelte` - Correct `$derived` usage
 
 ### UI Components (Verified Clean)
+
 - `src/lib/ui/modal/Modal.svelte` - Correct effect for dialog sync
 - `src/lib/ui/primitives/Countdown.svelte` - Correct lifecycle management
 - `src/lib/ui/primitives/AnimatedNumber.svelte` - Correct effect for tweened updates
@@ -416,9 +492,10 @@ The following antipatterns were searched for but not found:
 ## Appendix: Files Scanned
 
 **Total `.svelte` files**: 108  
-**Total `.svelte.ts` files**: 10  
+**Total `.svelte.ts` files**: 10
 
 All files in the following directories were scanned:
+
 - `src/lib/stores/`
 - `src/lib/core/`
 - `src/lib/features/`

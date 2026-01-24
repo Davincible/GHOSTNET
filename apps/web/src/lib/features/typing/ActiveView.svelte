@@ -28,18 +28,12 @@
 	let timeRemainingSeconds = $derived(Math.ceil(timeRemaining / 1000));
 
 	let progressPercent = $derived(
-		challenge.command.length > 0
-			? (progress.typed.length / challenge.command.length) * 100
-			: 0
+		challenge.command.length > 0 ? (progress.typed.length / challenge.command.length) * 100 : 0
 	);
 
-	let accuracy = $derived(
-		calculateAccuracy(progress.correctChars, progress.typed.length)
-	);
+	let accuracy = $derived(calculateAccuracy(progress.correctChars, progress.typed.length));
 
-	let wpm = $derived(
-		calculateWpm(progress.correctChars, timeElapsed)
-	);
+	let wpm = $derived(calculateWpm(progress.correctChars, timeElapsed));
 
 	// Project reward based on current performance
 	let projectedReward = $derived(calculateReward(accuracy, wpm));
@@ -76,28 +70,33 @@
 		// Smooth scroll to position
 		commandDisplayEl.scrollTo({
 			left: targetScrollLeft,
-			behavior: 'smooth'
+			behavior: 'smooth',
 		});
 	});
 </script>
 
 <div class="active-view">
-	<Box title={totalRounds > 1 ? `ROUND ${currentRound}/${totalRounds}` : 'SCRAMBLE SEQUENCE ACTIVE'}>
+	<Box
+		title={totalRounds > 1 ? `ROUND ${currentRound}/${totalRounds}` : 'SCRAMBLE SEQUENCE ACTIVE'}
+	>
 		<div class="typing-container">
 			<!-- Command prompt -->
 			<div class="prompt-section">
 				<div class="prompt-label">TYPE THE FOLLOWING COMMAND:</div>
 
-				<div class="command-display" role="textbox" aria-label="Typing target" bind:this={commandDisplayEl}>
+				<div
+					class="command-display"
+					role="textbox"
+					aria-label="Typing target"
+					bind:this={commandDisplayEl}
+				>
 					<span class="prompt-symbol">$</span>
 					<span class="command-text">
 						{#each commandChars as char, i (i)}
 							{@const status = getCharStatus(i)}
-							<span
-								class="char char-{status}"
-								class:char-space={char === ' '}
-								aria-hidden="true"
-							>{char === ' ' ? '\u00A0' : char}</span>
+							<span class="char char-{status}" class:char-space={char === ' '} aria-hidden="true"
+								>{char === ' ' ? '\u00A0' : char}</span
+							>
 						{/each}
 					</span>
 				</div>
@@ -122,7 +121,11 @@
 
 					<div class="stat">
 						<span class="stat-label">ACCURACY</span>
-						<span class="stat-value" class:stat-warning={accuracy < 0.7} class:stat-danger={accuracy < 0.5}>
+						<span
+							class="stat-value"
+							class:stat-warning={accuracy < 0.7}
+							class:stat-danger={accuracy < 0.5}
+						>
 							{progress.typed.length > 0 ? `${Math.round(accuracy * 100)}%` : '---%'}
 						</span>
 					</div>

@@ -30,7 +30,12 @@
 
 {#if browser}
 	{#if wallet.isConnected && wallet.address}
-		<button class="wallet-connected" onclick={handleDisconnect} type="button" title="Click to disconnect">
+		<button
+			class="wallet-connected"
+			onclick={handleDisconnect}
+			type="button"
+			title="Click to disconnect"
+		>
 			<Row gap={2} align="center">
 				<span class="wallet-indicator" aria-hidden="true"></span>
 				<AddressDisplay address={wallet.address} />
@@ -41,9 +46,7 @@
 			{wallet.status === 'reconnecting' ? 'Reconnecting...' : 'Connecting...'}
 		</Button>
 	{:else}
-		<Button variant="primary" size="sm" onclick={openModal}>
-			Connect
-		</Button>
+		<Button variant="primary" size="sm" onclick={openModal}>Connect</Button>
 	{/if}
 
 	{#if wallet.isConnected && !wallet.isCorrectChain}
@@ -56,9 +59,7 @@
 	<WalletModal open={showWalletModal} onclose={closeModal} />
 {:else}
 	<!-- SSR fallback -->
-	<Button variant="primary" size="sm" disabled>
-		Connect
-	</Button>
+	<Button variant="primary" size="sm" disabled>Connect</Button>
 {/if}
 
 <style>

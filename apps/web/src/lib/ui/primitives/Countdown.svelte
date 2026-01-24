@@ -24,7 +24,7 @@
 		urgentThreshold = 60,
 		onComplete,
 		showExpired = true,
-		label
+		label,
 	}: Props = $props();
 
 	let remainingMs = $state(0);
@@ -125,7 +125,8 @@
 	}
 
 	@keyframes urgent-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			color: var(--color-red);
 			text-shadow: 0 0 4px var(--color-red-glow);
 		}

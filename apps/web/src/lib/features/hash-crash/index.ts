@@ -40,5 +40,58 @@ export {
 	type HashCrashState,
 } from './store.svelte';
 
+// Audio
+export { createHashCrashAudio, type HashCrashAudio } from './audio';
+
+// Contract provider (Option B - clean separation)
+export {
+	createContractProvider,
+	type ContractProvider,
+	type ContractProviderState,
+	type PlayerInfo,
+} from './contractProvider.svelte';
+
+// Low-level contract interactions
+export {
+	// Types
+	SessionState,
+	type RoundData,
+	type PlayerBetData,
+	type SeedInfo,
+	// Helpers
+	formatMultiplier as formatContractMultiplier,
+	parseMultiplier,
+	formatData,
+	parseData,
+	// Read functions
+	getCurrentRoundId,
+	getRound,
+	getPlayerBet,
+	getRoundPlayers,
+	isSeedReady,
+	isSeedExpired,
+	getSeedInfo,
+	getDataBalance,
+	getArcadeCoreAllowance,
+	getWithdrawableBalance,
+	// Write functions
+	approveDataForArcade,
+	startRound,
+	placeBet as placeBetContract,
+	lockRound,
+	revealCrash,
+	settleAll,
+	withdraw,
+	handleExpiredRound,
+	// Event watchers
+	watchBetPlaced,
+	watchCrashPointRevealed,
+	watchPlayerWon,
+	watchPlayerLost,
+	watchRoundStarted,
+	// Errors
+	parseContractError,
+} from './contracts';
+
 // Re-export player types from arcade
 export type { HashCrashPlayerResult, HashCrashBet, HashCrashRound } from '$lib/core/types/arcade';

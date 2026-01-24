@@ -22,7 +22,11 @@
 	let overBar = $derived('█'.repeat(overChars));
 </script>
 
-<div class="pool-bars" role="img" aria-label="Pool distribution: {underPercent}% under, {overPercent}% over">
+<div
+	class="pool-bars"
+	role="img"
+	aria-label="Pool distribution: {underPercent}% under, {overPercent}% over"
+>
 	<div class="pool-bar-container">
 		<span class="pool-bar-under">{underBar}</span><span class="pool-bar-over">{overBar}</span>
 	</div>

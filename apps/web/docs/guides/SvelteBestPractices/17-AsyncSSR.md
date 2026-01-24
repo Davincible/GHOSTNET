@@ -9,11 +9,11 @@ Async SSR allows using `await` directly in component scripts without wrapper blo
 ```javascript
 // svelte.config.js
 export default {
-  compilerOptions: {
-    experimental: {
-      async: true
-    }
-  }
+	compilerOptions: {
+		experimental: {
+			async: true,
+		},
+	},
 };
 ```
 
@@ -45,17 +45,17 @@ export default {
 
 ```svelte
 <script>
-  import { getPosts, getUser } from '$lib/server/data.remote';
-  
-  // Multiple awaits
-  const posts = await getPosts();
-  const user = await getUser('current');
+	import { getPosts, getUser } from '$lib/server/data.remote';
+
+	// Multiple awaits
+	const posts = await getPosts();
+	const user = await getUser('current');
 </script>
 
 <h1>Welcome, {user.name}</h1>
 
 {#each posts as post}
-  <article>{post.title}</article>
+	<article>{post.title}</article>
 {/each}
 ```
 
@@ -63,17 +63,14 @@ export default {
 
 ```svelte
 <script>
-  import { getPosts, getUser } from '$lib/server/data.remote';
-  
-  // Sequential (slower)
-  const posts = await getPosts();
-  const user = await getUser();
-  
-  // Parallel (faster) - PREFERRED
-  const [posts, user] = await Promise.all([
-    getPosts(),
-    getUser()
-  ]);
+	import { getPosts, getUser } from '$lib/server/data.remote';
+
+	// Sequential (slower)
+	const posts = await getPosts();
+	const user = await getUser();
+
+	// Parallel (faster) - PREFERRED
+	const [posts, user] = await Promise.all([getPosts(), getUser()]);
 </script>
 ```
 
@@ -83,25 +80,25 @@ With async SSR, errors throw like normal async code:
 
 ```svelte
 <script>
-  import { getPost } from '$lib/server/posts.remote';
-  
-  let { postId } = $props();
-  
-  // Wrap in try-catch for error handling
-  let post;
-  let error;
-  
-  try {
-    post = await getPost(postId);
-  } catch (e) {
-    error = e;
-  }
+	import { getPost } from '$lib/server/posts.remote';
+
+	let { postId } = $props();
+
+	// Wrap in try-catch for error handling
+	let post;
+	let error;
+
+	try {
+		post = await getPost(postId);
+	} catch (e) {
+		error = e;
+	}
 </script>
 
 {#if error}
-  <p>Error: {error.message}</p>
+	<p>Error: {error.message}</p>
 {:else}
-  <h1>{post.title}</h1>
+	<h1>{post.title}</h1>
 {/if}
 ```
 
@@ -111,11 +108,11 @@ Use `<svelte:boundary>` for declarative error handling with async components:
 
 ```svelte
 <svelte:boundary onerror={(e) => console.error(e)}>
-  {#snippet failed(error)}
-    <p>Something went wrong: {error.message}</p>
-  {/snippet}
-  
-  <AsyncComponent />
+	{#snippet failed(error)}
+		<p>Something went wrong: {error.message}</p>
+	{/snippet}
+
+	<AsyncComponent />
 </svelte:boundary>
 ```
 
@@ -126,30 +123,30 @@ Async SSR works with SvelteKit's streaming:
 ```typescript
 // +page.server.ts
 export async function load() {
-  return {
-    // Fast data - awaited before HTML sent
-    fastData: await getFastData(),
-    
-    // Slow data - streamed in later
-    slowData: getSlowData() // NOT awaited
-  };
+	return {
+		// Fast data - awaited before HTML sent
+		fastData: await getFastData(),
+
+		// Slow data - streamed in later
+		slowData: getSlowData(), // NOT awaited
+	};
 }
 ```
 
 ```svelte
 <!-- +page.svelte -->
 <script>
-  let { data } = $props();
-  
-  // fastData is immediately available
-  // slowData streams in when ready
-  const slow = await data.slowData;
+	let { data } = $props();
+
+	// fastData is immediately available
+	// slowData streams in when ready
+	const slow = await data.slowData;
 </script>
 
 <h1>{data.fastData.title}</h1>
 
 <section>
-  <h2>{slow.title}</h2>
+	<h2>{slow.title}</h2>
 </section>
 ```
 
@@ -164,11 +161,11 @@ export async function load() {
 
 ## When to Use Async SSR
 
-| Use Case | Recommendation |
-|----------|----------------|
-| Initial page data | Use `+page.server.ts` load functions |
-| Child component data | Async SSR works well |
-| Data that streams | Combine with load function streaming |
+| Use Case              | Recommendation                          |
+| --------------------- | --------------------------------------- |
+| Initial page data     | Use `+page.server.ts` load functions    |
+| Child component data  | Async SSR works well                    |
+| Data that streams     | Combine with load function streaming    |
 | Complex orchestration | Use `Promise.all` for parallel fetching |
 
 ---

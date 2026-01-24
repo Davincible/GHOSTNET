@@ -11,15 +11,15 @@ export default defineConfig({
 			globals: {
 				Buffer: true,
 				global: true,
-				process: true
+				process: true,
 			},
-			protocolImports: true
+			protocolImports: true,
 		}),
-		sveltekit()
+		sveltekit(),
 	],
 	// Pre-bundle WalletConnect for faster dev startup
 	optimizeDeps: {
-		include: ['@walletconnect/ethereum-provider']
+		include: ['@walletconnect/ethereum-provider'],
 	},
 	test: {
 		projects: [

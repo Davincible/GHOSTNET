@@ -33,7 +33,9 @@
 	const USER_HAS_CREW = true;
 
 	// Crew data (loaded from mock generators)
-	let crew = $state<Crew | null>(USER_HAS_CREW ? generateMockCrew({ memberCount: 23, includeYou: true }) : null);
+	let crew = $state<Crew | null>(
+		USER_HAS_CREW ? generateMockCrew({ memberCount: 23, includeYou: true }) : null
+	);
 	let members = $state<CrewMember[]>(USER_HAS_CREW ? generateMockMembers(23, true) : []);
 	let activity = $state<CrewActivity[]>(generateMockActivity(15));
 	let pendingInvites = $state<CrewInvite[]>(!USER_HAS_CREW ? generateMockInvites(2) : []);

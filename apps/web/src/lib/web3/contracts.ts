@@ -2,7 +2,7 @@
  * Contract Interaction Utilities
  * ===============================
  * Read/write helpers for GHOSTNET contracts
- * 
+ *
  * SSR-SAFE: All browser APIs are guarded
  */
 
@@ -11,7 +11,7 @@ import {
 	readContract,
 	writeContract,
 	waitForTransactionReceipt,
-	simulateContract
+	simulateContract,
 } from '@wagmi/core';
 import {
 	formatUnits,
@@ -19,7 +19,7 @@ import {
 	UserRejectedRequestError,
 	ContractFunctionExecutionError,
 	InsufficientFundsError,
-	EstimateGasExecutionError
+	EstimateGasExecutionError,
 } from 'viem';
 import { requireConfig } from './config';
 import { ghostCoreAbi, dataTokenAbi, deadPoolAbi, getContractAddress } from './abis';
@@ -61,7 +61,7 @@ export interface TransactionResult {
 
 /**
  * Parse contract errors into user-friendly messages
- * 
+ *
  * HIGH FIX: Added InsufficientFundsError and EstimateGasExecutionError handling
  * to provide better feedback when users don't have enough ETH for gas.
  */
@@ -70,17 +70,17 @@ export function parseContractError(err: unknown): string {
 	if (err instanceof UserRejectedRequestError) {
 		return 'Transaction cancelled by user';
 	}
-	
+
 	// HIGH FIX: User doesn't have enough ETH for gas fees
 	if (err instanceof InsufficientFundsError) {
 		return 'Insufficient ETH for gas fees. Please add ETH to your wallet.';
 	}
-	
+
 	// HIGH FIX: Gas estimation failed (transaction would revert)
 	if (err instanceof EstimateGasExecutionError) {
 		return 'Transaction would fail. Please check your inputs and try again.';
 	}
-	
+
 	// Contract execution error with revert reason
 	if (err instanceof ContractFunctionExecutionError) {
 		// Try to extract revert reason
@@ -94,7 +94,7 @@ export function parseContractError(err: unknown): string {
 		if (reason.includes('ExceedsCapacity')) return 'Level capacity exceeded';
 		return reason;
 	}
-	
+
 	// Generic Error with message parsing
 	if (err instanceof Error) {
 		// Check for network-related errors
@@ -110,7 +110,7 @@ export function parseContractError(err: unknown): string {
 		}
 		return err.message;
 	}
-	
+
 	return 'Transaction failed';
 }
 
@@ -124,7 +124,7 @@ export function parseContractError(err: unknown): string {
 export function formatData(amount: bigint, decimals = 2): string {
 	return Number(formatUnits(amount, 18)).toLocaleString(undefined, {
 		minimumFractionDigits: decimals,
-		maximumFractionDigits: decimals
+		maximumFractionDigits: decimals,
 	});
 }
 
@@ -176,7 +176,7 @@ export async function getDataBalance(address: `0x${string}`): Promise<bigint> {
 		address: tokenAddress,
 		abi: dataTokenAbi,
 		functionName: 'balanceOf',
-		args: [address]
+		args: [address],
 	}) as Promise<bigint>;
 }
 
@@ -198,7 +198,7 @@ export async function getDataAllowance(owner: `0x${string}`): Promise<bigint> {
 		address: tokenAddress,
 		abi: dataTokenAbi,
 		functionName: 'allowance',
-		args: [owner, ghostCoreAddress]
+		args: [owner, ghostCoreAddress],
 	}) as Promise<bigint>;
 }
 
@@ -219,7 +219,7 @@ export async function approveData(amount: bigint): Promise<`0x${string}`> {
 		address: tokenAddress,
 		abi: dataTokenAbi,
 		functionName: 'approve',
-		args: [ghostCoreAddress, amount]
+		args: [ghostCoreAddress, amount],
 	});
 
 	const hash = await writeContract(config, request);
@@ -243,7 +243,7 @@ export async function getPosition(address: `0x${string}`): Promise<Position | nu
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'positions',
-		args: [address]
+		args: [address],
 	})) as [bigint, number, bigint, bigint, bigint, bigint, number, bigint, number];
 
 	// Check if position exists (amount > 0)
@@ -258,7 +258,7 @@ export async function getPosition(address: `0x${string}`): Promise<Position | nu
 		nextScanTime: position[5],
 		ghostStreak: position[6],
 		boostExpiry: position[7],
-		boostMultiplier: position[8]
+		boostMultiplier: position[8],
 	};
 }
 
@@ -274,7 +274,7 @@ export async function getLevelConfig(level: number): Promise<LevelConfig> {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'levelConfigs',
-		args: [level]
+		args: [level],
 	})) as [number, bigint, bigint, bigint, bigint];
 
 	return {
@@ -282,7 +282,7 @@ export async function getLevelConfig(level: number): Promise<LevelConfig> {
 		scanInterval: levelConfig[1],
 		baseYieldRate: levelConfig[2],
 		minStake: levelConfig[3],
-		levelCapacity: levelConfig[4]
+		levelCapacity: levelConfig[4],
 	};
 }
 
@@ -298,7 +298,7 @@ export async function getPendingYield(address: `0x${string}`): Promise<bigint> {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'calculatePendingYield',
-		args: [address]
+		args: [address],
 	}) as Promise<bigint>;
 }
 
@@ -313,7 +313,7 @@ export async function getTotalStaked(): Promise<bigint> {
 	return readContract(config, {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
-		functionName: 'totalStaked'
+		functionName: 'totalStaked',
 	}) as Promise<bigint>;
 }
 
@@ -329,7 +329,7 @@ export async function getLevelStaked(level: number): Promise<bigint> {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'levelStaked',
-		args: [level]
+		args: [level],
 	}) as Promise<bigint>;
 }
 
@@ -358,7 +358,7 @@ export async function jackIn(level: number, amount: bigint): Promise<`0x${string
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'jackIn',
-		args: [level, amount]
+		args: [level, amount],
 	});
 
 	const hash = await writeContract(config, request);
@@ -377,7 +377,7 @@ export async function extract(): Promise<`0x${string}`> {
 	const { request } = await simulateContract(config, {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
-		functionName: 'extract'
+		functionName: 'extract',
 	});
 
 	const hash = await writeContract(config, request);
@@ -396,7 +396,7 @@ export async function claimRewards(): Promise<`0x${string}`> {
 	const { request } = await simulateContract(config, {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
-		functionName: 'claimRewards'
+		functionName: 'claimRewards',
 	});
 
 	const hash = await writeContract(config, request);
@@ -416,7 +416,7 @@ export async function upgradeLevel(newLevel: number): Promise<`0x${string}`> {
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'upgradeLevel',
-		args: [newLevel]
+		args: [newLevel],
 	});
 
 	const hash = await writeContract(config, request);
@@ -445,7 +445,7 @@ export async function increaseStake(additionalAmount: bigint): Promise<`0x${stri
 		address: ghostCoreAddress,
 		abi: ghostCoreAbi,
 		functionName: 'increaseStake',
-		args: [additionalAmount]
+		args: [additionalAmount],
 	});
 
 	const hash = await writeContract(config, request);
@@ -478,14 +478,14 @@ export async function getCurrentRound(): Promise<{
 	const roundNumber = (await readContract(config, {
 		address: deadPoolAddress,
 		abi: deadPoolAbi,
-		functionName: 'currentRound'
+		functionName: 'currentRound',
 	})) as bigint;
 
 	const round = (await readContract(config, {
 		address: deadPoolAddress,
 		abi: deadPoolAbi,
 		functionName: 'rounds',
-		args: [roundNumber]
+		args: [roundNumber],
 	})) as [number, bigint, bigint, bigint, bigint, bigint, boolean, number];
 
 	return {
@@ -497,7 +497,7 @@ export async function getCurrentRound(): Promise<{
 		totalUnder: round[4],
 		totalOver: round[5],
 		resolved: round[6],
-		outcome: round[7]
+		outcome: round[7],
 	};
 }
 
@@ -522,7 +522,7 @@ export async function placeBet(isOver: boolean, amount: bigint): Promise<`0x${st
 		address: tokenAddress,
 		abi: dataTokenAbi,
 		functionName: 'allowance',
-		args: [address, deadPoolAddress]
+		args: [address, deadPoolAddress],
 	})) as bigint;
 
 	if (allowance < amount) {
@@ -530,7 +530,7 @@ export async function placeBet(isOver: boolean, amount: bigint): Promise<`0x${st
 			address: tokenAddress,
 			abi: dataTokenAbi,
 			functionName: 'approve',
-			args: [deadPoolAddress, amount]
+			args: [deadPoolAddress, amount],
 		});
 		const approveHash = await writeContract(config, approveRequest);
 		await waitForTransactionReceipt(config, { hash: approveHash });
@@ -540,7 +540,7 @@ export async function placeBet(isOver: boolean, amount: bigint): Promise<`0x${st
 		address: deadPoolAddress,
 		abi: deadPoolAbi,
 		functionName: 'placeBet',
-		args: [isOver, amount]
+		args: [isOver, amount],
 	});
 
 	const hash = await writeContract(config, request);
@@ -560,7 +560,7 @@ export async function claimWinnings(roundNumber: bigint): Promise<`0x${string}`>
 		address: deadPoolAddress,
 		abi: deadPoolAbi,
 		functionName: 'claim',
-		args: [roundNumber]
+		args: [roundNumber],
 	});
 
 	const hash = await writeContract(config, request);

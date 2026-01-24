@@ -301,9 +301,7 @@
 							<AmountDisplay amount={waitingDuel.wagerAmount} symbol="DATA" decimals={0} />
 						</div>
 						<p class="waiting-text">Searching for an opponent...</p>
-						<Button variant="ghost" onclick={() => handleCancelDuel(waitingDuel.id)}>
-							CANCEL
-						</Button>
+						<Button variant="ghost" onclick={() => handleCancelDuel(waitingDuel.id)}>CANCEL</Button>
 					</div>
 				</Box>
 			</div>

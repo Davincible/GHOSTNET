@@ -10,20 +10,13 @@
 		compact?: boolean;
 	}
 
-	let {
-		level,
-		glow = false,
-		compact = false
-	}: Props = $props();
+	let { level, glow = false, compact = false }: Props = $props();
 
 	// Display text
 	let displayText = $derived(compact ? level : `[${level}]`);
 </script>
 
-<span
-	class="level-badge level-{level.toLowerCase().replace('_', '-')}"
-	class:level-glow={glow}
->
+<span class="level-badge level-{level.toLowerCase().replace('_', '-')}" class:level-glow={glow}>
 	{displayText}
 </span>
 
@@ -81,11 +74,14 @@
 	}
 
 	@keyframes danger-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: 0 0 4px rgba(255, 51, 102, 0.5);
 		}
 		50% {
-			text-shadow: 0 0 8px rgba(255, 51, 102, 0.6), 0 0 16px rgba(255, 51, 102, 0.3);
+			text-shadow:
+				0 0 8px rgba(255, 51, 102, 0.6),
+				0 0 16px rgba(255, 51, 102, 0.3);
 		}
 	}
 </style>

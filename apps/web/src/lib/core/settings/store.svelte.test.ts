@@ -15,7 +15,7 @@ import { createSettingsStore, type SettingsStore } from './store.svelte';
 
 // Mock $app/environment - must be hoisted
 vi.mock('$app/environment', () => ({
-	browser: true
+	browser: true,
 }));
 
 // Mock localStorage
@@ -36,13 +36,13 @@ const localStorageMock = (() => {
 			return Object.keys(store).length;
 		},
 		key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
-		_getStore: () => store // Helper for debugging
+		_getStore: () => store, // Helper for debugging
 	};
 })();
 
 Object.defineProperty(globalThis, 'localStorage', {
 	value: localStorageMock,
-	writable: true
+	writable: true,
 });
 
 // ============================================================================
@@ -56,7 +56,7 @@ const DEFAULT_SETTINGS = {
 	audioVolume: 0.5,
 	effectsEnabled: true,
 	scanlinesEnabled: true,
-	flickerEnabled: true
+	flickerEnabled: true,
 };
 
 // ============================================================================
@@ -94,7 +94,7 @@ describe('createSettingsStore', () => {
 				audioVolume: 0.8,
 				effectsEnabled: false,
 				scanlinesEnabled: false,
-				flickerEnabled: true
+				flickerEnabled: true,
 			};
 			localStorageMock.setItem(STORAGE_KEY, JSON.stringify(savedSettings));
 
@@ -111,7 +111,7 @@ describe('createSettingsStore', () => {
 			// Only save some settings
 			const partialSettings = {
 				audioEnabled: false,
-				audioVolume: 0.3
+				audioVolume: 0.3,
 			};
 			localStorageMock.setItem(STORAGE_KEY, JSON.stringify(partialSettings));
 
@@ -250,10 +250,7 @@ describe('createSettingsStore', () => {
 			store.reset();
 
 			// Should have saved the reset state
-			expect(localStorageMock.setItem).toHaveBeenCalledWith(
-				STORAGE_KEY,
-				expect.any(String)
-			);
+			expect(localStorageMock.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
 		});
 	});
 

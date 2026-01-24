@@ -297,10 +297,7 @@ export function calculateBonuses(members: CrewMember[]): CrewBonus[] {
  * Generate a complete mock crew with members and bonuses
  * @param options - Configuration options
  */
-export function generateMockCrew(options?: {
-	memberCount?: number;
-	includeYou?: boolean;
-}): Crew {
+export function generateMockCrew(options?: { memberCount?: number; includeYou?: boolean }): Crew {
 	const memberCount = options?.memberCount ?? randomInt(15, 45);
 	const members = generateMockMembers(memberCount, options?.includeYou);
 	const bonuses = calculateBonuses(members);

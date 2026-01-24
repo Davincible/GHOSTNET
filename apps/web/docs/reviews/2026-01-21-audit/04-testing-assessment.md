@@ -18,15 +18,15 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 ## Test File Naming Audit
 
-| File | Extension Correct | Uses Runes | Status |
-|------|-------------------|------------|--------|
-| `counter.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `wallet.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `Counter.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `provider.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `hackrun/store.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `typing/store.svelte.test.ts` | `.svelte.test.ts` | Yes | OK |
-| `e2e/home.test.ts` | `.test.ts` | No (E2E) | OK |
+| File                           | Extension Correct | Uses Runes | Status |
+| ------------------------------ | ----------------- | ---------- | ------ |
+| `counter.svelte.test.ts`       | `.svelte.test.ts` | Yes        | OK     |
+| `wallet.svelte.test.ts`        | `.svelte.test.ts` | Yes        | OK     |
+| `Counter.svelte.test.ts`       | `.svelte.test.ts` | Yes        | OK     |
+| `provider.svelte.test.ts`      | `.svelte.test.ts` | Yes        | OK     |
+| `hackrun/store.svelte.test.ts` | `.svelte.test.ts` | Yes        | OK     |
+| `typing/store.svelte.test.ts`  | `.svelte.test.ts` | Yes        | OK     |
+| `e2e/home.test.ts`             | `.test.ts`        | No (E2E)   | OK     |
 
 ### Misnamed Files (Critical)
 
@@ -40,16 +40,17 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 **Location**: `src/lib/stores/counter.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Edge Cases Covered | Yes |
-| Clean Setup/Teardown | Yes |
+| Criteria              | Status |
+| --------------------- | ------ |
+| Tests Behavioral      | Yes    |
+| Meaningful Assertions | Yes    |
+| Edge Cases Covered    | Yes    |
+| Clean Setup/Teardown  | Yes    |
 
 **Assessment**: Excellent. This is a model test file.
 
 **Strengths**:
+
 - Tests behavior, not implementation
 - Fresh instance per test via `beforeEach`
 - Tests derived values reactively update
@@ -64,16 +65,17 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 **Location**: `src/lib/web3/wallet.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Edge Cases Covered | Partial |
-| Mock Boundaries | Correct |
+| Criteria              | Status  |
+| --------------------- | ------- |
+| Tests Behavioral      | Yes     |
+| Meaningful Assertions | Yes     |
+| Edge Cases Covered    | Partial |
+| Mock Boundaries       | Correct |
 
 **Assessment**: Good quality with appropriate mocking strategy.
 
 **Strengths**:
+
 - Mocks external dependencies (`@wagmi/core`, `viem`), not data structures
 - Tests initial state, derived values, error handling
 - SSR safety tests included
@@ -83,6 +85,7 @@ The test suite demonstrates solid foundational practices—correct file naming c
 **Issues**:
 
 1. **Incomplete SSR Test** (Line 179-192)
+
    ```typescript
    it('init returns noop cleanup in SSR', async () => {
      // Mock browser as false for this test
@@ -90,6 +93,7 @@ The test suite demonstrates solid foundational practices—correct file naming c
      // Need to re-import to get the mocked version
      const { createWalletStore: createSSRStore } = await import('./wallet.svelte');
    ```
+
    The `vi.doMock` inside a test doesn't affect already-imported modules. This test likely doesn't actually test SSR behavior. The mock needs to be set up before the import.
 
 2. **Missing Tests**:
@@ -97,6 +101,7 @@ The test suite demonstrates solid foundational practices—correct file naming c
    - Short address derivation edge cases (addresses of different lengths)
 
 **Recommendations**:
+
 - Move SSR mocks to a separate test file with proper module isolation
 - Add tests for `connectWalletConnect`
 
@@ -106,16 +111,17 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 **Location**: `src/lib/components/Counter.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Edge Cases Covered | Yes |
-| Uses Semantic Locators | Yes |
+| Criteria               | Status |
+| ---------------------- | ------ |
+| Tests Behavioral       | Yes    |
+| Meaningful Assertions  | Yes    |
+| Edge Cases Covered     | Yes    |
+| Uses Semantic Locators | Yes    |
 
 **Assessment**: Excellent component test demonstrating best practices.
 
 **Strengths**:
+
 - Uses `page.getByRole()` and `page.getByTestId()` correctly
 - Tests user interactions, not internal state
 - Covers rendering, interactions, and edge cases
@@ -129,16 +135,17 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 **Location**: `src/lib/core/providers/mock/provider.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Edge Cases Covered | Yes |
-| Timer Handling | Correct |
+| Criteria              | Status  |
+| --------------------- | ------- |
+| Tests Behavioral      | Yes     |
+| Meaningful Assertions | Yes     |
+| Edge Cases Covered    | Yes     |
+| Timer Handling        | Correct |
 
 **Assessment**: Very thorough test suite for the mock provider.
 
 **Strengths**:
+
 - Proper use of `vi.useFakeTimers()` and `vi.advanceTimersByTimeAsync()`
 - Tests state machine transitions
 - Tests subscription/unsubscription patterns
@@ -150,13 +157,14 @@ The test suite demonstrates solid foundational practices—correct file naming c
 1. **Potential Timer Leak** (Line 26-28)
    ```typescript
    afterEach(() => {
-     provider.disconnect();
-     vi.useRealTimers();
+   	provider.disconnect();
+   	vi.useRealTimers();
    });
    ```
    The `disconnect()` should be wrapped in a try-catch or use `vi.restoreAllMocks()` in case the test threw before provider was created.
 
 **Recommendations**:
+
 - Add `try { provider?.disconnect(); } catch {}` pattern for resilience
 
 ---
@@ -165,16 +173,17 @@ The test suite demonstrates solid foundational practices—correct file naming c
 
 **Location**: `src/lib/features/hackrun/store.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Edge Cases Covered | Yes |
+| Criteria               | Status    |
+| ---------------------- | --------- |
+| Tests Behavioral       | Yes       |
+| Meaningful Assertions  | Yes       |
+| Edge Cases Covered     | Yes       |
 | State Machine Coverage | Excellent |
 
 **Assessment**: Comprehensive state machine testing.
 
 **Strengths**:
+
 - Tests all state transitions: idle -> selecting -> countdown -> running -> complete/failed
 - Tests timeout and abort scenarios
 - Tests derived values (currentMultiplier, totalLoot, timeRemainingPercent)
@@ -186,23 +195,24 @@ The test suite demonstrates solid foundational practices—correct file naming c
 1. **Tautological Test** (Line 537-542)
    ```typescript
    it('resetHackRunStore clears singleton', () => {
-     resetHackRunStore();
-     // If we get here without error, the reset worked
-     expect(true).toBe(true);
+   	resetHackRunStore();
+   	// If we get here without error, the reset worked
+   	expect(true).toBe(true);
    });
    ```
    This test asserts nothing meaningful. It will always pass.
 
 **Fix**:
+
 ```typescript
 it('resetHackRunStore clears singleton', () => {
-  const store1 = createHackRunStore();
-  store1.selectDifficulty();
-  
-  resetHackRunStore();
-  
-  const store2 = createHackRunStore();
-  expect(store2.state.status).toBe('idle');
+	const store1 = createHackRunStore();
+	store1.selectDifficulty();
+
+	resetHackRunStore();
+
+	const store2 = createHackRunStore();
+	expect(store2.state.status).toBe('idle');
 });
 ```
 
@@ -212,16 +222,17 @@ it('resetHackRunStore clears singleton', () => {
 
 **Location**: `src/lib/features/typing/store.svelte.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Tests Behavioral | Yes |
-| Meaningful Assertions | Yes |
-| Pure Functions Tested | Excellent |
-| State Machine Coverage | Complete |
+| Criteria               | Status    |
+| ---------------------- | --------- |
+| Tests Behavioral       | Yes       |
+| Meaningful Assertions  | Yes       |
+| Pure Functions Tested  | Excellent |
+| State Machine Coverage | Complete  |
 
 **Assessment**: Exemplary test structure with separation of pure functions and state machine.
 
 **Strengths**:
+
 - Separates pure function tests (`calculateWpm`, `calculateAccuracy`, `calculateReward`) from state machine tests
 - Comprehensive reward tier testing including speed bonuses
 - Tests multi-round progression
@@ -234,6 +245,7 @@ it('resetHackRunStore clears singleton', () => {
    The file imports `flushSync` from 'svelte' (line 10) but never uses it in the tests. This appears to be dead code.
 
 **Recommendations**:
+
 - Remove unused `flushSync` import
 
 ---
@@ -242,50 +254,55 @@ it('resetHackRunStore clears singleton', () => {
 
 **Location**: `e2e/home.test.ts`
 
-| Criteria | Status |
-|----------|--------|
-| Stable Selectors | Partial |
-| Meaningful Assertions | Yes |
+| Criteria               | Status  |
+| ---------------------- | ------- |
+| Stable Selectors       | Partial |
+| Meaningful Assertions  | Yes     |
 | Critical Flows Covered | Minimal |
-| Proper Async | Yes |
+| Proper Async           | Yes     |
 
 **Assessment**: Basic smoke test coverage, but needs expansion.
 
 **Issues**:
 
 1. **Fragile Selectors** (Multiple locations)
+
    ```typescript
    // Line 26-27: CSS class selector
    const header = page.locator('header');
-   
+
    // Line 32-33: Text-based selector - fragile if copy changes
    const feedPanel = page.locator('text=LIVE FEED').first();
-   
+
    // Line 77-78: CSS class pattern - breaks if class naming changes
    const feedItems = page.locator('[class*="feed-item"], [class*="FeedItem"]');
-   
+
    // Line 92: Multiple selector patterns for modal
    const modal = page.locator('[role="dialog"], .modal');
-   
+
    // Line 102-103: CSS class pattern
    const scanlines = page.locator('[class*="scanline"], [class*="Scanline"]');
    ```
 
 2. **Magic Timeout** (Line 74)
+
    ```typescript
    await page.waitForTimeout(1000);
    ```
+
    Hard-coded waits are fragile. Prefer waiting for specific conditions.
 
 3. **Test That Can't Fail** (Line 100-107)
+
    ```typescript
    test('scanlines overlay is present', async ({ page }) => {
-     const scanlines = page.locator('[class*="scanline"], [class*="Scanline"]');
-     const count = await scanlines.count();
-     // Either scanlines exist or they're disabled - both are valid states
-     expect(count).toBeGreaterThanOrEqual(0);
+   	const scanlines = page.locator('[class*="scanline"], [class*="Scanline"]');
+   	const count = await scanlines.count();
+   	// Either scanlines exist or they're disabled - both are valid states
+   	expect(count).toBeGreaterThanOrEqual(0);
    });
    ```
+
    Any count >= 0 is valid, so this test literally cannot fail.
 
 4. **Missing Critical User Flows**:
@@ -295,6 +312,7 @@ it('resetHackRunStore clears singleton', () => {
    - Wallet connection flow (mocked or real)
 
 **Recommendations**:
+
 - Add `data-testid` attributes to key elements and use `page.getByTestId()`
 - Replace text selectors with `page.getByRole()` where possible
 - Remove or rewrite the scanlines test
@@ -313,18 +331,19 @@ it('resetHackRunStore clears singleton', () => {
 
 ```typescript
 describe('SSR safety', () => {
-  it('init returns noop cleanup in SSR', async () => {
-    // This mock is set AFTER wallet.svelte is already imported at line 65
-    vi.doMock('$app/environment', () => ({ browser: false }));
-    
-    // Re-import doesn't help because vi.doMock was called after module load
-    const { createWalletStore: createSSRStore } = await import('./wallet.svelte');
-    // ...
-  });
+	it('init returns noop cleanup in SSR', async () => {
+		// This mock is set AFTER wallet.svelte is already imported at line 65
+		vi.doMock('$app/environment', () => ({ browser: false }));
+
+		// Re-import doesn't help because vi.doMock was called after module load
+		const { createWalletStore: createSSRStore } = await import('./wallet.svelte');
+		// ...
+	});
 });
 ```
 
 **Fix**: Create a separate test file for SSR scenarios:
+
 ```typescript
 // wallet.ssr.test.ts (runs in node environment, no .svelte prefix)
 vi.mock('$app/environment', () => ({ browser: false }));
@@ -332,12 +351,12 @@ vi.mock('$app/environment', () => ({ browser: false }));
 import { createWalletStore } from './wallet.svelte';
 
 describe('Wallet SSR Safety', () => {
-  it('init returns noop cleanup in SSR', () => {
-    const store = createWalletStore();
-    const cleanup = store.init();
-    expect(typeof cleanup).toBe('function');
-    cleanup(); // Should be safe noop
-  });
+	it('init returns noop cleanup in SSR', () => {
+		const store = createWalletStore();
+		const cleanup = store.init();
+		expect(typeof cleanup).toBe('function');
+		cleanup(); // Should be safe noop
+	});
 });
 ```
 
@@ -347,44 +366,46 @@ describe('Wallet SSR Safety', () => {
 
 ### Untested Stores
 
-| Store | Location | Has Tests | Priority | Reason |
-|-------|----------|-----------|----------|--------|
-| `settings/store.svelte.ts` | `src/lib/core/settings/` | **No** | **Critical** | Manages localStorage persistence, SSR safety |
-| `toast/store.svelte.ts` | `src/lib/ui/toast/` | **No** | **High** | Timer-based auto-removal, used throughout app |
-| `duels/store.svelte.ts` | `src/lib/features/duels/` | **No** | **High** | Complex state machine, opponent simulation |
-| `audio/manager.svelte.ts` | `src/lib/core/audio/` | **No** | Medium | Integration with settings, browser-only behavior |
-| `stores/index.svelte.ts` | `src/lib/core/stores/` | **No** | Low | Thin wrapper over provider |
+| Store                      | Location                  | Has Tests | Priority     | Reason                                           |
+| -------------------------- | ------------------------- | --------- | ------------ | ------------------------------------------------ |
+| `settings/store.svelte.ts` | `src/lib/core/settings/`  | **No**    | **Critical** | Manages localStorage persistence, SSR safety     |
+| `toast/store.svelte.ts`    | `src/lib/ui/toast/`       | **No**    | **High**     | Timer-based auto-removal, used throughout app    |
+| `duels/store.svelte.ts`    | `src/lib/features/duels/` | **No**    | **High**     | Complex state machine, opponent simulation       |
+| `audio/manager.svelte.ts`  | `src/lib/core/audio/`     | **No**    | Medium       | Integration with settings, browser-only behavior |
+| `stores/index.svelte.ts`   | `src/lib/core/stores/`    | **No**    | Low          | Thin wrapper over provider                       |
 
 ### Critical Store: Settings Store
 
 **File**: `src/lib/core/settings/store.svelte.ts`
 
 **Why it needs tests**:
+
 - Persists to `localStorage`
 - Has SSR guards (`browser` checks)
 - Validates volume range (0-1)
 - Uses Svelte context API
 
 **Recommended test coverage**:
+
 ```typescript
 // settings/store.svelte.test.ts
 describe('createSettingsStore', () => {
-  describe('initial state', () => {
-    it('loads default settings when no localStorage');
-    it('loads saved settings from localStorage');
-    it('merges partial saved settings with defaults');
-    it('handles corrupted localStorage gracefully');
-  });
-  
-  describe('persistence', () => {
-    it('saves to localStorage on setting change');
-    it('validates volume is clamped to 0-1 range');
-  });
-  
-  describe('reset', () => {
-    it('restores all defaults');
-    it('persists reset to localStorage');
-  });
+	describe('initial state', () => {
+		it('loads default settings when no localStorage');
+		it('loads saved settings from localStorage');
+		it('merges partial saved settings with defaults');
+		it('handles corrupted localStorage gracefully');
+	});
+
+	describe('persistence', () => {
+		it('saves to localStorage on setting change');
+		it('validates volume is clamped to 0-1 range');
+	});
+
+	describe('reset', () => {
+		it('restores all defaults');
+		it('persists reset to localStorage');
+	});
 });
 ```
 
@@ -393,57 +414,59 @@ describe('createSettingsStore', () => {
 **File**: `src/lib/ui/toast/store.svelte.ts`
 
 **Why it needs tests**:
+
 - Uses `setTimeout` for auto-removal
 - Relies on `crypto.randomUUID()`
 - Must handle rapid add/remove sequences
 
 **Recommended test coverage**:
+
 ```typescript
 // toast/store.svelte.test.ts
 describe('createToastStore', () => {
-  beforeEach(() => vi.useFakeTimers());
-  afterEach(() => vi.useRealTimers());
-  
-  it('adds toast with generated ID');
-  it('removes toast after duration');
-  it('does not auto-remove when duration is 0');
-  it('manual remove works before auto-remove');
-  it('clear removes all toasts');
-  it('convenience methods set correct type');
+	beforeEach(() => vi.useFakeTimers());
+	afterEach(() => vi.useRealTimers());
+
+	it('adds toast with generated ID');
+	it('removes toast after duration');
+	it('does not auto-remove when duration is 0');
+	it('manual remove works before auto-remove');
+	it('clear removes all toasts');
+	it('convenience methods set correct type');
 });
 ```
 
 ### Untested Features
 
-| Feature | Location | Has Tests | Priority |
-|---------|----------|-----------|----------|
-| `JackInModal` | `src/lib/features/modals/` | **No** | **Critical** |
-| `ExtractModal` | `src/lib/features/modals/` | **No** | **Critical** |
-| `WalletModal` | `src/lib/features/modals/` | **No** | High |
-| `SettingsModal` | `src/lib/features/modals/` | **No** | High |
-| `FeedPanel` | `src/lib/features/feed/` | **No** | High |
-| `PositionPanel` | `src/lib/features/position/` | **No** | High |
-| `LeaderboardTable` | `src/lib/features/leaderboard/` | **No** | Medium |
+| Feature            | Location                        | Has Tests | Priority     |
+| ------------------ | ------------------------------- | --------- | ------------ |
+| `JackInModal`      | `src/lib/features/modals/`      | **No**    | **Critical** |
+| `ExtractModal`     | `src/lib/features/modals/`      | **No**    | **Critical** |
+| `WalletModal`      | `src/lib/features/modals/`      | **No**    | High         |
+| `SettingsModal`    | `src/lib/features/modals/`      | **No**    | High         |
+| `FeedPanel`        | `src/lib/features/feed/`        | **No**    | High         |
+| `PositionPanel`    | `src/lib/features/position/`    | **No**    | High         |
+| `LeaderboardTable` | `src/lib/features/leaderboard/` | **No**    | Medium       |
 
 ### Untested UI Primitives
 
-| Component | Location | Has Tests | Priority |
-|-----------|----------|-----------|----------|
-| `Button` | `src/lib/ui/primitives/` | **No** | Medium |
-| `Modal` | `src/lib/ui/modal/` | **No** | High |
-| `ProgressBar` | `src/lib/ui/primitives/` | **No** | Low |
-| `AnimatedNumber` | `src/lib/ui/primitives/` | **No** | Low |
+| Component        | Location                 | Has Tests | Priority |
+| ---------------- | ------------------------ | --------- | -------- |
+| `Button`         | `src/lib/ui/primitives/` | **No**    | Medium   |
+| `Modal`          | `src/lib/ui/modal/`      | **No**    | High     |
+| `ProgressBar`    | `src/lib/ui/primitives/` | **No**    | Low      |
+| `AnimatedNumber` | `src/lib/ui/primitives/` | **No**    | Low      |
 
 ### Untested Routes
 
-| Route | Has Tests | Priority |
-|-------|-----------|----------|
-| `/typing` | E2E only (navigation) | High |
-| `/leaderboard` | E2E only (navigation) | Medium |
-| `/games/hackrun` | **No** | High |
-| `/games/duels` | **No** | High |
-| `/market` | **No** | Medium |
-| `/crew` | **No** | Medium |
+| Route            | Has Tests             | Priority |
+| ---------------- | --------------------- | -------- |
+| `/typing`        | E2E only (navigation) | High     |
+| `/leaderboard`   | E2E only (navigation) | Medium   |
+| `/games/hackrun` | **No**                | High     |
+| `/games/duels`   | **No**                | High     |
+| `/market`        | **No**                | Medium   |
+| `/crew`          | **No**                | Medium   |
 
 ---
 
@@ -451,14 +474,14 @@ describe('createToastStore', () => {
 
 ### Selector Stability Analysis
 
-| Selector Type | Count | Risk |
-|---------------|-------|------|
-| `page.getByRole()` | 2 | Low |
-| `page.getByTestId()` | 1 | Low |
-| `page.locator('text=...')` | 5 | Medium |
-| `page.locator('header')` | 1 | Medium |
-| `page.locator('[class*=...]')` | 3 | **High** |
-| `page.locator('nav')` | 1 | Medium |
+| Selector Type                  | Count | Risk     |
+| ------------------------------ | ----- | -------- |
+| `page.getByRole()`             | 2     | Low      |
+| `page.getByTestId()`           | 1     | Low      |
+| `page.locator('text=...')`     | 5     | Medium   |
+| `page.locator('header')`       | 1     | Medium   |
+| `page.locator('[class*=...]')` | 3     | **High** |
+| `page.locator('nav')`          | 1     | Medium   |
 
 ### Fragile Selectors Identified
 
@@ -468,16 +491,16 @@ describe('createToastStore', () => {
 
 ### Missing User Flows
 
-| Flow | Covered | Priority |
-|------|---------|----------|
-| Page loads successfully | Yes | - |
-| Connect wallet (mock) | **No** | Critical |
-| Jack In (stake) | **No** | Critical |
-| Extract (withdraw) | **No** | Critical |
-| Play typing game | **No** | High |
-| Complete typing game | **No** | High |
-| Navigate between pages | Partial | Medium |
-| Change settings | **No** | Medium |
+| Flow                    | Covered | Priority |
+| ----------------------- | ------- | -------- |
+| Page loads successfully | Yes     | -        |
+| Connect wallet (mock)   | **No**  | Critical |
+| Jack In (stake)         | **No**  | Critical |
+| Extract (withdraw)      | **No**  | Critical |
+| Play typing game        | **No**  | High     |
+| Complete typing game    | **No**  | High     |
+| Navigate between pages  | Partial | Medium   |
+| Change settings         | **No**  | Medium   |
 
 ---
 
@@ -485,14 +508,14 @@ describe('createToastStore', () => {
 
 ### vite.config.ts
 
-| Check | Status | Notes |
-|-------|--------|-------|
-| Browser mode enabled | Yes | Line 32-34 |
-| Playwright provider | Yes | Line 33 |
-| `.svelte` in include pattern | Yes | Line 37 |
-| Setup files configured | Yes | Line 38 |
-| Multi-project setup | Yes | client/server/ssr |
-| `conditions: ['browser']` | **Not needed** | Browser mode handles this |
+| Check                        | Status         | Notes                     |
+| ---------------------------- | -------------- | ------------------------- |
+| Browser mode enabled         | Yes            | Line 32-34                |
+| Playwright provider          | Yes            | Line 33                   |
+| `.svelte` in include pattern | Yes            | Line 37                   |
+| Setup files configured       | Yes            | Line 38                   |
+| Multi-project setup          | Yes            | client/server/ssr         |
+| `conditions: ['browser']`    | **Not needed** | Browser mode handles this |
 
 **Assessment**: Configuration is correct and follows best practices.
 
@@ -520,15 +543,15 @@ test: {
 
 ### playwright.config.ts
 
-| Check | Status | Notes |
-|-------|--------|-------|
-| Test directory | Yes | `./e2e` |
-| Output directory | Yes | `./test-results` |
-| Parallel execution | Yes | `fullyParallel: true` |
-| Retry on CI | Yes | 2 retries |
-| Base URL | Yes | `http://localhost:4173` |
-| Trace on failure | Yes | `on-first-retry` |
-| Web server command | Yes | Build + preview |
+| Check              | Status | Notes                   |
+| ------------------ | ------ | ----------------------- |
+| Test directory     | Yes    | `./e2e`                 |
+| Output directory   | Yes    | `./test-results`        |
+| Parallel execution | Yes    | `fullyParallel: true`   |
+| Retry on CI        | Yes    | 2 retries               |
+| Base URL           | Yes    | `http://localhost:4173` |
+| Trace on failure   | Yes    | `on-first-retry`        |
+| Web server command | Yes    | Build + preview         |
 
 **Assessment**: Configuration is solid. Consider adding multiple browser projects for cross-browser testing.
 
@@ -611,13 +634,13 @@ import 'vitest-browser-svelte';
 
 ## Test Metrics Summary
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Test files | 7 | 20+ |
-| Stores with tests | 5/10 (50%) | 10/10 (100%) |
-| Features with tests | 2/15 (13%) | 8/15 (53%) |
-| E2E user flows | 2 | 8+ |
-| Fragile selectors | 3 | 0 |
+| Metric              | Current    | Target       |
+| ------------------- | ---------- | ------------ |
+| Test files          | 7          | 20+          |
+| Stores with tests   | 5/10 (50%) | 10/10 (100%) |
+| Features with tests | 2/15 (13%) | 8/15 (53%)   |
+| E2E user flows      | 2          | 8+           |
+| Fragile selectors   | 3          | 0            |
 
 ---
 
@@ -625,19 +648,19 @@ import 'vitest-browser-svelte';
 
 ### Unit/Component Tests (Vitest Browser Mode)
 
-| File | Lines | Tests | Quality |
-|------|-------|-------|---------|
-| `counter.svelte.test.ts` | 81 | 8 | Excellent |
-| `wallet.svelte.test.ts` | 407 | 26 | Good |
-| `Counter.svelte.test.ts` | 102 | 9 | Excellent |
-| `provider.svelte.test.ts` | 497 | 35 | Very Good |
-| `hackrun/store.svelte.test.ts` | 544 | 33 | Very Good |
-| `typing/store.svelte.test.ts` | 636 | 47 | Excellent |
+| File                           | Lines | Tests | Quality   |
+| ------------------------------ | ----- | ----- | --------- |
+| `counter.svelte.test.ts`       | 81    | 8     | Excellent |
+| `wallet.svelte.test.ts`        | 407   | 26    | Good      |
+| `Counter.svelte.test.ts`       | 102   | 9     | Excellent |
+| `provider.svelte.test.ts`      | 497   | 35    | Very Good |
+| `hackrun/store.svelte.test.ts` | 544   | 33    | Very Good |
+| `typing/store.svelte.test.ts`  | 636   | 47    | Excellent |
 
 ### E2E Tests (Playwright)
 
-| File | Lines | Tests | Quality |
-|------|-------|-------|---------|
-| `home.test.ts` | 143 | 12 | Needs Work |
+| File           | Lines | Tests | Quality    |
+| -------------- | ----- | ----- | ---------- |
+| `home.test.ts` | 143   | 12    | Needs Work |
 
 **Total**: 158 test cases across 7 files.

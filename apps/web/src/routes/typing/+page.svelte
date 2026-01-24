@@ -17,7 +17,7 @@
 
 	// Track if we've submitted the current result to avoid infinite loops
 	let hasSubmittedResult = $state(false);
-	
+
 	// Track previous state for audio triggers
 	let prevStatus = $state<string>('idle');
 	let prevCountdown = $state<number>(0);
@@ -116,7 +116,7 @@
 	// Audio effects for state transitions
 	$effect(() => {
 		const status = gameStore.state.status;
-		
+
 		// Countdown ticks
 		if (status === 'countdown') {
 			const seconds = gameStore.state.secondsLeft;
@@ -127,7 +127,7 @@
 				}
 			}
 		}
-		
+
 		// State transition sounds
 		if (status !== prevStatus) {
 			if (status === 'active' && prevStatus === 'countdown') {

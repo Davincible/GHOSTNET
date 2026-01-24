@@ -33,26 +33,26 @@
 			id: 'metamask',
 			name: 'MetaMask',
 			icon: '🦊',
-			description: 'Connect using MetaMask browser extension'
+			description: 'Connect using MetaMask browser extension',
 		},
 		{
 			id: 'coinbase',
 			name: 'Coinbase Wallet',
 			icon: '🔵',
-			description: 'Connect using Coinbase Wallet'
+			description: 'Connect using Coinbase Wallet',
 		},
 		{
 			id: 'walletconnect',
 			name: 'WalletConnect',
 			icon: '🔗',
-			description: 'Scan QR code with mobile wallet'
+			description: 'Scan QR code with mobile wallet',
 		},
 		{
 			id: 'injected',
 			name: 'Browser Wallet',
 			icon: '🌐',
-			description: 'Connect using detected browser wallet'
-		}
+			description: 'Connect using detected browser wallet',
+		},
 	];
 
 	// SSR-safe: detect wallets only on client, empty during SSR for consistent hydration
@@ -93,12 +93,15 @@
 				await wallet.connectWalletConnect();
 			} else {
 				// Map wallet ID to specific target
-				const target = walletId === 'metamask' ? 'metaMask' 
-					: walletId === 'coinbase' ? 'coinbaseWallet' 
-					: undefined;
-				
+				const target =
+					walletId === 'metamask'
+						? 'metaMask'
+						: walletId === 'coinbase'
+							? 'coinbaseWallet'
+							: undefined;
+
 				await wallet.connect(target);
-				
+
 				// Check if connected successfully
 				if (wallet.isConnected) {
 					onclose();
@@ -124,9 +127,7 @@
 
 <Modal {open} {onclose} title="CONNECT WALLET" maxWidth="sm">
 	<Stack gap={3}>
-		<p class="description">
-			Select a wallet to connect to GHOSTNET
-		</p>
+		<p class="description">Select a wallet to connect to GHOSTNET</p>
 
 		<div class="wallet-list">
 			{#each availableWallets as w (w.id)}
@@ -208,8 +209,13 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.7; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 
 	.wallet-icon {
@@ -241,8 +247,13 @@
 	}
 
 	@keyframes blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.error-message {

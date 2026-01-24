@@ -15,12 +15,7 @@
 		onViewAll?: () => void;
 	}
 
-	let {
-		members,
-		maxOnlineVisible = 5,
-		maxOfflineVisible = 3,
-		onViewAll,
-	}: Props = $props();
+	let { members, maxOnlineVisible = 5, maxOfflineVisible = 3, onViewAll }: Props = $props();
 
 	// Separate online and offline members
 	let onlineMembers = $derived(members.filter((m) => m.isOnline));
@@ -37,9 +32,9 @@
 	// Format "last seen" time
 	function formatLastSeen(member: CrewMember): string {
 		// For mock data, we'll use joinedAt as a proxy for last activity
-		const lastActive = member.joinedAt + (Math.random() * 86400000); // Random within last 24h
+		const lastActive = member.joinedAt + Math.random() * 86400000; // Random within last 24h
 		const hoursAgo = Math.floor((Date.now() - lastActive) / 3600000);
-		
+
 		if (hoursAgo < 1) return '<1h';
 		if (hoursAgo < 24) return `${hoursAgo}h`;
 		const daysAgo = Math.floor(hoursAgo / 24);
@@ -55,7 +50,7 @@
 				MEMBERS ONLINE
 				<span class="section-count">({onlineMembers.length})</span>
 			</h3>
-			
+
 			{#if visibleOnline.length > 0}
 				<div class="members-list">
 					{#each visibleOnline as member (member.address)}
@@ -81,7 +76,7 @@
 				OFFLINE
 				<span class="section-count">({offlineMembers.length})</span>
 			</h3>
-			
+
 			{#if visibleOffline.length > 0}
 				<div class="members-list">
 					{#each visibleOffline as member (member.address)}
@@ -89,9 +84,7 @@
 					{/each}
 				</div>
 				{#if hasMoreOffline}
-					<button class="view-more-btn" onclick={onViewAll}>
-						[VIEW ALL OFFLINE]
-					</button>
+					<button class="view-more-btn" onclick={onViewAll}> [VIEW ALL OFFLINE] </button>
 				{/if}
 			{:else}
 				<p class="no-members">All members online</p>

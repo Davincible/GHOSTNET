@@ -2,23 +2,19 @@
 	import { onMount } from 'svelte';
 
 	interface Props {
-		density?: number;      // Number of columns
-		speed?: number;        // Fall speed multiplier
-		opacity?: number;      // Overall opacity
-		color?: string;        // Rain color (CSS color)
+		density?: number; // Number of columns
+		speed?: number; // Fall speed multiplier
+		opacity?: number; // Overall opacity
+		color?: string; // Rain color (CSS color)
 	}
 
-	let { 
-		density = 20, 
-		speed = 1, 
-		opacity = 0.15,
-		color = 'var(--color-accent)'
-	}: Props = $props();
+	let { density = 20, speed = 1, opacity = 0.15, color = 'var(--color-accent)' }: Props = $props();
 
 	let canvas: HTMLCanvasElement;
 	let animationId: number;
 
-	const chars = 'ゴーストネット01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン$DATA';
+	const chars =
+		'ゴーストネット01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン$DATA';
 
 	onMount(() => {
 		const ctx = canvas.getContext('2d');
@@ -56,7 +52,7 @@
 
 			// Draw characters
 			ctx.font = '14px monospace';
-			
+
 			const columnWidth = canvas.width / columns;
 
 			for (let i = 0; i < drops.length; i++) {

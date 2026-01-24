@@ -9,11 +9,7 @@
 		children: Snippet;
 	}
 
-	let {
-		enabled = true,
-		intensity = 'subtle',
-		children
-	}: Props = $props();
+	let { enabled = true, intensity = 'subtle', children }: Props = $props();
 </script>
 
 <div
@@ -48,30 +44,69 @@
 	}
 
 	@keyframes flicker-subtle {
-		0%, 100% { opacity: 1; }
-		97% { opacity: 1; }
-		97.5% { opacity: 0.97; }
-		98% { opacity: 1; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		97% {
+			opacity: 1;
+		}
+		97.5% {
+			opacity: 0.97;
+		}
+		98% {
+			opacity: 1;
+		}
 	}
 
 	@keyframes flicker-normal {
-		0%, 100% { opacity: 1; }
-		92% { opacity: 1; }
-		93% { opacity: 0.9; }
-		94% { opacity: 1; }
-		95% { opacity: 0.95; }
-		96% { opacity: 1; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		92% {
+			opacity: 1;
+		}
+		93% {
+			opacity: 0.9;
+		}
+		94% {
+			opacity: 1;
+		}
+		95% {
+			opacity: 0.95;
+		}
+		96% {
+			opacity: 1;
+		}
 	}
 
 	@keyframes flicker-intense {
-		0%, 100% { opacity: 1; }
-		90% { opacity: 1; }
-		91% { opacity: 0.85; }
-		92% { opacity: 1; }
-		93% { opacity: 0.9; }
-		94% { opacity: 1; }
-		95% { opacity: 0.88; }
-		96% { opacity: 1; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		91% {
+			opacity: 0.85;
+		}
+		92% {
+			opacity: 1;
+		}
+		93% {
+			opacity: 0.9;
+		}
+		94% {
+			opacity: 1;
+		}
+		95% {
+			opacity: 0.88;
+		}
+		96% {
+			opacity: 1;
+		}
 	}
 
 	/* Respect reduced motion preference */

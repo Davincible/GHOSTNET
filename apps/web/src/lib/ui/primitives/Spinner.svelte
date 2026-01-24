@@ -9,18 +9,10 @@
 		label?: string;
 	}
 
-	let {
-		size = 'md',
-		variant = 'default',
-		label = 'Loading...'
-	}: Props = $props();
+	let { size = 'md', variant = 'default', label = 'Loading...' }: Props = $props();
 </script>
 
-<span
-	class="spinner spinner-{size} spinner-{variant}"
-	role="status"
-	aria-label={label}
->
+<span class="spinner spinner-{size} spinner-{variant}" role="status" aria-label={label}>
 	{#if variant === 'dots'}
 		<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
 	{:else if variant === 'bar'}
@@ -59,10 +51,18 @@
 	}
 
 	@keyframes spin-chars {
-		0% { content: '|'; }
-		25% { content: '/'; }
-		50% { content: '-'; }
-		75% { content: '\\'; }
+		0% {
+			content: '|';
+		}
+		25% {
+			content: '/';
+		}
+		50% {
+			content: '-';
+		}
+		75% {
+			content: '\\';
+		}
 	}
 
 	/* Dots variant: three dots loading */
@@ -87,7 +87,9 @@
 	}
 
 	@keyframes dot-pulse {
-		0%, 80%, 100% {
+		0%,
+		80%,
+		100% {
 			opacity: 0.3;
 		}
 		40% {

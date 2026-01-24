@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Header } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
-	import { 
+	import {
 		NetworkVisualizationPanel,
 		OrbitalTrackerPanel,
 		RadarSweepPanel,
-		HeartbeatPanel
+		HeartbeatPanel,
 	} from '$lib/ui/visualizations';
 </script>
 
@@ -36,7 +36,7 @@
 
 			<!-- Radar Sweep -->
 			<div class="viz-card">
-				<RadarSweepPanel 
+				<RadarSweepPanel
 					nextScanTime={Date.now() + 45000}
 					operatorCount={1247}
 					survivalRate={87.3}

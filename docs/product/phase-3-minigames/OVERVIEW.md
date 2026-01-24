@@ -226,16 +226,21 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Contract tests | ✅ | 84 tests (HashCrashTest + HashCrashCoverageTest) |
 | **Frontend** | | |
 | Create `hash-crash/` feature | ✅ | Full feature directory structure |
-| Implement store with Svelte 5 runes | ✅ | 30 tests passing |
+| Implement store with Svelte 5 runes | ✅ | 50 tests passing |
 | Betting phase UI | ✅ | BettingPanel.svelte |
 | Multiplier animation | ✅ | MultiplierDisplay.svelte + CrashChart.svelte |
 | Cash-out button | ✅ | In BettingPanel |
 | Crash animation | ✅ | Shake, flash, color transitions |
 | Live players panel | ✅ | LivePlayersPanel.svelte |
 | Recent crashes history | ✅ | RecentCrashes.svelte |
+| Network Penetration theme | ✅ | Immersive hacking visual theme |
+| Win/Loss visual effects | ✅ | ExtractionFlash, TraceFlash |
+| Theme selection & persistence | ✅ | theme.svelte.ts |
 | WebSocket real-time updates | 🔄 | Structure ready, needs backend |
-| Sound integration | ⬜ | |
+| Sound integration | ✅ | audio.ts helper, effects in HashCrashGame |
 | Mobile responsive | ✅ | Responsive grid layout |
+| Contract integration | ✅ | contracts.ts + contractProvider.svelte.ts |
+| Testnet test page | ✅ | `/arcade/hash-crash/testnet` |
 | **Testing** | | |
 | Unit tests | ✅ | 84 Solidity tests passing |
 | E2E tests | ⬜ | |
@@ -377,6 +382,81 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 ## Completed Work Log
 
+### 2026-01-24: Hash Crash Contract Integration
+
+**ABI Export & Contract Addresses:**
+- ✅ Exported `HashCrash.json` and `ArcadeCore.json` ABIs to `apps/web/src/lib/contracts/abis/`
+- ✅ Added MegaETH testnet contract addresses to `apps/web/src/lib/web3/abis.ts`:
+  - MockERC20 (mDATA): `0xf278eb6Cd5255dC67CFBcdbD57F91baCB3735804`
+  - ArcadeCore (proxy): `0xC65338Eda8F8AEaDf89bA95042b99116dD899BD0`
+  - HashCrash: `0x037e0554f10e5447e08e4EDdbB16d8D8F402F785`
+
+**Low-Level Contract Module (`apps/web/src/lib/features/hash-crash/contracts.ts`):**
+- ✅ Types: `SessionState` enum, `RoundData`, `PlayerBetData`, `SeedInfo`
+- ✅ Read functions:
+  - `getCurrentRoundId()`, `getRound()`, `getPlayerBet()`
+  - `getRoundPlayers()`, `isSeedReady()`, `isSeedExpired()`
+  - `getDataBalance()`, `getArcadeCoreAllowance()`, `getWithdrawableBalance()`
+- ✅ Write functions:
+  - `approveDataForArcade()`, `startRound()`, `placeBet()`
+  - `lockRound()`, `revealCrash()`, `settleAll()`
+  - `withdraw()`, `handleExpiredRound()`
+- ✅ Event watchers:
+  - `watchBetPlaced()`, `watchCrashPointRevealed()`
+  - `watchPlayerWon()`, `watchPlayerLost()`, `watchRoundStarted()`
+- ✅ Helper utilities: `formatMultiplier()`, `parseMultiplier()`, `formatData()`, `parseData()`
+
+**Contract Provider (`apps/web/src/lib/features/hash-crash/contractProvider.svelte.ts`):**
+- ✅ Clean separation (Option B architecture)
+- ✅ Polls contract state every 2s (500ms during locked phase)
+- ✅ Watches contract events for real-time updates
+- ✅ Exposes reactive state via Svelte 5 runes
+- ✅ Actions: `startRound()`, `placeBet()`, `lockRound()`, `revealCrash()`, `settleAll()`, `withdraw()`
+- ✅ Derived state: `canBet`, `phase`, `crashPoint`, `bettingTimeRemaining`, `playerResult`
+
+**Testnet Test Page (`/arcade/hash-crash/testnet`):**
+- ✅ Wallet connection UI
+- ✅ Round state display (phase, prize pool, crash point)
+- ✅ Bet placement form
+- ✅ Player list with win/loss status
+- ✅ Round management buttons (start, lock, reveal, settle)
+- ✅ Debug info panel
+
+**What's Remaining:**
+- ⬜ Bridge provider to existing HashCrashGame component (for full UI experience)
+- ⬜ E2E testing with testnet
+
+---
+
+### 2026-01-23: Hash Crash UI Polish & Theming
+
+**Network Penetration Theme (apps/web/src/lib/features/hash-crash/components/themes/):**
+- ✅ `NetworkPenetrationTheme.svelte` - Immersive "hacking through firewalls" visual theme
+- ✅ `PenetrationBar.svelte` - Animated depth progress bar with firewall markers
+- ✅ `ExtractionFlash.svelte` - Green celebration effect for wins (pulse, particles, scan)
+- ✅ `TraceFlash.svelte` - Red danger effect for losses
+- ✅ Theme selection system with persistence (`theme.svelte.ts`)
+
+**BettingPanel Enhancements:**
+- ✅ Snake border animation on bet amount input (sweeping gradient)
+- ✅ Selected state for multiplier preset buttons
+- ✅ Recommended (10x) highlighting with amber pulsing glow
+- ✅ Removed win probability display (simplified UI)
+- ✅ 50 unique scanning messages for locked phase (`messages.ts`)
+- ✅ Configurable timing constants (betting duration, round delays)
+
+**Bug Fixes:**
+- ✅ Fixed premature result display (showed before game completed)
+- ✅ Fixed red TRACED flash showing on win state
+- ✅ Fixed slider progression reset during animation
+- ✅ Separated win/loss visual effects properly
+
+**Test Updates:**
+- Store tests expanded from 30 → 50 tests
+- All tests passing
+
+---
+
 ### 2026-01-23: Hash Crash Frontend Implementation
 
 **Shared Game Engine (apps/web/src/lib/features/arcade/engine/):**
@@ -416,8 +496,8 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 **What's Still Needed:**
 - WebSocket backend integration (structure ready in store)
-- Sound effects integration (ZzFX)
-- Contract interaction via viem/wagmi
+- ~~Sound effects integration (ZzFX)~~ ✅ DONE
+- ~~Contract interaction via viem/wagmi~~ 🔄 Module created, store integration pending
 - E2E tests
 
 ---

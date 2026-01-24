@@ -34,8 +34,7 @@ function createChallenge(command: string, timeLimit = 30): TypingChallenge {
 
 /** Create multiple challenges for multi-round testing */
 function createChallenges(count: number = TOTAL_ROUNDS): () => TypingChallenge[] {
-	return () =>
-		Array.from({ length: count }, (_, i) => createChallenge(`test${i + 1}`, 30));
+	return () => Array.from({ length: count }, (_, i) => createChallenge(`test${i + 1}`, 30));
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -101,7 +100,7 @@ describe('calculateReward', () => {
 		it('returns Excellent tier for 95-99% accuracy', () => {
 			const reward = calculateReward(0.95, 50);
 			expect(reward).not.toBeNull();
-			expect(reward?.value).toBe(-0.20);
+			expect(reward?.value).toBe(-0.2);
 			expect(reward?.label).toContain('Excellent');
 		});
 
@@ -112,13 +111,13 @@ describe('calculateReward', () => {
 		});
 
 		it('returns Good tier for 70-84% accuracy', () => {
-			const reward = calculateReward(0.70, 50);
-			expect(reward?.value).toBe(-0.10);
+			const reward = calculateReward(0.7, 50);
+			expect(reward?.value).toBe(-0.1);
 			expect(reward?.label).toContain('Good');
 		});
 
 		it('returns Okay tier for 50-69% accuracy', () => {
-			const reward = calculateReward(0.50, 50);
+			const reward = calculateReward(0.5, 50);
 			expect(reward?.value).toBe(-0.05);
 			expect(reward?.label).toContain('Okay');
 		});
@@ -133,7 +132,7 @@ describe('calculateReward', () => {
 	describe('speed bonuses', () => {
 		it('adds Speed Master bonus for 100+ WPM with 95%+ accuracy', () => {
 			const reward = calculateReward(0.98, 100);
-			expect(reward?.value).toBeCloseTo(-0.30, 5); // -0.20 (Excellent) + -0.10 (Speed Master)
+			expect(reward?.value).toBeCloseTo(-0.3, 5); // -0.20 (Excellent) + -0.10 (Speed Master)
 			expect(reward?.label).toContain('Speed Master');
 		});
 
@@ -145,21 +144,21 @@ describe('calculateReward', () => {
 
 		it('prefers Speed Master over Speed Bonus when both qualify', () => {
 			const reward = calculateReward(0.98, 120);
-			expect(reward?.value).toBeCloseTo(-0.30, 5); // Speed Master, not cumulative
+			expect(reward?.value).toBeCloseTo(-0.3, 5); // Speed Master, not cumulative
 			expect(reward?.label).toContain('Speed Master');
 			expect(reward?.label).not.toContain('Speed Bonus');
 		});
 
 		it('does not add speed bonus for low accuracy', () => {
-			const reward = calculateReward(0.80, 100); // 80% accuracy, 100 WPM
+			const reward = calculateReward(0.8, 100); // 80% accuracy, 100 WPM
 			// 80% is in "Good" tier (70-84%), not "Great" (85-94%)
-			expect(reward?.value).toBe(-0.10); // Just Good tier, no speed bonus (need 95%+)
+			expect(reward?.value).toBe(-0.1); // Just Good tier, no speed bonus (need 95%+)
 			expect(reward?.label).not.toContain('Speed');
 		});
 
 		it('does not add speed bonus for low WPM', () => {
 			const reward = calculateReward(0.98, 50); // 98% accuracy, 50 WPM
-			expect(reward?.value).toBe(-0.20); // Just Excellent tier, no speed bonus
+			expect(reward?.value).toBe(-0.2); // Just Excellent tier, no speed bonus
 			expect(reward?.label).not.toContain('Speed');
 		});
 	});

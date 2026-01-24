@@ -2,7 +2,7 @@
  * GHOSTNET Home Page E2E Tests
  * =============================
  * Tests for the main command center interface.
- * 
+ *
  * E2E tests run against a real built application (via `bun run preview`).
  * Use these for testing full user flows across multiple pages.
  */
@@ -99,7 +99,7 @@ test.describe('GHOSTNET Home Page', () => {
 		// GHOSTNET uses CRT-style scanlines effect
 		// Using data-testid for stable selection
 		const scanlines = page.getByTestId('scanlines-overlay');
-		
+
 		// Scanlines are enabled by default, so should be visible
 		await expect(scanlines).toBeVisible();
 	});
@@ -127,7 +127,7 @@ test.describe('Navigation to other pages', () => {
 	test('can navigate to typing game', async ({ page }) => {
 		await page.goto('/typing');
 		await expect(page).toHaveURL(/\/typing/);
-		
+
 		// Typing page should load
 		const typingContent = page.locator('text=/trace|evasion|typing/i').first();
 		await expect(typingContent).toBeVisible({ timeout: 5000 });

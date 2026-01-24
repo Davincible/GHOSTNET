@@ -2,7 +2,7 @@
  * Wagmi Configuration
  * ====================
  * Core wagmi config for wallet connections
- * 
+ *
  * SSR-SAFE: Config is lazily initialized only in browser
  */
 
@@ -41,7 +41,7 @@ export function getConfig(): Config | null {
 			connectors: [
 				// MetaMask, Coinbase, etc.
 				injected({
-					shimDisconnect: true
+					shimDisconnect: true,
 				}),
 				// WalletConnect for mobile wallets
 				...(WALLETCONNECT_PROJECT_ID
@@ -52,18 +52,18 @@ export function getConfig(): Config | null {
 									name: 'GHOSTNET',
 									description: 'High-stakes crypto survival game',
 									url: 'https://ghostnet.io',
-									icons: ['https://ghostnet.io/icon.png']
+									icons: ['https://ghostnet.io/icon.png'],
 								},
-								showQrModal: true
-							})
+								showQrModal: true,
+							}),
 						]
-					: [])
+					: []),
 			],
 			transports: {
 				[megaethTestnet.id]: http(),
 				[megaethMainnet.id]: http(),
-				[localhost.id]: http()
-			}
+				[localhost.id]: http(),
+			},
 		});
 	}
 

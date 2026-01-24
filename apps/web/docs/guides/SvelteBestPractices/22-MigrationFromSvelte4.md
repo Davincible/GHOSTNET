@@ -44,7 +44,7 @@ bunx sv migrate svelte-5
 <script>
   let count = $state(0);
   const doubled = $derived(count * 2);
-  
+
   $effect(() => {
     if (count > 10) {
       console.log('Large count!');
@@ -77,7 +77,12 @@ bunx sv migrate svelte-5
 
 <!-- Svelte 5 -->
 <button onclick={handleClick}>Click</button>
-<button onclick={(e) => { e.preventDefault(); handleSubmit(e); }}>Submit</button>
+<button
+	onclick={(e) => {
+		e.preventDefault();
+		handleSubmit(e);
+	}}>Submit</button
+>
 ```
 
 ### Event Dispatching
@@ -87,7 +92,7 @@ bunx sv migrate svelte-5
 <script>
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
-  
+
   function handleClick() {
     dispatch('select', { id: 123 });
   }
@@ -96,7 +101,7 @@ bunx sv migrate svelte-5
 <!-- Svelte 5 -->
 <script>
   let { onSelect } = $props();
-  
+
   function handleClick() {
     onSelect?.({ id: 123 });
   }
@@ -106,22 +111,22 @@ bunx sv migrate svelte-5
 ### Slots to Snippets
 
 ```svelte
-<!-- Svelte 4 -->
-<div>
-  <slot />
-  <slot name="header" />
-  <slot name="item" {item} {index} />
-</div>
-
 <!-- Svelte 5 -->
 <script>
-  let { children, header, item } = $props();
+	let { children, header, item } = $props();
 </script>
 
+<!-- Svelte 4 -->
 <div>
-  {@render children?.()}
-  {@render header?.()}
-  {@render item?.(item, index)}
+	<slot />
+	<slot name="header" />
+	<slot name="item" {item} {index} />
+</div>
+
+<div>
+	{@render children?.()}
+	{@render header?.()}
+	{@render item?.(item, index)}
 </div>
 ```
 
@@ -145,7 +150,7 @@ bunx sv migrate svelte-5
 <!-- Svelte 4 -->
 <script>
   import { onMount, onDestroy, beforeUpdate, afterUpdate } from 'svelte';
-  
+
   onMount(() => {
     console.log('mounted');
     return () => console.log('cleanup');
@@ -183,17 +188,17 @@ bunx sv migrate svelte-5
 
 ```svelte
 <script>
-  // ❌ Don't convert $: directly to $effect
-  // Svelte 4
-  $: doubled = count * 2;
-  
-  // ❌ Wrong
-  $effect(() => {
-    doubled = count * 2;
-  });
-  
-  // ✅ Correct
-  const doubled = $derived(count * 2);
+	// ❌ Don't convert $: directly to $effect
+	// Svelte 4
+	$: doubled = count * 2;
+
+	// ❌ Wrong
+	$effect(() => {
+		doubled = count * 2;
+	});
+
+	// ✅ Correct
+	const doubled = $derived(count * 2);
 </script>
 ```
 
@@ -211,12 +216,12 @@ bunx sv migrate svelte-5
 <script>
   // Option 1: Convert to $state
   let count = $state(0);
-  
+
   // Option 2: If keeping stores, subscribe explicitly
   import { writable } from 'svelte/store';
   const countStore = writable(0);
   let count = $state(0);
-  
+
   $effect(() => {
     const unsubscribe = countStore.subscribe(value => {
       count = value;

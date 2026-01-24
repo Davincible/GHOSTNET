@@ -19,7 +19,7 @@
 	const provider = initializeProvider();
 	const settings = initializeSettings();
 	initializeToasts();
-	
+
 	// Create audio manager with settings reference (captured during init)
 	const audio = createAudioManager(settings);
 
@@ -29,7 +29,7 @@
 	// Connect provider on mount
 	onMount(() => {
 		provider.connect();
-		
+
 		// Initialize audio on first user interaction
 		const initOnInteraction = () => {
 			initAudio();
@@ -47,7 +47,7 @@
 			} else if (event.type === 'JACKPOT') {
 				flashType = 'jackpot';
 			}
-			
+
 			// Audio effects
 			const audioHandlers: Partial<Record<FeedEventType, () => void>> = {
 				JACK_IN: () => audio.jackIn(),

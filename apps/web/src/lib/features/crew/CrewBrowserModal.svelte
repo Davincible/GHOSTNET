@@ -100,11 +100,7 @@
 					>
 						MEMBERS
 					</button>
-					<button
-						class="sort-btn"
-						class:active={sortBy === 'tvl'}
-						onclick={() => (sortBy = 'tvl')}
-					>
+					<button class="sort-btn" class:active={sortBy === 'tvl'} onclick={() => (sortBy = 'tvl')}>
 						TVL
 					</button>
 				</Row>
@@ -143,7 +139,9 @@
 						</div>
 						<div class="stat">
 							<span class="stat-label">TVL</span>
-							<span class="stat-value"><AmountDisplay amount={crew.totalStaked} format="compact" /></span>
+							<span class="stat-value"
+								><AmountDisplay amount={crew.totalStaked} format="compact" /></span
+							>
 						</div>
 						<div class="stat">
 							<span class="stat-label">BONUSES</span>
@@ -156,9 +154,7 @@
 					<div class="crew-actions">
 						{#if crew.isPublic}
 							{#if crew.memberCount < crew.maxMembers}
-								<Button variant="primary" size="sm" onclick={() => handleJoin(crew)}>
-									JOIN
-								</Button>
+								<Button variant="primary" size="sm" onclick={() => handleJoin(crew)}>JOIN</Button>
 							{:else}
 								<Badge variant="warning">FULL</Badge>
 							{/if}

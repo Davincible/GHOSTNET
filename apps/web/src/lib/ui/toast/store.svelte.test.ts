@@ -16,7 +16,7 @@ import { createToastStore, type ToastStore, type ToastType } from './store.svelt
 // Mock crypto.randomUUID for deterministic IDs in tests
 let uuidCounter = 0;
 vi.stubGlobal('crypto', {
-	randomUUID: () => `test-uuid-${++uuidCounter}`
+	randomUUID: () => `test-uuid-${++uuidCounter}`,
 });
 
 // ============================================================================
@@ -53,7 +53,7 @@ describe('createToastStore', () => {
 				id: 'test-uuid-1',
 				message: 'Test message',
 				type: 'info',
-				duration: 3000
+				duration: 3000,
 			});
 		});
 

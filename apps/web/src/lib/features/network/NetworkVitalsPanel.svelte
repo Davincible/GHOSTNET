@@ -17,7 +17,9 @@
 	// Calculate operators percentage of ATH
 	let operatorsPercent = $derived(
 		provider.networkState.operatorsAth > 0
-			? Math.round((provider.networkState.operatorsOnline / provider.networkState.operatorsAth) * 100)
+			? Math.round(
+					(provider.networkState.operatorsOnline / provider.networkState.operatorsAth) * 100
+				)
 			: 0
 	);
 
@@ -59,7 +61,9 @@
 				</span>
 			</Row>
 			<ProgressBar value={operatorsPercent} variant="cyan" showPercent />
-			<span class="vital-subtitle">{operatorsPercent}% OF ATH ({provider.networkState.operatorsAth})</span>
+			<span class="vital-subtitle"
+				>{operatorsPercent}% OF ATH ({provider.networkState.operatorsAth})</span
+			>
 		</div>
 
 		<!-- System Reset Timer -->
@@ -107,7 +111,11 @@
 			<div class="tree-item tree-item-total">
 				<span class="tree-branch"></span>
 				<span class="tree-label">Net Flow:</span>
-				<span class="tree-value" class:tree-value-positive={netFlowPositive} class:tree-value-negative={!netFlowPositive}>
+				<span
+					class="tree-value"
+					class:tree-value-positive={netFlowPositive}
+					class:tree-value-negative={!netFlowPositive}
+				>
 					{netFlowPositive ? '+' : ''}<AmountDisplay amount={netFlow} format="compact" />
 					{netFlowPositive ? '' : ''}
 				</span>

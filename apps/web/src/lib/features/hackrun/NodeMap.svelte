@@ -17,9 +17,7 @@
 
 	// Get main path nodes (sorted by position, excluding backdoors)
 	const mainNodes = $derived(
-		run.nodes
-			.filter((n) => n.type !== 'backdoor')
-			.sort((a, b) => a.position - b.position)
+		run.nodes.filter((n) => n.type !== 'backdoor').sort((a, b) => a.position - b.position)
 	);
 
 	// Get node status from progress

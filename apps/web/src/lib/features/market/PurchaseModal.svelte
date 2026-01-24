@@ -21,14 +21,7 @@
 		onConfirm?: (consumableId: string, quantity: number) => void;
 	}
 
-	let {
-		open,
-		consumable,
-		balance,
-		loading = false,
-		onClose,
-		onConfirm
-	}: Props = $props();
+	let { open, consumable, balance, loading = false, onClose, onConfirm }: Props = $props();
 
 	// Quantity selection
 	let quantity = $state(1);
@@ -91,11 +84,21 @@
 			<div class="quantity-section">
 				<span class="section-label" id="quantity-label">QUANTITY</span>
 				<Row gap={2} align="center" aria-labelledby="quantity-label">
-					<Button variant="ghost" size="sm" onclick={() => adjustQuantity(-1)} disabled={quantity <= 1}>
+					<Button
+						variant="ghost"
+						size="sm"
+						onclick={() => adjustQuantity(-1)}
+						disabled={quantity <= 1}
+					>
 						-
 					</Button>
 					<span class="quantity-display">{quantity}</span>
-					<Button variant="ghost" size="sm" onclick={() => adjustQuantity(1)} disabled={quantity >= maxQuantity}>
+					<Button
+						variant="ghost"
+						size="sm"
+						onclick={() => adjustQuantity(1)}
+						disabled={quantity >= maxQuantity}
+					>
 						+
 					</Button>
 				</Row>
@@ -140,22 +143,19 @@
 			<!-- Balance check -->
 			{#if !canAfford}
 				<div class="error-message">
-					Insufficient balance. You have <AmountDisplay amount={balance} symbol="DATA" decimals={0} />
+					Insufficient balance. You have <AmountDisplay
+						amount={balance}
+						symbol="DATA"
+						decimals={0}
+					/>
 				</div>
 			{/if}
 		</Stack>
 	{/if}
 
 	{#snippet footer()}
-		<Button variant="ghost" onclick={onClose} disabled={loading}>
-			CANCEL
-		</Button>
-		<Button
-			variant="primary"
-			onclick={handleConfirm}
-			disabled={!canPurchase}
-			{loading}
-		>
+		<Button variant="ghost" onclick={onClose} disabled={loading}>CANCEL</Button>
+		<Button variant="primary" onclick={handleConfirm} disabled={!canPurchase} {loading}>
 			{loading ? 'PURCHASING...' : 'CONFIRM PURCHASE'}
 		</Button>
 	{/snippet}

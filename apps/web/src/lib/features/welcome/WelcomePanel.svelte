@@ -19,11 +19,11 @@
 	let slideProgress = $state(0);
 	let isTransitioning = $state(false);
 	let slideKey = $state(0); // Force re-render of slide content
-	
+
 	const SLIDE_DURATION = 7000; // 7 seconds per slide
 	const PROGRESS_INTERVAL = 50;
 	const TRANSITION_DURATION = 400;
-	
+
 	const totalSlides = 7;
 
 	// Auto-advance slides
@@ -32,16 +32,16 @@
 
 	function startAutoPlay() {
 		if (!isAutoPlaying) return;
-		
+
 		slideProgress = 0;
-		
+
 		progressInterval = setInterval(() => {
 			slideProgress += (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
 			if (slideProgress >= 100) {
 				slideProgress = 100;
 			}
 		}, PROGRESS_INTERVAL);
-		
+
 		slideTimeout = setTimeout(() => {
 			if (isAutoPlaying) {
 				nextSlide();
@@ -56,7 +56,7 @@
 
 	function transitionTo(newSlide: number) {
 		isTransitioning = true;
-		
+
 		setTimeout(() => {
 			currentSlide = newSlide;
 			slideKey++; // Force re-mount of slide content
@@ -101,10 +101,10 @@
 	});
 
 	// Slide 0 animation states
-	let logoTypingComplete = $state(false);  // When ASCII art finishes typing
-	let logoSlidUp = $state(false);          // When logo has moved up
-	let showTagline = $state(false);         // When tagline should start typing
-	let taglineComplete = $state(false);     // When tagline finishes typing
+	let logoTypingComplete = $state(false); // When ASCII art finishes typing
+	let logoSlidUp = $state(false); // When logo has moved up
+	let showTagline = $state(false); // When tagline should start typing
+	let taglineComplete = $state(false); // When tagline finishes typing
 
 	function handleLogoTypingComplete() {
 		logoTypingComplete = true;
@@ -136,7 +136,7 @@
 	let showMatrixRain = $state(true);
 </script>
 
-<div 
+<div
 	class="welcome-panel"
 	onmouseenter={handleMouseEnter}
 	onmouseleave={handleMouseLeave}
@@ -149,10 +149,10 @@
 			{#if showMatrixRain}
 				<MatrixRain density={25} speed={0.8} opacity={0.08} />
 			{/if}
-			
+
 			<!-- Scanline Overlay -->
 			<div class="scanlines"></div>
-			
+
 			<!-- Glitch Transition Overlay -->
 			<div class="glitch-overlay" class:active={isTransitioning}></div>
 
@@ -162,7 +162,7 @@
 					{#if currentSlide === 0}
 						<div class="slide slide-hook" class:content-visible={logoSlidUp}>
 							<div class="logo-container" class:slid-up={logoSlidUp}>
-								<AsciiTypewriter 
+								<AsciiTypewriter
 									text={` ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
 ██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
 ██║  ███╗███████║██║   ██║███████╗   ██║   ██╔██╗ ██║█████╗     ██║   
@@ -179,16 +179,16 @@
 							<div class="hook-content" class:visible={showTagline}>
 								<h2 class="tagline">
 									{#if showTagline}
-										<GlitchText 
-											text="JACK IN. DON'T GET TRACED." 
-											speed={35} 
+										<GlitchText
+											text="JACK IN. DON'T GET TRACED."
+											speed={35}
 											glitchIntensity={0.4}
 											onComplete={handleTaglineComplete}
 										/>
 									{/if}
 								</h2>
 								<p class="subtitle" class:visible={taglineComplete}>
-									A game where doing nothing can make you rich.<br/>
+									A game where doing nothing can make you rich.<br />
 									<span class="glow-danger">Or lose you everything.</span>
 								</p>
 							</div>
@@ -231,7 +231,7 @@
 					{#if currentSlide === 2}
 						<div class="slide slide-twist">
 							<h2 class="twist-headline">
-								WHEN OTHERS <span class="glow-danger">DIE</span>,<br/>
+								WHEN OTHERS <span class="glow-danger">DIE</span>,<br />
 								<span class="glow-profit">YOU PROFIT.</span>
 							</h2>
 							<div class="twist-visual">
@@ -251,7 +251,9 @@
 									</div>
 								</div>
 							</div>
-							<p class="twist-footer">It's PvP economics. <span class="glow-accent">The traced feed the living.</span></p>
+							<p class="twist-footer">
+								It's PvP economics. <span class="glow-accent">The traced feed the living.</span>
+							</p>
 						</div>
 					{/if}
 
@@ -291,7 +293,9 @@
 									<span class="level-reward">100-500% APY</span>
 								</div>
 							</div>
-							<p class="risk-tagline"><span class="glow-accent">The deeper you go, the more you earn.</span></p>
+							<p class="risk-tagline">
+								<span class="glow-accent">The deeper you go, the more you earn.</span>
+							</p>
 						</div>
 					{/if}
 
@@ -299,7 +303,7 @@
 					{#if currentSlide === 4}
 						<div class="slide slide-edge">
 							<h2 class="edge-headline">
-								DON'T JUST WATCH.<br/>
+								DON'T JUST WATCH.<br />
 								<span class="glow-accent">FIGHT BACK.</span>
 							</h2>
 							<div class="edge-options">
@@ -307,26 +311,32 @@
 									<span class="edge-icon bracket">&gt;_</span>
 									<div class="edge-info">
 										<span class="edge-name">TRACE EVASION</span>
-										<span class="edge-desc">Type fast. Reduce death rate up to <span class="highlight">-25%</span></span>
+										<span class="edge-desc"
+											>Type fast. Reduce death rate up to <span class="highlight">-25%</span></span
+										>
 									</div>
 								</div>
 								<div class="edge-item" style="--delay: 1">
 									<span class="edge-icon bracket">&lt;/&gt;</span>
 									<div class="edge-info">
 										<span class="edge-name">HACK RUNS</span>
-										<span class="edge-desc">Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span>
+										<span class="edge-desc"
+											>Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span
+										>
 									</div>
 								</div>
 								<div class="edge-item" style="--delay: 2">
 									<span class="edge-icon bracket">%$</span>
 									<div class="edge-info">
 										<span class="edge-name">DEAD POOL</span>
-										<span class="edge-desc">Bet on outcomes. Win more <span class="highlight">$DATA</span></span>
+										<span class="edge-desc"
+											>Bet on outcomes. Win more <span class="highlight">$DATA</span></span
+										>
 									</div>
 								</div>
 							</div>
 							<p class="edge-tagline">
-								<span class="dim">Passive is fine.</span> 
+								<span class="dim">Passive is fine.</span>
 								<span class="glow-profit">Active is better.</span>
 							</p>
 						</div>
@@ -360,7 +370,7 @@
 					{#if currentSlide === 6}
 						<div class="slide slide-cta">
 							<h2 class="cta-headline">
-								THE NETWORK IS <span class="glow-profit blink">LIVE</span>.<br/>
+								THE NETWORK IS <span class="glow-profit blink">LIVE</span>.<br />
 								THE FEED IS <span class="glow-amber">BURNING</span>.
 							</h2>
 							<p class="cta-question">How long can you survive?</p>
@@ -384,8 +394,8 @@
 			<div class="slide-nav">
 				<div class="nav-dots">
 					{#each Array(totalSlides) as _, i (i)}
-						<button 
-							class="nav-dot" 
+						<button
+							class="nav-dot"
 							class:active={currentSlide === i}
 							onclick={() => goToSlide(i)}
 							aria-label="Go to slide {i + 1}"
@@ -399,11 +409,7 @@
 
 				<!-- Matrix Effect Toggle -->
 				<label class="matrix-toggle">
-					<input 
-						type="checkbox" 
-						bind:checked={showMatrixRain}
-						class="toggle-input"
-					/>
+					<input type="checkbox" bind:checked={showMatrixRain} class="toggle-input" />
 					<span class="toggle-track">
 						<span class="toggle-thumb"></span>
 					</span>
@@ -436,12 +442,25 @@
 	}
 
 	@keyframes terminal-flicker {
-		0%, 100% { opacity: 1; }
-		92% { opacity: 1; }
-		93% { opacity: 0.95; }
-		94% { opacity: 1; }
-		95% { opacity: 0.98; }
-		96% { opacity: 1; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		92% {
+			opacity: 1;
+		}
+		93% {
+			opacity: 0.95;
+		}
+		94% {
+			opacity: 1;
+		}
+		95% {
+			opacity: 0.98;
+		}
+		96% {
+			opacity: 1;
+		}
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -484,27 +503,27 @@
 	}
 
 	@keyframes glitch-flash {
-		0% { 
+		0% {
 			background: transparent;
 			clip-path: inset(0 0 0 0);
 		}
-		20% { 
+		20% {
 			background: rgba(0, 255, 255, 0.1);
 			clip-path: inset(10% 0 80% 0);
 		}
-		40% { 
+		40% {
 			background: rgba(255, 0, 100, 0.1);
 			clip-path: inset(40% 0 40% 0);
 		}
-		60% { 
+		60% {
 			background: rgba(0, 255, 255, 0.15);
 			clip-path: inset(70% 0 10% 0);
 		}
-		80% { 
+		80% {
 			background: transparent;
 			clip-path: inset(0 0 0 0);
 		}
-		100% { 
+		100% {
 			background: transparent;
 		}
 	}
@@ -521,7 +540,9 @@
 		padding: var(--space-4) var(--space-2);
 		position: relative;
 		z-index: 5;
-		transition: opacity 0.2s, transform 0.2s;
+		transition:
+			opacity 0.2s,
+			transform 0.2s;
 	}
 
 	.slides-container.transitioning {
@@ -556,22 +577,30 @@
 
 	.glow-accent {
 		color: var(--color-accent);
-		text-shadow: 0 0 10px var(--color-accent-glow), 0 0 20px var(--color-accent-glow);
+		text-shadow:
+			0 0 10px var(--color-accent-glow),
+			0 0 20px var(--color-accent-glow);
 	}
 
 	.glow-profit {
 		color: var(--color-profit);
-		text-shadow: 0 0 10px var(--color-profit-glow), 0 0 20px var(--color-profit-glow);
+		text-shadow:
+			0 0 10px var(--color-profit-glow),
+			0 0 20px var(--color-profit-glow);
 	}
 
 	.glow-danger {
 		color: var(--color-red);
-		text-shadow: 0 0 10px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.3);
+		text-shadow:
+			0 0 10px rgba(255, 0, 0, 0.5),
+			0 0 20px rgba(255, 0, 0, 0.3);
 	}
 
 	.glow-amber {
 		color: var(--color-amber);
-		text-shadow: 0 0 10px rgba(255, 170, 0, 0.5), 0 0 20px rgba(255, 170, 0, 0.3);
+		text-shadow:
+			0 0 10px rgba(255, 170, 0, 0.5),
+			0 0 20px rgba(255, 170, 0, 0.3);
 	}
 
 	.blink {
@@ -579,8 +608,13 @@
 	}
 
 	@keyframes blink-glow {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.7; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 
 	.pulse {
@@ -588,8 +622,13 @@
 	}
 
 	@keyframes pulse-scale {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.1); }
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.1);
+		}
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
@@ -632,7 +671,9 @@
 	.hook-content {
 		opacity: 0;
 		transform: translateY(10px);
-		transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+		transition:
+			opacity 0.4s ease-out,
+			transform 0.4s ease-out;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -662,7 +703,9 @@
 		line-height: var(--leading-relaxed);
 		opacity: 0;
 		transform: translateY(8px);
-		transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+		transition:
+			opacity 0.5s ease-out,
+			transform 0.5s ease-out;
 	}
 
 	.subtitle.visible {
@@ -774,11 +817,12 @@
 	}
 
 	@keyframes cascade-glow {
-		0%, 100% { 
+		0%,
+		100% {
 			border-color: var(--color-border-default);
 			box-shadow: none;
 		}
-		50% { 
+		50% {
 			border-color: rgba(255, 0, 0, 0.3);
 			box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.1);
 		}
@@ -805,8 +849,15 @@
 	}
 
 	@keyframes arrow-pulse {
-		0%, 100% { opacity: 0.3; transform: translateY(0); }
-		50% { opacity: 1; transform: translateY(3px); }
+		0%,
+		100% {
+			opacity: 0.3;
+			transform: translateY(0);
+		}
+		50% {
+			opacity: 1;
+			transform: translateY(3px);
+		}
 	}
 
 	.split-result {
@@ -882,17 +933,42 @@
 		border-radius: 2px;
 	}
 
-	.level-5 .level-indicator { background: var(--color-red); box-shadow: 0 0 8px var(--color-red); }
-	.level-4 .level-indicator { background: #ff6600; box-shadow: 0 0 8px #ff6600; }
-	.level-3 .level-indicator { background: var(--color-amber); box-shadow: 0 0 8px var(--color-amber); }
-	.level-2 .level-indicator { background: var(--color-cyan); box-shadow: 0 0 8px var(--color-cyan); }
-	.level-1 .level-indicator { background: var(--color-profit); box-shadow: 0 0 8px var(--color-profit); }
+	.level-5 .level-indicator {
+		background: var(--color-red);
+		box-shadow: 0 0 8px var(--color-red);
+	}
+	.level-4 .level-indicator {
+		background: #ff6600;
+		box-shadow: 0 0 8px #ff6600;
+	}
+	.level-3 .level-indicator {
+		background: var(--color-amber);
+		box-shadow: 0 0 8px var(--color-amber);
+	}
+	.level-2 .level-indicator {
+		background: var(--color-cyan);
+		box-shadow: 0 0 8px var(--color-cyan);
+	}
+	.level-1 .level-indicator {
+		background: var(--color-profit);
+		box-shadow: 0 0 8px var(--color-profit);
+	}
 
-	.level-5 .level-death { color: var(--color-red); }
-	.level-4 .level-death { color: #ff6600; }
-	.level-3 .level-death { color: var(--color-amber); }
-	.level-2 .level-death { color: var(--color-cyan); }
-	.level-1 .level-death { color: var(--color-profit); }
+	.level-5 .level-death {
+		color: var(--color-red);
+	}
+	.level-4 .level-death {
+		color: #ff6600;
+	}
+	.level-3 .level-death {
+		color: var(--color-amber);
+	}
+	.level-2 .level-death {
+		color: var(--color-cyan);
+	}
+	.level-1 .level-death {
+		color: var(--color-profit);
+	}
 
 	.level-name {
 		font-weight: var(--font-bold);
@@ -1035,8 +1111,13 @@
 	}
 
 	@keyframes fire-dance {
-		0%, 100% { transform: translateY(0) scale(1); }
-		50% { transform: translateY(-5px) scale(1.1); }
+		0%,
+		100% {
+			transform: translateY(0) scale(1);
+		}
+		50% {
+			transform: translateY(-5px) scale(1.1);
+		}
 	}
 
 	.trust-headline {
@@ -1127,7 +1208,7 @@
 		left: -100%;
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 		transition: left 0.5s ease;
 	}
 
@@ -1143,17 +1224,22 @@
 	}
 
 	@keyframes cta-pulse {
-		0%, 100% { 
+		0%,
+		100% {
 			box-shadow: 0 0 10px var(--color-accent-glow);
 		}
-		50% { 
-			box-shadow: 0 0 25px var(--color-accent-glow), 0 0 40px var(--color-accent-glow);
+		50% {
+			box-shadow:
+				0 0 25px var(--color-accent-glow),
+				0 0 40px var(--color-accent-glow);
 		}
 	}
 
 	.cta-btn.primary:hover {
 		background: var(--color-accent-bright);
-		box-shadow: 0 0 30px var(--color-accent-glow), 0 0 60px var(--color-accent-glow);
+		box-shadow:
+			0 0 30px var(--color-accent-glow),
+			0 0 60px var(--color-accent-glow);
 		transform: translateY(-2px);
 		animation: none;
 	}

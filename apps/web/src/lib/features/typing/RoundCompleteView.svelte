@@ -19,8 +19,8 @@
 		if (result.accuracy >= 1.0) return { label: 'PERFECT', color: 'gold' };
 		if (result.accuracy >= 0.95) return { label: 'EXCELLENT', color: 'success' };
 		if (result.accuracy >= 0.85) return { label: 'GREAT', color: 'success' };
-		if (result.accuracy >= 0.70) return { label: 'GOOD', color: 'info' };
-		if (result.accuracy >= 0.50) return { label: 'OKAY', color: 'warning' };
+		if (result.accuracy >= 0.7) return { label: 'GOOD', color: 'info' };
+		if (result.accuracy >= 0.5) return { label: 'OKAY', color: 'warning' };
 		return { label: 'FAILED', color: 'danger' };
 	});
 
@@ -32,7 +32,11 @@
 		<div class="round-content">
 			<div class="round-header">
 				<span class="round-label">ROUND {currentRound}/{totalRounds}</span>
-				<Badge variant={tier.color === 'gold' ? 'success' : tier.color as 'success' | 'info' | 'warning' | 'danger'}>
+				<Badge
+					variant={tier.color === 'gold'
+						? 'success'
+						: (tier.color as 'success' | 'info' | 'warning' | 'danger')}
+				>
 					{tier.label}
 				</Badge>
 			</div>

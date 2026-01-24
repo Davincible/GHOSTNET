@@ -24,7 +24,7 @@
 		width = 500,
 		height = 300,
 		waveforms: initialWaveforms,
-		updateInterval = 100
+		updateInterval = 100,
 	}: Props = $props();
 
 	let canvas: HTMLCanvasElement;
@@ -42,7 +42,7 @@
 		profit: '#00ff88',
 		amber: '#ffb000',
 		red: '#ff3366',
-		sweep: '#00e5cc33'
+		sweep: '#00e5cc33',
 	};
 
 	const MAX_POINTS = 100;
@@ -59,7 +59,7 @@
 				min: 0,
 				max: 100,
 				currentValue: 75,
-				unit: 'M'
+				unit: 'M',
 			},
 			{
 				id: 'operators',
@@ -70,7 +70,7 @@
 				min: 0,
 				max: 100,
 				currentValue: 60,
-				unit: ''
+				unit: '',
 			},
 			{
 				id: 'trace',
@@ -81,7 +81,7 @@
 				min: 0,
 				max: 100,
 				currentValue: 5,
-				unit: '%'
+				unit: '%',
 			},
 			{
 				id: 'yield',
@@ -92,8 +92,8 @@
 				min: 0,
 				max: 100,
 				currentValue: 45,
-				unit: ''
-			}
+				unit: '',
+			},
 		];
 	}
 
@@ -109,7 +109,7 @@
 
 		// Use provided waveforms if available
 		if (initialWaveforms) {
-			waveforms = initialWaveforms.map(wf => ({ ...wf, values: [...wf.values] }));
+			waveforms = initialWaveforms.map((wf) => ({ ...wf, values: [...wf.values] }));
 		}
 
 		// Initialize waveform data
@@ -277,7 +277,8 @@
 			} else {
 				if (wf.type === 'step') {
 					// Step function
-					const prevY = chartY + chartHeight - ((wf.values[i - 1] - wf.min) / (wf.max - wf.min)) * chartHeight;
+					const prevY =
+						chartY + chartHeight - ((wf.values[i - 1] - wf.min) / (wf.max - wf.min)) * chartHeight;
 					ctx.lineTo(x, prevY);
 					ctx.lineTo(x, pointY);
 				} else if (wf.type === 'spike') {
@@ -337,11 +338,7 @@
 </script>
 
 <div class="heartbeat-monitor">
-	<canvas 
-		bind:this={canvas}
-		style:width="{width}px"
-		style:height="{height}px"
-	></canvas>
+	<canvas bind:this={canvas} style:width="{width}px" style:height="{height}px"></canvas>
 </div>
 
 <style>

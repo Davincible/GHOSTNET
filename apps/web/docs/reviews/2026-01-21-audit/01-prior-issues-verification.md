@@ -10,12 +10,12 @@
 
 **5 of 6 issues have been FIXED.** The development team has addressed the critical financial precision bug, implemented proper error feedback throughout the wallet and modal code, fixed the fragile CSS selector, and added development warnings for missing contract addresses. The remaining issue (type safety erosion with `any` casts) has been **partially addressed** - the number of `any` casts has been reduced from 9 to 0, but this was achieved through removal of the code patterns rather than proper typing.
 
-| Status | Count |
-|--------|-------|
-| FIXED | 5 |
-| PARTIALLY FIXED | 0 |
-| NOT FIXED | 0 |
-| NO LONGER APPLICABLE | 1 |
+| Status               | Count |
+| -------------------- | ----- |
+| FIXED                | 5     |
+| PARTIALLY FIXED      | 0     |
+| NOT FIXED            | 0     |
+| NO LONGER APPLICABLE | 1     |
 
 ---
 
@@ -32,9 +32,9 @@
 ```typescript
 // Lines 34-38 in original review
 let parsedAmount = $derived.by(() => {
-  const num = parseFloat(amountInput);
-  if (isNaN(num) || num <= 0) return 0n;
-  return BigInt(Math.floor(num * 1e18));  // <- Precision loss
+	const num = parseFloat(amountInput);
+	if (isNaN(num) || num <= 0) return 0n;
+	return BigInt(Math.floor(num * 1e18)); // <- Precision loss
 });
 ```
 
@@ -42,13 +42,13 @@ let parsedAmount = $derived.by(() => {
 
 ```typescript
 let parsedAmount = $derived.by(() => {
-  const trimmed = amountInput.trim();
-  if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) return 0n;
-  try {
-    return parseUnits(trimmed, 18);
-  } catch {
-    return 0n;
-  }
+	const trimmed = amountInput.trim();
+	if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) return 0n;
+	try {
+		return parseUnits(trimmed, 18);
+	} catch {
+		return 0n;
+	}
 });
 ```
 
@@ -78,70 +78,80 @@ The `parseUnits` function from viem correctly handles decimal string parsing wit
 ```typescript
 // Lines 193-225 in original review
 async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
-  if (!browser) return;  // Silent return - no error feedback
-  const config = getConfig();
-  if (!config) return;   // Silent return - no error feedback
-  // ...
+	if (!browser) return; // Silent return - no error feedback
+	const config = getConfig();
+	if (!config) return; // Silent return - no error feedback
+	// ...
 }
 ```
 
 #### Current Code
 
 **`init()` function (lines 157-192):**
+
 ```typescript
 function init(): () => void {
-  // SSR guard - expected during server-side rendering
-  if (!browser) return () => {};
+	// SSR guard - expected during server-side rendering
+	if (!browser) return () => {};
 
-  const config = getConfig();
-  if (!config) {
-    error = 'Wallet configuration not available';
-    console.error('[Wallet] Config not available during init - possible SSR leak or initialization race');
-    return () => {};
-  }
-  // ...
+	const config = getConfig();
+	if (!config) {
+		error = 'Wallet configuration not available';
+		console.error(
+			'[Wallet] Config not available during init - possible SSR leak or initialization race'
+		);
+		return () => {};
+	}
+	// ...
 }
 ```
 
 **`connectWallet()` function (lines 198-239):**
+
 ```typescript
 async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
-  // SSR guard - should not be called during SSR
-  if (!browser) {
-    console.error('[Wallet] connectWallet called in non-browser environment');
-    return;
-  }
+	// SSR guard - should not be called during SSR
+	if (!browser) {
+		console.error('[Wallet] connectWallet called in non-browser environment');
+		return;
+	}
 
-  const config = getConfig();
-  if (!config) {
-    error = 'Wallet configuration not available';
-    console.error('[Wallet] Config not available during connect - possible SSR leak or initialization race');
-    return;
-  }
-  // ...
+	const config = getConfig();
+	if (!config) {
+		error = 'Wallet configuration not available';
+		console.error(
+			'[Wallet] Config not available during connect - possible SSR leak or initialization race'
+		);
+		return;
+	}
+	// ...
 }
 ```
 
 **`disconnectWallet()` function (lines 288-313):**
+
 ```typescript
 async function disconnectWallet() {
-  // SSR guard - should not be called during SSR
-  if (!browser) {
-    console.error('[Wallet] disconnectWallet called in non-browser environment');
-    return;
-  }
+	// SSR guard - should not be called during SSR
+	if (!browser) {
+		console.error('[Wallet] disconnectWallet called in non-browser environment');
+		return;
+	}
 
-  const config = getConfig();
-  if (!config) {
-    error = 'Wallet configuration not available';
-    console.error('[Wallet] Config not available during disconnect - possible SSR leak or initialization race');
-    return;
-  }
-  // ...
+	const config = getConfig();
+	if (!config) {
+		error = 'Wallet configuration not available';
+		console.error(
+			'[Wallet] Config not available during disconnect - possible SSR leak or initialization race'
+		);
+		return;
+	}
+	// ...
 }
 ```
 
 **Other methods checked:**
+
 - `connectWalletConnect()` (lines 244-283): Has proper error state and logging
 - `switchToCorrectChain()` (lines 318-339): Has proper error state and logging
 - `refreshBalance()` (lines 344-363): Uses `console.warn` (appropriate for background operation)
@@ -172,15 +182,15 @@ The error state (`error` getter on the store) is exposed and can be displayed in
 ```typescript
 // Lines 86-99 in original review
 async function handleJackIn() {
-  // ...
-  try {
-    await provider.jackIn(selectedLevel, parsedAmount);
-    onclose();
-  } catch (error) {
-    console.error('Jack In failed:', error);
-    // Could show error toast here  <- This comment is not implemented
-  }
-  // ...
+	// ...
+	try {
+		await provider.jackIn(selectedLevel, parsedAmount);
+		onclose();
+	} catch (error) {
+		console.error('Jack In failed:', error);
+		// Could show error toast here  <- This comment is not implemented
+	}
+	// ...
 }
 ```
 
@@ -188,29 +198,29 @@ async function handleJackIn() {
 
 ```typescript
 async function handleJackIn() {
-  if (isSubmitting) return;
-  isSubmitting = true;
+	if (isSubmitting) return;
+	isSubmitting = true;
 
-  try {
-    await provider.jackIn(selectedLevel, parsedAmount);
-    toast.success('Successfully jacked in');
-    onclose();
-  } catch (err) {
-    console.error('Jack In failed:', err);
+	try {
+		await provider.jackIn(selectedLevel, parsedAmount);
+		toast.success('Successfully jacked in');
+		onclose();
+	} catch (err) {
+		console.error('Jack In failed:', err);
 
-    // Provide user-friendly error messages
-    if (err instanceof UserRejectedRequestError) {
-      toast.error('Transaction cancelled');
-    } else if (err instanceof ContractFunctionExecutionError) {
-      toast.error(err.shortMessage || 'Transaction reverted');
-    } else if (err instanceof Error) {
-      toast.error(err.message);
-    } else {
-      toast.error('Jack In failed. Please try again.');
-    }
-  } finally {
-    isSubmitting = false;
-  }
+		// Provide user-friendly error messages
+		if (err instanceof UserRejectedRequestError) {
+			toast.error('Transaction cancelled');
+		} else if (err instanceof ContractFunctionExecutionError) {
+			toast.error(err.shortMessage || 'Transaction reverted');
+		} else if (err instanceof Error) {
+			toast.error(err.message);
+		} else {
+			toast.error('Jack In failed. Please try again.');
+		}
+	} finally {
+		isSubmitting = false;
+	}
 }
 ```
 
@@ -220,7 +230,7 @@ The fix is comprehensive:
 
 1. **Toast integration** (line 26): `const toast = getToasts();`
 2. **Success feedback** (line 103): `toast.success('Successfully jacked in');`
-3. **Error type discrimination**: 
+3. **Error type discrimination**:
    - `UserRejectedRequestError` -> "Transaction cancelled"
    - `ContractFunctionExecutionError` -> Uses `shortMessage` for detailed contract errors
    - Generic `Error` -> Uses error message
@@ -235,29 +245,29 @@ The same pattern has been applied to `ExtractModal.svelte` (lines 54-78):
 
 ```typescript
 async function handleExtract() {
-  if (isSubmitting || !position) return;
-  isSubmitting = true;
+	if (isSubmitting || !position) return;
+	isSubmitting = true;
 
-  try {
-    await provider.extract();
-    toast.success('Successfully extracted');
-    onclose();
-  } catch (err) {
-    console.error('Extract failed:', err);
+	try {
+		await provider.extract();
+		toast.success('Successfully extracted');
+		onclose();
+	} catch (err) {
+		console.error('Extract failed:', err);
 
-    // Provide user-friendly error messages
-    if (err instanceof UserRejectedRequestError) {
-      toast.error('Transaction cancelled');
-    } else if (err instanceof ContractFunctionExecutionError) {
-      toast.error(err.shortMessage || 'Transaction reverted');
-    } else if (err instanceof Error) {
-      toast.error(err.message);
-    } else {
-      toast.error('Extract failed. Please try again.');
-    }
-  } finally {
-    isSubmitting = false;
-  }
+		// Provide user-friendly error messages
+		if (err instanceof UserRejectedRequestError) {
+			toast.error('Transaction cancelled');
+		} else if (err instanceof ContractFunctionExecutionError) {
+			toast.error(err.shortMessage || 'Transaction reverted');
+		} else if (err instanceof Error) {
+			toast.error(err.message);
+		} else {
+			toast.error('Extract failed. Please try again.');
+		}
+	} finally {
+		isSubmitting = false;
+	}
 }
 ```
 
@@ -308,10 +318,10 @@ Looking at the actual usage pattern:
 ```typescript
 // Line 186-196
 const { request } = await simulateContract(config, {
-  address: tokenAddress,
-  abi: dataTokenAbi,
-  functionName: 'approve',
-  args: [ghostCoreAddress, amount]
+	address: tokenAddress,
+	abi: dataTokenAbi,
+	functionName: 'approve',
+	args: [ghostCoreAddress, amount],
 });
 
 const hash = await writeContract(config, request);
@@ -336,27 +346,29 @@ The types now align without casting. This is the correct fix - using wagmi's pro
 ```typescript
 // Lines 74-78 in original review
 function handleWatchFeed() {
-  const feedElement = document.querySelector('.column-left');
-  if (feedElement) {
-    feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+	const feedElement = document.querySelector('.column-left');
+	if (feedElement) {
+		feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 }
 ```
 
 #### Current Code
 
 **Function (lines 83-89):**
+
 ```typescript
 function handleWatchFeed() {
-  // Scroll to the feed panel smoothly
-  const feedElement = document.querySelector('[data-feed-column]');
-  if (feedElement) {
-    feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
+	// Scroll to the feed panel smoothly
+	const feedElement = document.querySelector('[data-feed-column]');
+	if (feedElement) {
+		feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
 }
 ```
 
 **HTML (line 234):**
+
 ```svelte
 <div class="column column-left" data-feed-column>
 ```
@@ -399,21 +411,21 @@ const warnedMissing = new Set<string>();
  * Get contract address for a chain
  */
 export function getContractAddress(chainId: number, contract: ContractName): `0x${string}` | null {
-  const addresses = CONTRACT_ADDRESSES[chainId as ChainId];
-  if (!addresses) return null;
-  const addr = addresses[contract];
-  // Check if address is set (not empty string)
-  if (!addr || addr.length < 3) {
-    const key = `${chainId}-${contract}`;
-    if (import.meta.env.DEV && !warnedMissing.has(key)) {
-      warnedMissing.add(key);
-      console.warn(
-        `[Contracts] ${contract} not deployed on chain ${chainId}. Run 'just contracts-deploy-local' to deploy.`
-      );
-    }
-    return null;
-  }
-  return addr;
+	const addresses = CONTRACT_ADDRESSES[chainId as ChainId];
+	if (!addresses) return null;
+	const addr = addresses[contract];
+	// Check if address is set (not empty string)
+	if (!addr || addr.length < 3) {
+		const key = `${chainId}-${contract}`;
+		if (import.meta.env.DEV && !warnedMissing.has(key)) {
+			warnedMissing.add(key);
+			console.warn(
+				`[Contracts] ${contract} not deployed on chain ${chainId}. Run 'just contracts-deploy-local' to deploy.`
+			);
+		}
+		return null;
+	}
+	return addr;
 }
 ```
 
@@ -435,14 +447,14 @@ This is a thoughtful implementation that provides developer feedback without clu
 
 ## Summary Table
 
-| Issue | Severity | Status | Notes |
-|-------|----------|--------|-------|
-| 1. Float precision | Critical | FIXED | Using `parseUnits` from viem correctly |
-| 2. Silent failures | Critical | FIXED | All wallet methods now set error state and log |
-| 3. Unhandled rejection | Critical | FIXED | Toast notifications with error type discrimination |
-| 4. Any casts | High | N/A | No `any` casts remain in file |
-| 5. Magic selector | High | FIXED | Using `data-feed-column` attribute |
-| 6. Empty addresses | High | FIXED | DEV warning with deduplication |
+| Issue                  | Severity | Status | Notes                                              |
+| ---------------------- | -------- | ------ | -------------------------------------------------- |
+| 1. Float precision     | Critical | FIXED  | Using `parseUnits` from viem correctly             |
+| 2. Silent failures     | Critical | FIXED  | All wallet methods now set error state and log     |
+| 3. Unhandled rejection | Critical | FIXED  | Toast notifications with error type discrimination |
+| 4. Any casts           | High     | N/A    | No `any` casts remain in file                      |
+| 5. Magic selector      | High     | FIXED  | Using `data-feed-column` attribute                 |
+| 6. Empty addresses     | High     | FIXED  | DEV warning with deduplication                     |
 
 ---
 
@@ -451,7 +463,6 @@ This is a thoughtful implementation that provides developer feedback without clu
 ### Positive Patterns Noted During Verification
 
 1. **Consistent error handling pattern**: Both `JackInModal` and `ExtractModal` use the same error handling pattern with viem error type discrimination
-   
 2. **Import hygiene**: Viem error types (`UserRejectedRequestError`, `ContractFunctionExecutionError`) are properly imported where needed
 
 3. **Double-submit protection**: Both modals use `isSubmitting` state with guards to prevent duplicate transactions
@@ -475,6 +486,7 @@ The development team has addressed all critical and high-priority issues identif
 The codebase demonstrates good error handling patterns and appropriate user feedback mechanisms. The remaining work from the original review (medium and low priority items) should be verified in a subsequent audit.
 
 **Recommended Next Steps**:
+
 1. Verify the wallet `error` state is displayed in the UI
 2. Run TypeScript strict mode to confirm the `any` cast removal doesn't hide type issues
 3. Address medium priority items from the original review (timer leaks, test coverage, E2E fragility)

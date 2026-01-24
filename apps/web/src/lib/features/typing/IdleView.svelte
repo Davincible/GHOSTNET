@@ -25,9 +25,7 @@
 		return typingMod ? typingMod.value : 0;
 	});
 
-	let effectiveDeathRate = $derived(
-		baseDeathRate * (1 + currentProtection)
-	);
+	let effectiveDeathRate = $derived(baseDeathRate * (1 + currentProtection));
 
 	let hasProtection = $derived(currentProtection < 0);
 
@@ -38,12 +36,12 @@
 		{ accuracy: '85-94%', reduction: '-15%', label: 'Great', highlight: false },
 		{ accuracy: '70-84%', reduction: '-10%', label: 'Good', highlight: false },
 		{ accuracy: '50-69%', reduction: '-5%', label: 'Okay', highlight: false },
-		{ accuracy: '<50%', reduction: 'None', label: 'Failed', highlight: false }
+		{ accuracy: '<50%', reduction: 'None', label: 'Failed', highlight: false },
 	];
 
 	const speedBonuses = [
 		{ wpm: '100+', accuracy: '95%+', bonus: '-10%' },
-		{ wpm: '80+', accuracy: '95%+', bonus: '-5%' }
+		{ wpm: '80+', accuracy: '95%+', bonus: '-5%' },
 	];
 </script>
 
@@ -79,7 +77,10 @@
 
 					<Row justify="between" align="center">
 						<span class="label">EFFECTIVE RATE</span>
-						<PercentDisplay value={effectiveDeathRate * 100} trend={hasProtection ? 'down' : 'stable'} />
+						<PercentDisplay
+							value={effectiveDeathRate * 100}
+							trend={hasProtection ? 'down' : 'stable'}
+						/>
 					</Row>
 
 					<Row justify="between" align="center">

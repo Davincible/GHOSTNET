@@ -13,12 +13,7 @@ import {
 	resetHackRunStore,
 	type HackRunStore,
 } from './store.svelte';
-import type {
-	HackRun,
-	HackRunNode,
-	NodeResult,
-	NodeProgress,
-} from '$lib/core/types/hackrun';
+import type { HackRun, HackRunNode, NodeResult, NodeProgress } from '$lib/core/types/hackrun';
 
 // ════════════════════════════════════════════════════════════════
 // TEST FIXTURES

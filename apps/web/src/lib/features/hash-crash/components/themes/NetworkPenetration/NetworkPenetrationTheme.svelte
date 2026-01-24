@@ -22,6 +22,7 @@
 		TerminalOverlay,
 		GlitchEffect,
 		TraceFlash,
+		ExtractionFlash,
 		TerminalLog,
 		IceThreatMeter,
 		DepthDisplay,
@@ -179,104 +180,148 @@
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// DYNAMIC MAX DEPTH
+	// MAX DEPTH (fixed per round to prevent bar "reset" during animation)
 	// ─────────────────────────────────────────────────────────────────────────
 
-	// Scale the bar's max based on current depth and exit point
-	let maxDepth = $derived.by(() => {
-		const max = Math.max(depth * 1.5, exitPoint ?? 5, 5);
+	// Calculate appropriate max depth based on exit point
+	// This should be set once at round start and not change during animation
+	function calculateMaxDepth(exit: number | null): number {
+		const target = exit ?? 5;
+		// Set max to accommodate the exit point with some headroom
+		// so the bar doesn't fill completely before crash
+		const max = Math.max(target * 2, 5);
 		// Round up to nice numbers
 		if (max <= 5) return 5;
 		if (max <= 10) return 10;
 		if (max <= 20) return 20;
 		if (max <= 50) return 50;
 		return 100;
+	}
+
+	// Lock in maxDepth when round starts (betting phase)
+	let lockedMaxDepth = $state<number | null>(null);
+
+	// Reset and lock maxDepth when phase changes to betting
+	$effect(() => {
+		if (phase === 'betting') {
+			// Reset for new round
+			lockedMaxDepth = null;
+		} else if (phase === 'animating' && lockedMaxDepth === null) {
+			// Lock in maxDepth at start of animation
+			lockedMaxDepth = calculateMaxDepth(exitPoint);
+		}
 	});
+
+	// Use locked value during animation, otherwise calculate dynamically
+	let maxDepth = $derived(lockedMaxDepth ?? calculateMaxDepth(exitPoint));
 
 	// ─────────────────────────────────────────────────────────────────────────
 	// STATE FLAGS
 	// ─────────────────────────────────────────────────────────────────────────
 
 	let isActive = $derived(phase === 'animating');
-	let showGlitch = $derived(traced);
+	let isSettled = $derived(phase === 'settled');
+	// Only show "traced" (red/danger) effects when player LOST or had no bet
+	let showTracedEffects = $derived(traced && playerResult !== 'won');
+	// Show extraction (green/success) effects when player WON
+	let showExtractedEffects = $derived(traced && playerResult === 'won');
 </script>
 
-<TraceFlash active={traced}>
-	<GlitchEffect active={showGlitch} intensity={3}>
-		<TerminalOverlay>
-			<div class="network-penetration-theme">
-				<!-- Header -->
-				<header class="theme-header">
-					<span class="theme-title">ICE BREAKER</span>
-					{#if roundId > 0}
-						<span class="round-info">BREACH #{roundId}</span>
+<ExtractionFlash active={showExtractedEffects}>
+	<TraceFlash active={showTracedEffects}>
+		<GlitchEffect active={showTracedEffects} intensity={3}>
+			<TerminalOverlay>
+				<div class="network-penetration-theme" class:extracted={showExtractedEffects}>
+					<!-- Header -->
+					<header class="theme-header">
+						<span class="theme-title">ICE BREAKER</span>
+						{#if roundId > 0}
+							<span class="round-info">BREACH #{roundId}</span>
+						{/if}
+						<span
+							class="status-indicator"
+							class:betting={phase === 'betting'}
+							class:active={isActive}
+							class:traced={showTracedEffects}
+							class:extracted={showExtractedEffects}
+						>
+							{#if showExtractedEffects}
+								EXTRACTED
+							{:else if showTracedEffects}
+								TRACED
+							{:else if phase === 'betting'}
+								AWAITING ENTRY
+							{:else if phase === 'locked'}
+								INITIALIZING
+							{:else if isActive}
+								BREACH ACTIVE
+							{:else}
+								STANDBY
+							{/if}
+						</span>
+					</header>
+
+					<!-- Main visualization area -->
+					<div class="visualization-area">
+						<!-- Large depth display -->
+						<DepthDisplay
+							{depth}
+							target={exitPoint}
+							crashed={showTracedEffects}
+							{phase}
+							showStatus={true}
+						/>
+
+						<!-- Penetration progress bar -->
+						<div class="bar-section">
+							<PenetrationBar
+								{depth}
+								{exitPoint}
+								{maxDepth}
+								active={isActive}
+								traced={showTracedEffects}
+							/>
+						</div>
+
+						<!-- Terminal log and threat meter side by side -->
+						<div class="info-row">
+							<div class="log-section">
+								<TerminalLog {messages} maxLines={5} height="100px" />
+							</div>
+
+							<div class="threat-section">
+								<IceThreatMeter level={threatLevel} active={isActive} />
+							</div>
+						</div>
+					</div>
+
+					<!-- Player bet info (if has bet) -->
+					{#if exitPoint}
+						<div
+							class="bet-info"
+							class:won={playerResult === 'won'}
+							class:lost={playerResult === 'lost'}
+						>
+							<div class="bet-row">
+								<span class="bet-label">EXIT POINT:</span>
+								<span class="bet-value">{exitPoint.toFixed(2)}x</span>
+							</div>
+							{#if traced && playerResult === 'won'}
+								<!-- Only show result AFTER game ends (traced) -->
+								<div class="result-badge won">EXTRACTION SECURED</div>
+							{:else if traced && playerResult === 'lost'}
+								<div class="result-badge lost">TRACED - EXTRACTION FAILED</div>
+							{:else if isActive && depth >= exitPoint}
+								<!-- During animation, show safe indicator when past exit point -->
+								<div class="result-badge safe">EXIT AVAILABLE - SAFE</div>
+							{/if}
+						</div>
 					{/if}
-					<span
-						class="status-indicator"
-						class:betting={phase === 'betting'}
-						class:active={isActive}
-						class:traced
-					>
-						{#if traced}
-							TRACED
-						{:else if phase === 'betting'}
-							AWAITING ENTRY
-						{:else if phase === 'locked'}
-							INITIALIZING
-						{:else if isActive}
-							BREACH ACTIVE
-						{:else}
-							STANDBY
-						{/if}
-					</span>
-				</header>
-
-				<!-- Main visualization area -->
-				<div class="visualization-area">
-					<!-- Large depth display -->
-					<DepthDisplay {depth} target={exitPoint} crashed={traced} {phase} showStatus={true} />
-
-					<!-- Penetration progress bar -->
-					<div class="bar-section">
-						<PenetrationBar {depth} {exitPoint} {maxDepth} active={isActive} {traced} />
-					</div>
-
-					<!-- Terminal log and threat meter side by side -->
-					<div class="info-row">
-						<div class="log-section">
-							<TerminalLog {messages} maxLines={5} height="100px" />
-						</div>
-
-						<div class="threat-section">
-							<IceThreatMeter level={threatLevel} active={isActive} />
-						</div>
-					</div>
 				</div>
-
-				<!-- Player bet info (if has bet) -->
-				{#if exitPoint}
-					<div
-						class="bet-info"
-						class:won={playerResult === 'won'}
-						class:lost={playerResult === 'lost'}
-					>
-						<div class="bet-row">
-							<span class="bet-label">EXIT POINT:</span>
-							<span class="bet-value">{exitPoint.toFixed(2)}x</span>
-						</div>
-						{#if playerResult === 'won'}
-							<div class="result-badge won">EXTRACTION SECURED</div>
-						{:else if playerResult === 'lost'}
-							<div class="result-badge lost">TRACED - EXTRACTION FAILED</div>
-						{:else if isActive && depth >= exitPoint}
-							<div class="result-badge safe">EXIT AVAILABLE - SAFE</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
-		</TerminalOverlay>
-	</GlitchEffect>
-</TraceFlash>
+			</TerminalOverlay>
+		</GlitchEffect>
+	</TraceFlash>
+</ExtractionFlash>
 
 <style>
 	.network-penetration-theme {
@@ -340,6 +385,21 @@
 		animation: flash-status 0.3s ease-in-out infinite;
 	}
 
+	.status-indicator.extracted {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		background: var(--color-accent-glow);
+		animation: glow-status 1.5s ease-in-out infinite;
+	}
+
+	/* Extracted (won) state for main container */
+	.network-penetration-theme.extracted {
+		border-color: var(--color-accent);
+		box-shadow:
+			0 0 20px var(--color-accent-glow),
+			inset 0 0 30px var(--color-accent-glow);
+	}
+
 	@keyframes pulse-status {
 		0%,
 		100% {
@@ -357,6 +417,18 @@
 		}
 		50% {
 			opacity: 0.3;
+		}
+	}
+
+	@keyframes glow-status {
+		0%,
+		100% {
+			opacity: 1;
+			box-shadow: 0 0 5px var(--color-accent-glow);
+		}
+		50% {
+			opacity: 0.9;
+			box-shadow: 0 0 15px var(--color-accent-glow);
 		}
 	}
 

@@ -3,7 +3,7 @@
  * =============
  * Centralized audio system for GHOSTNET using ZzFX.
  * Integrates with settings store for volume and enable/disable.
- * 
+ *
  * IMPORTANT: The audio manager must be initialized during component
  * initialization (not in callbacks) to properly capture the settings context.
  */
@@ -46,7 +46,58 @@ const SOUNDS = {
 	// Alerts
 	alert: [0.5, , 300, 0.01, 0.1, 0.1, 2, 1, , , , , 0.05] as ZzFXParams,
 	warning: [0.5, , 200, 0.01, 0.15, 0.1, 2, 1, , , , , 0.1] as ZzFXParams,
-	danger: [0.6, , 150, 0.01, 0.2, 0.15, 3, 1, , , , , 0.05, 0.3] as ZzFXParams
+	danger: [0.6, , 150, 0.01, 0.2, 0.15, 3, 1, , , , , 0.05, 0.3] as ZzFXParams,
+
+	// Hash Crash
+	crashBettingStart: [0.3, , 500, 0.01, 0.05, 0.08, , 1, , , 50, 0.02] as ZzFXParams,
+	crashBettingEnd: [0.4, , 400, 0.01, 0.05, 0.1, , 1, , , 50, 0.05] as ZzFXParams,
+	crashLaunch: [0.4, , 300, 0.02, 0.1, 0.2, , 1, , , 100, 0.02] as ZzFXParams,
+	crashCashOut: [0.5, , 700, 0.01, 0.05, 0.1, , 1, , , 200, 0.02] as ZzFXParams,
+	crashCashOutOther: [0.2, , 600, , 0.02, 0.03, , 1, , , 100, 0.01] as ZzFXParams,
+	crashExplosion: [0.8, , 100, 0.01, 0.3, 0.5, 4, 1, -10, , -200, 0.1, , 0.8, , 0.2] as ZzFXParams,
+	crashWinSmall: [0.4, , 600, 0.02, 0.1, 0.2, , 1, , , 100, 0.02, , , , , , 0.8] as ZzFXParams,
+	crashWinMedium: [0.5, , 500, 0.02, 0.15, 0.25, , 1, 3, , 150, 0.03, 0.05] as ZzFXParams,
+	crashWinBig: [
+		0.6,
+		,
+		400,
+		0.03,
+		0.2,
+		0.35,
+		,
+		1,
+		5,
+		,
+		200,
+		0.05,
+		0.1,
+		,
+		,
+		,
+		0.1,
+		0.9,
+	] as ZzFXParams,
+	crashWinMassive: [
+		0.7,
+		,
+		300,
+		0.03,
+		0.3,
+		0.4,
+		,
+		1,
+		7,
+		,
+		250,
+		0.07,
+		0.15,
+		,
+		,
+		,
+		0.15,
+		0.95,
+	] as ZzFXParams,
+	crashLoss: [0.4, , 250, 0.02, 0.15, 0.3, 3, 1, -3, , -100, 0.05, , 0.2] as ZzFXParams,
 } as const;
 
 export type SoundName = keyof typeof SOUNDS;
@@ -84,6 +135,20 @@ export interface AudioManager {
 	alert: () => void;
 	warning: () => void;
 	danger: () => void;
+	// Hash Crash
+	crashBettingStart: () => void;
+	crashBettingEnd: () => void;
+	crashLaunch: () => void;
+	crashCashOut: () => void;
+	crashCashOutOther: () => void;
+	crashExplosion: () => void;
+	crashWinSmall: () => void;
+	crashWinMedium: () => void;
+	crashWinBig: () => void;
+	crashWinMassive: () => void;
+	crashLoss: () => void;
+	// Dynamic sound (for custom params)
+	playDynamic: (params: ZzFXParams) => void;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -139,16 +204,38 @@ function playSound(name: SoundName): void {
 	}
 }
 
+/**
+ * Play a sound with custom ZzFX parameters (for dynamic sounds)
+ */
+function playDynamic(params: ZzFXParams): void {
+	if (!browser) return;
+	if (settingsRef && !settingsRef.audioEnabled) return;
+
+	if (!audioInitialized) {
+		initAudio();
+	}
+
+	const volume = settingsRef?.audioVolume ?? 0.5;
+	const volumeAdjusted = [...params] as ZzFXParams;
+	volumeAdjusted[0] = (volumeAdjusted[0] ?? 1) * volume;
+
+	try {
+		zzfx(...volumeAdjusted);
+	} catch {
+		// Ignore
+	}
+}
+
 // ════════════════════════════════════════════════════════════════
 // FACTORY FUNCTION
 // ════════════════════════════════════════════════════════════════
 
 /**
  * Create an audio manager with settings integration.
- * 
+ *
  * MUST be called during component initialization to capture the settings context.
  * The returned manager can then be used in callbacks.
- * 
+ *
  * @param settings - The settings store from getSettings()
  */
 export function createAudioManager(settings: SettingsStore): AudioManager {
@@ -187,7 +274,23 @@ export function createAudioManager(settings: SettingsStore): AudioManager {
 		// Alerts
 		alert: () => playSound('alert'),
 		warning: () => playSound('warning'),
-		danger: () => playSound('danger')
+		danger: () => playSound('danger'),
+
+		// Hash Crash
+		crashBettingStart: () => playSound('crashBettingStart'),
+		crashBettingEnd: () => playSound('crashBettingEnd'),
+		crashLaunch: () => playSound('crashLaunch'),
+		crashCashOut: () => playSound('crashCashOut'),
+		crashCashOutOther: () => playSound('crashCashOutOther'),
+		crashExplosion: () => playSound('crashExplosion'),
+		crashWinSmall: () => playSound('crashWinSmall'),
+		crashWinMedium: () => playSound('crashWinMedium'),
+		crashWinBig: () => playSound('crashWinBig'),
+		crashWinMassive: () => playSound('crashWinMassive'),
+		crashLoss: () => playSound('crashLoss'),
+
+		// Dynamic
+		playDynamic,
 	};
 }
 
@@ -198,7 +301,7 @@ export function createAudioManager(settings: SettingsStore): AudioManager {
 /**
  * Get an audio manager without settings integration.
  * Audio will play at default volume (0.5) and always be enabled.
- * 
+ *
  * @deprecated Use createAudioManager(settings) for proper settings integration
  */
 export function getAudioManager(): AudioManager {
@@ -234,6 +337,22 @@ export function getAudioManager(): AudioManager {
 		// Alerts
 		alert: () => playSound('alert'),
 		warning: () => playSound('warning'),
-		danger: () => playSound('danger')
+		danger: () => playSound('danger'),
+
+		// Hash Crash
+		crashBettingStart: () => playSound('crashBettingStart'),
+		crashBettingEnd: () => playSound('crashBettingEnd'),
+		crashLaunch: () => playSound('crashLaunch'),
+		crashCashOut: () => playSound('crashCashOut'),
+		crashCashOutOther: () => playSound('crashCashOutOther'),
+		crashExplosion: () => playSound('crashExplosion'),
+		crashWinSmall: () => playSound('crashWinSmall'),
+		crashWinMedium: () => playSound('crashWinMedium'),
+		crashWinBig: () => playSound('crashWinBig'),
+		crashWinMassive: () => playSound('crashWinMassive'),
+		crashLoss: () => playSound('crashLoss'),
+
+		// Dynamic
+		playDynamic,
 	};
 }

@@ -8,11 +8,11 @@
 
 **11 performance issues found** across the codebase. The overall performance posture is **good**—no critical anti-patterns detected (no barrel file imports, no catastrophic getter functions). However, there are several **medium-priority optimizations** that would improve rendering efficiency and reduce reactivity overhead, particularly around unkeyed `{#each}` blocks and opportunities for `$state.raw`.
 
-| Severity | Count | Categories |
-|----------|-------|------------|
-| Critical | 0 | None |
-| Medium | 7 | Unkeyed `{#each}`, template computations, effect scope |
-| Low | 4 | `$state.raw` opportunities, data structure optimizations |
+| Severity | Count | Categories                                               |
+| -------- | ----- | -------------------------------------------------------- |
+| Critical | 0     | None                                                     |
+| Medium   | 7     | Unkeyed `{#each}`, template computations, effect scope   |
+| Low      | 4     | `$state.raw` opportunities, data structure optimizations |
 
 **Estimated Impact**: Low to Medium. These are incremental optimizations rather than show-stopping issues.
 
@@ -25,8 +25,9 @@
 **Status: CLEAN**
 
 No problematic barrel file imports detected. The codebase does not import from:
+
 - `lucide-svelte` (barrel)
-- `@heroicons/*` (barrel)  
+- `@heroicons/*` (barrel)
 - `date-fns` (barrel)
 - `lodash` (barrel)
 - `rxjs` (barrel)
@@ -53,6 +54,7 @@ let feedEvents = $state<FeedEvent[]>([]);
 **Issue**: Feed events are a large array (up to 100 items) that grows via prepending. The data is display-only and never mutated in place.
 
 **Recommendation**: Use `$state.raw`:
+
 ```typescript
 let feedEvents = $state.raw<FeedEvent[]>([]);
 ```
@@ -73,6 +75,7 @@ let rankings = $state(generateCrewRankings(20));
 **Issue**: Rankings are generated once when the modal opens and displayed read-only. They're never mutated—only filtered/sorted via `$derived`.
 
 **Recommendation**: Use `$state.raw`:
+
 ```typescript
 let rankings = $state.raw(generateCrewRankings(20));
 ```
@@ -95,6 +98,7 @@ let history = $state<DuelHistoryEntry[]>([]);
 **Issue**: These arrays are replaced entirely on refresh, not mutated. History grows to 50 items.
 
 **Recommendation**: Use `$state.raw` for `history`:
+
 ```typescript
 let history = $state.raw<DuelHistoryEntry[]>([]);
 ```
@@ -124,16 +128,16 @@ let waveforms: WaveformData[] = $state(getDefaultWaveforms());
 
 The following `{#each}` blocks lack identity keys, causing DOM recreation instead of efficient updates:
 
-| File | Line | Collection | Severity |
-|------|------|------------|----------|
-| `src/lib/features/modals/JackInModal.svelte` | 166 | `LEVELS` | Medium |
-| `src/lib/features/market/PurchaseModal.svelte` | 104 | `presets` | Low |
-| `src/lib/features/welcome/WelcomePanel.svelte` | 386 | `Array(totalSlides)` | Low |
-| `src/lib/features/daily/StreakProgress.svelte` | 52 | `Array(7)` | Low |
-| `src/lib/features/deadpool/BetModal.svelte` | 213 | `presets` | Low |
-| `src/lib/features/typing/IdleView.svelte` | 111, 133 | `rewardTiers`, `speedBonuses` | Low |
-| `src/lib/features/header/KeyboardHints.svelte` | 28, 45, 62 | `shortcuts` arrays | Low |
-| `src/routes/rabbit/+page.svelte` | 52, 65, 78, 92 | `rabbits`, `colors` | Low |
+| File                                           | Line           | Collection                    | Severity |
+| ---------------------------------------------- | -------------- | ----------------------------- | -------- |
+| `src/lib/features/modals/JackInModal.svelte`   | 166            | `LEVELS`                      | Medium   |
+| `src/lib/features/market/PurchaseModal.svelte` | 104            | `presets`                     | Low      |
+| `src/lib/features/welcome/WelcomePanel.svelte` | 386            | `Array(totalSlides)`          | Low      |
+| `src/lib/features/daily/StreakProgress.svelte` | 52             | `Array(7)`                    | Low      |
+| `src/lib/features/deadpool/BetModal.svelte`    | 213            | `presets`                     | Low      |
+| `src/lib/features/typing/IdleView.svelte`      | 111, 133       | `rewardTiers`, `speedBonuses` | Low      |
+| `src/lib/features/header/KeyboardHints.svelte` | 28, 45, 62     | `shortcuts` arrays            | Low      |
+| `src/routes/rabbit/+page.svelte`               | 52, 65, 78, 92 | `rabbits`, `colors`           | Low      |
 
 #### High Priority Fix: JackInModal.svelte
 
@@ -145,6 +149,7 @@ The following `{#each}` blocks lack identity keys, causing DOM recreation instea
 ```
 
 **Fix**:
+
 ```svelte
 {#each LEVELS as level (level)}
 ```
@@ -156,6 +161,7 @@ This renders 5 level selection cards. Without a key, all cards re-render when an
 The remaining unkeyed iterations are over static data (`presets`, `rewardTiers`, etc.) that never changes during the component lifecycle. Adding keys won't improve performance, but it's good practice for consistency.
 
 **Pattern fix**:
+
 ```svelte
 <!-- Static arrays - add index key -->
 {#each presets as preset, i (i)}
@@ -177,32 +183,33 @@ The `filteredCrews` derived contains multiple chained operations:
 
 ```typescript
 let filteredCrews = $derived.by(() => {
-    let crews = rankings.map((r) => r.crew);
-    
-    if (searchQuery) {
-        crews = crews.filter(/* ... */);
-    }
-    
-    switch (sortBy) {
-        case 'members':
-            crews = [...crews].sort((a, b) => b.memberCount - a.memberCount);
-            break;
-        // ...
-    }
-    
-    return crews;
+	let crews = rankings.map((r) => r.crew);
+
+	if (searchQuery) {
+		crews = crews.filter(/* ... */);
+	}
+
+	switch (sortBy) {
+		case 'members':
+			crews = [...crews].sort((a, b) => b.memberCount - a.memberCount);
+			break;
+		// ...
+	}
+
+	return crews;
 });
 ```
 
-**Assessment**: This is correctly using `$derived.by()` which is the right pattern. However, the `rankings.map()` runs even when only `sortBy` changes. 
+**Assessment**: This is correctly using `$derived.by()` which is the right pattern. However, the `rankings.map()` runs even when only `sortBy` changes.
 
 **Optimization** (optional):
+
 ```typescript
 // Separate the extraction from filtering/sorting
 const crews = $derived(rankings.map((r) => r.crew));
 const filteredCrews = $derived.by(() => {
-    let result = crews;
-    // ... filter and sort
+	let result = crews;
+	// ... filter and sort
 });
 ```
 
@@ -216,9 +223,9 @@ const filteredCrews = $derived.by(() => {
 **Lines**: 19-21
 
 ```typescript
-const actionShortcuts = shortcuts.filter(s => s.category === 'action');
-const gameShortcuts = shortcuts.filter(s => s.category === 'game');
-const socialShortcuts = shortcuts.filter(s => s.category === 'social');
+const actionShortcuts = shortcuts.filter((s) => s.category === 'action');
+const gameShortcuts = shortcuts.filter((s) => s.category === 'game');
+const socialShortcuts = shortcuts.filter((s) => s.category === 'social');
 ```
 
 **Issue**: Three separate filter iterations over the same 6-item array. This is evaluated at component creation, not reactively.
@@ -235,7 +242,7 @@ No instances of the catastrophic getter-function-instead-of-derived pattern foun
 
 ```typescript
 // This anti-pattern does NOT exist in the codebase
-const type = () => getType(value);  // BAD - would recalculate every render
+const type = () => getType(value); // BAD - would recalculate every render
 ```
 
 All computed values correctly use `$derived` or `$derived.by()`. This is excellent.
@@ -253,18 +260,18 @@ All computed values correctly use `$derived` or `$derived.by()`. This is excelle
 
 ```typescript
 $effect(() => {
-    const status = store.state.status;
+	const status = store.state.status;
 
-    if (status !== prevStatus) {
-        if (status === 'running' && prevStatus === 'countdown') {
-            audio.countdownGo();
-        } else if (status === 'complete') {
-            audio.gameComplete();
-        } else if (status === 'failed') {
-            audio.traced();
-        }
-        prevStatus = status;
-    }
+	if (status !== prevStatus) {
+		if (status === 'running' && prevStatus === 'countdown') {
+			audio.countdownGo();
+		} else if (status === 'complete') {
+			audio.gameComplete();
+		} else if (status === 'failed') {
+			audio.traced();
+		}
+		prevStatus = status;
+	}
 });
 ```
 
@@ -279,34 +286,36 @@ $effect(() => {
 
 ```typescript
 $effect(() => {
-    if (open && initialSide) {
-        selectedSide = initialSide;
-    } else if (!open) {
-        selectedSide = null;
-        amountInput = '100';
-    }
+	if (open && initialSide) {
+		selectedSide = initialSide;
+	} else if (!open) {
+		selectedSide = null;
+		amountInput = '100';
+	}
 });
 ```
 
 **Issue**: This effect handles two distinct concerns:
+
 1. Setting initial side when modal opens
 2. Resetting state when modal closes
 
 **Recommendation**: Split into two effects:
+
 ```typescript
 // Set initial side when opening
 $effect(() => {
-    if (open && initialSide) {
-        selectedSide = initialSide;
-    }
+	if (open && initialSide) {
+		selectedSide = initialSide;
+	}
 });
 
 // Reset state when closing
 $effect(() => {
-    if (!open) {
-        selectedSide = null;
-        amountInput = '100';
-    }
+	if (!open) {
+		selectedSide = null;
+		amountInput = '100';
+	}
 });
 ```
 
@@ -330,11 +339,11 @@ The codebase uses a good pattern for keyboard handling—individual components a
 
 ```typescript
 $effect(() => {
-    if (!browser) return;
-    window.addEventListener('keydown', handleKeydown);
-    return () => {
-        window.removeEventListener('keydown', handleKeydown);
-    };
+	if (!browser) return;
+	window.addEventListener('keydown', handleKeydown);
+	return () => {
+		window.removeEventListener('keydown', handleKeydown);
+	};
 });
 ```
 
@@ -368,22 +377,21 @@ if (['j', 'e', 't', 'h', 'c', 'p'].includes(key)) {
 
 ```typescript
 function getCurrentNodeIndex(progress: NodeProgress[]): number {
-    return progress.findIndex((p) => p.status === 'current');
+	return progress.findIndex((p) => p.status === 'current');
 }
 
 function getNodeById(run: HackRun, nodeId: string): HackRunNode | undefined {
-    return run.nodes.find((n) => n.id === nodeId);
+	return run.nodes.find((n) => n.id === nodeId);
 }
 ```
 
 **Issue**: `getNodeById` is called multiple times per node transition. With only 5 nodes per run, this is O(5) per call—negligible.
 
 **Potential optimization** (only if profiling shows issues):
+
 ```typescript
 // Build a lookup map once per run
-const nodeMap = $derived(
-    new Map(state.run?.nodes.map(n => [n.id, n]))
-);
+const nodeMap = $derived(new Map(state.run?.nodes.map((n) => [n.id, n])));
 ```
 
 **Verdict**: No action needed for current scale.
@@ -398,7 +406,7 @@ The codebase correctly uses `{#if}` for modals (heavy content, infrequent toggle
 
 ```svelte
 {#if showJackInModal}
-    <JackInModal ... />
+	<JackInModal ... />
 {/if}
 ```
 
@@ -408,16 +416,16 @@ I didn't find cases where CSS visibility would be clearly better than `{#if}`. T
 
 ## Summary Table
 
-| Category | Count | Severity | Est. Impact |
-|----------|-------|----------|-------------|
-| Barrel imports | 0 | - | None |
-| Missing `$state.raw` | 4 | Low | Memory overhead |
-| Unkeyed `{#each}` | 7+ | Medium | Render inefficiency |
-| Heavy template computations | 0 | - | None (correctly uses `$derived`) |
-| Getter functions | 0 | - | None |
-| Effect scope issues | 1 | Low | Code clarity |
-| Missing passive listeners | 0 | - | None |
-| Data structure inefficiencies | 0 | - | Acceptable for current scale |
+| Category                      | Count | Severity | Est. Impact                      |
+| ----------------------------- | ----- | -------- | -------------------------------- |
+| Barrel imports                | 0     | -        | None                             |
+| Missing `$state.raw`          | 4     | Low      | Memory overhead                  |
+| Unkeyed `{#each}`             | 7+    | Medium   | Render inefficiency              |
+| Heavy template computations   | 0     | -        | None (correctly uses `$derived`) |
+| Getter functions              | 0     | -        | None                             |
+| Effect scope issues           | 1     | Low      | Code clarity                     |
+| Missing passive listeners     | 0     | -        | None                             |
+| Data structure inefficiencies | 0     | -        | Acceptable for current scale     |
 
 ---
 

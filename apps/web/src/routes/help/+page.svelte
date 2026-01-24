@@ -62,7 +62,7 @@
 				{
 					question: 'Can I change levels?',
 					answer:
-						'Yes! Extract your position first, then Jack In at a different level. There\'s no cooldown for changing levels, but you\'ll need to go through the Jack In process again.',
+						"Yes! Extract your position first, then Jack In at a different level. There's no cooldown for changing levels, but you'll need to go through the Jack In process again.",
 				},
 			],
 		},
@@ -148,7 +148,7 @@
 					question: 'What is the System Reset timer?',
 					answer:
 						'A global countdown that resets when anyone deposits. If it hits zero, everyone loses 25% of their stake. Big deposits = longer timer extensions. The last depositor before collapse wins a jackpot from the seized 25%.',
-					tip: 'Watch the timer! If it\'s getting low, either deposit to extend it or be ready to extract.',
+					tip: "Watch the timer! If it's getting low, either deposit to extend it or be ready to extract.",
 				},
 				{
 					question: 'What is The Culling?',
@@ -158,7 +158,7 @@
 				{
 					question: 'What is a Ghost Streak?',
 					answer:
-						'The number of consecutive trace scans you\'ve survived. Higher streaks:\n- Appear on leaderboards\n- Prove your skill (or luck)\n- Contribute to crew bonuses\n\nStreaks reset if you extract or get traced.',
+						"The number of consecutive trace scans you've survived. Higher streaks:\n- Appear on leaderboards\n- Prove your skill (or luck)\n- Contribute to crew bonuses\n\nStreaks reset if you extract or get traced.",
 				},
 				{
 					question: 'How does the Network Modifier work?',
@@ -207,7 +207,10 @@
 
 <svelte:head>
 	<title>GHOSTNET - Help & Documentation</title>
-	<meta name="description" content="Learn how to play GHOSTNET. Game mechanics, mini-games, crews, and tokenomics explained." />
+	<meta
+		name="description"
+		content="Learn how to play GHOSTNET. Game mechanics, mini-games, crews, and tokenomics explained."
+	/>
 </svelte:head>
 
 <Shell>
@@ -250,7 +253,9 @@
 									aria-expanded={isExpanded(currentSection.id, index)}
 									aria-controls={panelId}
 								>
-									<span class="item-icon">{isExpanded(currentSection.id, index) ? '[-]' : '[+]'}</span>
+									<span class="item-icon"
+										>{isExpanded(currentSection.id, index) ? '[-]' : '[+]'}</span
+									>
 									<span class="item-question">{item.question}</span>
 								</button>
 								{#if isExpanded(currentSection.id, index)}

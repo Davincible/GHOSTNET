@@ -49,9 +49,7 @@
 				<span class="subtitle">PREDICTION MARKET</span>
 			</div>
 			{#if onHelp}
-				<Button variant="ghost" size="sm" onclick={onHelp} aria-label="Help">
-					[?]
-				</Button>
+				<Button variant="ghost" size="sm" onclick={onHelp} aria-label="Help">[?]</Button>
 			{/if}
 		</div>
 

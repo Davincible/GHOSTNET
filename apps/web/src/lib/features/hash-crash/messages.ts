@@ -230,3 +230,90 @@ export function getIceThreatColor(threatLevel: number): string {
 	if (threatLevel < 80) return 'amber';
 	return 'red';
 }
+
+// ============================================================================
+// SCANNING STATUS MESSAGES (50 unique messages for locked phase)
+// ============================================================================
+
+/**
+ * Thematic scanning messages displayed during the locked/waiting phase.
+ * These cycle every 2 seconds to create atmosphere and tension.
+ * Based on GHOSTNET's hacker/terminal aesthetic.
+ */
+export const SCANNING_MESSAGES: string[] = [
+	// Network scanning (10)
+	'Scanning network topology...',
+	'Probing firewall configurations...',
+	'Mapping subnet architecture...',
+	'Analyzing packet routes...',
+	'Detecting ICE signatures...',
+	'Querying DNS blackholes...',
+	'Tracing proxy chains...',
+	'Enumerating open ports...',
+	'Sniffing encrypted channels...',
+	'Resolving hidden nodes...',
+
+	// Hash/crypto operations (10)
+	'Awaiting block confirmation...',
+	'Hashing seed parameters...',
+	'Validating merkle root...',
+	'Computing entropy pool...',
+	'Deriving crash threshold...',
+	'Sampling random oracle...',
+	'Verifying chain state...',
+	'Processing commitment hash...',
+	'Finalizing block seed...',
+	'Extracting VRF output...',
+
+	// System operations (10)
+	'Loading breach protocol...',
+	'Initializing ghost sequence...',
+	'Compiling extraction vectors...',
+	'Calibrating trace scanners...',
+	'Buffering data streams...',
+	'Synchronizing network state...',
+	'Allocating secure memory...',
+	'Establishing tunnel integrity...',
+	'Preparing cascade triggers...',
+	'Arming countermeasures...',
+
+	// Security/ICE themed (10)
+	'Evading patrol routines...',
+	'Bypassing authentication...',
+	'Spoofing identity markers...',
+	'Masking operator signature...',
+	'Disrupting trace protocols...',
+	'Injecting noise packets...',
+	'Cycling through proxies...',
+	'Deploying ghost protocol...',
+	'Scrambling location data...',
+	'Activating cloak sequence...',
+
+	// Dramatic/tension building (10)
+	'The network is watching...',
+	'ICE countermeasures active...',
+	'Trace scan imminent...',
+	'Calculating survival odds...',
+	'Processing final parameters...',
+	'Point of no return...',
+	'Commit sequence locked...',
+	'Destiny being computed...',
+	'The cascade awaits...',
+	'Fate sealed in the chain...',
+];
+
+/**
+ * Get a random scanning message.
+ * Use this for one-time random selection.
+ */
+export function getRandomScanningMessage(): string {
+	return SCANNING_MESSAGES[Math.floor(Math.random() * SCANNING_MESSAGES.length)];
+}
+
+/**
+ * Get scanning message by index (for sequential cycling).
+ * Wraps around when index exceeds array length.
+ */
+export function getScanningMessageByIndex(index: number): string {
+	return SCANNING_MESSAGES[index % SCANNING_MESSAGES.length];
+}

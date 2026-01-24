@@ -28,7 +28,12 @@
 				{#each entries as entry (entry.crewId)}
 					{@const movement = getRankMovement(entry.rank, entry.previousRank)}
 					{@const movementIcon = movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●'}
-					{@const movementClass = movement === 'up' ? 'movement-up' : movement === 'down' ? 'movement-down' : 'movement-same'}
+					{@const movementClass =
+						movement === 'up'
+							? 'movement-up'
+							: movement === 'down'
+								? 'movement-down'
+								: 'movement-same'}
 
 					<tr class="crew-row" class:is-your-crew={entry.isYourCrew}>
 						<td class="col-rank">

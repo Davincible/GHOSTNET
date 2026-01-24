@@ -35,19 +35,12 @@
 
 	<div class="consumables-grid">
 		{#each sortedConsumables as consumable (consumable.id)}
-			<ConsumableCard
-				{consumable}
-				{userLevel}
-				canAfford={canAfford(consumable)}
-				{onBuy}
-			/>
+			<ConsumableCard {consumable} {userLevel} canAfford={canAfford(consumable)} {onBuy} />
 		{/each}
 	</div>
 
 	{#snippet footer()}
-		<span class="footer-text">
-			Buy 3+ for 5% off | 5+ for 10% off | 10+ for 15% off
-		</span>
+		<span class="footer-text"> Buy 3+ for 5% off | 5+ for 10% off | 10+ for 15% off </span>
 	{/snippet}
 </Panel>
 

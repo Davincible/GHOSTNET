@@ -2,17 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { Header } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
-	import {
-		DeadPoolHeader,
-		ActiveRoundsGrid,
-		ResultsPanel,
-		BetModal
-	} from '$lib/features/deadpool';
+	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
 	import {
 		MarketPanel,
 		InventoryPanel,
 		PurchaseModal,
-		UseConfirmModal
+		UseConfirmModal,
 	} from '$lib/features/market';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
@@ -21,7 +16,7 @@
 		generateActiveRounds,
 		generateMockHistoryList,
 		generateUserStats,
-		updatePoolsWithBet
+		updatePoolsWithBet,
 	} from '$lib/core/providers/mock/generators/deadpool';
 	import type {
 		DeadPoolRound,
@@ -29,7 +24,7 @@
 		DeadPoolHistory,
 		DeadPoolUserStats,
 		Consumable,
-		OwnedConsumable
+		OwnedConsumable,
 	} from '$lib/core/types';
 
 	const provider = getProvider();
@@ -87,8 +82,8 @@
 				userBet: {
 					side,
 					amount,
-					timestamp: Date.now()
-				}
+					timestamp: Date.now(),
+				},
 			};
 		}
 
@@ -206,8 +201,8 @@
 					...round,
 					pools: {
 						under: round.pools.under + underChange,
-						over: round.pools.over + overChange
-					}
+						over: round.pools.over + overChange,
+					},
 				};
 			});
 		}, 5000);
@@ -250,16 +245,9 @@
 		<!-- Tab Content -->
 		{#if activeTab === 'blackmarket'}
 			<Stack gap={4}>
-				<MarketPanel
-					userBalance={userBalance}
-					userLevel={userLevel}
-					onBuy={handleBuyConsumable}
-				/>
+				<MarketPanel {userBalance} {userLevel} onBuy={handleBuyConsumable} />
 
-				<InventoryPanel
-					inventory={ownedConsumables}
-					onUse={handleUseConsumable}
-				/>
+				<InventoryPanel inventory={ownedConsumables} onUse={handleUseConsumable} />
 			</Stack>
 		{:else}
 			<Stack gap={4}>

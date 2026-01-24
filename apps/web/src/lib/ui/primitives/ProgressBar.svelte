@@ -22,7 +22,7 @@
 		showPercent = false,
 		width = 20,
 		label,
-		animated = false
+		animated = false,
 	}: Props = $props();
 
 	// Clamp value between 0-100
@@ -50,7 +50,9 @@
 		<span class="progress-label">{label}</span>
 	{/if}
 	<span class="progress-bar progress-{variant}">
-		<span class="progress-filled">{filledChars}</span><span class="progress-empty">{emptyChars}</span>
+		<span class="progress-filled">{filledChars}</span><span class="progress-empty"
+			>{emptyChars}</span
+		>
 	</span>
 	{#if showPercent}
 		<span class="progress-percent">{Math.round(clampedValue)}%</span>
@@ -139,7 +141,8 @@
 	}
 
 	@keyframes glow-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: none;
 		}
 		50% {

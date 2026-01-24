@@ -15,9 +15,7 @@
 
 	// Compute rank movement
 	let movement = $derived(getRankMovement(entry.rank, entry.previousRank));
-	let movementIcon = $derived(
-		movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●'
-	);
+	let movementIcon = $derived(movement === 'up' ? '▲' : movement === 'down' ? '▼' : '●');
 	let movementClass = $derived(
 		movement === 'up' ? 'movement-up' : movement === 'down' ? 'movement-down' : 'movement-same'
 	);

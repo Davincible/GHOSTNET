@@ -12,7 +12,7 @@ const config = {
 		// We specify nodejs22.x here as fallback for adapter validation during local builds
 		// The actual deployment uses Bun per vercel.json config
 		adapter: adapter({
-			runtime: 'nodejs22.x'
+			runtime: 'nodejs22.x',
 		}),
 
 		// Alias configuration for cleaner imports

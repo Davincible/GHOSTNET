@@ -11,10 +11,10 @@
 		survivalRate?: number;
 	}
 
-	let { 
+	let {
 		nextScanTime = Date.now() + 60000,
 		operatorCount = 1247,
-		survivalRate = 87.3
+		survivalRate = 87.3,
 	}: Props = $props();
 
 	let containerWidth = $state(0);
@@ -52,11 +52,7 @@
 
 		<div class="viz-container">
 			{#if visualSize > 100}
-				<RadarSweep 
-					width={visualSize} 
-					height={visualSize}
-					sweepDuration={12}
-				/>
+				<RadarSweep width={visualSize} height={visualSize} sweepDuration={12} />
 			{/if}
 		</div>
 
@@ -149,7 +145,12 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 </style>

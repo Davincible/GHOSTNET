@@ -135,7 +135,7 @@ export const CONSUMABLES: Consumable[] = [
 		name: 'ICE Breaker',
 		description: '-10% death rate for 24 hours',
 		price: 150n * 10n ** 18n,
-		effect: { type: 'death_rate', value: -0.10, duration: 24 * 60 * 60 * 1000 },
+		effect: { type: 'death_rate', value: -0.1, duration: 24 * 60 * 60 * 1000 },
 		cooldown: 48 * 60 * 60 * 1000, // 48h cooldown
 		maxStack: 3,
 		icon: '🧊',
@@ -146,7 +146,7 @@ export const CONSUMABLES: Consumable[] = [
 		name: 'Neural Boost',
 		description: '+50% yield for 1 hour (intense)',
 		price: 120n * 10n ** 18n,
-		effect: { type: 'yield_boost', value: 0.50, duration: 60 * 60 * 1000 },
+		effect: { type: 'yield_boost', value: 0.5, duration: 60 * 60 * 1000 },
 		cooldown: 12 * 60 * 60 * 1000, // 12h cooldown
 		minLevel: 'SUBNET',
 		maxStack: 5,
@@ -158,7 +158,7 @@ export const CONSUMABLES: Consumable[] = [
 		name: 'Phantom Cloak',
 		description: '-20% death rate for 8 hours',
 		price: 300n * 10n ** 18n,
-		effect: { type: 'death_rate', value: -0.20, duration: 8 * 60 * 60 * 1000 },
+		effect: { type: 'death_rate', value: -0.2, duration: 8 * 60 * 60 * 1000 },
 		cooldown: 72 * 60 * 60 * 1000, // 72h cooldown
 		minLevel: 'DARKNET',
 		maxStack: 2,

@@ -19,7 +19,7 @@
 	const DIFF_COLORS: Record<HackRunDifficulty, string> = {
 		easy: 'var(--color-profit)',
 		medium: 'var(--color-amber)',
-		hard: 'var(--color-loss)'
+		hard: 'var(--color-loss)',
 	};
 
 	// SSR-safe timestamp for triggering re-renders
@@ -79,7 +79,8 @@
 					<Row justify="between" align="center" class="run-stats">
 						<div class="stat">
 							<span class="stat-label">NODES:</span>
-							<span class="stat-value">{entry.result.nodesCompleted}/{entry.result.totalNodes}</span>
+							<span class="stat-value">{entry.result.nodesCompleted}/{entry.result.totalNodes}</span
+							>
 						</div>
 						<div class="stat">
 							<span class="stat-label">MULT:</span>
