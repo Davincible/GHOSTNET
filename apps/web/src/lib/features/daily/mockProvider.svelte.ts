@@ -11,9 +11,10 @@
  * - ?mock=true&claimed=true     Mark today as claimed
  * - ?mock=true&shield=3         Set shield days remaining
  * - ?mock=true&badges=2         Number of badges earned (0-3)
+ * - ?mock=true&missions=3       Number of missions today (1-3)
  */
 
-import { STREAK_MILESTONES, BADGE_IDS, BADGE_INFO } from '$lib/core/types/daily';
+import { STREAK_MILESTONES, BADGE_IDS, BADGE_INFO, type DailyMission } from '$lib/core/types/daily';
 import type { DailyOpsState, DailyOpsProvider, NextMilestone } from './contractProvider.svelte';
 import type { RawPlayerStreak, RawBadge } from './contracts';
 
@@ -71,6 +72,95 @@ function calculateDeathRateReduction(streak: number): number {
 	return 0;
 }
 
+/** Mission templates for mock generation */
+const MISSION_TEMPLATES = [
+	{
+		title: 'SPEED DEMON',
+		description: 'Complete a Trace Evasion with 80+ WPM',
+		missionType: 'typing_games' as const,
+		target: 1,
+		reward: { type: 'tokens' as const, value: 50, duration: null },
+	},
+	{
+		title: 'SURVIVOR',
+		description: 'Survive a trace scan without dying',
+		missionType: 'survive_scan' as const,
+		target: 1,
+		reward: { type: 'death_rate' as const, value: -0.02, duration: 4 * 60 * 60 * 1000 },
+	},
+	{
+		title: 'ORACLE',
+		description: 'Win a Dead Pool bet',
+		missionType: 'deadpool_win' as const,
+		target: 1,
+		reward: { type: 'yield' as const, value: 0.05, duration: 4 * 60 * 60 * 1000 },
+	},
+	{
+		title: 'HIGH ROLLER',
+		description: 'Have 500+ $DATA staked',
+		missionType: 'stake_amount' as const,
+		target: 500,
+		reward: { type: 'tokens' as const, value: 25, duration: null },
+	},
+	{
+		title: 'INFILTRATOR',
+		description: 'Complete a Hack Run',
+		missionType: 'hackrun_complete' as const,
+		target: 1,
+		reward: { type: 'death_rate' as const, value: -0.03, duration: 4 * 60 * 60 * 1000 },
+	},
+];
+
+/** Generate mock missions for today */
+function createMockMissions(count: number, hasClaimed: boolean): DailyMission[] {
+	const missions: DailyMission[] = [];
+	const now = Date.now();
+	const endOfDay = Math.ceil(now / 86400000) * 86400000;
+
+	// Shuffle and pick missions
+	const shuffled = [...MISSION_TEMPLATES].sort(() => Math.random() - 0.5);
+
+	for (let i = 0; i < Math.min(count, shuffled.length); i++) {
+		const template = shuffled[i];
+		const progress = hasClaimed ? template.target : Math.floor(Math.random() * template.target);
+		const completed = progress >= template.target;
+
+		missions.push({
+			id: `mission-${i}-${now}`,
+			missionType: template.missionType,
+			title: template.title,
+			description: template.description,
+			progress,
+			target: template.target,
+			reward: template.reward,
+			expiresAt: endOfDay,
+			completed,
+			claimed: hasClaimed && completed,
+		});
+	}
+
+	return missions;
+}
+
+/** Generate completed days for calendar (based on streak) */
+function createCompletedDays(currentDay: number, streak: number): Set<number> {
+	const completed = new Set<number>();
+
+	// Add days for current streak
+	for (let i = 1; i <= streak; i++) {
+		completed.add(currentDay - i);
+	}
+
+	// Add some random older days for variety
+	const olderDaysCount = Math.min(streak, 10);
+	for (let i = 0; i < olderDaysCount; i++) {
+		const randomOffset = streak + 2 + Math.floor(Math.random() * 20);
+		completed.add(currentDay - randomOffset);
+	}
+
+	return completed;
+}
+
 // ════════════════════════════════════════════════════════════════
 // MOCK PROVIDER FACTORY
 // ════════════════════════════════════════════════════════════════
@@ -80,19 +170,39 @@ export interface MockProviderOptions {
 	claimed?: boolean;
 	shield?: number;
 	badges?: number;
+	missions?: number;
 }
 
-export function createMockDailyOpsProvider(options: MockProviderOptions = {}): DailyOpsProvider {
+/** Extended provider interface with missions and calendar */
+export interface MockDailyOpsProvider extends DailyOpsProvider {
+	/** Today's missions */
+	readonly missions: DailyMission[];
+	/** Set of completed days (UTC day numbers) for calendar */
+	readonly completedDays: Set<number>;
+	/** Streak start day for calendar highlighting */
+	readonly streakStartDay: number;
+	/** Claim a specific mission */
+	claimMissionReward(missionId: string): Promise<void>;
+}
+
+export function createMockDailyOpsProvider(options: MockProviderOptions = {}): MockDailyOpsProvider {
 	const {
 		streak: initialStreak = 12,
 		claimed: hasClaimed = false,
 		shield: shieldDays = 0,
 		badges: numBadges = 1,
+		missions: missionCount = 3,
 	} = options;
 
-	const currentDay = BigInt(Math.floor(Date.now() / 86400000));
+	const currentDayNum = Math.floor(Date.now() / 86400000);
+	const currentDay = BigInt(currentDayNum);
 	const mockStreak = createMockStreak(initialStreak, shieldDays);
 	const mockBadges = createMockBadges(numBadges);
+
+	// Generate missions and calendar data
+	const initialMissions = createMockMissions(missionCount, hasClaimed);
+	const completedDays = createCompletedDays(currentDayNum, initialStreak);
+	const streakStartDay = currentDayNum - initialStreak;
 
 	// ─────────────────────────────────────────────────────────────
 	// STATE
@@ -113,6 +223,9 @@ export function createMockDailyOpsProvider(options: MockProviderOptions = {}): D
 		error: null,
 		lastPoll: Date.now(),
 	});
+
+	// Missions state (separate from contract state)
+	let missions = $state<DailyMission[]>(initialMissions);
 
 	// ─────────────────────────────────────────────────────────────
 	// DERIVED STATE
@@ -254,6 +367,32 @@ export function createMockDailyOpsProvider(options: MockProviderOptions = {}): D
 		console.log('[MockDailyOps] Refreshed (mock mode)');
 	}
 
+	async function claimMissionReward(missionId: string): Promise<void> {
+		const mission = missions.find((m) => m.id === missionId);
+		if (!mission || !mission.completed || mission.claimed) return;
+
+		state = { ...state, isLoading: true };
+
+		// Simulate network delay
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
+		// Mark mission as claimed
+		missions = missions.map((m) => (m.id === missionId ? { ...m, claimed: true } : m));
+
+		// Add reward to balance if it's tokens
+		if (mission.reward.type === 'tokens') {
+			state = {
+				...state,
+				isLoading: false,
+				balance: state.balance + BigInt(mission.reward.value) * 10n ** 18n,
+			};
+		} else {
+			state = { ...state, isLoading: false };
+		}
+
+		console.log('[MockDailyOps] Mission claimed:', mission.title);
+	}
+
 	// ─────────────────────────────────────────────────────────────
 	// RETURN INTERFACE
 	// ─────────────────────────────────────────────────────────────
@@ -280,10 +419,21 @@ export function createMockDailyOpsProvider(options: MockProviderOptions = {}): D
 		get shieldExpiryFormatted() {
 			return shieldExpiryFormatted;
 		},
+		// New: missions and calendar data
+		get missions() {
+			return missions;
+		},
+		get completedDays() {
+			return completedDays;
+		},
+		get streakStartDay() {
+			return streakStartDay;
+		},
 		connect,
 		disconnect,
 		claimMission,
 		buyShield,
 		refresh,
+		claimMissionReward,
 	};
 }

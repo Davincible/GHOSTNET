@@ -10,7 +10,9 @@
 	import StreakDisplay from '$lib/features/daily/StreakDisplay.svelte';
 	import BadgeDisplay from '$lib/features/daily/BadgeDisplay.svelte';
 	import ShieldPurchase from '$lib/features/daily/ShieldPurchase.svelte';
-	import { formatTimeUntilReset } from '$lib/features/daily/contracts';
+	import MissionCard from '$lib/features/daily/MissionCard.svelte';
+	import StreakCalendar from '$lib/features/daily/StreakCalendar.svelte';
+	import type { DailyMission } from '$lib/core/types/daily';
 
 	// Check for mock mode from URL params
 	let isMockMode = $derived($page.url.searchParams.get('mock') === 'true');
@@ -24,6 +26,7 @@
 			claimed: params.get('claimed') === 'true',
 			shield: params.has('shield') ? parseInt(params.get('shield')!, 10) : undefined,
 			badges: params.has('badges') ? parseInt(params.get('badges')!, 10) : undefined,
+			missions: params.has('missions') ? parseInt(params.get('missions')!, 10) : undefined,
 		};
 	});
 
@@ -45,13 +48,28 @@
 	let timeUntilReset = $state('--:--:--');
 	let resetInterval: ReturnType<typeof setInterval> | null = null;
 
+	// Calculate time until next day reset (UTC midnight)
+	function getTimeUntilReset(): number {
+		const now = Date.now();
+		const nextDayStart = (Math.floor(now / 86400000) + 1) * 86400000;
+		return nextDayStart - now;
+	}
+
+	// Format time as HH:MM:SS
+	function formatTime(ms: number): string {
+		const hours = Math.floor(ms / 3600000);
+		const minutes = Math.floor((ms % 3600000) / 60000);
+		const seconds = Math.floor((ms % 60000) / 1000);
+		return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+	}
+
 	onMount(() => {
 		// Connect provider (mock connects instantly)
 		const disconnect = provider.connect();
 
 		// Update reset timer
 		const updateTimer = () => {
-			timeUntilReset = formatTimeUntilReset();
+			timeUntilReset = formatTime(getTimeUntilReset());
 		};
 		updateTimer();
 		resetInterval = setInterval(updateTimer, 1000);
@@ -71,11 +89,27 @@
 		}
 	}
 
+	// Handle mission claim (mock only for now)
+	async function handleClaimMission(missionId: string) {
+		if (isMockMode && mockProvider) {
+			try {
+				// Access the mock-specific method
+				const mp = mockProvider as { claimMissionReward?: (id: string) => Promise<void> };
+				if (mp.claimMissionReward) {
+					await mp.claimMissionReward(missionId);
+				}
+			} catch (err) {
+				console.error('Failed to claim mission:', err);
+			}
+		}
+	}
+
 	// Derived state from provider
 	let streak = $derived(provider.state.streak);
 	let badges = $derived(provider.state.badges);
 	let shieldActive = $derived(provider.state.shieldActive);
-	let balance = $derived(provider.state.balance ?? 0n);
+	// Balance exists on DailyOpsState
+	let balance = $derived('balance' in provider.state ? (provider.state.balance as bigint) : 0n);
 	let isLoading = $derived(provider.state.isLoading);
 	let error = $derived(provider.state.error);
 	let nextMilestone = $derived(provider.nextMilestone);
@@ -88,8 +122,37 @@
 		return remaining > 0 ? remaining : undefined;
 	});
 
+	// Mock-only: missions and calendar data
+	let missions = $derived<DailyMission[]>(
+		isMockMode && mockProvider && 'missions' in mockProvider
+			? (mockProvider.missions as DailyMission[])
+			: []
+	);
+	let completedDays = $derived<Set<number>>(
+		isMockMode && mockProvider && 'completedDays' in mockProvider
+			? (mockProvider.completedDays as Set<number>)
+			: new Set<number>()
+	);
+	let streakStartDay = $derived<number>(
+		isMockMode && mockProvider && 'streakStartDay' in mockProvider
+			? (mockProvider.streakStartDay as number)
+			: 0
+	);
+	let currentDayNum = $derived(Number(provider.state.currentDay));
+
+	// Count missions with explicit types
+	let completedMissionCount = $derived(
+		missions.filter((m: DailyMission) => m.completed).length
+	);
+	let claimableMissionCount = $derived(
+		missions.filter((m: DailyMission) => m.completed && !m.claimed).length
+	);
+
 	// Check if we should show the main content
 	let showContent = $derived(isMockMode || (wallet.isConnected && provider.state.isConnected));
+
+	// Tab state for mobile
+	let activeTab = $state<'overview' | 'missions' | 'calendar'>('overview');
 </script>
 
 <svelte:head>
@@ -126,68 +189,162 @@
 				</div>
 			</Box>
 		{:else}
+			<!-- Tab Navigation (Mobile) -->
+			<nav class="tab-nav">
+				<button
+					class="tab-btn"
+					class:active={activeTab === 'overview'}
+					onclick={() => (activeTab = 'overview')}
+				>
+					OVERVIEW
+				</button>
+				<button
+					class="tab-btn"
+					class:active={activeTab === 'missions'}
+					onclick={() => (activeTab = 'missions')}
+				>
+					MISSIONS
+					{#if claimableMissionCount > 0}
+						<span class="tab-badge">{claimableMissionCount}</span>
+					{/if}
+				</button>
+				<button
+					class="tab-btn"
+					class:active={activeTab === 'calendar'}
+					onclick={() => (activeTab = 'calendar')}
+				>
+					CALENDAR
+				</button>
+			</nav>
+
 			<div class="main-content">
-				<!-- Streak Display -->
-				<section class="section streak-section">
-					<StreakDisplay
-						currentStreak={streak?.currentStreak ?? 0}
-						longestStreak={streak?.longestStreak ?? 0}
-						deathRateReduction={provider.state.deathRateReduction}
-						{shieldActive}
-						{shieldDaysRemaining}
-						{nextMilestone}
-						{milestoneProgress}
-					/>
-				</section>
+				<!-- Overview Tab / Desktop Left Column -->
+				<div class="content-column overview-column" class:hidden={activeTab !== 'overview'}>
+					<!-- Streak Display -->
+					<section class="section streak-section">
+						<StreakDisplay
+							currentStreak={streak?.currentStreak ?? 0}
+							longestStreak={streak?.longestStreak ?? 0}
+							deathRateReduction={provider.state.deathRateReduction}
+							{shieldActive}
+							{shieldDaysRemaining}
+							{nextMilestone}
+							{milestoneProgress}
+						/>
+					</section>
 
-				<!-- Reset Timer -->
-				<section class="section reset-section">
-					<Box title="DAILY RESET">
-						<div class="reset-timer">
-							<span class="reset-label">Next reset in</span>
-							<span class="reset-time">{timeUntilReset}</span>
-						</div>
-						{#if provider.state.hasClaimedToday}
-							<div class="claimed-status">
-								<span class="status-icon">✓</span>
-								<span class="status-text">Mission claimed today!</span>
+					<!-- Reset Timer -->
+					<section class="section reset-section">
+						<Box title="DAILY RESET">
+							<div class="reset-timer">
+								<span class="reset-label">Next reset in</span>
+								<span class="reset-time">{timeUntilReset}</span>
 							</div>
-						{:else}
-							<div class="unclaimed-status">
-								<span class="status-icon">!</span>
-								<span class="status-text">Mission available - check the game!</span>
+							{#if provider.state.hasClaimedToday}
+								<div class="claimed-status">
+									<span class="status-icon">✓</span>
+									<span class="status-text">Missions claimed today!</span>
+								</div>
+							{:else}
+								<div class="unclaimed-status">
+									<span class="status-icon">!</span>
+									<span class="status-text">
+										{claimableMissionCount > 0
+											? `${claimableMissionCount} mission(s) ready to claim!`
+											: 'Complete missions to earn rewards'}
+									</span>
+								</div>
+							{/if}
+						</Box>
+					</section>
+
+					<!-- Shield Purchase -->
+					<section class="section shield-section">
+						<ShieldPurchase
+							{shieldActive}
+							{shieldExpiry}
+							canPurchase={canPurchaseShield}
+							{balance}
+							isPurchasing={isLoading}
+							onPurchase={handlePurchaseShield}
+						/>
+					</section>
+
+					<!-- Badges -->
+					<section class="section badges-section">
+						<Box title="ACHIEVEMENTS">
+							<BadgeDisplay {badges} showAll />
+						</Box>
+					</section>
+				</div>
+
+				<!-- Missions Tab / Desktop Right Column -->
+				<div class="content-column missions-column" class:hidden={activeTab !== 'missions'}>
+					<section class="section missions-section">
+						<Box title="TODAY'S MISSIONS">
+							<div class="missions-header">
+								<span class="missions-count">
+									{completedMissionCount}/{missions.length} completed
+								</span>
+								{#if claimableMissionCount > 0}
+									<span class="claimable-badge">{claimableMissionCount} CLAIMABLE</span>
+								{/if}
 							</div>
-						{/if}
-					</Box>
-				</section>
 
-				<!-- Shield Purchase -->
-				<section class="section shield-section">
-					<ShieldPurchase
-						{shieldActive}
-						{shieldExpiry}
-						canPurchase={canPurchaseShield}
-						{balance}
-						isPurchasing={isLoading}
-						onPurchase={handlePurchaseShield}
-					/>
-				</section>
+							<Stack gap={2}>
+								{#each missions as mission (mission.id)}
+									<MissionCard {mission} onClaim={handleClaimMission} />
+								{/each}
 
-				<!-- Badges -->
-				<section class="section badges-section">
-					<Box title="ACHIEVEMENTS">
-						<BadgeDisplay {badges} showAll />
-					</Box>
-				</section>
+								{#if missions.length === 0}
+									<div class="no-missions">
+										<p>No missions available.</p>
+										<p class="hint">
+											{#if isMockMode}
+												Add <code>?missions=3</code> to URL to see missions
+											{:else}
+												Missions are assigned daily at UTC midnight
+											{/if}
+										</p>
+									</div>
+								{/if}
+							</Stack>
+						</Box>
+					</section>
+				</div>
 
-				<!-- Error Display -->
-				{#if error}
-					<div class="error-banner">
-						<span class="error-icon">⚠</span>
-						<span class="error-text">{error}</span>
-					</div>
-				{/if}
+				<!-- Calendar Tab -->
+				<div class="content-column calendar-column" class:hidden={activeTab !== 'calendar'}>
+					<section class="section calendar-section">
+						<Box title="STREAK CALENDAR">
+							<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
+
+							<div class="calendar-stats">
+								<div class="stat">
+									<span class="stat-label">CURRENT STREAK</span>
+									<span class="stat-value">{streak?.currentStreak ?? 0} days</span>
+								</div>
+								<div class="stat">
+									<span class="stat-label">LONGEST STREAK</span>
+									<span class="stat-value">{streak?.longestStreak ?? 0} days</span>
+								</div>
+								<div class="stat">
+									<span class="stat-label">TOTAL MISSIONS</span>
+									<span class="stat-value">{streak?.totalMissionsCompleted?.toString() ?? '0'}</span>
+								</div>
+							</div>
+						</Box>
+					</section>
+				</div>
 			</div>
+
+			<!-- Error Display -->
+			{#if error}
+				<div class="error-banner">
+					<span class="error-icon">⚠</span>
+					<span class="error-text">{error}</span>
+				</div>
+			{/if}
 		{/if}
 
 		<!-- Info Section -->
@@ -203,7 +360,8 @@
 					<div class="info-item">
 						<span class="info-icon">2</span>
 						<div class="info-text">
-							<strong>Build your streak</strong> - Claim rewards on consecutive days to grow your streak
+							<strong>Build your streak</strong> - Claim rewards on consecutive days to grow your
+							streak
 						</div>
 					</div>
 					<div class="info-item">
@@ -230,16 +388,16 @@
 						<p class="mock-instructions">Customize the mock data via URL parameters:</p>
 						<ul class="mock-params">
 							<li><code>?mock=true&streak=45</code> - Set streak to 45 days</li>
-							<li><code>?mock=true&claimed=true</code> - Mark today as claimed</li>
+							<li><code>?mock=true&claimed=true</code> - Mark missions as claimed</li>
 							<li><code>?mock=true&shield=3</code> - Set 3 days of shield</li>
 							<li><code>?mock=true&badges=2</code> - Show 2 badges</li>
-							<li><code>?mock=true&streak=100&badges=3</code> - Combine options</li>
+							<li><code>?mock=true&missions=3</code> - Show 3 missions</li>
 						</ul>
 						<div class="mock-examples">
-							<a href="?mock=true&streak=5">New Player</a>
-							<a href="?mock=true&streak=25&badges=1">Week Warrior</a>
-							<a href="?mock=true&streak=45&badges=2&shield=5">Dedicated Operator</a>
-							<a href="?mock=true&streak=100&badges=3&claimed=true">Legend</a>
+							<a href="?mock=true&streak=5&missions=2">New Player</a>
+							<a href="?mock=true&streak=25&badges=1&missions=3">Week Warrior</a>
+							<a href="?mock=true&streak=45&badges=2&shield=5&missions=3">Dedicated Operator</a>
+							<a href="?mock=true&streak=100&badges=3&claimed=true&missions=3">Legend</a>
 						</div>
 					</Stack>
 				</Box>
@@ -252,8 +410,8 @@
 	.daily-ops-page {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-6);
-		max-width: 800px;
+		gap: var(--space-4);
+		max-width: 1000px;
 		margin: 0 auto;
 		padding: var(--space-4);
 	}
@@ -296,6 +454,50 @@
 		font-size: var(--text-xs);
 		color: var(--color-warning);
 		letter-spacing: var(--tracking-wide);
+	}
+
+	/* Tab Navigation */
+	.tab-nav {
+		display: none;
+		gap: var(--space-1);
+		border-bottom: 1px solid var(--color-border-subtle);
+		padding-bottom: var(--space-2);
+	}
+
+	.tab-btn {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+		padding: var(--space-2);
+		background: transparent;
+		border: 1px solid var(--color-border-subtle);
+		color: var(--color-text-secondary);
+		font-size: var(--text-xs);
+		font-family: var(--font-mono);
+		letter-spacing: var(--tracking-wide);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+	}
+
+	.tab-btn:hover {
+		border-color: var(--color-border-default);
+		color: var(--color-text-primary);
+	}
+
+	.tab-btn.active {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		background: var(--color-accent-glow);
+	}
+
+	.tab-badge {
+		background: var(--color-accent);
+		color: var(--color-bg-primary);
+		padding: 0 var(--space-1);
+		font-size: var(--text-2xs);
+		font-weight: var(--font-bold);
 	}
 
 	.connect-prompt {
@@ -342,14 +544,109 @@
 		}
 	}
 
+	/* Main Content - Desktop: 2 columns, Mobile: tabs */
 	.main-content {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-4);
+	}
+
+	.content-column {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
 	}
 
+	.calendar-column {
+		grid-column: 1 / -1;
+	}
+
 	.section {
 		width: 100%;
+	}
+
+	/* Missions */
+	.missions-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: var(--space-3);
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid var(--color-border-subtle);
+	}
+
+	.missions-count {
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+	}
+
+	.claimable-badge {
+		padding: var(--space-0-5) var(--space-1);
+		background: var(--color-accent-glow);
+		border: 1px solid var(--color-accent);
+		font-size: var(--text-2xs);
+		color: var(--color-accent);
+		font-weight: var(--font-medium);
+		letter-spacing: var(--tracking-wide);
+		animation: pulse-glow 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse-glow {
+		0%,
+		100% {
+			box-shadow: 0 0 4px var(--color-accent-glow);
+		}
+		50% {
+			box-shadow: 0 0 8px var(--color-accent);
+		}
+	}
+
+	.no-missions {
+		text-align: center;
+		padding: var(--space-6);
+		color: var(--color-text-tertiary);
+	}
+
+	.no-missions .hint {
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		margin-top: var(--space-2);
+	}
+
+	.no-missions code {
+		background: var(--color-bg-tertiary);
+		padding: var(--space-0-5) var(--space-1);
+		font-family: var(--font-mono);
+		color: var(--color-accent);
+	}
+
+	/* Calendar Stats */
+	.calendar-stats {
+		display: flex;
+		justify-content: space-around;
+		gap: var(--space-4);
+		margin-top: var(--space-4);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--color-border-subtle);
+	}
+
+	.calendar-stats .stat {
+		text-align: center;
+	}
+
+	.calendar-stats .stat-label {
+		display: block;
+		font-size: var(--text-2xs);
+		color: var(--color-text-muted);
+		letter-spacing: var(--tracking-wider);
+		margin-bottom: var(--space-1);
+	}
+
+	.calendar-stats .stat-value {
+		font-size: var(--text-lg);
+		font-family: var(--font-mono);
+		color: var(--color-accent);
+		font-weight: var(--font-medium);
 	}
 
 	/* Reset section */
@@ -512,13 +809,30 @@
 	}
 
 	/* Mobile */
-	@media (max-width: 640px) {
+	@media (max-width: 768px) {
 		.daily-ops-page {
 			padding: var(--space-3);
 		}
 
 		.page-title {
 			font-size: var(--text-2xl);
+		}
+
+		.tab-nav {
+			display: flex;
+		}
+
+		.main-content {
+			display: block;
+		}
+
+		.content-column.hidden {
+			display: none;
+		}
+
+		.calendar-stats {
+			flex-direction: column;
+			gap: var(--space-2);
 		}
 	}
 </style>
