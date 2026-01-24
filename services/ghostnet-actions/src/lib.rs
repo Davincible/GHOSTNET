@@ -93,6 +93,7 @@ pub mod plugin;
 pub mod state;
 
 mod actions;
+mod math;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // RE-EXPORTS

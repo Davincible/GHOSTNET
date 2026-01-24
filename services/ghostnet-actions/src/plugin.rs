@@ -400,4 +400,62 @@ mod tests {
         assert_eq!(to, plugin.contracts.hash_crash);
         assert!(!data.is_empty());
     }
+
+    #[tokio::test]
+    async fn execute_action_returns_not_implemented() {
+        let plugin = test_plugin();
+        let wallet = WalletState::new("test".into(), Address::ZERO);
+
+        let action = Action::with_data(
+            ACTION_JACK_IN,
+            "Jack In",
+            serde_json::json!({
+                "amount": "1000000000000000000",
+                "level": 3,
+            }),
+        );
+
+        // execute_action currently returns failure because signing is not implemented
+        let result = plugin.execute_action(&action, &wallet, 0).await;
+        assert!(result.is_ok());
+
+        let action_result = result.unwrap();
+        assert!(!action_result.success, "execute_action should return failure");
+        assert!(
+            action_result.error.as_ref().is_some_and(|e| e.contains("signing not implemented")),
+            "error should mention signing not implemented"
+        );
+        assert!(action_result.tx_hash.is_none(), "no tx should be sent");
+    }
+
+    #[tokio::test]
+    async fn build_transaction_returns_calldata() {
+        let plugin = test_plugin();
+        let wallet = WalletState::new("test".into(), Address::ZERO);
+
+        let action = Action::with_data(
+            ACTION_EXTRACT,
+            "Extract",
+            serde_json::json!({}),
+        );
+
+        let result = plugin.build_transaction(&action, &wallet, 0).await;
+        assert!(result.is_ok());
+
+        let calldata = result.unwrap();
+        // Extract has just a function selector (4 bytes)
+        assert_eq!(calldata.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn read_state_returns_default() {
+        let plugin = test_plugin();
+
+        // Currently returns empty default state
+        let result = plugin.read_state(Address::ZERO).await;
+        assert!(result.is_ok());
+
+        let state = result.unwrap();
+        assert!(state.is_object());
+    }
 }

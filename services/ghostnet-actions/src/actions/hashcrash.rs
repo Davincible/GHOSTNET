@@ -3,9 +3,9 @@
 //! This module handles decisions for:
 //! - `hashcrash_bet`: Place a bet in the current round
 
-// Allow precision loss for financial calculations that don't need exact precision
+// Allow precision loss for target multiplier calculations (small integers, not tokens)
 #![allow(clippy::cast_precision_loss)]
-// Allow suboptimal flops since readability is preferred
+// Allow suboptimal floating point ops - readability over micro-optimization
 #![allow(clippy::suboptimal_flops)]
 
 use alloy::primitives::U256;
@@ -15,6 +15,7 @@ use rand::Rng;
 use tracing::debug;
 
 use crate::config::BehaviorSettings;
+use crate::math::{percentage_of, pct_to_bps, random_bps};
 use crate::state::GhostnetState;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -112,26 +113,30 @@ impl HashCrashDecider {
     }
 
     /// Calculate bet amount based on balance and settings.
+    ///
+    /// Uses basis-point arithmetic for precision with large token amounts.
     fn calculate_bet_amount(
         state: &GhostnetState,
         profile: &BehaviorProfile,
         settings: &BehaviorSettings,
         context: &mut PluginContext<'_>,
     ) -> U256 {
-        // Calculate max bet as percentage of balance
-        let max_pct = settings.max_hashcrash_bet_pct * profile.risk_tolerance;
+        // Calculate max bet percentage using basis points
+        let max_bps = pct_to_bps(settings.max_hashcrash_bet_pct * profile.risk_tolerance);
 
-        // Add jitter
-        let jitter = context.rng.random_range(0.3..1.0);
-        let pct = max_pct * jitter;
+        // Apply jitter: 30% to 100% of max
+        let jitter_bps = random_bps(0.3, 1.0, context.rng);
+        // Safe: max_bps * jitter_bps / 10000 fits in u64 (max ~10000 * 10000 / 10000 = 10000)
+        #[allow(clippy::cast_possible_truncation)]
+        let bet_bps = (u128::from(max_bps) * u128::from(jitter_bps) / 10_000) as u64;
 
-        let balance_f64 = state.data_balance.to::<u128>() as f64;
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let amount = U256::from((balance_f64 * pct) as u128);
+        // Calculate amount using integer arithmetic
+        let amount = percentage_of(state.data_balance, bet_bps);
 
-        // Ensure within bounds
+        // Ensure within bounds: min bet to 10% of balance
         let min = U256::from(MIN_BET);
-        amount.max(min).min(state.data_balance / U256::from(10)) // Cap at 10% of balance
+        let max = percentage_of(state.data_balance, 1000); // 10% = 1000 bps
+        amount.max(min).min(max)
     }
 
     /// Calculate target multiplier based on risk tolerance.

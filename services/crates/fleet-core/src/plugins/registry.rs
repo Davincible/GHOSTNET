@@ -6,6 +6,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use tracing::warn;
+
 use super::traits::{ActionId, ActionPlugin};
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -99,12 +101,21 @@ impl PluginRegistry {
     /// Get enabled plugins based on a list of IDs.
     ///
     /// Returns plugins in the order specified by `enabled_ids`.
-    /// Unknown IDs are silently ignored.
+    /// Unknown IDs log a warning and are skipped.
     #[must_use]
     pub fn enabled(&self, enabled_ids: &[String]) -> Vec<Arc<dyn ActionPlugin>> {
         enabled_ids
             .iter()
-            .filter_map(|id| self.plugins.get(id).cloned())
+            .filter_map(|id| {
+                self.plugins.get(id).cloned().or_else(|| {
+                    warn!(
+                        plugin_id = %id,
+                        available = ?self.plugins.keys().collect::<Vec<_>>(),
+                        "Unknown plugin ID in enabled list - check configuration"
+                    );
+                    None
+                })
+            })
             .collect()
     }
 

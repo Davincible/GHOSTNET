@@ -317,7 +317,176 @@ impl BehaviorProfile {
             afk_max_hours: 24,
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // VALIDATION
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// Validate that all fields are within acceptable ranges.
+    ///
+    /// Returns a list of validation errors, or an empty vector if valid.
+    ///
+    /// # Validated Fields
+    ///
+    /// | Field | Valid Range | Description |
+    /// |-------|-------------|-------------|
+    /// | `risk_tolerance` | 0.0-1.0 | Probability value |
+    /// | `patience` | 0.0-1.0 | Probability value |
+    /// | `off_hours_factor` | 0.0-1.0 | Probability value |
+    /// | `afk_probability` | 0.0-1.0 | Probability value |
+    /// | `active_hours_*` | 0-23 | Valid UTC hours |
+    /// | `activity_level` | > 0 | Must be positive |
+    /// | `action_interval_secs` | > 0 | Must be positive |
+    /// | `afk_min_hours` | <= afk_max_hours | Logical ordering |
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use fleet_core::profiles::BehaviorProfile;
+    ///
+    /// let profile = BehaviorProfile::degen();
+    /// let errors = profile.validate();
+    /// assert!(errors.is_empty());
+    ///
+    /// let mut bad = BehaviorProfile::new("bad");
+    /// bad.risk_tolerance = 1.5; // Invalid!
+    /// let errors = bad.validate();
+    /// assert!(!errors.is_empty());
+    /// ```
+    #[must_use]
+    pub fn validate(&self) -> Vec<ProfileValidationError> {
+        let mut errors = Vec::new();
+
+        // Probability fields must be 0.0-1.0
+        if !(0.0..=1.0).contains(&self.risk_tolerance) {
+            errors.push(ProfileValidationError::InvalidProbability {
+                field: "risk_tolerance",
+                value: self.risk_tolerance,
+            });
+        }
+        if !(0.0..=1.0).contains(&self.patience) {
+            errors.push(ProfileValidationError::InvalidProbability {
+                field: "patience",
+                value: self.patience,
+            });
+        }
+        if !(0.0..=1.0).contains(&self.off_hours_factor) {
+            errors.push(ProfileValidationError::InvalidProbability {
+                field: "off_hours_factor",
+                value: self.off_hours_factor,
+            });
+        }
+        if !(0.0..=1.0).contains(&self.afk_probability) {
+            errors.push(ProfileValidationError::InvalidProbability {
+                field: "afk_probability",
+                value: self.afk_probability,
+            });
+        }
+
+        // Hours must be 0-23
+        if self.active_hours_start > 23 {
+            errors.push(ProfileValidationError::InvalidHour {
+                field: "active_hours_start",
+                value: self.active_hours_start,
+            });
+        }
+        if self.active_hours_end > 23 {
+            errors.push(ProfileValidationError::InvalidHour {
+                field: "active_hours_end",
+                value: self.active_hours_end,
+            });
+        }
+
+        // Positive values
+        if self.activity_level <= 0.0 {
+            errors.push(ProfileValidationError::NonPositive {
+                field: "activity_level",
+            });
+        }
+        if self.action_interval_secs == 0 {
+            errors.push(ProfileValidationError::NonPositive {
+                field: "action_interval_secs",
+            });
+        }
+
+        // Logical ordering
+        if self.afk_min_hours > self.afk_max_hours {
+            errors.push(ProfileValidationError::InvalidRange {
+                field: "afk_hours",
+                min: self.afk_min_hours,
+                max: self.afk_max_hours,
+            });
+        }
+
+        errors
+    }
+
+    /// Check if the profile is valid.
+    ///
+    /// Shorthand for `self.validate().is_empty()`.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.validate().is_empty()
+    }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VALIDATION ERROR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Error returned when a profile field has an invalid value.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProfileValidationError {
+    /// A probability field is outside 0.0-1.0.
+    InvalidProbability {
+        /// Field name.
+        field: &'static str,
+        /// Invalid value.
+        value: f64,
+    },
+    /// An hour field is outside 0-23.
+    InvalidHour {
+        /// Field name.
+        field: &'static str,
+        /// Invalid value.
+        value: u8,
+    },
+    /// A field that must be positive is zero or negative.
+    NonPositive {
+        /// Field name.
+        field: &'static str,
+    },
+    /// A min/max range is inverted (min > max).
+    InvalidRange {
+        /// Field name (describes the range).
+        field: &'static str,
+        /// Minimum value.
+        min: u64,
+        /// Maximum value.
+        max: u64,
+    },
+}
+
+impl std::fmt::Display for ProfileValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidProbability { field, value } => {
+                write!(f, "{field} must be 0.0-1.0, got {value}")
+            }
+            Self::InvalidHour { field, value } => {
+                write!(f, "{field} must be 0-23, got {value}")
+            }
+            Self::NonPositive { field } => {
+                write!(f, "{field} must be positive")
+            }
+            Self::InvalidRange { field, min, max } => {
+                write!(f, "{field} range is invalid: min ({min}) > max ({max})")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ProfileValidationError {}
 
 impl Default for BehaviorProfile {
     fn default() -> Self {
@@ -438,5 +607,71 @@ mod tests {
 
         // Should be roughly 30% (with some variance)
         assert!(act_count > 10 && act_count < 60, "off-hours factor ~30%, got {act_count}");
+    }
+
+    #[test]
+    fn preset_profiles_are_valid() {
+        assert!(BehaviorProfile::whale().is_valid());
+        assert!(BehaviorProfile::grinder().is_valid());
+        assert!(BehaviorProfile::degen().is_valid());
+        assert!(BehaviorProfile::casual().is_valid());
+        assert!(BehaviorProfile::sniper().is_valid());
+    }
+
+    #[test]
+    fn validation_catches_invalid_probabilities() {
+        let mut profile = BehaviorProfile::new("bad");
+        
+        profile.risk_tolerance = 1.5;
+        let errors = profile.validate();
+        assert!(errors.iter().any(|e| matches!(e, 
+            ProfileValidationError::InvalidProbability { field: "risk_tolerance", .. }
+        )));
+
+        profile.risk_tolerance = 0.5;
+        profile.patience = -0.1;
+        let errors = profile.validate();
+        assert!(errors.iter().any(|e| matches!(e,
+            ProfileValidationError::InvalidProbability { field: "patience", .. }
+        )));
+
+        profile.patience = 0.5;
+        profile.off_hours_factor = 2.0;
+        let errors = profile.validate();
+        assert!(errors.iter().any(|e| matches!(e,
+            ProfileValidationError::InvalidProbability { field: "off_hours_factor", .. }
+        )));
+    }
+
+    #[test]
+    fn validation_catches_invalid_hours() {
+        let mut profile = BehaviorProfile::new("bad");
+        profile.active_hours_start = 25;
+        
+        let errors = profile.validate();
+        assert!(errors.iter().any(|e| matches!(e,
+            ProfileValidationError::InvalidHour { field: "active_hours_start", value: 25 }
+        )));
+    }
+
+    #[test]
+    fn validation_catches_invalid_range() {
+        let mut profile = BehaviorProfile::new("bad");
+        profile.afk_min_hours = 48;
+        profile.afk_max_hours = 12;
+        
+        let errors = profile.validate();
+        assert!(errors.iter().any(|e| matches!(e,
+            ProfileValidationError::InvalidRange { field: "afk_hours", min: 48, max: 12 }
+        )));
+    }
+
+    #[test]
+    fn validation_error_display() {
+        let err = ProfileValidationError::InvalidProbability {
+            field: "risk_tolerance",
+            value: 1.5,
+        };
+        assert_eq!(err.to_string(), "risk_tolerance must be 0.0-1.0, got 1.5");
     }
 }

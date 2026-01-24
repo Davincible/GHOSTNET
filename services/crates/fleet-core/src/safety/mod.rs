@@ -191,7 +191,14 @@ impl CircuitBreaker {
     pub fn check_auto_reset(&mut self) -> usize {
         let now = Utc::now();
         let cooldown_chrono = chrono::Duration::from_std(self.cooldown)
-            .unwrap_or_else(|_| chrono::Duration::hours(1));
+            .unwrap_or_else(|e| {
+                warn!(
+                    cooldown_secs = self.cooldown.as_secs(),
+                    error = %e,
+                    "Cooldown duration too large for chrono, using 1 hour fallback"
+                );
+                chrono::Duration::hours(1)
+            });
 
         let to_reset: Vec<String> = self
             .trip_times

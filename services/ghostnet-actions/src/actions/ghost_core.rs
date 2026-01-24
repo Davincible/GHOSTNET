@@ -6,9 +6,7 @@
 //! - `extract`: Exit position and claim rewards
 //! - `claimRewards`: Claim rewards without exiting
 
-// Allow precision loss for financial calculations that don't need exact precision
-#![allow(clippy::cast_precision_loss)]
-// Allow suboptimal flops since readability is preferred
+// Allow suboptimal floating point ops - readability over micro-optimization
 #![allow(clippy::suboptimal_flops)]
 
 use alloy::primitives::U256;
@@ -18,6 +16,7 @@ use rand::Rng;
 use tracing::debug;
 
 use crate::config::{BehaviorSettings, LevelSettings};
+use crate::math::{apply_jitter, percentage_of, pct_to_bps};
 use crate::state::{GhostnetState, Level};
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -273,18 +272,16 @@ impl GhostCoreDecider {
             return U256::ZERO;
         }
 
-        // Calculate percentage of balance to stake
+        // Calculate percentage of balance to stake using basis points (safe integer math)
         // Higher risk tolerance = higher percentage
-        let base_pct = 0.1 + (profile.risk_tolerance * 0.4); // 10% to 50%
+        // Risk 0.0 -> 10% (1000 bps), Risk 1.0 -> 50% (5000 bps)
+        let base_bps = pct_to_bps(0.1 + (profile.risk_tolerance * 0.4));
 
-        // Add some randomness
-        let jitter = context.rng.random_range(0.8..1.2);
-        let pct = (base_pct * jitter).min(0.8); // Cap at 80%
+        // Add some randomness (80% to 120% of base, capped at 80%)
+        let jittered_bps = apply_jitter(base_bps, 0.8, 1.2, context.rng).min(8000);
 
-        // Calculate amount
-        let balance_f64 = state.data_balance.to::<u128>() as f64;
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let amount = U256::from((balance_f64 * pct) as u128);
+        // Calculate amount using integer arithmetic
+        let amount = percentage_of(state.data_balance, jittered_bps);
 
         // Clamp to min/max
         amount.max(min_stake).min(state.data_balance)
@@ -297,13 +294,14 @@ impl GhostCoreDecider {
         context: &mut PluginContext<'_>,
     ) -> U256 {
         // Add 10-30% of current balance, adjusted by risk tolerance
-        let base_pct = 0.1 + (profile.risk_tolerance * 0.2);
-        let jitter = context.rng.random_range(0.8..1.2);
-        let pct = (base_pct * jitter).min(0.5);
+        // Risk 0.0 -> 10% (1000 bps), Risk 1.0 -> 30% (3000 bps)
+        let base_bps = pct_to_bps(0.1 + (profile.risk_tolerance * 0.2));
 
-        let balance_f64 = state.data_balance.to::<u128>() as f64;
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let amount = U256::from((balance_f64 * pct) as u128);
+        // Add jitter (80% to 120% of base, capped at 50%)
+        let jittered_bps = apply_jitter(base_bps, 0.8, 1.2, context.rng).min(5000);
+
+        // Calculate amount using integer arithmetic
+        let amount = percentage_of(state.data_balance, jittered_bps);
 
         // Don't add less than 1 DATA
         let min = U256::from(1_000_000_000_000_000_000_u128);
