@@ -1,7 +1,7 @@
 # Phase 3 Implementation Overview
 
 > Master tracking document for the GHOSTNET Arcade expansion.  
-> Last updated: 2026-01-24
+> Last updated: 2026-01-25
 
 ---
 
@@ -29,7 +29,7 @@ PHASE 3A GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
 01. HASH CRASH (Casino)                                         [██████████░░] FRONTEND DONE
 02. CODE DUEL (Competitive)                                     [██████░░░░░░] CONTRACT DONE
-03. DAILY OPS (Progression)                                     [██████░░░░░░] CONTRACT DONE
+03. DAILY OPS (Progression)                                     [██████████░░] FRONTEND DONE
 
 PHASE 3B GAMES                                                  STATUS
 ──────────────────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ PHASE 3C GAMES                                                  STATUS
 09. SHADOW PROTOCOL (Meta)                                      [░░░░░░░░░░░░] NOT STARTED
 
 ══════════════════════════════════════════════════════════════════════════════
-OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1273 Tests Passing
+OVERALL PROGRESS: Core Infrastructure Complete → Testnet Deployed → 1275 Tests Passing
 ══════════════════════════════════════════════════════════════════════════════
 ```
 
@@ -250,7 +250,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 **Spec:** [games/02-code-duel.md](./games/02-code-duel.md)  
 **Category:** Competitive | **Entry:** 50-500 $DATA | **Burn:** 10%  
 **Dependencies:** Game Engine, Contracts Core, Matchmaking Service  
-**Status:** CONTRACT COMPLETE (99 tests, 94.74% branch coverage)
+**Status:** CONTRACT COMPLETE (101 tests, 94.74% branch coverage)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -259,8 +259,8 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Wager escrow mechanics | ✅ | Stake tiers (50/150/300/500 DATA), match creation |
 | Result submission (oracle) | ✅ | ECDSA-signed results with nonce replay protection |
 | Payout distribution | ✅ | Win/Tie/Forfeit/Timeout outcomes, pull-payment |
-| Contract tests | ✅ | 99 tests (42 base + 57 security tests) |
-| Security tests | ✅ | Replay attacks, griefing, oracle compromise, state machine |
+| Contract tests | ✅ | 101 tests (42 base + 59 security tests) |
+| Security tests | ✅ | Replay attacks, griefing, oracle compromise, state machine, TIE/TIMEOUT validation |
 | **Backend** | | |
 | 1v1 matchmaking queue | ⬜ | Needs `arcade-coordinator` service |
 | Ready check system | ⬜ | |
@@ -285,7 +285,7 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 **Spec:** [games/03-daily-ops.md](./games/03-daily-ops.md)  
 **Category:** Progression | **Entry:** Free | **Burn:** Streak rewards  
 **Dependencies:** Game Engine only  
-**Status:** CONTRACT COMPLETE (36 tests)
+**Status:** FRONTEND COMPLETE (awaiting testnet deployment)
 
 | Task | Status | Notes |
 |------|--------|-------|
@@ -296,13 +296,20 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 | Reward distribution | ✅ | Treasury-funded, token transfers |
 | Contract tests | ✅ | 36 tests (fuzz, integration, edge cases) |
 | **Frontend** | | |
-| Create `daily-ops/` feature | 🔄 | Basic scaffolding exists |
-| Mission list UI | ⬜ | |
-| Progress tracking | ⬜ | |
-| Streak display | 🔄 | StreakProgress.svelte exists |
-| Reward claim UI | ⬜ | |
-| Calendar/history view | ⬜ | |
-| Sound integration | ⬜ | |
+| Create `daily-ops/` feature | ✅ | Full feature directory with 7 components |
+| Mission list UI | ✅ | MissionCard.svelte with claim functionality |
+| Progress tracking | ✅ | StreakProgress.svelte, milestone progress |
+| Streak display | ✅ | StreakDisplay.svelte with death rate reduction |
+| Reward claim UI | ✅ | Server-signed claim flow ready |
+| Calendar/history view | ✅ | StreakCalendar.svelte with completed days |
+| Badge display | ✅ | BadgeDisplay.svelte with all badge types |
+| Shield purchase | ✅ | ShieldPurchase.svelte (1-day/7-day) |
+| Contract provider | ✅ | 534 lines, full read/write/events |
+| Mock provider | ✅ | URL param testing (?mock=true&streak=45) |
+| Responsive design | ✅ | Tab navigation on mobile |
+| **Deployment** | | |
+| Export ABI | ✅ | DailyOps.json in web app |
+| Deploy to testnet | ⬜ | Needs deployment + address registration |
 | **Testing** | | |
 | Unit tests | ⬜ | |
 | E2E tests | ⬜ | |
@@ -383,6 +390,52 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 
 ## Completed Work Log
 
+### 2026-01-25: Daily Ops Frontend Complete
+
+**Frontend Implementation (`apps/web/src/lib/features/daily/`):**
+- ✅ Full page implementation (754 lines) with responsive design
+- ✅ Tab navigation on mobile (Overview, Missions, Calendar)
+- ✅ Mock mode for testing without wallet (`?mock=true&streak=45`)
+
+**Components (7 total):**
+- ✅ `DailyOpsPanel.svelte` - Main container panel
+- ✅ `StreakDisplay.svelte` - Current/longest streak with death rate reduction
+- ✅ `StreakProgress.svelte` - Visual progress to next milestone
+- ✅ `StreakCalendar.svelte` - Monthly calendar showing completed days
+- ✅ `MissionCard.svelte` - Mission display with claim button
+- ✅ `BadgeDisplay.svelte` - Achievement badges (Week Warrior, Dedicated Operator, Legend)
+- ✅ `ShieldPurchase.svelte` - 1-day (50 DATA) and 7-day (200 DATA) shield purchase
+
+**Contract Integration (`contractProvider.svelte.ts` - 534 lines):**
+- ✅ Full polling for streak, badges, shield status, death rate reduction
+- ✅ Event watching (DailyRewardClaimed, MilestoneReached, BadgeEarned, StreakBroken, ShieldPurchased)
+- ✅ Actions: `claimMission()`, `buyShield()`
+- ✅ Derived states: `nextMilestone`, `milestoneProgress`, `shieldExpiryFormatted`
+- ✅ Error parsing with user-friendly messages
+
+**Mock Provider (`mockProvider.svelte.ts`):**
+- ✅ URL parameter configuration for testing
+- ✅ Simulates all contract state for UI development
+
+**What's Remaining:**
+- ⬜ Deploy DailyOps contract to MegaETH testnet
+- ⬜ Register contract address in `abis.ts`
+- ⬜ E2E testing with real contract
+
+---
+
+### 2026-01-25: CODE DUEL Security Tests
+
+**DuelEscrow.Security.t.sol (57 additional tests):**
+- ✅ Signature security: replay attacks, cross-chain replay, oracle compromise
+- ✅ State machine: all state transition validation
+- ✅ Refund security: double-claim prevention, timeout handling
+- ✅ Stricter validation: TIE/TIMEOUT require `winner == address(0)`
+
+**Total Contract Tests: 1275 (up from 1273)**
+
+---
+
 ### 2026-01-24: CODE DUEL Smart Contract
 
 **DuelEscrow.sol Implementation (`packages/contracts/src/arcade/games/DuelEscrow.sol`):**
@@ -412,7 +465,9 @@ The implementation follows a dependency-aware order. Infrastructure must be buil
 - ✅ Griefing prevention: non-joining opponent, double claim prevention
 - ✅ Branch coverage: 94.74% (54/57 branches)
 
-**Total Contract Tests: 1273 (up from 1216)**
+**Total Contract Tests: 1216 (up from 1172)**
+
+*Note: Security tests (57) were added later, bringing total to 1273.*
 
 ---
 
