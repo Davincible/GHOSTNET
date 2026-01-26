@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createToastStore, type ToastStore, type ToastType } from './store.svelte';
+import { createToastStore, type ToastStore } from './store.svelte';
 
 // ============================================================================
 // MOCKS

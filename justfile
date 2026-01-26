@@ -31,6 +31,25 @@ dev:
     @echo "Run 'just web-dev' in one terminal"
     @echo "Run 'just contracts-anvil' in another terminal"
 
+# ==========================================================================
+# MVP COMMANDS (ship the basics)
+# ==========================================================================
+
+# MVP checks: web + core contracts + indexer
+mvp-check: web-lint-mvp web-test contracts-check-mvp svc-check-mvp
+    @echo "MVP checks passed!"
+
+# MVP tests only (faster than full check)
+mvp-test: web-test contracts-test-mvp svc-test-mvp
+    @echo "MVP tests passed!"
+
+# MVP dev guidance (3 terminals)
+mvp-dev:
+    @echo "MVP dev environment (3 terminals):"
+    @echo "  1) just contracts-anvil"
+    @echo "  2) just svc-indexer-dev"
+    @echo "  3) just web-dev"
+
 # ============================================================================
 # WEB APP COMMANDS (apps/web)
 # ============================================================================
@@ -100,6 +119,11 @@ web-test-e2e-ui:
 web-lint:
     cd apps/web && bun run lint
 
+# Lint MVP-relevant web code only
+[group('web')]
+web-lint-mvp:
+    cd apps/web && bun run lint:mvp
+
 # Format web code
 [group('web')]
 web-format:
@@ -165,6 +189,11 @@ contracts-build-sizes:
 [group('contracts')]
 contracts-test:
     cd packages/contracts && forge test -vvv
+
+# Run MVP contract tests (exclude arcade/game tests)
+[group('contracts')]
+contracts-test-mvp:
+    cd packages/contracts && forge test --no-match-contract "(ArcadeCore|CommitRevealBase|GameRegistry|DailyOps|DuelEscrow|HashCrash)" -vvv
 
 # Run tests matching a pattern
 [group('contracts')]
@@ -296,6 +325,21 @@ contracts-remappings:
 contracts-check: contracts-fmt-check contracts-lint contracts-test contracts-slither-high
     @echo "All contract checks passed!"
 
+# MVP contract formatting check (core only)
+[group('contracts')]
+contracts-fmt-check-mvp:
+    cd packages/contracts && forge fmt --check \
+      src/core src/token src/randomness src/libraries src/interfaces \
+      test/GhostCore.t.sol test/TraceScan.t.sol test/DataToken.t.sol test/RewardsDistributor.t.sol \
+      test/FeeRouter.t.sol test/TeamVesting.t.sol test/CircuitBreakerTimelock.t.sol \
+      test/Security.t.sol test/EdgeCases.t.sol test/Upgrade.t.sol test/Integration.t.sol test/E2E.t.sol \
+      test/randomness test/mocks
+
+# MVP contract checks (core only)
+[group('contracts')]
+contracts-check-mvp: contracts-fmt-check-mvp contracts-lint contracts-test-mvp
+    @echo "MVP contract checks passed!"
+
 # ============================================================================
 # INTEGRATION COMMANDS
 # ============================================================================
@@ -376,6 +420,23 @@ svc-test:
     else \
         echo "No services to test yet."; \
     fi
+
+# MVP: run tests for indexer only
+[group('services')]
+svc-test-mvp:
+    cd services && cargo nextest run -p ghostnet-indexer
+
+# MVP: clippy/build/tests/deny for indexer only
+[group('services')]
+svc-check-mvp: svc-fmt-check svc-lint-mvp svc-test-mvp svc-deny
+
+[group('services')]
+svc-lint-mvp:
+    cd services && cargo clippy -p ghostnet-indexer --all-features -- -D warnings
+
+[group('services')]
+svc-indexer-dev:
+    cd services/ghostnet-indexer && cargo run -- run
 
 # Run doc tests (nextest doesn't support these)
 [group('services')]

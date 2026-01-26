@@ -20,6 +20,7 @@ This prevents re-learning the same lessons.
 | [004](./004-timescaledb-hypertable-entity-antipattern.md) | Hypertables for Entities is Antipattern | Database/TimescaleDB | Entity tables with updates (positions) should NOT be hypertables. Append-only event tables (deaths) SHOULD be. |
 | [005](./005-token-amount-bigdecimal-scale-mismatch.md) | TokenAmount BigDecimal Scale Mismatch | Database/Rust | `to_bigdecimal()` must convert human units to wei when schema uses `NUMERIC(78, 0)` (integers). |
 | [2026-01-23](./2026-01-23-megaeth-foundry-deployment.md) | MegaETH Foundry Deployment | Smart Contracts/MegaETH | MegaEVM has different gas costs. Use `--skip-simulation --gas-limit 10000000 --legacy` for all Foundry deployments. |
+| [2026-01-20](./2026-01-20-evm-rust-guide-alignment.md) | EVM Rust Guide Alignment | Architecture/Dependencies | Keep Rust MSRV + Alloy versions aligned across docs/specs/CI. |
 
 ## Template
 

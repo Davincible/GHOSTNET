@@ -7,7 +7,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { flushSync } from 'svelte';
 import {
 	createTypingGameStore,
 	calculateWpm,
@@ -15,7 +14,6 @@ import {
 	calculateReward,
 	TOTAL_ROUNDS,
 	type TypingGameStore,
-	type RoundResult,
 } from './store.svelte';
 import type { TypingChallenge } from '$lib/core/types';
 

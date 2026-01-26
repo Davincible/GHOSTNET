@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { browser } from '$app/environment';
 	import { Shell } from '$lib/ui/terminal';
 	import { getProvider } from '$lib/core/stores/index.svelte';
@@ -47,7 +48,7 @@
 	function handleReturn(): void {
 		// Result is already auto-submitted when game completes
 		gameStore.reset();
-		goto('/');
+		goto(resolve('/'));
 	}
 
 	// Global keyboard handler for typing
@@ -153,7 +154,7 @@
 	<div class="typing-page">
 		<!-- Header -->
 		<header class="page-header">
-			<button class="back-button" onclick={() => goto('/')} aria-label="Return to network">
+			<button class="back-button" onclick={() => goto(resolve('/'))} aria-label="Return to network">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<line x1="19" y1="12" x2="5" y2="12"></line>
 					<polyline points="12 19 5 12 12 5"></polyline>

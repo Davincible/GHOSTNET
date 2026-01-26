@@ -77,6 +77,11 @@
 			>
 				{@render children()}
 			</div>
+			{#if showScrollHint && canScrollUp}
+				<div class="scroll-hint scroll-hint-top">
+					<span class="text-green-dim text-xs">▲ SCROLL UP</span>
+				</div>
+			{/if}
 			{#if showScrollHint && canScrollDown}
 				<div class="scroll-hint scroll-hint-bottom">
 					<span class="text-green-dim text-xs">▼ SCROLL FOR MORE</span>

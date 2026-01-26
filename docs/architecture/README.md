@@ -4,13 +4,17 @@ This directory contains technical architecture documentation for the GHOSTNET pr
 
 ## Documents
 
+**Start here (MVP):**
+- `docs/architecture/overview.md`
+- `docs/architecture/mvp-scope.md`
+
 | Document | Description | Status |
 |----------|-------------|--------|
 | [Frontend Architecture](./frontend-architecture.md) | Core systems, state management, event bus | Planning |
 | [UI Components](./ui-components.md) | Screens, components, design system | Planning |
 | [Implementation Plan](./implementation-plan.md) | Phased checklist with dummy data approach | **Active** |
-| Backend Architecture | Server-side systems (TBD) | Not Started |
-| Contract Architecture | Smart contract design (TBD) | Not Started |
+| [Backend Architecture](./backend/indexer-architecture.md) | Indexer, DB schema, streaming, APIs | **Active** |
+| [Contract Architecture](./smart-contracts-plan.md) | Core contract system plan | **Active** |
 
 ## Architecture Decision Records (ADRs)
 

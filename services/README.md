@@ -6,7 +6,7 @@ This directory contains backend services for GHOSTNET.
 
 Services are language-agnostic backend components. Currently supported:
 
-- **Rust** (1.85+, Edition 2024) - High-performance services
+- **Rust** (1.88+, Edition 2024) - High-performance services
 
 ## Creating a New Rust Service
 

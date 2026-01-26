@@ -16,6 +16,7 @@
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"lint": "prettier --check . && eslint .",
+		"lint:mvp": "prettier --check . && eslint -c eslint.mvp.config.js .",
 		"format": "prettier --write ."
 	},
 	"devDependencies": {

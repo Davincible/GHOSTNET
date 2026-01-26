@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { Header, KeyboardHints } from '$lib/features/header';
 	import { FeedPanel } from '$lib/features/feed';
 	import { PositionPanel, ModifiersPanel } from '$lib/features/position';
@@ -18,7 +19,6 @@
 		simulateCheckIn,
 		claimMission,
 	} from '$lib/core/providers/mock/generators/daily';
-	import type { DailyProgress, DailyMission } from '$lib/core/types';
 
 	import { browser } from '$app/environment';
 
@@ -65,23 +65,23 @@
 	}
 
 	function handleTraceEvasion() {
-		goto('/typing');
+		goto(resolve('/typing'));
 	}
 
 	function handleHackRun() {
-		goto('/games/hackrun');
+		goto(resolve('/games/hackrun'));
 	}
 
 	function handleDuels() {
-		goto('/games/duels');
+		goto(resolve('/games/duels'));
 	}
 
 	function handleCrew() {
-		goto('/crew');
+		goto(resolve('/crew'));
 	}
 
 	function handleDeadPool() {
-		goto('/market');
+		goto(resolve('/market'));
 	}
 
 	function handleWatchFeed() {

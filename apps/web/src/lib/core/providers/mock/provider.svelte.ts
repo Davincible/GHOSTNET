@@ -5,6 +5,7 @@
  */
 
 import type { DataProvider } from '../types';
+import { SvelteSet } from 'svelte/reactivity';
 import type {
 	User,
 	Position,
@@ -26,7 +27,7 @@ import { LEVEL_CONFIG, getConsumable } from '../../types';
 import { generateMockFeedEvents, generateRandomFeedEvent } from './generators/feed';
 import { generateMockNetworkState, updateNetworkState } from './generators/network';
 import { generateMockPosition, updatePositionYield, createPosition } from './generators/position';
-import { getRandomCommand, getCommandDifficulty, getDifficultyReward } from './data/commands';
+import { getRandomCommand, getCommandDifficulty } from './data/commands';
 import {
 	generateMockInventory,
 	simulatePurchase,
@@ -49,12 +50,12 @@ export function createMockProvider(): DataProvider {
 	let modifiers = $state<Modifier[]>([]);
 	let networkState = $state<NetworkState>(generateMockNetworkState());
 	let feedEvents = $state.raw<FeedEvent[]>([]);
-	let crew = $state<Crew | null>(null);
-	let activeRounds = $state<DeadPoolRound[]>([]);
+	const crew = $state<Crew | null>(null);
+	const activeRounds = $state<DeadPoolRound[]>([]);
 	let ownedConsumables = $state<OwnedConsumable[]>([]);
 
 	// Feed subscribers
-	const feedSubscribers = new Set<(event: FeedEvent) => void>();
+	const feedSubscribers = new SvelteSet<(event: FeedEvent) => void>();
 
 	// Simulation intervals
 	let feedInterval: ReturnType<typeof setInterval> | null = null;
@@ -271,10 +272,13 @@ export function createMockProvider(): DataProvider {
 	// ─────────────────────────────────────────────────────────────
 
 	async function placeBet(
-		_roundId: string,
-		_side: 'under' | 'over',
-		_amount: bigint
+		roundId: string,
+		side: 'under' | 'over',
+		amount: bigint
 	): Promise<string> {
+		void roundId;
+		void side;
+		void amount;
 		throw new Error('Dead Pool not implemented in mock provider');
 	}
 

@@ -8,7 +8,7 @@
  * The game consists of multiple rounds (default 5), with cumulative scoring.
  */
 
-import type { TypingChallenge, TypingResult, TypingGameState } from '$lib/core/types';
+import type { TypingChallenge, TypingResult } from '$lib/core/types';
 
 // ════════════════════════════════════════════════════════════════
 // CONFIGURATION
@@ -334,7 +334,7 @@ export function createTypingGameStore(): TypingGameStore {
 	function handleKey(key: string): void {
 		if (state.status !== 'active') return;
 
-		const { challenge, progress, currentRound, totalRounds } = state;
+		const { progress, currentRound, totalRounds, challenge } = state;
 		const targetChar = challenge.command[progress.typed.length];
 
 		// Ignore if already complete
@@ -395,7 +395,7 @@ export function createTypingGameStore(): TypingGameStore {
 
 		clearTimers();
 
-		const { challenge, progress, currentRound, totalRounds } = state;
+		const { progress, currentRound, totalRounds } = state;
 		const timeElapsed = progress.currentTime - progress.startTime;
 		const totalChars = progress.typed.length;
 		const accuracy = calculateAccuracy(progress.correctChars, totalChars);

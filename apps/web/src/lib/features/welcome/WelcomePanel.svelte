@@ -101,7 +101,9 @@
 	});
 
 	// Slide 0 animation states
+	// Tracks logo typing completion (used for future slide choreography)
 	let logoTypingComplete = $state(false); // When ASCII art finishes typing
+	void logoTypingComplete;
 	let logoSlidUp = $state(false); // When logo has moved up
 	let showTagline = $state(false); // When tagline should start typing
 	let taglineComplete = $state(false); // When tagline finishes typing

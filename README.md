@@ -159,7 +159,7 @@ The frontend is **95% complete** with mock data:
 | Audio System | ✅ Complete |
 | Visual Effects (scanlines, flicker) | ✅ Complete |
 | Settings (audio, visual toggles) | ✅ Complete |
-| Smart Contracts | 🔲 Not started |
+| Smart Contracts (core loop) | 🟡 In progress (active specs + partial implementation) |
 
 See `docs/architecture/implementation-plan.md` for detailed progress.
 

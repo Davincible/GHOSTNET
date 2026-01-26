@@ -27,7 +27,9 @@
 		failed: 'Transaction failed',
 	};
 
-	const explorerUrl = $derived(state.hash ? `https://megaexplorer.xyz/tx/${state.hash}` : null);
+	const explorerUrl = $derived(
+		state.hash ? `https://megaexplorer.xyz/tx/${state.hash}` : null
+	);
 
 	const statusMessage = $derived(statusMessages[state.status]);
 
@@ -38,12 +40,6 @@
 		return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
 	}
 
-	// Determine if we should show a loading indicator
-	const isLoading = $derived(
-		state.status === 'preparing' ||
-			state.status === 'awaiting_signature' ||
-			state.status === 'pending'
-	);
 </script>
 
 {#if state.status !== 'idle'}
@@ -86,7 +82,12 @@
 			{/if}
 
 			{#if explorerUrl && (state.status === 'pending' || state.status === 'confirmed')}
-				<a href={explorerUrl} target="_blank" rel="noopener noreferrer" class="tx-hash-link">
+				<a
+					href={explorerUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="tx-hash-link"
+				>
 					{formatHash(state.hash!)} ↗
 				</a>
 			{/if}

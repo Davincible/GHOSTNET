@@ -61,7 +61,9 @@ export function zzfx(...params: ZzFXParams): AudioBufferSourceNode | undefined {
  * Generate ZzFX samples
  */
 export function zzfxGenerate(
-	volume = 1,
+	_volume = 1,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	volume = _volume,
 	randomness = 0.05,
 	frequency = 220,
 	attack = 0,
@@ -87,11 +89,11 @@ export function zzfxGenerate(
 
 	const PI2 = Math.PI * 2;
 	const sign = (v: number) => (v > 0 ? 1 : -1);
-	let startSlide = (slide *= (500 * PI2) / sampleRate / sampleRate);
+	const startSlide = (slide *= (500 * PI2) / sampleRate / sampleRate);
 	let startFrequency = (frequency *=
 		((1 + randomness * 2 * Math.random() - randomness) * PI2) / sampleRate);
 
-	let b = [];
+	const b: number[] = [];
 	let t = 0,
 		tm = 0,
 		f = 0,

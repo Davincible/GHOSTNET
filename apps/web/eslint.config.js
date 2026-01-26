@@ -27,6 +27,13 @@ export default ts.config(
 		},
 	},
 	{
+		files: ['src/lib/core/audio/manager.svelte.ts', 'src/lib/features/hash-crash/audio.ts'],
+		rules: {
+			// ZzFX parameter arrays intentionally include elisions.
+			'no-sparse-arrays': 'off',
+		},
+	},
+	{
 		ignores: [
 			'build/',
 			'.svelte-kit/',

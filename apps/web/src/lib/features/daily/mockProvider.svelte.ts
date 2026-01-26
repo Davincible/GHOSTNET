@@ -185,7 +185,9 @@ export interface MockDailyOpsProvider extends DailyOpsProvider {
 	claimMissionReward(missionId: string): Promise<void>;
 }
 
-export function createMockDailyOpsProvider(options: MockProviderOptions = {}): MockDailyOpsProvider {
+export function createMockDailyOpsProvider(
+	options: MockProviderOptions = {}
+): MockDailyOpsProvider {
 	const {
 		streak: initialStreak = 12,
 		claimed: hasClaimed = false,

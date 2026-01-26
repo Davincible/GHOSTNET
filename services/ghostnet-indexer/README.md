@@ -34,7 +34,7 @@ MegaETH RPC
 
 ## Requirements
 
-- Rust 1.85+ (Edition 2024)
+- Rust 1.88+ (Edition 2024)
 - TimescaleDB 2.22+
 - Apache Iggy 0.6+
 - MegaETH RPC access

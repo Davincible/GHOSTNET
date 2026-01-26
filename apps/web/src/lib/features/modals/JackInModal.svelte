@@ -15,6 +15,7 @@
 	} from 'viem';
 	import { wallet } from '$lib/web3/wallet.svelte';
 	import { defaultChain } from '$lib/web3/chains';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		/** Whether the modal is open */
@@ -385,7 +386,7 @@
 								<span class="tx-hash-value">{txHash.slice(0, 10)}...{txHash.slice(-8)}</span>
 								{#if explorerUrl}
 									<a
-										href={explorerUrl}
+										href={resolve(explorerUrl)}
 										target="_blank"
 										rel="noopener noreferrer"
 										class="tx-explorer-link"

@@ -10,7 +10,7 @@
 <script lang="ts">
 	import { Box } from '$lib/ui/terminal';
 	import { Button, Badge, Countdown, ProgressBar } from '$lib/ui/primitives';
-	import { AmountDisplay, LevelBadge, PercentDisplay, AddressDisplay } from '$lib/ui/data-display';
+	import { AmountDisplay, LevelBadge, PercentDisplay } from '$lib/ui/data-display';
 	import { Stack, Row } from '$lib/ui/layout';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { LEVEL_CONFIG } from '$lib/core/types';

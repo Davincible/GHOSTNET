@@ -141,9 +141,7 @@
 	let currentDayNum = $derived(Number(provider.state.currentDay));
 
 	// Count missions with explicit types
-	let completedMissionCount = $derived(
-		missions.filter((m: DailyMission) => m.completed).length
-	);
+	let completedMissionCount = $derived(missions.filter((m: DailyMission) => m.completed).length);
 	let claimableMissionCount = $derived(
 		missions.filter((m: DailyMission) => m.completed && !m.claimed).length
 	);
@@ -321,7 +319,10 @@
 				</div>
 
 				<!-- Calendar Tab (Mobile only) -->
-				<div class="content-column calendar-column mobile-only" class:hidden={activeTab !== 'calendar'}>
+				<div
+					class="content-column calendar-column mobile-only"
+					class:hidden={activeTab !== 'calendar'}
+				>
 					<section class="section">
 						<Box title="STREAK CALENDAR">
 							<StreakCalendar {completedDays} currentDay={currentDayNum} {streakStartDay} />
@@ -352,8 +353,7 @@
 					<div class="info-item">
 						<span class="info-icon">2</span>
 						<div class="info-text">
-							<strong>Build your streak</strong> - Claim rewards on consecutive days to grow your
-							streak
+							<strong>Build your streak</strong> - Claim rewards on consecutive days to grow your streak
 						</div>
 					</div>
 					<div class="info-item">

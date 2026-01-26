@@ -6,18 +6,6 @@
 
 	const provider = getProvider();
 
-	// Format modifier value for display
-	function formatModifierValue(type: string, value: number): string {
-		if (type === 'death_rate') {
-			const percent = Math.abs(value * 100);
-			return value < 0 ? `-${percent.toFixed(0)}%` : `+${percent.toFixed(0)}%`;
-		}
-		if (type === 'yield_multiplier') {
-			return `${value.toFixed(1)}x`;
-		}
-		return String(value);
-	}
-
 	// Get modifier source icon
 	function getSourceIcon(source: string): string {
 		switch (source) {

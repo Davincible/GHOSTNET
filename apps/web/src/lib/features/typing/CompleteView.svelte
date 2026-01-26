@@ -38,13 +38,6 @@
 	let hasImprovement = $derived(newProtection < oldProtection);
 	let hasSameOrBetter = $derived(newProtection <= oldProtection && result.reward !== null);
 
-	// Format time elapsed
-	let timeFormatted = $derived.by(() => {
-		const seconds = Math.floor(result.timeElapsed / 1000);
-		const ms = result.timeElapsed % 1000;
-		return `${seconds}.${String(ms).padStart(3, '0').slice(0, 1)}s`;
-	});
-
 	// Result tier - Badge variants: default, success, warning, danger, info, hotkey
 	let resultTier = $derived.by(() => {
 		if (result.accuracy >= 1.0)

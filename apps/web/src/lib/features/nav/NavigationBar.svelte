@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { Row } from '$lib/ui/layout';
 
 	/**
@@ -54,7 +55,7 @@
 
 		// Then navigate if there's an href
 		if (item.href) {
-			goto(item.href);
+			goto(resolve(item.href));
 		}
 	}
 </script>
