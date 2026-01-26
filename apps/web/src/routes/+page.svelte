@@ -301,6 +301,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
+		padding-bottom: var(--space-16); /* Room for fixed nav */
 	}
 
 	.main-content {
@@ -334,10 +335,6 @@
 
 	/* Mobile: position panel (right column) appears first */
 	@media (max-width: 767px) {
-		.command-center {
-			padding-bottom: var(--space-16); /* Room for fixed nav */
-		}
-
 		.column-right {
 			order: -1; /* Position panel first on mobile */
 		}

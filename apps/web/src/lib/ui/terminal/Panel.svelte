@@ -68,31 +68,37 @@
 <div class="panel" class:panel-scrollable={scrollable}>
 	<Box {title} {variant} {borderColor} {glow} {padding}>
 		{#if scrollable}
-			<div
-				class="panel-scroll-container"
-				style:--panel-height={maxHeight}
-				bind:this={scrollContainer}
-				onscroll={updateScrollState}
-			>
-				{@render children()}
+			<div class="panel-content-wrapper" style:--panel-height={maxHeight}>
+				<div
+					class="panel-scroll-container"
+					bind:this={scrollContainer}
+					onscroll={updateScrollState}
+				>
+					{@render children()}
+				</div>
+				{#if showScrollHint && canScrollUp}
+					<div class="scroll-hint scroll-hint-top">
+						<span class="text-green-dim text-xs">▲ SCROLL UP</span>
+					</div>
+				{/if}
+				{#if showScrollHint && canScrollDown}
+					<div class="scroll-hint scroll-hint-bottom">
+						<span class="text-green-dim text-xs">▼ SCROLL FOR MORE</span>
+					</div>
+				{/if}
+				{#if footer}
+					<div class="panel-footer panel-footer-sticky">
+						{@render footer()}
+					</div>
+				{/if}
 			</div>
-			{#if showScrollHint && canScrollUp}
-				<div class="scroll-hint scroll-hint-top">
-					<span class="text-green-dim text-xs">▲ SCROLL UP</span>
-				</div>
-			{/if}
-			{#if showScrollHint && canScrollDown}
-				<div class="scroll-hint scroll-hint-bottom">
-					<span class="text-green-dim text-xs">▼ SCROLL FOR MORE</span>
-				</div>
-			{/if}
 		{:else}
 			{@render children()}
-		{/if}
-		{#if footer}
-			<div class="panel-footer">
-				{@render footer()}
-			</div>
+			{#if footer}
+				<div class="panel-footer">
+					{@render footer()}
+				</div>
+			{/if}
 		{/if}
 	</Box>
 </div>
@@ -102,15 +108,21 @@
 		width: 100%;
 	}
 
-	.panel-scroll-container {
+	.panel-content-wrapper {
+		display: flex;
+		flex-direction: column;
 		height: var(--panel-height);
 		min-height: var(--panel-height);
 		max-height: var(--panel-height);
+	}
+
+	.panel-scroll-container {
+		flex: 1;
+		min-height: 0; /* Allow shrinking in flexbox */
 		overflow-y: auto;
 		overflow-x: hidden;
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-border-strong) var(--color-bg-tertiary);
-		flex-shrink: 0;
 	}
 
 	.panel-scroll-container::-webkit-scrollbar {
@@ -153,5 +165,11 @@
 		margin-top: var(--space-3);
 		padding-top: var(--space-2);
 		border-top: 1px solid var(--color-border-subtle);
+	}
+
+	.panel-footer-sticky {
+		flex-shrink: 0;
+		margin-top: 0;
+		background: var(--color-bg-secondary);
 	}
 </style>
