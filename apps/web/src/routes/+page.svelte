@@ -245,8 +245,8 @@
 				<FeedPanel
 					collapsedCount={isMobile ? 4 : 6}
 					expandedCount={isMobile ? 12 : 20}
-					collapsedHeight={isMobile ? '200px' : '280px'}
-					expandedHeight={isMobile ? '400px' : '500px'}
+					collapsedHeight={isMobile ? '100px' : '140px'}
+					expandedHeight={isMobile ? '300px' : '400px'}
 				/>
 
 				<!-- Network Visualization: hidden on mobile (too heavy) -->

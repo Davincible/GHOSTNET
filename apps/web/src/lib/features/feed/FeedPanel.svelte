@@ -37,11 +37,11 @@
 		}
 	});
 
-	// Get visible events based on expansion state
-	let maxEvents = $derived(expanded ? expandedCount : collapsedCount);
-	let visibleEvents = $derived(provider.feedEvents.slice(0, maxEvents));
+	// Always show all events - height controls viewport, not item count
+	let visibleEvents = $derived(provider.feedEvents);
 	let hasMore = $derived(provider.feedEvents.length > collapsedCount);
 	let currentHeight = $derived(expanded ? expandedHeight : collapsedHeight);
+
 </script>
 
 <Panel title="LIVE FEED" scrollable maxHeight={currentHeight} minHeight={collapsedHeight}>

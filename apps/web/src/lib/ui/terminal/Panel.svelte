@@ -70,8 +70,7 @@
 		{#if scrollable}
 			<div
 				class="panel-scroll-container"
-				style:max-height={maxHeight}
-				style:min-height={minHeight}
+				style:--panel-height={maxHeight}
 				bind:this={scrollContainer}
 				onscroll={updateScrollState}
 			>
@@ -104,10 +103,14 @@
 	}
 
 	.panel-scroll-container {
+		height: var(--panel-height);
+		min-height: var(--panel-height);
+		max-height: var(--panel-height);
 		overflow-y: auto;
 		overflow-x: hidden;
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-border-strong) var(--color-bg-tertiary);
+		flex-shrink: 0;
 	}
 
 	.panel-scroll-container::-webkit-scrollbar {
