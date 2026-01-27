@@ -8,7 +8,7 @@
 		/** Modal title */
 		title?: string;
 		/** Max width of modal content */
-		maxWidth?: 'sm' | 'md' | 'lg';
+		maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
 		/** Close on backdrop click */
 		closeOnBackdrop?: boolean;
 		/** Close on Escape key */
@@ -84,6 +84,7 @@
 	class:modal-sm={maxWidth === 'sm'}
 	class:modal-md={maxWidth === 'md'}
 	class:modal-lg={maxWidth === 'lg'}
+	class:modal-xl={maxWidth === 'xl'}
 	onclick={handleClick}
 	onclose={handleClose}
 	oncancel={handleCancel}
@@ -131,6 +132,11 @@
 		width: 640px;
 	}
 
+	.modal-xl {
+		width: 70vw;
+		max-width: 1000px;
+	}
+
 	.modal-container {
 		background: var(--color-bg-secondary);
 		animation: modal-enter 0.2s ease-out;
@@ -144,7 +150,8 @@
 
 	/* Only apply max-height and scroll for larger modals */
 	.modal-md .modal-container .modal-content,
-	.modal-lg .modal-container .modal-content {
+	.modal-lg .modal-container .modal-content,
+	.modal-xl .modal-container .modal-content {
 		max-height: 60vh;
 		overflow-y: auto;
 	}

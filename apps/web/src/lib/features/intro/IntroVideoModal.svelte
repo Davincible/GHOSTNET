@@ -10,7 +10,7 @@
 	let { open = false, onclose }: Props = $props();
 </script>
 
-<Modal {open} title="/// TRANSMISSION ///" maxWidth="lg" {onclose}>
+<Modal {open} title="/// TRANSMISSION ///" maxWidth="xl" {onclose}>
 	<div class="intro-modal-body">
 		<IntroVideo active={open} />
 	</div>
