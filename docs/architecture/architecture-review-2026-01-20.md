@@ -4,8 +4,8 @@
 **Reviewer:** Senior Code Reviewer (Architecture Review)  
 **Documents Reviewed:**  
 - `docs/architecture/README.md`
-- `docs/architecture/contract-specifications.md`
-- `docs/architecture/smart-contracts-plan.md`
+- `docs/design/contracts/specifications.md` (was: `docs/architecture/contract-specifications.md`)
+- `docs/archive/architecture/smart-contracts-plan.md` (was: `docs/architecture/smart-contracts-plan.md`)
 - `docs/architecture/security-audit-scope.md`
 - `docs/architecture/emergency-procedures.md`
 - `docs/architecture/prevrandao-verification-plan.md`

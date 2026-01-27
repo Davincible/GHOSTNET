@@ -12,9 +12,9 @@ Initial deep-dive architecture planning session for the GHOSTNET frontend. Analy
 
 ## Documents Reviewed
 
-- `docs/product/master-design.md` - Full game mechanics, UI mockups, visual design
-- `docs/product/one-pager.md` - Product summary
-- `docs/product/copy-writing-bible.md` - Brand voice and terminology
+- `docs/archive/product/master-design.md` - Full game mechanics, UI mockups, visual design (historical)
+- `docs/archive/product/one-pager.md` - Product summary (historical)
+- `docs/design/copy-writing-bible.md` - Brand voice and terminology
 
 ## Key Decisions Made
 
@@ -125,7 +125,7 @@ lib/features/
 - `docs/architecture/implementation-plan.md` - Phased implementation checklist (~1500 lines)
 - `docs/architecture/README.md` - Architecture index
 - `docs/sessions/README.md` - Session log template
-- `docs/lessons/README.md` - Lessons learned template
+- `docs/learnings/README.md` - Lessons learned template
 
 ## Next Steps
 

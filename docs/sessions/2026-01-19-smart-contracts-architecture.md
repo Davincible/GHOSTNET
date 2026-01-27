@@ -358,7 +358,7 @@ This means the common assumption that "VRF = trustless" is incorrect for Gelato 
 
 ### MegaETH Block Model Implications
 
-From `docs/MEGAETH.md`:
+From `docs/integrations/megaeth.md`:
 - Mini blocks: 10ms (preconfirmed)
 - EVM blocks: 1s (finalized)
 - `block.timestamp` has 1-second resolution
@@ -367,7 +367,7 @@ This means our scan timers (30min, 2h, 8h, 24h) are fine, but sub-second UI coun
 
 ### MegaEVM Gas Differences
 
-From `docs/MEGAETH.md`:
+From `docs/integrations/megaeth.md`:
 > "Local toolchain gas estimation may fail. Use `--skip-simulation` with Foundry"
 
 Always use `--skip-simulation --gas-limit 10000000` when deploying/broadcasting to MegaETH.

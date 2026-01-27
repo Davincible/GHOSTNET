@@ -103,7 +103,7 @@ Designed a four-layer randomness reliability system to address the risk of seed 
 
 - `docs/architecture/randomness-congestion-mitigation.md` (created)
 - `docs/sessions/2026-01-21-randomness-congestion-mitigation.md` (this file)
-- `docs/lessons/2026-01-21-randomness-congestion-mitigation.md` (created)
+- `docs/learnings/2026-01-21-randomness-congestion-mitigation.md` (created)
 
 ---
 

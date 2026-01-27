@@ -476,7 +476,7 @@ The Nix shell (`shell.nix`) provides the complete Rust development environment:
 - **macOS**: Use default linker (lld configuration is commented out by default)
 - **Reason**: macOS lld requires specific invocation that varies by environment
 
-See `docs/lessons/` for documented issues and fixes related to the Nix environment.
+See `docs/learnings/` for documented issues and fixes related to the Nix environment.
 
 ### Rust Development Skills
 
@@ -632,7 +632,7 @@ MegaETH uses MegaEVM which has different gas costs than vanilla EVM. **Local too
 5. **Testnet RPC**: `https://carrot.megaeth.com/rpc` (Chain ID: 6343)
 6. **Mainnet RPC**: `https://mainnet.megaeth.com/rpc` (Chain ID: 4326, whitelisted only)
 
-See `docs/MEGAETH.md` for complete MegaETH developer guide.
+See `docs/integrations/megaeth.md` for complete MegaETH developer guide.
 
 ---
 

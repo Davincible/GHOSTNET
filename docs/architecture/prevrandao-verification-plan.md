@@ -286,7 +286,7 @@ Block Explorer Link: https://megaeth-testnet-v2.blockscout.com/address/0x332E2bb
 
 ### Notes:
 
-Full analysis and lessons learned documented in: **`docs/lessons/001-prevrandao-megaeth.md`**
+Full analysis and lessons learned documented in: **`docs/learnings/001-prevrandao-megaeth.md`**
 
 The verification confirmed that while prevrandao behaves differently on MegaETH than Ethereum mainnet, it is acceptable for GHOSTNET's use case with the implemented mitigations. The lock period ensures users cannot observe the randomness seed and then extract before a scan.
 

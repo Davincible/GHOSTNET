@@ -461,26 +461,26 @@ When a level reaches maximum capacity (`maxPositions`), new entrants trigger "Th
 
 | Document | Path |
 |----------|------|
-| Smart Contracts Plan | `docs/architecture/smart-contracts-plan.md` |
-| Contract Specifications | `docs/architecture/contract-specifications.md` |
+| Contract Specifications | `docs/design/contracts/specifications.md` |
+| Smart Contracts Plan | `docs/archive/architecture/smart-contracts-plan.md` (historical) |
 | Frontend Architecture | `docs/architecture/frontend-architecture.md` |
-| Backend Architecture | `docs/architecture/backend-architecture.md` |
+| Backend Architecture | `docs/architecture/backend/indexer-architecture.md` |
 | Emergency Procedures | `docs/architecture/emergency-procedures.md` |
 | MegaETH Networks | `docs/architecture/megaeth-networks.md` |
 
-### Product Documents
+### Design Documents
 
 | Document | Path |
 |----------|------|
-| Product Brief | `docs/product/PRODUCT-BRIEF.md` |
-| Game Mechanics | `docs/product/` |
-| Tokenomics | `docs/product/` |
+| Product Overview | `docs/blueprint/manifesto.md` |
+| Game Mechanics | `docs/blueprint/capabilities/` |
+| Arcade Games | `docs/design/arcade/` |
 
 ### Technical Notes
 
 | Document | Path |
 |----------|------|
-| prevrandao Verification | `docs/lessons/001-prevrandao-megaeth.md` |
+| prevrandao Verification | `docs/learnings/001-prevrandao-megaeth.md` |
 | prevrandao Plan | `docs/architecture/prevrandao-verification-plan.md` |
 
 ---

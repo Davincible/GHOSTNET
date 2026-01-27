@@ -10,7 +10,7 @@
 -- 5. Continuous aggregates for analytics
 -- 6. Fixed timestamp types (TIMESTAMPTZ instead of BIGINT)
 --
--- Reference: docs/lessons/004-timescaledb-hypertable-entity-antipattern.md
+-- Reference: docs/learnings/004-timescaledb-hypertable-entity-antipattern.md
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- STEP 1: DROP OLD TABLES IF THEY EXIST (for clean migrations)

@@ -4,7 +4,7 @@
 > **Last Updated**: 2026-01-20  
 > **Status**: Specification (Review Complete)  
 > **Supersedes**: `event-indexer-rust.md`, `backend-architecture-old.md`  
-> **Review**: See `docs/lessons/indexer-architecture-review.md` for review notes  
+> **Review**: See `docs/learnings/indexer-architecture-review.md` for review notes  
 > **EVM Guide Alignment**: Cross-referenced with `evm-rust-guide.md` (January 2026)
 
 This document provides the complete architecture specification for the GHOSTNET Event Indexer - a high-performance Rust-based backend service that indexes blockchain events, persists them to TimescaleDB, streams them via Apache Iggy, and exposes REST/WebSocket APIs.

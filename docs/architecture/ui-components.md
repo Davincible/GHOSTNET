@@ -3,7 +3,7 @@
 **Version:** 1.0  
 **Status:** Planning  
 **Last Updated:** 2026-01-19  
-**Source:** docs/product/master-design.md
+**Source:** docs/archive/product/master-design.md (historical)
 
 ---
 

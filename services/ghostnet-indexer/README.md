@@ -164,7 +164,7 @@ processor.backfill_with_cursor(1_000_000, 2_000_000).await?;
 
 ### RPC Provider Selection
 
-> **Important**: See [docs/lessons/megaeth-rpc-endpoints.md](../../docs/lessons/megaeth-rpc-endpoints.md) for comprehensive testing results.
+> **Important**: See [docs/learnings/megaeth-rpc-endpoints.md](../../docs/learnings/megaeth-rpc-endpoints.md) for comprehensive testing results.
 
 #### MAINNET (Chain ID 4326)
 

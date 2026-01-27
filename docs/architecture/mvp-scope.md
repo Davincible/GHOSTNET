@@ -27,7 +27,7 @@ Anything outside this boundary is not allowed to drive architecture, interfaces,
 - Live feed (real-time events) and network vitals
 
 Primary reference:
-- `docs/architecture/implementation-plan.md`
+- `docs/archive/architecture/implementation-plan.md` (historical)
 
 ### Core Contracts (`packages/contracts`)
 
@@ -44,8 +44,8 @@ Supporting (MVP-required if used by the core flow):
 - `packages/contracts/src/token/TeamVesting.sol`
 
 Primary references:
-- `docs/architecture/contract-specifications.md`
-- `docs/architecture/smart-contracts-plan.md`
+- `docs/design/contracts/specifications.md`
+- `docs/archive/architecture/smart-contracts-plan.md` (historical)
 
 ### Indexer (`services/ghostnet-indexer`)
 

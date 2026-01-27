@@ -77,7 +77,7 @@ Every phase must pass before moving to the next:
 
 - Update this plan after completing each task
 - Log significant decisions in the Decision Log
-- Document lessons learned in `docs/lessons/`
+- Document lessons learned in `docs/learnings/`
 
 ---
 

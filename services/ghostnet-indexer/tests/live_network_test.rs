@@ -20,7 +20,7 @@
 //! | **MAINNET** | 4326 | ✅ | ✅ ALL WORK |
 //! | TESTNET | 6343 | ⚠️ Flaky | ❌ BROKEN |
 //!
-//! See `docs/lessons/megaeth-rpc-endpoints.md` for comprehensive endpoint analysis.
+//! See `docs/learnings/megaeth-rpc-endpoints.md` for comprehensive endpoint analysis.
 //!
 //! # Running the Tests
 //!
@@ -1277,7 +1277,7 @@ async fn test_mini_blocks_on_endpoint(ws_url: &str, endpoint_name: &str) -> Mini
 ///
 /// This test verifies mainnet works and documents testnet's broken state.
 ///
-/// See: docs/lessons/megaeth-rpc-endpoints.md
+/// See: docs/learnings/megaeth-rpc-endpoints.md
 #[tokio::test]
 #[ignore = "requires network access; tests MegaETH miniBlocks subscription"]
 async fn test_mini_blocks_subscription() {
@@ -1528,7 +1528,7 @@ async fn test_state_changes_on_endpoint(ws_url: &str, endpoint_name: &str) -> St
 /// Note: Even when working, this test may not receive data if monitored addresses
 /// have no activity during the test window.
 ///
-/// See: docs/lessons/megaeth-rpc-endpoints.md
+/// See: docs/learnings/megaeth-rpc-endpoints.md
 #[tokio::test]
 #[ignore = "requires network access; tests MegaETH stateChanges subscription"]
 async fn test_state_changes_subscription() {

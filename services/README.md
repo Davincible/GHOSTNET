@@ -204,4 +204,4 @@ nix-shell --run "cargo build"
 
 ### Lessons Learned
 
-See `docs/lessons/` for documented issues and fixes related to the development environment.
+See `docs/learnings/` for documented issues and fixes related to the development environment.

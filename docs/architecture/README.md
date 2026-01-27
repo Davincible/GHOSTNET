@@ -1,87 +1,139 @@
 # GHOSTNET Architecture Documentation
 
-This directory contains technical architecture documentation for the GHOSTNET project.
+Technical architecture documentation for the GHOSTNET project.
 
-## Documents
+## Start Here
 
-**Start here (MVP):**
-- `docs/architecture/overview.md`
-- `docs/architecture/mvp-scope.md`
+| Document | Purpose |
+|----------|---------|
+| [../blueprint/architecture.md](../blueprint/architecture.md) | System shape and component relationships |
+| [mvp-scope.md](./mvp-scope.md) | Explicit MVP boundaries (what's in/out) |
 
+## Core Architecture Documents
+
+### Contracts
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Frontend Architecture](./frontend-architecture.md) | Core systems, state management, event bus | Planning |
-| [UI Components](./ui-components.md) | Screens, components, design system | Planning |
-| [Implementation Plan](./implementation-plan.md) | Phased checklist with dummy data approach | **Active** |
-| [Backend Architecture](./backend/indexer-architecture.md) | Indexer, DB schema, streaming, APIs | **Active** |
-| [Contract Architecture](./smart-contracts-plan.md) | Core contract system plan | **Active** |
+| [../design/contracts/specifications.md](../design/contracts/specifications.md) | Solidity specs, storage layouts, ERC-7201 | **Authoritative** |
+
+### Frontend
+| Document | Description | Status |
+|----------|-------------|--------|
+| [frontend-architecture.md](./frontend-architecture.md) | Event bus, state layers, effects system | **Authoritative** |
+| [ui-components.md](./ui-components.md) | Screens, components, design system | Reference |
+
+### Backend
+| Document | Description | Status |
+|----------|-------------|--------|
+| [backend/indexer-architecture.md](./backend/indexer-architecture.md) | TimescaleDB, Rust types, APIs, Iggy | **Authoritative** |
+| [backend/indexer-implementation-plan.md](./backend/indexer-implementation-plan.md) | Implementation phases | Tracking |
+
+### Operations & Security
+| Document | Description |
+|----------|-------------|
+| [security-audit-scope.md](./security-audit-scope.md) | Audit scope, critical focus areas |
+| [emergency-procedures.md](./emergency-procedures.md) | Incident response runbook |
+| [runbook-circuit-breaker-response.md](./runbook-circuit-breaker-response.md) | Circuit breaker response procedures |
+
+### Technical Deep Dives
+| Document | Description |
+|----------|-------------|
+| [prevrandao-verification-plan.md](./prevrandao-verification-plan.md) | PREVRANDAO randomness verification |
+| [randomness-congestion-mitigation.md](./randomness-congestion-mitigation.md) | Congestion mitigation strategies |
+| [adr-circuit-breaker-reset-timelock.md](./adr-circuit-breaker-reset-timelock.md) | Circuit breaker ADR |
+| [megaeth-networks.md](./megaeth-networks.md) | MegaETH network configuration |
+
+### Planning Documents
+| Document | Description |
+|----------|-------------|
+| [phase2-implementation-plan.md](./phase2-implementation-plan.md) | Phase 2 implementation details |
+| [architecture-review-2026-01-20.md](./architecture-review-2026-01-20.md) | Architecture review session |
+
+## Archived Documentation
+
+See [../archive/README.md](../archive/README.md) for superseded documents:
+- Original overview (replaced by blueprint/architecture.md)
+- Smart contracts plan (replaced by design/contracts/)
+- Ghost Fleet wallet automation (post-MVP)
+- Arcade contracts plan (see design/arcade/)
+
+## Related Documentation
+
+- **Blueprint**: `docs/blueprint/` - Authoritative system documentation
+- **Design**: `docs/design/` - Detailed technical designs
+- **Guides**: `docs/guides/` - Development guides (Rust, TimescaleDB)
+- **References**: `docs/references/` - External reference materials
+- **Lessons**: `docs/learnings/` - Documented issues and fixes
 
 ## Architecture Decision Records (ADRs)
 
-Key decisions documented in the frontend architecture:
+Key decisions documented in the architecture:
 
-| ADR | Title | Status |
-|-----|-------|--------|
-| ADR-001 | Event-Sourced UI State | Accepted |
-| ADR-002 | Feature-Based Module Boundaries | Accepted |
-| ADR-003 | Three-Layer State Architecture | Accepted |
-| ADR-004 | Centralized Effects System | Accepted |
-| ADR-005 | CSS-First Visual Effects | Accepted |
+| ADR | Title | Location |
+|-----|-------|----------|
+| ADR-001 | Event-Sourced UI State | frontend-architecture.md |
+| ADR-002 | Feature-Based Module Boundaries | frontend-architecture.md |
+| ADR-003 | Three-Layer State Architecture | frontend-architecture.md |
+| ADR-004 | Centralized Effects System | frontend-architecture.md |
+| ADR-005 | CSS-First Visual Effects | frontend-architecture.md |
+| ADR-006 | Circuit Breaker Reset Timelock | adr-circuit-breaker-reset-timelock.md |
 
-## Quick Reference
-
-### Technology Stack
+## Technology Stack
 
 ```
 Frontend:     SvelteKit 2.x + Svelte 5 (runes)
 Styling:      CSS Custom Properties
 Web3:         viem (custom wallet layer)
-Real-time:    Native WebSocket
+Real-time:    Native WebSocket + Iggy streaming
 Audio:        ZzFX (procedural sounds)
 Animation:    CSS + Motion One
 Testing:      Vitest + Playwright
+
+Backend:      Rust 1.85+ (Edition 2024)
+Database:     TimescaleDB (PostgreSQL)
+Streaming:    Iggy.rs
+RPC:          ConnectRPC (Prost + tonic)
+
+Contracts:    Solidity 0.8.33
+Framework:    Foundry
+Dependencies: OpenZeppelin 5.x
 ```
 
-### Core Architecture Pattern
+## Core Architecture Pattern
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    EVENT BUS                         │
-│                                                      │
-│  Sources:              Subscribers:                  │
-│  ├── WebSocket         ├── Feed Store               │
-│  ├── Contracts         ├── Position Store           │
-│  ├── User Actions      ├── Sound Manager            │
-│  └── Timers            └── Visual Effects           │
-└─────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                         MEGAETH                                  |
+|  +-------------+    +-------------+    +-------------+         |
+|  | DataToken   |    | GhostNet    |    | TraceScan   |         |
+|  | (ERC-20)    |<-->| (Core)      |<-->| (Randomness)|         |
+|  +-------------+    +-------------+    +-------------+         |
++-----------------------------------------------------------------+
+           |                   |                   |
+           +-------------------+-------------------+
+                               v
++-----------------------------------------------------------------+
+|                        INDEXER (Rust)                            |
+|  +-------------+    +-------------+    +-------------+         |
+|  | Event       |--->| TimescaleDB |--->| Iggy        |         |
+|  | Listener    |    |             |    | Streaming   |         |
+|  +-------------+    +-------------+    +-------------+         |
++-----------------------------------------------------------------+
+                               |
+                               v
++-----------------------------------------------------------------+
+|                      WEB APP (SvelteKit)                         |
+|  +-------------+    +-------------+    +-------------+         |
+|  | WebSocket   |--->| Event Bus   |--->| UI          |         |
+|  | Client      |    |             |    | Components  |         |
+|  +-------------+    +-------------+    +-------------+         |
++-----------------------------------------------------------------+
 ```
-
-### File Structure Overview
-
-```
-apps/web/src/lib/
-├── core/           # Infrastructure (events, web3, timers)
-├── features/       # Feature modules (feed, position, typing, etc.)
-├── ui/             # Presentational components
-└── audio/          # Sound system
-```
-
-## Implementation Timeline
-
-| Phase | Duration | Focus |
-|-------|----------|-------|
-| 1. Foundation | Week 1 | Event bus, terminal shell, CSS tokens |
-| 2. Core UI | Week 2 | Feed, network vitals, position panel |
-| 3. Web3 | Week 3 | Wallet connection, contract interactions |
-| 4. Real-time | Week 4 | WebSocket, live data |
-| 5. Typing Game | Week 5 | Trace Evasion mini-game |
-| 6. Polish | Week 6 | Testing, performance, accessibility |
 
 ## Contributing
 
 When modifying architecture:
-
 1. Update relevant documentation
 2. Add ADR for significant decisions
 3. Update session log with rationale
-4. Get review before implementing
+4. Run `just check-all` before committing
