@@ -286,7 +286,7 @@
 						<Button variant="ghost" onclick={() => goto('/')}>COMMAND CENTER</Button>
 						<Button variant="ghost" onclick={() => goto('/typing')}>TRACE EVASION</Button>
 						<Button variant="ghost" onclick={() => goto('/games/hackrun')}>HACK RUNS</Button>
-						<Button variant="ghost" onclick={() => goto('/market')}>DEAD POOL</Button>
+						<Button variant="ghost" onclick={() => goto('/deadpool')}>DEAD POOL</Button>
 						<Button variant="ghost" onclick={() => goto('/crew')}>CREWS</Button>
 					</Row>
 				</div>

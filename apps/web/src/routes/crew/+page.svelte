@@ -50,7 +50,7 @@
 		if (id === 'network') {
 			goto('/');
 		} else if (id === 'pool') {
-			goto('/market');
+			goto('/deadpool');
 		}
 	}
 

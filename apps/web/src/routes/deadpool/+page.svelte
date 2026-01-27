@@ -1,0 +1,190 @@
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { Header, Breadcrumb } from '$lib/features/header';
+	import { NavigationBar } from '$lib/features/nav';
+	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
+	import { ToastContainer, getToasts } from '$lib/ui/toast';
+	import { Stack } from '$lib/ui/layout';
+	import { getProvider } from '$lib/core/stores/index.svelte';
+	import { formatWei } from '$lib/core/utils';
+	import {
+		generateActiveRounds,
+		generateMockHistoryList,
+		generateUserStats,
+		updatePoolsWithBet,
+	} from '$lib/core/providers/mock/generators/deadpool';
+	import type {
+		DeadPoolRound,
+		DeadPoolSide,
+		DeadPoolHistory,
+		DeadPoolUserStats,
+	} from '$lib/core/types';
+
+	const provider = getProvider();
+	const toast = getToasts();
+
+	// Navigation state
+	let activeNav = $state('pool');
+
+	// Dead Pool state - load mock data
+	let rounds = $state<DeadPoolRound[]>(generateActiveRounds());
+	let history = $state<DeadPoolHistory[]>(generateMockHistoryList(10));
+	let userStats = $state<DeadPoolUserStats>(generateUserStats());
+
+	// Dead Pool modal state
+	let showBetModal = $state(false);
+	let selectedRound = $state<DeadPoolRound | null>(null);
+
+	// User balance (from provider or mock)
+	const userBalance = $derived(provider.currentUser?.tokenBalance ?? 1000n * 10n ** 18n);
+
+	// Handlers
+	function handleBet(round: DeadPoolRound) {
+		if (!provider.currentUser) {
+			toast.warning('Connect wallet to place bets');
+			return;
+		}
+
+		selectedRound = round;
+		showBetModal = true;
+	}
+
+	function handleConfirmBet(side: DeadPoolSide, amount: bigint) {
+		if (!selectedRound) return;
+
+		// Update round with user's bet
+		const roundIndex = rounds.findIndex((r) => r.id === selectedRound!.id);
+		if (roundIndex !== -1) {
+			rounds[roundIndex] = {
+				...rounds[roundIndex],
+				pools: updatePoolsWithBet(rounds[roundIndex].pools, side, amount),
+				userBet: {
+					side,
+					amount,
+					timestamp: Date.now(),
+				},
+			};
+		}
+
+		toast.success(`Bet placed: ${formatWei(amount)} Đ on ${side.toUpperCase()}`);
+		handleCloseBetModal();
+	}
+
+	function handleCloseBetModal() {
+		showBetModal = false;
+		selectedRound = null;
+	}
+
+	function handleNavigate(id: string) {
+		activeNav = id;
+		if (id === 'network') {
+			goto('/');
+		}
+	}
+
+	function handleHelp() {
+		toast.info('Dead Pool: Bet on network outcomes. Parimutuel odds, 5% rake burned.');
+	}
+
+	// Simulate pool updates every 5 seconds
+	$effect(() => {
+		const interval = setInterval(() => {
+			rounds = rounds.map((round) => {
+				if (round.userBet) return round; // Don't update rounds user has bet on
+
+				// Random small pool changes
+				const underChange =
+					Math.random() < 0.3 ? BigInt(Math.floor(Math.random() * 20)) * 10n ** 18n : 0n;
+				const overChange =
+					Math.random() < 0.3 ? BigInt(Math.floor(Math.random() * 20)) * 10n ** 18n : 0n;
+
+				return {
+					...round,
+					pools: {
+						under: round.pools.under + underChange,
+						over: round.pools.over + overChange,
+					},
+				};
+			});
+		}, 5000);
+
+		return () => clearInterval(interval);
+	});
+</script>
+
+<svelte:head>
+	<title>GHOSTNET - Dead Pool</title>
+	<meta name="description" content="Dead Pool prediction markets. Bet on network outcomes." />
+</svelte:head>
+
+<div class="deadpool-page">
+	<Header />
+	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'DEAD POOL' }]} />
+
+	<main class="main-content">
+		<Stack gap={4}>
+			<DeadPoolHeader stats={userStats} balance={userBalance} onHelp={handleHelp} />
+
+			<section class="section">
+				<h2 class="section-title">ACTIVE ROUNDS</h2>
+				<ActiveRoundsGrid {rounds} onBet={handleBet} />
+			</section>
+
+			<section class="section">
+				<ResultsPanel {history} limit={5} />
+			</section>
+		</Stack>
+	</main>
+
+	<NavigationBar active={activeNav} onNavigate={handleNavigate} />
+</div>
+
+<!-- Dead Pool Bet Modal -->
+<BetModal
+	open={showBetModal}
+	round={selectedRound}
+	balance={userBalance}
+	onClose={handleCloseBetModal}
+	onConfirm={handleConfirmBet}
+/>
+
+<!-- Toast notifications -->
+<ToastContainer />
+
+<style>
+	.deadpool-page {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		padding-bottom: var(--space-16); /* Room for fixed nav */
+	}
+
+	.main-content {
+		flex: 1;
+		padding: var(--space-4) var(--space-6);
+		width: 100%;
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.section-title {
+		font-size: var(--text-sm);
+		font-weight: var(--font-medium);
+		color: var(--color-text-tertiary);
+		letter-spacing: var(--tracking-widest);
+		border-bottom: 1px solid var(--color-border-subtle);
+		padding-bottom: var(--space-2);
+	}
+
+	@media (max-width: 767px) {
+		.main-content {
+			padding: var(--space-2);
+		}
+	}
+</style>

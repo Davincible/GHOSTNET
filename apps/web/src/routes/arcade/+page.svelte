@@ -53,7 +53,7 @@
 			icon: '💀',
 			name: 'Dead Pool',
 			description: 'Bet on who lives and who dies',
-			href: '/market',
+			href: '/deadpool',
 		},
 		{
 			icon: '$',

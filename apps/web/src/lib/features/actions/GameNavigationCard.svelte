@@ -8,7 +8,7 @@
 		{ name: 'HACK RUN', icon: '</>', href: '/games/hackrun', desc: 'Hack for yield' },
 		{ name: 'PVP DUELS', icon: '⚔', href: '/games/duels', desc: '1v1 battles' },
 		{ name: 'HASH CRASH', icon: '↗', href: '/arcade/hash-crash', desc: 'Crash game' },
-		{ name: 'DEAD POOL', icon: '💀', href: '/market', desc: 'Bet on outcomes' },
+		{ name: 'DEAD POOL', icon: '💀', href: '/deadpool', desc: 'Bet on outcomes' },
 		{ name: 'DAILY OPS', icon: '☰', href: '/arcade/daily-ops', desc: 'Daily missions' },
 	];
 
@@ -32,9 +32,7 @@
 		{/each}
 	</div>
 	<div class="arcade-link">
-		<button class="view-all-btn" onclick={() => navigate('/arcade')}>
-			VIEW ALL →
-		</button>
+		<button class="view-all-btn" onclick={() => navigate('/arcade')}> VIEW ALL → </button>
 	</div>
 </Box>
 

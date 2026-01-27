@@ -35,6 +35,7 @@
 		{ id: 'network', label: 'NETWORK', href: '/' },
 		{ id: 'arcade', label: 'ARCADE', href: '/arcade' },
 		{ id: 'crew', label: 'CREW', href: '/crew' },
+		{ id: 'pool', label: 'DEAD POOL', href: '/deadpool' },
 		{ id: 'market', label: 'MARKET', href: '/market' },
 		{ id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },
 		{ id: 'help', label: '?', href: '/help' },

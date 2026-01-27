@@ -88,7 +88,7 @@
 	}
 
 	function handleDeadPool() {
-		goto(resolve('/market'));
+		goto(resolve('/deadpool'));
 	}
 
 	function handleWatchFeed() {
