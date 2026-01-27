@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { FeedEventType } from '$lib/core/types';
 	import { onMount, onDestroy } from 'svelte';
 	import '../app.css';
 	import { Shell, Scanlines, Flicker, ScreenFlash } from '$lib/ui/terminal';
@@ -39,28 +38,16 @@
 		document.addEventListener('click', initOnInteraction);
 		document.addEventListener('keydown', initOnInteraction);
 
-		// Subscribe to feed events for screen flashes and audio
+		// Subscribe to feed events for screen flashes
+		// Audio is intentionally NOT triggered here — feed events fire continuously
+		// and background sounds are distracting. Sound should only play in response
+		// to direct user actions or game-critical moments.
 		const unsubscribe = provider.subscribeFeed((event) => {
-			// Visual effects
 			if (event.type === 'TRACED') {
 				flashType = 'death';
 			} else if (event.type === 'JACKPOT') {
 				flashType = 'jackpot';
 			}
-
-			// Audio effects
-			const audioHandlers: Partial<Record<FeedEventType, () => void>> = {
-				JACK_IN: () => audio.jackIn(),
-				EXTRACT: () => audio.extract(),
-				TRACED: () => audio.traced(),
-				SURVIVED: () => audio.survived(),
-				JACKPOT: () => audio.jackpot(),
-				TRACE_SCAN_WARNING: () => audio.scanWarning(),
-				TRACE_SCAN_START: () => audio.scanStart(),
-			};
-
-			const handler = audioHandlers[event.type];
-			if (handler) handler();
 		});
 
 		return () => {

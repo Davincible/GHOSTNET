@@ -29,7 +29,7 @@
 	let prevTimePercent = $state<number>(100);
 	let prevNodeIndex = $state<number>(-1);
 	let correctStreak = $state<number>(0);
-	
+
 	// Time warning thresholds
 	const TIME_WARNING_THRESHOLD = 30; // percent
 	const TIME_DANGER_THRESHOLD = 15; // percent
@@ -176,7 +176,7 @@
 				const isCorrect = event.key === targetChar;
 				if (isCorrect) {
 					correctStreak++;
-					
+
 					// Milestone sound every N correct chars
 					if (correctStreak > 0 && correctStreak % STREAK_MILESTONE === 0) {
 						audio.success(); // Satisfying milestone sound
@@ -259,40 +259,20 @@
 		if (status === 'running' || status === 'node_typing' || status === 'node_result') {
 			const progress = store.state.progress;
 			const currentIndex = progress.findIndex((p) => p.status === 'current');
-			
+
 			// Advanced to a new node (not the first one)
 			if (currentIndex > prevNodeIndex && prevNodeIndex >= 0) {
 				audio.success();
 			}
-			
+
 			prevNodeIndex = currentIndex;
 		} else if (status === 'countdown') {
 			prevNodeIndex = -1; // Reset for new run
 		}
 	});
 
-	// Danger zone ambient pulse - repeating warning when time critical
-	$effect(() => {
-		if (!browser) return;
-		
-		const status = store.state.status;
-		const isActive = status === 'running' || status === 'node_typing' || status === 'node_result';
-		
-		if (!isActive) return;
-		
-		const timeRemaining = store.state.timeRemaining;
-		const timeLimit = store.state.run.timeLimit;
-		const timePercent = (timeRemaining / timeLimit) * 100;
-		
-		// Only pulse in danger zone during typing
-		if (timePercent <= TIME_DANGER_THRESHOLD && status === 'node_typing') {
-			const pulseInterval = setInterval(() => {
-				audio.scanWarning(); // Subtle repeating pulse
-			}, 2000); // Every 2 seconds
-			
-			return () => clearInterval(pulseInterval);
-		}
-	});
+	// Danger zone warning is handled by the time-warning effect above
+	// (one-shot when crossing the threshold — no repeating loops)
 </script>
 
 <svelte:head>
@@ -300,7 +280,13 @@
 </svelte:head>
 
 <Header />
-<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'HACK RUN' }]} />
+<Breadcrumb
+	path={[
+		{ label: 'NETWORK', href: '/' },
+		{ label: 'ARCADE', href: '/arcade' },
+		{ label: 'HACK RUN' },
+	]}
+/>
 
 <Shell>
 	<div class="hackrun-page">

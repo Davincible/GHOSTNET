@@ -456,15 +456,25 @@
 		animation: panel-attn-highlight var(--panel-attn-duration) var(--ease-out) forwards;
 	}
 
+	/* Transient attention animations: box-shadow is only set at PEAK keyframes.
+	   At 0% and 100%, the browser interpolates from/to the cascade value:
+	   - glow=true panels: smooth flare from/to static glow
+	   - non-glow panels: smooth flare from/to nothing */
 	@keyframes panel-attn-highlight {
 		0% {
 			filter: brightness(1);
 		}
-		15% {
-			filter: brightness(1.4);
+		10% {
+			filter: brightness(1.5);
+			box-shadow:
+				0 0 20px -2px color-mix(in srgb, var(--panel-glow-color) 40%, transparent),
+				0 0 50px -4px color-mix(in srgb, var(--panel-glow-color) 20%, transparent);
 		}
-		40% {
-			filter: brightness(1.15);
+		30% {
+			filter: brightness(1.2);
+			box-shadow:
+				0 0 15px -2px color-mix(in srgb, var(--panel-glow-color) 30%, transparent),
+				0 0 40px -4px color-mix(in srgb, var(--panel-glow-color) 15%, transparent);
 		}
 		100% {
 			filter: brightness(1);
@@ -481,12 +491,21 @@
 		}
 		10% {
 			filter: brightness(1.5);
+			box-shadow:
+				0 0 25px -2px color-mix(in srgb, var(--color-red) 45%, transparent),
+				0 0 60px -4px color-mix(in srgb, var(--color-red) 20%, transparent);
 		}
 		25% {
 			filter: brightness(1.1);
+			box-shadow:
+				0 0 15px -2px color-mix(in srgb, var(--color-red) 25%, transparent),
+				0 0 35px -4px color-mix(in srgb, var(--color-red) 10%, transparent);
 		}
 		40% {
 			filter: brightness(1.35);
+			box-shadow:
+				0 0 20px -2px color-mix(in srgb, var(--color-red) 35%, transparent),
+				0 0 50px -4px color-mix(in srgb, var(--color-red) 15%, transparent);
 		}
 		100% {
 			filter: brightness(1);
@@ -503,6 +522,9 @@
 		}
 		15% {
 			filter: brightness(1.3);
+			box-shadow:
+				0 0 20px -2px color-mix(in srgb, var(--color-cyan) 40%, transparent),
+				0 0 50px -4px color-mix(in srgb, var(--color-cyan) 18%, transparent);
 		}
 		100% {
 			filter: brightness(1);
@@ -521,22 +543,37 @@
 		10% {
 			filter: brightness(1.6);
 			transform: translateX(-2px);
+			box-shadow:
+				0 0 30px -2px color-mix(in srgb, var(--color-red) 50%, transparent),
+				0 0 70px -4px color-mix(in srgb, var(--color-red) 25%, transparent);
 		}
 		20% {
 			filter: brightness(1.1);
 			transform: translateX(2px);
+			box-shadow:
+				0 0 10px -2px color-mix(in srgb, var(--color-red) 20%, transparent),
+				0 0 30px -4px color-mix(in srgb, var(--color-red) 8%, transparent);
 		}
 		30% {
 			filter: brightness(1.5);
 			transform: translateX(-1px);
+			box-shadow:
+				0 0 25px -2px color-mix(in srgb, var(--color-red) 45%, transparent),
+				0 0 60px -4px color-mix(in srgb, var(--color-red) 20%, transparent);
 		}
 		40% {
 			filter: brightness(1.1);
 			transform: translateX(1px);
+			box-shadow:
+				0 0 8px -2px color-mix(in srgb, var(--color-red) 15%, transparent),
+				0 0 20px -4px color-mix(in srgb, var(--color-red) 6%, transparent);
 		}
 		50% {
 			filter: brightness(1.4);
 			transform: translateX(0);
+			box-shadow:
+				0 0 20px -2px color-mix(in srgb, var(--color-red) 35%, transparent),
+				0 0 50px -4px color-mix(in srgb, var(--color-red) 15%, transparent);
 		}
 		100% {
 			filter: brightness(1);
@@ -566,9 +603,13 @@
 	.panel-attn-focused {
 		filter: brightness(1.05);
 		transform: scale(1.01);
+		box-shadow:
+			0 0 15px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+			0 0 35px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
 		transition:
 			filter var(--duration-normal) var(--ease-default),
-			transform var(--duration-normal) var(--ease-default);
+			transform var(--duration-normal) var(--ease-default),
+			box-shadow var(--duration-normal) var(--ease-default);
 	}
 
 	/* ═══════════════════════════════════════════════════════════
@@ -599,9 +640,15 @@
 		0%,
 		100% {
 			filter: brightness(1);
+			box-shadow:
+				0 0 12px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+				0 0 30px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
 		}
 		50% {
 			filter: brightness(1.08);
+			box-shadow:
+				0 0 20px -2px color-mix(in srgb, var(--panel-glow-color) 40%, transparent),
+				0 0 45px -4px color-mix(in srgb, var(--panel-glow-color) 20%, transparent);
 		}
 	}
 
@@ -613,18 +660,33 @@
 		0%,
 		100% {
 			filter: brightness(1);
+			box-shadow:
+				0 0 12px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+				0 0 30px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
 		}
 		14% {
 			filter: brightness(1.12);
+			box-shadow:
+				0 0 24px -2px color-mix(in srgb, var(--panel-glow-color) 45%, transparent),
+				0 0 50px -4px color-mix(in srgb, var(--panel-glow-color) 22%, transparent);
 		}
 		28% {
 			filter: brightness(1);
+			box-shadow:
+				0 0 12px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+				0 0 30px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
 		}
 		42% {
 			filter: brightness(1.08);
+			box-shadow:
+				0 0 18px -2px color-mix(in srgb, var(--panel-glow-color) 35%, transparent),
+				0 0 40px -4px color-mix(in srgb, var(--panel-glow-color) 16%, transparent);
 		}
 		56% {
 			filter: brightness(1);
+			box-shadow:
+				0 0 12px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+				0 0 30px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
 		}
 	}
 
