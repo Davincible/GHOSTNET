@@ -182,7 +182,7 @@
 						<div class="control-group">
 							<span class="control-label">ATTENTION (PERSISTENT)</span>
 							<Row gap={1} wrap>
-								{#each ['blackout', 'dimmed', 'focused'] as a (a)}
+								{#each ['blackout', 'dimmed', 'focused', 'locked'] as a (a)}
 									<Button
 										size="sm"
 										variant={activeAttention === a ? 'primary' : 'ghost'}
@@ -193,7 +193,7 @@
 										{a.toUpperCase()}
 									</Button>
 								{/each}
-								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused'}
+								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused' || activeAttention === 'locked'}
 									<Button size="sm" variant="danger" onclick={clearAttention}>
 										CLEAR
 									</Button>
@@ -288,18 +288,18 @@
 				PERSISTENT
 				<Badge variant="warning" compact>MANUAL CLEAR</Badge>
 			</h3>
-			<div class="demo-grid demo-grid-3">
+			<div class="demo-grid demo-grid-2">
 				<div class="demo-card">
 					<Panel title="BLACKOUT" attention="blackout">
 						<div class="demo-content">
-							<p class="demo-desc">brightness(0.15) &mdash; nearly dark. Dead, offline.</p>
+							<p class="demo-desc">Darkened + desaturated. Dead, offline, disconnected.</p>
 						</div>
 					</Panel>
 				</div>
 				<div class="demo-card">
 					<Panel title="DIMMED" attention="dimmed">
 						<div class="demo-content">
-							<p class="demo-desc">opacity 0.5, desaturated. Secondary importance.</p>
+							<p class="demo-desc">Opacity 0.5, desaturated. Secondary importance.</p>
 						</div>
 					</Panel>
 				</div>
@@ -307,6 +307,13 @@
 					<Panel title="FOCUSED" attention="focused">
 						<div class="demo-content">
 							<p class="demo-desc">Slight brightness + scale. Active panel.</p>
+						</div>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="LOCKED" attention="locked">
+						<div class="demo-content">
+							<p class="demo-desc">Blurred + dimmed. Coming soon, unavailable, requires unlock.</p>
 						</div>
 					</Panel>
 				</div>

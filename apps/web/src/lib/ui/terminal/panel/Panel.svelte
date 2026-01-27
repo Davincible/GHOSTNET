@@ -174,6 +174,7 @@
 	class:panel-attn-blackout={effectsOn && attention === 'blackout'}
 	class:panel-attn-dimmed={effectsOn && attention === 'dimmed'}
 	class:panel-attn-focused={effectsOn && attention === 'focused'}
+	class:panel-attn-locked={effectsOn && attention === 'locked'}
 	class:panel-ambient-pulse={effectsOn && ambientEffect === 'pulse'}
 	class:panel-ambient-heartbeat={effectsOn && ambientEffect === 'heartbeat'}
 	class:panel-ambient-static={effectsOn && ambientEffect === 'static'}
@@ -461,7 +462,7 @@
 	   ═══════════════════════════════════════════════════════════ */
 
 	.panel-attn-blackout {
-		filter: brightness(0.15);
+		filter: brightness(0.35) saturate(0.3);
 		transition:
 			filter var(--duration-slow) var(--ease-default),
 			opacity var(--duration-slow) var(--ease-default);
@@ -481,6 +482,15 @@
 		transition:
 			filter var(--duration-normal) var(--ease-default),
 			transform var(--duration-normal) var(--ease-default);
+	}
+
+	.panel-attn-locked {
+		filter: brightness(0.5) saturate(0.3) blur(2px);
+		opacity: 0.6;
+		user-select: none;
+		transition:
+			filter var(--duration-slow) var(--ease-default),
+			opacity var(--duration-slow) var(--ease-default);
 	}
 
 	/* ═══════════════════════════════════════════════════════════
@@ -578,11 +588,16 @@
 	}
 
 	/* Scan overlay: horizontal line sweep */
+	.panel-ambient-scan > .panel-overlay {
+		overflow: hidden;
+	}
+
 	.panel-ambient-scan > .panel-overlay::after {
 		content: '';
 		position: absolute;
 		left: 0;
 		right: 0;
+		top: 0;
 		height: 2px;
 		background: var(--color-accent-glow);
 		box-shadow: 0 0 8px var(--color-accent-glow);
@@ -591,10 +606,10 @@
 
 	@keyframes panel-scan-sweep {
 		0% {
-			transform: translateY(0);
+			top: 0%;
 		}
 		100% {
-			transform: translateY(var(--panel-height, 200px));
+			top: 100%;
 		}
 	}
 
@@ -628,6 +643,11 @@
 		.panel-enter-glitch {
 			clip-path: inset(0 0 0 0);
 			opacity: 1;
+		}
+
+		/* Remove blur for reduced motion — keep dim only */
+		.panel-attn-locked {
+			filter: brightness(0.5) saturate(0.3);
 		}
 	}
 </style>

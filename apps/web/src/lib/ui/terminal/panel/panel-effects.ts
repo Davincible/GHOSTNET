@@ -36,6 +36,7 @@ const ATTENTION_BORDER_COLOR: Partial<Record<PanelAttention, PanelBorderColor>> 
 	success: 'cyan',
 	highlight: 'bright',
 	focused: 'bright',
+	locked: 'dim',
 };
 
 const ATTENTION_GLOW: Partial<Record<PanelAttention, boolean>> = {
@@ -46,6 +47,7 @@ const ATTENTION_GLOW: Partial<Record<PanelAttention, boolean>> = {
 	focused: true,
 	blackout: false,
 	dimmed: false,
+	locked: false,
 };
 
 /**

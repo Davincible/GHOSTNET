@@ -57,9 +57,10 @@ Before drawing shapes, name the forces:
 
 | State | Visual | Use Case |
 |-------|--------|----------|
-| `blackout` | `filter: brightness(0.15)` — nearly dark | Dead, offline, inactive |
+| `blackout` | `filter: brightness(0.35) saturate(0.3)` — dark but readable | Dead, offline, inactive |
 | `dimmed` | `opacity: 0.5`, `filter: saturate(0.5)` | Secondary importance |
 | `focused` | `filter: brightness(1.05)`, `transform: scale(1.01)` | Active panel in multi-panel layout |
+| `locked` | `filter: brightness(0.5) saturate(0.3) blur(2px)`, `opacity: 0.6` | Coming soon, unavailable, requires unlock |
 
 ### 3.3 Ambient Effects — Persistent visual behaviors
 
