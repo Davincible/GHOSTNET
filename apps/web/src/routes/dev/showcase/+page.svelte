@@ -7,10 +7,19 @@
 	const componentSections = [
 		{
 			name: 'PANELS',
-			description: 'Container component with lifecycle animations, attention states, and ambient effects.',
+			description:
+				'Container component with lifecycle animations, attention states, and ambient effects.',
 			href: '/dev/showcase/panels',
 			status: 'ACTIVE',
 			count: '6 attention states, 4 ambient effects, 2 enter animations, blur modifier',
+		},
+		{
+			name: 'AUDIO',
+			description:
+				'ZzFX sound system — UI feedback, game events, alerts, and crash game sounds.',
+			href: '/dev/showcase/audio',
+			status: 'ACTIVE',
+			count: '30 sounds, 5 categories',
 		},
 		{
 			name: 'BUTTONS',
