@@ -53,7 +53,7 @@ const ATTENTION_GLOW: Partial<Record<PanelAttention, boolean>> = {
  * Returns override color for attention state, or null to use configured.
  */
 export function resolveAttentionBorderColor(
-	attention: PanelAttention | null,
+	attention: PanelAttention | null
 ): PanelBorderColor | null {
 	if (!attention) return null;
 	return ATTENTION_BORDER_COLOR[attention] ?? null;
@@ -81,8 +81,9 @@ const SPEED_MULTIPLIER: Record<PanelAnimationSpeed, number> = {
 
 /** Base durations in ms for each animation type */
 const BASE_DURATIONS = {
-	boot: 400,
-	glitch: 250,
+	boot: 960,
+	glitch: 500,
+	expand: 800,
 	shutdown: 300,
 	attention: 2000,
 	critical: 1500,
@@ -92,7 +93,7 @@ export type AnimationKey = keyof typeof BASE_DURATIONS;
 
 export function getAnimationDuration(
 	animation: AnimationKey,
-	speed: PanelAnimationSpeed = 'normal',
+	speed: PanelAnimationSpeed = 'normal'
 ): number {
 	return BASE_DURATIONS[animation] * SPEED_MULTIPLIER[speed];
 }
@@ -102,7 +103,7 @@ export function getAnimationDuration(
  */
 export function getCssDuration(
 	animation: AnimationKey,
-	speed: PanelAnimationSpeed = 'normal',
+	speed: PanelAnimationSpeed = 'normal'
 ): string {
 	return `${getAnimationDuration(animation, speed)}ms`;
 }
@@ -132,7 +133,7 @@ const OVERLAY_AMBIENT: ReadonlySet<string> = new Set(['static', 'scan']);
 
 export function needsOverlay(
 	attention: PanelAttention | null,
-	ambientEffect: string | null,
+	ambientEffect: string | null
 ): boolean {
 	if (attention && OVERLAY_ATTENTION.has(attention)) return true;
 	if (ambientEffect && OVERLAY_AMBIENT.has(ambientEffect)) return true;

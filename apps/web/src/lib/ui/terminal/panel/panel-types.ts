@@ -9,7 +9,7 @@
 // ════════════════════════════════════════════════════════════════
 
 /** How the panel enters the viewport */
-export type PanelEnterAnimation = 'boot' | 'glitch' | 'none';
+export type PanelEnterAnimation = 'boot' | 'glitch' | 'expand' | 'none';
 
 /** How the panel exits (if removed from DOM) */
 export type PanelExitAnimation = 'shutdown' | 'glitch' | 'none';

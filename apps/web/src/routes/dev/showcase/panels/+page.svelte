@@ -18,9 +18,12 @@
 	let activeVariant = $state<PanelVariant>('single');
 	let activeGlow = $state(false);
 	let activeBlur = $state<boolean | 'content'>(false);
+	let activeBorderFill = $state(false);
+	let activePadding = $state<0 | 1 | 2 | 3 | 4>(3);
+	let activeTitle = $state('LIVE PREVIEW');
 
-	// Key to force re-mount for enter animations
-	let enterKey = $state(0);
+	// Per-animation keys to force individual re-mount for enter animations
+	let enterKeys = $state<Record<string, number>>({ boot: 0, glitch: 0, expand: 0 });
 
 	function triggerAttention(state: PanelAttention) {
 		// Clear then set to allow re-triggering same state
@@ -39,8 +42,10 @@
 	}
 
 	function replayEnter(animation: PanelEnterAnimation) {
+		// For the showcase grid: bump only that animation's key
+		enterKeys = { ...enterKeys, [animation]: (enterKeys[animation] ?? 0) + 1 };
+		// For the playground: also update its state
 		activeEnter = 'none';
-		enterKey++;
 		requestAnimationFrame(() => {
 			activeEnter = animation;
 		});
@@ -79,20 +84,22 @@
 		<div class="playground-layout">
 			<!-- Live Preview -->
 			<div class="playground-preview">
-				{#key enterKey}
+				{#key enterKeys[activeEnter] ?? 0}
 					<Panel
-						title="LIVE PREVIEW"
+						title={activeTitle}
 						variant={activeVariant}
 						borderColor={activeBorderColor}
 						glow={activeGlow}
+						borderFill={activeBorderFill}
 						blur={activeBlur}
+						padding={activePadding}
 						attention={activeAttention}
 						onAttentionEnd={clearAttention}
 						ambientEffect={activeAmbient}
 						enterAnimation={activeEnter}
 					>
 						<div class="preview-content">
-							<p class="preview-text">SYSTEM ONLINE // MONITORING ACTIVE</p>
+							<p class="preview-text">GHOSTNET v2.4.1 // NODE ACTIVE // UPTIME 14d 7h 32m</p>
 							<div class="preview-stats">
 								<div class="stat">
 									<span class="stat-label">OPERATORS</span>
@@ -105,6 +112,59 @@
 								<div class="stat">
 									<span class="stat-label">SURVIVAL</span>
 									<span class="stat-value">87.3%</span>
+								</div>
+							</div>
+
+							<div class="preview-divider"></div>
+
+							<div class="preview-position">
+								<div class="preview-position-header">
+									<span class="preview-position-label">ACTIVE POSITION</span>
+									<span class="preview-position-level preview-level-subnet">SUBNET</span>
+								</div>
+								<div class="preview-position-row">
+									<span class="preview-dim">STAKED</span>
+									<span class="preview-mono">42,000 $DATA</span>
+								</div>
+								<div class="preview-position-row">
+									<span class="preview-dim">YIELD</span>
+									<span class="preview-green">+1,847.32 $DATA</span>
+								</div>
+								<div class="preview-position-row">
+									<span class="preview-dim">NEXT SCAN</span>
+									<span class="preview-amber">02:41:18</span>
+								</div>
+								<div class="preview-position-row">
+									<span class="preview-dim">DEATH RATE</span>
+									<span class="preview-red">15%</span>
+								</div>
+							</div>
+
+							<div class="preview-divider"></div>
+
+							<div class="preview-feed">
+								<p class="preview-feed-title">LIVE FEED</p>
+								<div class="preview-feed-line">
+									<span class="preview-dim">[14:23:07]</span>
+									<span class="preview-green">0x7a3f...c821</span>
+									<span class="preview-dim">extracted</span>
+									<span class="preview-mono">12,400 $DATA</span>
+								</div>
+								<div class="preview-feed-line">
+									<span class="preview-dim">[14:22:51]</span>
+									<span class="preview-red">0xb4e2...9f10</span>
+									<span class="preview-dim">traced &mdash; DEAD</span>
+								</div>
+								<div class="preview-feed-line">
+									<span class="preview-dim">[14:22:34]</span>
+									<span class="preview-green">0x91cd...4a77</span>
+									<span class="preview-dim">jacked in at</span>
+									<span class="preview-mono">DARKNET</span>
+								</div>
+								<div class="preview-feed-line">
+									<span class="preview-dim">[14:21:58]</span>
+									<span class="preview-amber">SCAN COMPLETE</span>
+									<span class="preview-dim">&mdash; 23 traced, 184 survived</span>
 								</div>
 							</div>
 						</div>
@@ -160,6 +220,47 @@
 									{activeGlow ? 'ON' : 'OFF'}
 								</Button>
 							</Row>
+						</div>
+
+						<!-- Border Fill -->
+						<div class="control-group">
+							<span class="control-label">BORDER FILL</span>
+							<Row gap={1}>
+								<Button
+									size="sm"
+									variant={activeBorderFill ? 'primary' : 'ghost'}
+									onclick={() => (activeBorderFill = !activeBorderFill)}
+								>
+									{activeBorderFill ? 'ON' : 'OFF'}
+								</Button>
+							</Row>
+						</div>
+
+						<!-- Padding -->
+						<div class="control-group">
+							<span class="control-label">PADDING</span>
+							<Row gap={1}>
+								{#each [0, 1, 2, 3, 4] as p (p)}
+									<Button
+										size="sm"
+										variant={activePadding === p ? 'primary' : 'ghost'}
+										onclick={() => (activePadding = p as 0 | 1 | 2 | 3 | 4)}
+									>
+										{p}
+									</Button>
+								{/each}
+							</Row>
+						</div>
+
+						<!-- Title -->
+						<div class="control-group">
+							<span class="control-label">TITLE</span>
+							<input
+								class="control-input"
+								type="text"
+								bind:value={activeTitle}
+								placeholder="Panel title..."
+							/>
 						</div>
 
 						<!-- Blur -->
@@ -247,7 +348,7 @@
 						<div class="control-group">
 							<span class="control-label">ENTER ANIMATION</span>
 							<Row gap={1} wrap>
-								{#each ['boot', 'glitch'] as a (a)}
+								{#each ['boot', 'glitch', 'expand'] as a (a)}
 									<Button
 										size="sm"
 										variant="ghost"
@@ -395,9 +496,9 @@
 			<p class="section-subtitle">How panels appear in the viewport. Plays once on mount.</p>
 		</div>
 
-		<div class="demo-grid demo-grid-2">
-			{#each [{ animation: 'boot', desc: 'CRT power-on: panel expands from horizontal line via clip-path, content fades in.' }, { animation: 'glitch', desc: 'Brief clip-path displacement + hue-rotate, then resolves to normal.' }] as item (item.animation)}
-				{@const key = `enter-${item.animation}-${enterKey}`}
+		<div class="demo-grid demo-grid-3">
+			{#each [{ animation: 'boot', desc: 'CRT power-on: thin horizontal line expands vertically with brightness flash.' }, { animation: 'glitch', desc: 'Corrupted data burst: horizontal slice displacement, color channel splits, jittery resolve.' }, { animation: 'expand', desc: 'Left-to-right reveal: terminal cursor drawing the panel into existence.' }] as item (item.animation)}
+				{@const key = `enter-${item.animation}-${enterKeys[item.animation] ?? 0}`}
 				<div class="demo-card">
 					{#key key}
 						<Panel
@@ -463,15 +564,35 @@
 		<!-- Glow -->
 		<div class="subsection">
 			<h3 class="subsection-title">GLOW EFFECT</h3>
-			<div class="demo-grid demo-grid-2">
+			<div class="demo-grid demo-grid-3">
 				<div class="demo-card">
 					<Panel title="NO GLOW" borderColor="cyan">
-						<p class="demo-desc">glow=false (default)</p>
+						<p class="demo-desc">glow=false (default). No text-shadow, no background halo.</p>
 					</Panel>
 				</div>
 				<div class="demo-card">
-					<Panel title="WITH GLOW" borderColor="cyan" glow>
-						<p class="demo-desc">glow=true &mdash; text-shadow on border characters</p>
+					<Panel title="CYAN GLOW" borderColor="cyan" glow>
+						<p class="demo-desc">Border text-shadow + ambient background halo in cyan.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="RED GLOW" borderColor="red" glow>
+						<p class="demo-desc">Red glow. Danger, critical state.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="AMBER GLOW" borderColor="amber" glow>
+						<p class="demo-desc">Amber glow. Warning, degraded.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="GREEN GLOW" borderColor="bright" glow>
+						<p class="demo-desc">Green/accent glow. Active, healthy.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="GLOW + PULSE" borderColor="cyan" glow ambientEffect="pulse">
+						<p class="demo-desc">Glow composes with ambient effects.</p>
 					</Panel>
 				</div>
 			</div>
@@ -800,6 +921,89 @@
 		font-weight: var(--font-medium);
 	}
 
+	.preview-divider {
+		border-top: 1px solid var(--color-border-subtle);
+	}
+
+	.preview-position {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1-5);
+	}
+
+	.preview-position-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.preview-position-label {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-secondary);
+		letter-spacing: var(--tracking-wider);
+		font-weight: var(--font-medium);
+	}
+
+	.preview-level-subnet {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-amber);
+		letter-spacing: var(--tracking-wider);
+		font-weight: var(--font-bold);
+	}
+
+	.preview-position-row {
+		display: flex;
+		justify-content: space-between;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+	}
+
+	.preview-dim {
+		color: var(--color-text-tertiary);
+	}
+
+	.preview-mono {
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+	}
+
+	.preview-green {
+		color: var(--color-accent);
+	}
+
+	.preview-amber {
+		color: var(--color-amber);
+	}
+
+	.preview-red {
+		color: var(--color-red);
+	}
+
+	.preview-feed {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.preview-feed-title {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-secondary);
+		letter-spacing: var(--tracking-wider);
+		font-weight: var(--font-medium);
+		margin: 0;
+	}
+
+	.preview-feed-line {
+		display: flex;
+		gap: var(--space-1-5);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		flex-wrap: wrap;
+	}
+
 	.playground-controls {
 		flex: 0 0 260px;
 		min-width: 260px;
@@ -820,6 +1024,26 @@
 		font-size: 0.5625rem;
 		color: var(--color-text-tertiary);
 		letter-spacing: var(--tracking-widest);
+	}
+
+	.control-input {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-primary);
+		background: var(--color-bg-tertiary);
+		border: 1px solid var(--color-border-default);
+		padding: var(--space-1-5) var(--space-2);
+		letter-spacing: var(--tracking-wide);
+		outline: none;
+		width: 100%;
+	}
+
+	.control-input:focus {
+		border-color: var(--color-accent-dim);
+	}
+
+	.control-input::placeholder {
+		color: var(--color-text-muted);
 	}
 
 	/* ── Log Lines (scrollable demo) ── */

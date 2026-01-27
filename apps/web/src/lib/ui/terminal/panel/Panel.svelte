@@ -114,6 +114,19 @@
 		return resolveAttentionGlow(attention) ?? glow;
 	});
 
+	// ── Background glow color ──
+	// Maps border color to a CSS color value for box-shadow ambient glow
+	const GLOW_COLORS: Record<string, string> = {
+		default: 'var(--color-accent)',
+		bright: 'var(--color-accent)',
+		dim: 'var(--color-border-default)',
+		cyan: 'var(--color-cyan)',
+		amber: 'var(--color-amber)',
+		red: 'var(--color-red)',
+	};
+
+	let glowColor = $derived(GLOW_COLORS[effectiveBorderColor] ?? 'var(--color-accent)');
+
 	// ── Title masking ──
 	// When blur={true}, replace title characters with * to obscure it while keeping borders crisp
 	let effectiveTitle = $derived.by(() => {
@@ -140,7 +153,11 @@
 		if (!isPanelAnimation(e.animationName)) return;
 
 		// Enter animation completed
-		if (e.animationName === 'panel-enter-boot' || e.animationName === 'panel-enter-glitch') {
+		if (
+			e.animationName === 'panel-enter-boot' ||
+			e.animationName === 'panel-enter-glitch' ||
+			e.animationName === 'panel-enter-expand'
+		) {
 			hasEntered = true;
 			return;
 		}
@@ -179,6 +196,7 @@
 	class:panel-scrollable={scrollable}
 	class:panel-enter-boot={effectsOn && enterAnimation === 'boot' && !hasEntered}
 	class:panel-enter-glitch={effectsOn && enterAnimation === 'glitch' && !hasEntered}
+	class:panel-enter-expand={effectsOn && enterAnimation === 'expand' && !hasEntered}
 	class:panel-attn-highlight={effectsOn && attention === 'highlight'}
 	class:panel-attn-alert={effectsOn && attention === 'alert'}
 	class:panel-attn-success={effectsOn && attention === 'success'}
@@ -186,13 +204,16 @@
 	class:panel-attn-blackout={effectsOn && attention === 'blackout'}
 	class:panel-attn-dimmed={effectsOn && attention === 'dimmed'}
 	class:panel-attn-focused={effectsOn && attention === 'focused'}
+	class:panel-glow={effectsOn && effectiveGlow}
 	class:panel-blurred={effectsOn && !!blur}
 	class:panel-ambient-pulse={effectsOn && ambientEffect === 'pulse'}
 	class:panel-ambient-heartbeat={effectsOn && ambientEffect === 'heartbeat'}
 	class:panel-ambient-static={effectsOn && ambientEffect === 'static'}
 	class:panel-ambient-scan={effectsOn && ambientEffect === 'scan'}
+	style:--panel-glow-color={glowColor}
 	style:--panel-enter-duration={getCssDuration('boot', animationSpeed)}
 	style:--panel-glitch-duration={getCssDuration('glitch', animationSpeed)}
+	style:--panel-expand-duration={getCssDuration('expand', animationSpeed)}
 	style:--panel-attn-duration={getCssDuration('attention', animationSpeed)}
 	style:--panel-critical-duration={getCssDuration('critical', animationSpeed)}
 	onanimationend={handleAnimationEnd}
@@ -258,6 +279,14 @@
 		position: relative;
 	}
 
+	/* ── Background glow — ambient halo around the panel ── */
+	.panel-glow {
+		box-shadow:
+			0 0 12px -2px color-mix(in srgb, var(--panel-glow-color) 25%, transparent),
+			0 0 30px -4px color-mix(in srgb, var(--panel-glow-color) 12%, transparent);
+		transition: box-shadow var(--duration-slow) var(--ease-default);
+	}
+
 	.panel-content-wrapper {
 		display: flex;
 		flex-direction: column;
@@ -292,7 +321,6 @@
 	}
 
 	.scroll-hint {
-		padding-top: var(--space-2);
 		text-align: center;
 		animation: panel-scroll-pulse 2s ease-in-out infinite;
 	}
@@ -327,25 +355,29 @@
 	   ENTER ANIMATIONS
 	   ═══════════════════════════════════════════════════════════ */
 
+	/* ── BOOT: CRT power-on ──
+	   Thin horizontal line in the center → expands vertically.
+	   Only start/end keyframes — the easing curve handles all the motion. */
 	.panel-enter-boot {
-		animation: panel-enter-boot var(--panel-enter-duration) var(--ease-out) forwards;
+		animation: panel-enter-boot var(--panel-enter-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
 
 	@keyframes panel-enter-boot {
 		0% {
 			clip-path: inset(50% 0 50% 0);
-			opacity: 0.6;
-		}
-		60% {
-			clip-path: inset(0 0 0 0);
-			opacity: 0.8;
+			filter: brightness(3);
+			opacity: 1;
 		}
 		100% {
 			clip-path: inset(0 0 0 0);
+			filter: brightness(1);
 			opacity: 1;
 		}
 	}
 
+	/* ── GLITCH: Corrupted data burst ──
+	   Horizontal slice displacements, color channel splits,
+	   jittery clip-path jumps. Feels broken, then resolves. */
 	.panel-enter-glitch {
 		animation: panel-enter-glitch var(--panel-glitch-duration) var(--ease-out) forwards;
 	}
@@ -353,26 +385,65 @@
 	@keyframes panel-enter-glitch {
 		0% {
 			clip-path: inset(0 0 100% 0);
-			filter: hue-rotate(90deg);
+			filter: hue-rotate(90deg) saturate(3);
 			opacity: 0;
+			transform: translateX(0);
 		}
-		30% {
-			clip-path: inset(0 0 20% 0);
-			filter: hue-rotate(45deg);
-			opacity: 0.7;
+		15% {
+			clip-path: inset(0 30% 60% 0);
+			filter: hue-rotate(-60deg) saturate(2);
+			opacity: 0.8;
+			transform: translateX(4px);
+		}
+		25% {
+			clip-path: inset(20% 0 30% 10%);
+			filter: hue-rotate(45deg) saturate(2.5);
+			transform: translateX(-6px);
+		}
+		35% {
+			clip-path: inset(5% 15% 10% 0);
+			filter: hue-rotate(-30deg) saturate(1.5);
+			opacity: 0.9;
+			transform: translateX(3px);
 		}
 		50% {
-			clip-path: inset(10% 0 0 0);
-			filter: hue-rotate(-20deg);
+			clip-path: inset(0 5% 5% 5%);
+			filter: hue-rotate(15deg) saturate(1.2);
+			transform: translateX(-2px);
 		}
-		70% {
-			clip-path: inset(0 0 5% 0);
-			filter: hue-rotate(10deg);
-			opacity: 0.9;
+		65% {
+			clip-path: inset(3% 0 0 2%);
+			filter: hue-rotate(-5deg);
+			transform: translateX(1px);
+		}
+		80% {
+			clip-path: inset(0 0 2% 0);
+			filter: hue-rotate(2deg);
+			transform: translateX(0);
 		}
 		100% {
 			clip-path: inset(0 0 0 0);
-			filter: hue-rotate(0deg);
+			filter: hue-rotate(0deg) saturate(1);
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	/* ── EXPAND: Left-to-right reveal ──
+	   Only start/end keyframes — easing curve handles all motion. */
+	.panel-enter-expand {
+		animation: panel-enter-expand var(--panel-expand-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+
+	@keyframes panel-enter-expand {
+		0% {
+			clip-path: inset(0 100% 0 0);
+			filter: brightness(1.5);
+			opacity: 1;
+		}
+		100% {
+			clip-path: inset(0 0 0 0);
+			filter: brightness(1);
 			opacity: 1;
 		}
 	}
@@ -643,6 +714,7 @@
 	@media (prefers-reduced-motion: reduce) {
 		.panel-enter-boot,
 		.panel-enter-glitch,
+		.panel-enter-expand,
 		.panel-attn-highlight,
 		.panel-attn-alert,
 		.panel-attn-success,
@@ -663,9 +735,12 @@
 
 		/* Enter animations should still resolve to visible */
 		.panel-enter-boot,
-		.panel-enter-glitch {
+		.panel-enter-glitch,
+		.panel-enter-expand {
 			clip-path: inset(0 0 0 0);
 			opacity: 1;
+			filter: none;
+			transform: none;
 		}
 
 		/* Remove blur for reduced motion */

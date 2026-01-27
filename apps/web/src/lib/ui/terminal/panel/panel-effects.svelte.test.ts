@@ -45,7 +45,6 @@ describe('resolveAttentionBorderColor', () => {
 	it('returns null for blackout (no border override)', () => {
 		expect(resolveAttentionBorderColor('blackout')).toBeNull();
 	});
-
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -84,7 +83,6 @@ describe('resolveAttentionGlow', () => {
 	it('returns false for dimmed', () => {
 		expect(resolveAttentionGlow('dimmed')).toBe(false);
 	});
-
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -119,7 +117,6 @@ describe('isTransientAttention', () => {
 	it('identifies focused as persistent', () => {
 		expect(isTransientAttention('focused')).toBe(false);
 	});
-
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -128,23 +125,27 @@ describe('isTransientAttention', () => {
 
 describe('getAnimationDuration', () => {
 	it('returns base duration at normal speed', () => {
-		expect(getAnimationDuration('boot', 'normal')).toBe(400);
+		expect(getAnimationDuration('boot', 'normal')).toBe(960);
 	});
 
 	it('returns halved duration at fast speed', () => {
-		expect(getAnimationDuration('boot', 'fast')).toBe(200);
+		expect(getAnimationDuration('boot', 'fast')).toBe(480);
 	});
 
 	it('returns 1.5x duration at slow speed', () => {
-		expect(getAnimationDuration('boot', 'slow')).toBe(600);
+		expect(getAnimationDuration('boot', 'slow')).toBe(1440);
 	});
 
 	it('defaults to normal speed', () => {
-		expect(getAnimationDuration('boot')).toBe(400);
+		expect(getAnimationDuration('boot')).toBe(960);
 	});
 
 	it('handles glitch duration', () => {
-		expect(getAnimationDuration('glitch', 'normal')).toBe(250);
+		expect(getAnimationDuration('glitch', 'normal')).toBe(500);
+	});
+
+	it('handles expand duration', () => {
+		expect(getAnimationDuration('expand', 'normal')).toBe(800);
 	});
 
 	it('handles attention duration', () => {
@@ -166,11 +167,11 @@ describe('getAnimationDuration', () => {
 
 describe('getCssDuration', () => {
 	it('returns CSS duration string at normal speed', () => {
-		expect(getCssDuration('boot', 'normal')).toBe('400ms');
+		expect(getCssDuration('boot', 'normal')).toBe('960ms');
 	});
 
 	it('returns CSS duration string at fast speed', () => {
-		expect(getCssDuration('boot', 'fast')).toBe('200ms');
+		expect(getCssDuration('boot', 'fast')).toBe('480ms');
 	});
 
 	it('defaults to normal speed', () => {
