@@ -6,7 +6,7 @@
 		active?: boolean;
 	}
 
-	let { src = '/intro_video_01.mp4', active = true }: Props = $props();
+	let { src = 'https://i.imgur.com/59R2ABZ.mp4', active = true }: Props = $props();
 
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let isMuted = $state(true);

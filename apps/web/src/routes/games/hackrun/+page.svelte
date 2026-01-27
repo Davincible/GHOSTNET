@@ -5,6 +5,8 @@
 	import { Stack } from '$lib/ui/layout';
 	import { getSettings } from '$lib/core/settings';
 	import { createAudioManager } from '$lib/core/audio';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import {
 		getHackRunStore,
 		RunSelectionView,
@@ -297,27 +299,11 @@
 	<title>Hack Run | GHOSTNET</title>
 </svelte:head>
 
+<Header />
+<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'HACK RUN' }]} />
+
 <Shell>
 	<div class="hackrun-page">
-		<!-- Header -->
-		<header class="page-header">
-			<button class="back-button" onclick={() => goto('/')} aria-label="Return to network">
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					aria-hidden="true"
-				>
-					<line x1="19" y1="12" x2="5" y2="12"></line>
-					<polyline points="12 19 5 12 12 5"></polyline>
-				</svg>
-				<span>NETWORK</span>
-			</button>
-			<h1 class="page-title">HACK RUN</h1>
-			<div class="spacer"></div>
-		</header>
-
 		<!-- Main Content -->
 		<main class="page-content">
 			{#if store.state.status === 'selecting'}
@@ -393,6 +379,7 @@
 		</main>
 	</div>
 </Shell>
+<NavigationBar active="arcade" />
 
 <style>
 	.hackrun-page {
@@ -401,63 +388,7 @@
 		min-height: 100vh;
 		min-height: 100dvh;
 		padding: var(--space-4);
-	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		margin-bottom: var(--space-6);
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--color-bg-tertiary);
-	}
-
-	.back-button {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		background: transparent;
-		border: 1px solid var(--color-border-default);
-		color: var(--color-text-secondary);
-		font-size: var(--text-sm);
-		font-family: var(--font-mono);
-		letter-spacing: var(--tracking-wide);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
-		flex-shrink: 0;
-	}
-
-	.back-button:hover {
-		background: var(--color-bg-secondary);
-		border-color: var(--color-accent-dim);
-		color: var(--color-accent);
-	}
-
-	.back-button:focus-visible {
-		outline: 2px solid var(--color-accent);
-		outline-offset: 2px;
-	}
-
-	.back-button svg {
-		width: 16px;
-		height: 16px;
-	}
-
-	.page-title {
-		color: var(--color-accent);
-		font-size: var(--text-lg);
-		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wider);
-		text-align: center;
-		flex: 1;
-		min-width: 0;
-	}
-
-	.spacer {
-		width: 100px;
-		flex-shrink: 0;
+		padding-bottom: var(--space-16);
 	}
 
 	.page-content {
@@ -468,30 +399,10 @@
 		min-height: 0;
 	}
 
-	/* Mobile header adjustments */
+	/* Mobile adjustments */
 	@media (max-width: 480px) {
 		.hackrun-page {
 			padding: var(--space-2);
-		}
-
-		.page-header {
-			margin-bottom: var(--space-4);
-		}
-
-		.back-button span {
-			display: none;
-		}
-
-		.back-button {
-			padding: var(--space-2);
-		}
-
-		.page-title {
-			font-size: var(--text-base);
-		}
-
-		.spacer {
-			width: 40px;
 		}
 	}
 

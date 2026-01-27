@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { Shell } from '$lib/ui/terminal';
+	import { Header, Breadcrumb } from '$lib/features/header';
+	import { NavigationBar } from '$lib/features/nav';
 	import {
 		LeaderboardHeader,
 		CategoryTabs,
@@ -43,120 +43,65 @@
 	<title>Leaderboard | GHOSTNET</title>
 </svelte:head>
 
-<Shell>
-	<div class="leaderboard-page">
-		<!-- Header -->
-		<header class="page-header">
-			<button class="back-button" onclick={() => goto('/')} aria-label="Return to network">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<line x1="19" y1="12" x2="5" y2="12"></line>
-					<polyline points="12 19 5 12 12 5"></polyline>
-				</svg>
-				<span>NETWORK</span>
-			</button>
-			<h1 class="page-title">RANKINGS</h1>
-			<div class="spacer"></div>
-		</header>
+<div class="leaderboard-shell">
+	<Header />
+	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'LEADERBOARD' }]} />
 
-		<!-- Main Content -->
-		<main class="page-content">
-			<!-- Leaderboard Header with User Rankings Summary -->
-			<section class="section-header">
-				<LeaderboardHeader {userRankings} />
-			</section>
+	<main class="leaderboard-content">
+		<!-- Leaderboard Header with User Rankings Summary -->
+		<section class="section-header">
+			<LeaderboardHeader {userRankings} />
+		</section>
 
-			<!-- Category & Timeframe Tabs -->
-			<section class="section-tabs">
-				<div class="tabs-row">
-					<CategoryTabs selected={category} onchange={handleCategoryChange} />
-				</div>
-				{#if !showCrews}
-					<div class="tabs-row timeframe-row">
-						<TimeframeTabs selected={timeframe} onchange={handleTimeframeChange} />
-					</div>
-				{/if}
-			</section>
-
-			<!-- Leaderboard Table or Crew Leaderboard -->
-			<section class="section-table">
-				{#if showCrews}
-					<CrewLeaderboard entries={crewData} />
-				{:else}
-					<LeaderboardTable {data} />
-				{/if}
-			</section>
-
-			<!-- Your Rank Card (context-specific) -->
+		<!-- Category & Timeframe Tabs -->
+		<section class="section-tabs">
+			<div class="tabs-row">
+				<CategoryTabs selected={category} onchange={handleCategoryChange} />
+			</div>
 			{#if !showCrews}
-				<section class="section-your-rank">
-					<YourRankCard {data} positionChange={Math.floor(Math.random() * 20) - 5} />
-				</section>
+				<div class="tabs-row timeframe-row">
+					<TimeframeTabs selected={timeframe} onchange={handleTimeframeChange} />
+				</div>
 			{/if}
-		</main>
-	</div>
-</Shell>
+		</section>
+
+		<!-- Leaderboard Table or Crew Leaderboard -->
+		<section class="section-table">
+			{#if showCrews}
+				<CrewLeaderboard entries={crewData} />
+			{:else}
+				<LeaderboardTable {data} />
+			{/if}
+		</section>
+
+		<!-- Your Rank Card (context-specific) -->
+		{#if !showCrews}
+			<section class="section-your-rank">
+				<YourRankCard {data} positionChange={Math.floor(Math.random() * 20) - 5} />
+			</section>
+		{/if}
+	</main>
+
+	<NavigationBar active="leaderboard" />
+</div>
 
 <style>
-	.leaderboard-page {
+	.leaderboard-shell {
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
-		padding: var(--space-4);
-		max-width: 1000px;
-		margin: 0 auto;
+		padding-bottom: var(--space-16);
 	}
 
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: var(--space-6);
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--color-bg-tertiary);
-	}
-
-	.back-button {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		background: transparent;
-		border: 1px solid var(--color-green-dim);
-		color: var(--color-green-mid);
-		font-size: var(--text-sm);
-		font-family: var(--font-mono);
-		letter-spacing: var(--tracking-wide);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
-	}
-
-	.back-button:hover {
-		background: var(--color-bg-secondary);
-		border-color: var(--color-green-mid);
-		color: var(--color-green-bright);
-	}
-
-	.back-button svg {
-		width: 16px;
-		height: 16px;
-	}
-
-	.page-title {
-		color: var(--color-green-bright);
-		font-size: var(--text-lg);
-		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wider);
-	}
-
-	.spacer {
-		width: 100px;
-	}
-
-	.page-content {
+	.leaderboard-content {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		padding: var(--space-4) var(--space-6);
+		width: 100%;
+		max-width: 1000px;
+		margin: 0 auto;
 	}
 
 	.section-header {
@@ -186,26 +131,9 @@
 		margin-top: var(--space-2);
 	}
 
-	@media (max-width: 640px) {
-		.leaderboard-page {
-			padding: var(--space-3);
-		}
-
-		.page-header {
-			margin-bottom: var(--space-4);
-		}
-
-		.back-button {
-			padding: var(--space-1) var(--space-2);
-			font-size: var(--text-xs);
-		}
-
-		.page-title {
-			font-size: var(--text-base);
-		}
-
-		.spacer {
-			width: 80px;
+	@media (max-width: 767px) {
+		.leaderboard-content {
+			padding: var(--space-2);
 		}
 	}
 </style>

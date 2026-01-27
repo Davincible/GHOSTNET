@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Header } from '$lib/features/header';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
 	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
 	import {
@@ -218,6 +218,7 @@
 
 <div class="market-page">
 	<Header />
+	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'MARKET' }]} />
 
 	<main class="main-content">
 		<!-- Tab Navigation -->

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Header } from '$lib/features/header';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
 	import {
 		CrewHeader,
@@ -157,6 +157,7 @@
 
 <div class="crew-page">
 	<Header />
+	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'CREW' }]} />
 
 	<main class="main-content">
 		{#if crew}

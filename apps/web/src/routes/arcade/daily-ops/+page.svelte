@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import { Box, Shell } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
@@ -156,6 +160,9 @@
 <svelte:head>
 	<title>DAILY OPS | GHOSTNET</title>
 </svelte:head>
+
+<Header />
+<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'DAILY OPS' }]} />
 
 <Shell>
 	<div class="daily-ops-page">
@@ -397,6 +404,7 @@
 		{/if}
 	</div>
 </Shell>
+<NavigationBar active="arcade" />
 
 <style>
 	.daily-ops-page {
@@ -406,6 +414,7 @@
 		max-width: 1000px;
 		margin: 0 auto;
 		padding: var(--space-4);
+		padding-bottom: var(--space-16);
 	}
 
 	.page-header {

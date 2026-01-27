@@ -42,8 +42,17 @@
 	let hasMore = $derived(provider.feedEvents.length > collapsedCount);
 	let currentHeight = $derived(expanded ? expandedHeight : collapsedHeight);
 
+	function collapse() {
+		expanded = false;
+	}
 </script>
 
+<!-- Backdrop: click to collapse when expanded -->
+{#if expanded}
+	<button class="feed-backdrop" onclick={collapse} aria-label="Collapse feed"></button>
+{/if}
+
+<div class="feed-panel-wrapper" class:expanded>
 <Panel title="LIVE FEED" scrollable maxHeight={currentHeight} minHeight={collapsedHeight}>
 	{#snippet footer()}
 		<Row justify="between" align="center">
@@ -77,8 +86,32 @@
 		{/if}
 	</div>
 </Panel>
+</div>
 
 <style>
+	/* ═══════════════════════════════════════════════════════════════
+	   EXPAND BACKDROP — click-away-to-close
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.feed-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: var(--z-overlay, 40);
+		background: rgba(0, 0, 0, 0.5);
+		border: none;
+		cursor: pointer;
+		backdrop-filter: blur(2px);
+	}
+
+	.feed-panel-wrapper {
+		position: relative;
+	}
+
+	.feed-panel-wrapper.expanded {
+		position: relative;
+		z-index: calc(var(--z-overlay, 40) + 1);
+	}
+
 	.feed-list {
 		display: flex;
 		flex-direction: column;

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import { Box, Shell } from '$lib/ui/terminal';
 	import { Stack, Row } from '$lib/ui/layout';
 	import { Button } from '$lib/ui/primitives';
@@ -213,6 +215,9 @@
 	/>
 </svelte:head>
 
+<Header />
+<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'HELP' }]} />
+
 <Shell>
 	<div class="help-page">
 		<header class="help-header">
@@ -289,12 +294,14 @@
 		</div>
 	</div>
 </Shell>
+<NavigationBar active="help" />
 
 <style>
 	.help-page {
 		max-width: 1000px;
 		margin: 0 auto;
 		padding: var(--space-4);
+		padding-bottom: var(--space-16);
 	}
 
 	.help-header {

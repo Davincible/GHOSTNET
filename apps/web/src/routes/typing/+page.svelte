@@ -6,6 +6,8 @@
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { createTypingGameStore, TOTAL_ROUNDS } from '$lib/features/typing/store.svelte';
 	import { getAudioManager } from '$lib/core/audio';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import IdleView from '$lib/features/typing/IdleView.svelte';
 	import CountdownView from '$lib/features/typing/CountdownView.svelte';
 	import ActiveView from '$lib/features/typing/ActiveView.svelte';
@@ -150,21 +152,11 @@
 	<title>Trace Evasion | GHOSTNET</title>
 </svelte:head>
 
+<Header />
+<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'TRACE EVASION' }]} />
+
 <Shell>
 	<div class="typing-page">
-		<!-- Header -->
-		<header class="page-header">
-			<button class="back-button" onclick={() => goto(resolve('/'))} aria-label="Return to network">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<line x1="19" y1="12" x2="5" y2="12"></line>
-					<polyline points="12 19 5 12 12 5"></polyline>
-				</svg>
-				<span>NETWORK</span>
-			</button>
-			<h1 class="page-title">TRACE EVASION</h1>
-			<div class="spacer"></div>
-		</header>
-
 		<!-- Main Content -->
 		<main class="page-content">
 			{#if gameStore.state.status === 'idle'}
@@ -205,6 +197,7 @@
 		{/if}
 	</div>
 </Shell>
+<NavigationBar active="arcade" />
 
 <style>
 	.typing-page {
@@ -212,52 +205,7 @@
 		flex-direction: column;
 		min-height: 100vh;
 		padding: var(--space-4);
-	}
-
-	.page-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: var(--space-6);
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--color-bg-tertiary);
-	}
-
-	.back-button {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		background: transparent;
-		border: 1px solid var(--color-green-dim);
-		color: var(--color-green-mid);
-		font-size: var(--text-sm);
-		font-family: var(--font-mono);
-		letter-spacing: var(--tracking-wide);
-		cursor: pointer;
-		transition: all var(--duration-fast) var(--ease-default);
-	}
-
-	.back-button:hover {
-		background: var(--color-bg-secondary);
-		border-color: var(--color-green-mid);
-		color: var(--color-green-bright);
-	}
-
-	.back-button svg {
-		width: 16px;
-		height: 16px;
-	}
-
-	.page-title {
-		color: var(--color-green-bright);
-		font-size: var(--text-lg);
-		font-weight: var(--font-bold);
-		letter-spacing: var(--tracking-wider);
-	}
-
-	.spacer {
-		width: 100px; /* Match back button width for centering */
+		padding-bottom: var(--space-16);
 	}
 
 	.page-content {

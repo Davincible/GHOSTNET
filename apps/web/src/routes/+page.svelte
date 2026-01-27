@@ -5,7 +5,7 @@
 	import { FeedPanel } from '$lib/features/feed';
 	import { PositionPanel, ModifiersPanel } from '$lib/features/position';
 	import { NetworkVitalsPanel } from '$lib/features/network';
-	import { QuickActionsPanel } from '$lib/features/actions';
+	import { QuickActionsPanel, GameNavigationCard } from '$lib/features/actions';
 	import { NavigationBar } from '$lib/features/nav';
 	import { WelcomePanel } from '$lib/features/welcome';
 	import { IntroVideoModal } from '$lib/features/intro';
@@ -55,7 +55,9 @@
 	let showJackInModal = $state(false);
 	let showExtractModal = $state(false);
 	let showSettingsModal = $state(false);
-	let showIntroVideo = $state(true);
+	let showIntroVideo = $state(
+		browser ? localStorage.getItem('ghostnet_intro_seen') !== 'true' : false
+	);
 
 	// Action handlers
 	function handleJackIn() {
@@ -239,7 +241,7 @@
 
 	<main class="main-content">
 		<div class="content-grid">
-			<!-- Left Column: Welcome, Feed & Visualization -->
+			<!-- Left Column: Welcome, Feed, Arcade & Visualization -->
 			<div class="column column-left" data-feed-column>
 				<!-- Welcome panel (network initialization): hidden on mobile -->
 				<div class="hide-mobile">
@@ -253,6 +255,9 @@
 					collapsedHeight={isMobile ? '100px' : '140px'}
 					expandedHeight={isMobile ? '300px' : '400px'}
 				/>
+
+				<!-- Arcade navigation card -->
+				<GameNavigationCard />
 
 				<!-- Network Visualization: hidden on mobile (too heavy) -->
 				<div class="hide-mobile">
@@ -297,7 +302,10 @@
 <JackInModal open={showJackInModal} onclose={() => (showJackInModal = false)} />
 <ExtractModal open={showExtractModal} onclose={() => (showExtractModal = false)} />
 <SettingsModal open={showSettingsModal} onclose={() => (showSettingsModal = false)} />
-<IntroVideoModal open={showIntroVideo} onclose={() => (showIntroVideo = false)} />
+<IntroVideoModal open={showIntroVideo} onclose={() => {
+	showIntroVideo = false;
+	if (browser) localStorage.setItem('ghostnet_intro_seen', 'true');
+}} />
 
 <!-- Toast notifications -->
 <ToastContainer />

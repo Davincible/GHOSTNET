@@ -33,8 +33,7 @@
 
 	const navItems: NavItem[] = [
 		{ id: 'network', label: 'NETWORK', href: '/' },
-		{ id: 'position', label: 'POSITION', href: '/' },
-		{ id: 'games', label: 'GAMES', href: '/typing' },
+		{ id: 'arcade', label: 'ARCADE', href: '/arcade' },
 		{ id: 'crew', label: 'CREW', href: '/crew' },
 		{ id: 'market', label: 'MARKET', href: '/market' },
 		{ id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },

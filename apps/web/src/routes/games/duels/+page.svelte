@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { onMount, onDestroy } from 'svelte';
 	import type { Duel, DuelHistoryEntry, CreateDuelParams } from '$lib/core/types/duel';
 	import {
@@ -9,6 +11,8 @@
 	} from '$lib/core/types/duel';
 	import { createDuelStore } from '$lib/features/duels';
 	import { MOCK_USER_ADDRESS } from '$lib/core/providers/mock/generators/duel';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Header, Breadcrumb } from '$lib/features/header';
 	import { Shell, Box } from '$lib/ui/terminal';
 	import { Button, ProgressBar, Badge } from '$lib/ui/primitives';
 	import { AmountDisplay, AddressDisplay } from '$lib/ui/data-display';
@@ -131,6 +135,9 @@
 <svelte:head>
 	<title>PvP Duels | GHOSTNET</title>
 </svelte:head>
+
+<Header />
+<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'PVP DUELS' }]} />
 
 <Shell>
 	<div class="duels-page">
@@ -485,6 +492,7 @@
 		{/snippet}
 	</Modal>
 </Shell>
+<NavigationBar active="arcade" />
 
 <style>
 	.duels-page {
@@ -492,6 +500,7 @@
 		flex-direction: column;
 		gap: var(--space-4);
 		padding: var(--space-4);
+		padding-bottom: var(--space-16);
 		min-height: 100%;
 	}
 

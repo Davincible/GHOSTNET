@@ -9,10 +9,11 @@
 	const shortcuts: Shortcut[] = [
 		{ key: 'J', modifier: 'SHIFT', label: 'Jack In', category: 'action' },
 		{ key: 'E', modifier: 'SHIFT', label: 'Extract', category: 'action' },
-		{ key: 'T', modifier: 'SHIFT', label: 'Typing', category: 'game' },
+		{ key: 'T', modifier: 'SHIFT', label: 'Trace Evasion', category: 'game' },
 		{ key: 'H', modifier: 'SHIFT', label: 'Hack Run', category: 'game' },
+		{ key: 'D', modifier: 'SHIFT', label: 'Duels', category: 'game' },
 		{ key: 'C', modifier: 'SHIFT', label: 'Crew', category: 'social' },
-		{ key: 'P', modifier: 'SHIFT', label: 'Pool', category: 'social' },
+		{ key: 'P', modifier: 'SHIFT', label: 'Dead Pool', category: 'social' },
 	];
 
 	// Group shortcuts by category for visual separation
