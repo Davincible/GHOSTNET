@@ -10,7 +10,7 @@
 	import { WelcomePanel } from '$lib/features/welcome';
 	import { IntroVideoModal } from '$lib/features/intro';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
-	import { FAQPanel } from '$lib/features/faq';
+
 	import { DailyOpsPanel } from '$lib/features/daily';
 	import { GettingStartedPanel } from '$lib/features/getting-started';
 	import { WalletModal } from '$lib/features/modals';
@@ -298,7 +298,7 @@
 					onCrew={handleCrew}
 					onDeadPool={handleDeadPool}
 				/>
-				<FAQPanel />
+				<!-- FAQPanel hidden for now -->
 			</div>
 		</div>
 	</main>
