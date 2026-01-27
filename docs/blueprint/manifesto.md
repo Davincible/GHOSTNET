@@ -19,45 +19,33 @@ tags:
 
 ## Jack In. Don't Get Traced.
 
-**Version:** 2.0  
-**Network:** MegaETH (Real-Time Layer 2)  
-**Category:** High-Frequency Game Theory (HFGT) + Active-Edge Gaming  
-**Token:** $DATA  
-
 ---
 
 ## The Seed
 
 You're a hacker. You jack into a hostile network. You earn yield while you're inside. But every few hours, the system runs a **trace scan**—and if you get caught, you lose everything.
 
-**The deeper you go, the higher the risk, the bigger the rewards.**
+The deeper you go, the higher the risk, the bigger the rewards.
 
 **When others die, you profit.**
 
----
-
-## The MegaETH Thesis
-
-Traditional blockchains (Ethereum L1, Optimism, Base) suffer from block times of 2-12 seconds. This latency makes "real-time" gambling impossible—the adrenaline is lost in the mempool.
-
-GHOSTNET is built on MegaETH's **Real-Time Execution Layer** to deliver:
-
-### Sub-Millisecond Ticks
-Our Trace Scans and Market Resolutions happen instantly. There is no lag between a decision and a result. When you see someone get traced in the feed, it just happened.
-
-### High-Frequency Transactions
-We process thousands of micro-transactions ($5 entries) per second without clogging the network or spiking gas fees. This enables:
-- Real-time feed updates
-- Instant position changes
-- Sub-second typing game responses
-- Live odds recalculation
-
-### The MegaMafia Alignment
-We fit the ecosystem's "Consumer Crypto" narrative—bringing Web2 speed (CS:GO/casino) to Web3 financial engineering. GHOSTNET is designed to be the flagship "degen entertainment" protocol on MegaETH.
+That's the game. That's the network. That's GHOSTNET.
 
 ---
 
-## The Game
+## Why This Exists
+
+Traditional blockchains are slow. 2-12 second blocks. By the time your transaction confirms, the adrenaline is gone. The moment is lost in the mempool.
+
+We built GHOSTNET on MegaETH because **speed is the product**.
+
+Sub-millisecond finality. When you see someone get traced in the feed, it *just happened*. No waiting. No lag. When your position survives a scan, you feel it instantly. The relief is real. The dopamine hits different when it's real-time.
+
+This is what crypto gaming should feel like. Not a spreadsheet. A video game where the money is real.
+
+---
+
+## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -73,222 +61,168 @@ We fit the ecosystem's "Consumer Crypto" narrative—bringing Web2 speed (CS:GO/
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### The Two-Layer Design
+**Don't want to play?** You don't have to. Jack in, close your browser, come back whenever. The network runs 24/7.
 
-**Layer 1: Passive Economic Core**
-Most people don't want to play—they want to invest and get rich. The core game requires ZERO interaction after staking:
-- Stake $DATA at your chosen security clearance
-- Accumulate yield passively
-- Survive automated trace scans (RNG death rolls)
-- Extract whenever you want
+**Want an edge?** Play mini-games. Type fast, hack nodes, predict deaths. Active operators can reduce their death rate by up to 35%. Passive operators... well, they're gambling on pure luck.
 
-**Layer 2: Active Boost Games**
-Optional mini-games that provide significant edges for those who engage:
-- **Trace Evasion (Typing):** Reduce your death probability
-- **Hack Runs:** Earn temporary yield multipliers
-- **Dead Pool:** Bet on network outcomes
-- **Daily Ops:** Consistent small boosts
-- **Crew Raids:** Coordinated team rewards
-- **PvP Duels:** Competitive wagering
+Your choice. Both work. Both can win. Both can lose.
 
 ---
 
-## The 5 Risk Levels (Security Clearances)
+## The Vocabulary
+
+Before we go deeper, learn the language. This is how operators talk.
+
+```
+GHOSTNET DICTIONARY
+───────────────────
+
+Jack In     = Deposit/stake (you're entering the network)
+Extract     = Withdraw (you're pulling your gains out)
+Ghost       = Survived a scan (you're still alive)
+Traced      = Died/liquidated (network caught you)
+Operator    = Player (you)
+The Feed    = Live activity stream (the dopamine engine)
+Trace Scan  = Death roll event (the moment of truth)
+Ghost Streak = Consecutive survivals (flex it)
+The Cascade = Redistribution system (how deaths feed survivors)
+The Furnace = Burn mechanism (tokens going to 0xdead)
+$DATA       = The token (always with the $)
+```
+
+We don't say "users." We say **operators**.
+We don't say "deposit." We say **jack in**.
+We don't say "withdraw." We say **extract**.
+
+You're not using a protocol. You're entering a network. Act like it.
+
+---
+
+## The 5 Security Clearances
+
+Choose your risk. Choose your reward. Choose your fate.
 
 ```
 ╔════════════════════════════════════════════════════════════════════════════════╗
 ║                         SECURITY CLEARANCE MATRIX                               ║
 ╠════════════════════════════════════════════════════════════════════════════════╣
 ║                                                                                 ║
-║  LEVEL   NAME          TRACE RATE   FREQUENCY   TARGET APY   MIN STAKE   ROLE  ║
-║  ─────   ────          ──────────   ─────────   ──────────   ─────────   ────  ║
+║  LEVEL   NAME          DEATH RATE   SCAN FREQ   APY          MIN STAKE        ║
+║  ─────   ────          ──────────   ─────────   ───          ─────────        ║
 ║                                                                                 ║
-║  LVL 1   THE VAULT     0% (Safe)    N/A         100-500%     100 $DATA   Bank  ║
-║          Absorbs yield from all 4 levels below. Safe haven for whales.         ║
+║  LVL 1   THE VAULT     0% (Safe)    Never       100-500%     100 $DATA        ║
+║          The whale zone. Zero risk. You eat yield from everyone below.         ║
+║          Sleep at night. Wake up richer. Boring but effective.                 ║
 ║                                                                                 ║
-║  LVL 2   MAINFRAME     2%           Every 24h   1,000%       50 $DATA    Cons. ║
-║          Conservative. Eats yield from Levels 3, 4, 5.                         ║
+║  LVL 2   MAINFRAME     2%           Every 24h   1,000%       50 $DATA         ║
+║          The conservative play. Low risk. Solid returns.                       ║
+║          For operators who want gains without the stress.                      ║
 ║                                                                                 ║
-║  LVL 3   SUBNET        15%          Every 8h    5,000%       30 $DATA    Mid   ║
-║          The Mid-Curve. Balance of survival and greed.                         ║
+║  LVL 3   SUBNET        15%          Every 8h    5,000%       30 $DATA         ║
+║          The balanced zone. Risk and reward in harmony.                        ║
+║          Smart money lives here. 3 scans a day. Manageable.                    ║
 ║                                                                                 ║
-║  LVL 4   DARKNET       40%          Every 2h    20,000%      15 $DATA    Degen ║
-║          The Degen zone. High velocity. Feeds L1-3.                            ║
+║  LVL 4   DARKNET       40%          Every 2h    20,000%      15 $DATA         ║
+║          Degen territory. Scans every 2 hours. Real risk.                      ║
+║          The rewards are massive. So are the losses.                           ║
 ║                                                                                 ║
-║  LVL 5   BLACK ICE     90%          Every 30m   Instant 2x   5 $DATA     Casino║
-║          The Casino. 30-minute rounds. Double or Nothing.                      ║
+║  LVL 5   BLACK ICE     90%          Every 30m   ∞            5 $DATA          ║
+║          The casino. 30-minute rounds. Double or nothing.                      ║
+║          90% of you will die. The 10% who survive? Legends.                    ║
 ║                                                                                 ║
 ╚════════════════════════════════════════════════════════════════════════════════╝
 ```
 
-This is the **Reverse Pyramid**—high-risk players (degens) in the lower clearances generate sustainable yield for risk-averse players (whales) in the upper clearances.
+Here's the game theory: **Dead capital flows UP**.
+
+When someone in BLACK ICE gets traced, their stake doesn't vanish. It flows upward—to DARKNET, SUBNET, MAINFRAME, and THE VAULT. Degens feed whales. That's the design.
+
+Want safe yield? Park in THE VAULT and let the degens below fund your returns.
+
+Want massive gains? Jack into BLACK ICE and pray. 90% death rate. But if you survive... you eat everyone else's stack.
 
 ---
 
 ## The Three Threats
 
-Once jacked in, you face three threats. Surviving them earns you yield.
+Once you're in, you face three ways to die. Surviving all of them is how you win.
 
-### Threat A: THE TRACE SCAN (RNG Death)
+### Threat 1: THE TRACE SCAN
 
-At the end of every frequency block (e.g., every 30 mins for BLACK ICE), the contract rolls a random number.
+The main event. The moment of truth. The RNG death roll.
 
-**If you are selected:** You get **TRACED**. Your staked tokens are seized and redistributed via The Cascade.
+At the end of every scan period (30 mins for BLACK ICE, up to 24 hours for MAINFRAME), the network rolls a random number for every position. If you're selected, you get **traced**. Your stake is seized. Redistributed. Gone.
 
-**If you survive:** You maintain **GHOST STATUS** and continue earning yield.
+If you survive, you keep your **ghost status**. You keep earning. And you get a cut of everyone who just died.
 
 ```
 TRACE SCAN SEQUENCE
 ───────────────────
 
-1. Warning appears in feed (60 seconds before)
+1. Warning hits the feed (60 seconds out)
    > ⚠ TRACE SCAN [DARKNET] in 00:60 ⚠
 
-2. Countdown escalates (final 10 seconds)
-   > ⚠ TRACE SCAN [DARKNET] in 00:10 ⚠
+2. Countdown escalates (final seconds)
    > ⚠ TRACE SCAN [DARKNET] IMMINENT ⚠
 
-3. Scan executes
+3. The scan executes
    > ░░░░░ SCANNING DARKNET ░░░░░
 
-4. Results stream (each position resolved)
+4. Results stream live
    > 0x7a3f survived [DARKNET] 👻
    > 0x9c2d ████ TRACED ████ 💀
    > 0x3b1a survived [DARKNET] 👻
+   > 0x8f2e ████ TRACED ████ 💀
 
-5. Summary
+5. Summary drops
    > SCAN COMPLETE: 847 ghosts, 153 traced
    > CASCADE INITIATED: 12,400 $DATA redistributed
 ```
 
-### Threat B: THE SYSTEM RESET (Starvation Timer)
+That's the game. Every scan. Every level. Every time.
 
-A global countdown timer that creates urgency for new deposits.
+The feed will show you who lived and who died. In real-time. No delay. This is why we built on MegaETH.
 
-**The Reset:** Every time ANYONE deposits (any level), the timer resets based on deposit size.
+### Threat 2: THE SYSTEM RESET
 
-**The Collapse:** If the timer hits 00:00:00 (no new deposits), catastrophic event triggers.
+A global timer that keeps the network hungry.
 
-**The Penalty:** Everyone in all levels loses a percentage of their stake (10-50%).
-
-**The Jackpot:** The last person to deposit before collapse wins 50% of the penalty pool.
+Every time someone jacks in, the timer resets. Big deposits reset it more. If no one deposits and the timer hits zero? **Catastrophic collapse.** Everyone loses a chunk of their stake.
 
 ```
-TIMER RESET VALUES (based on deposit size):
+TIMER RESET VALUES
+──────────────────
 
-Deposit < 50 $DATA:      Reset +1 hour
-Deposit 50-200 $DATA:    Reset +4 hours
-Deposit 200-500 $DATA:   Reset +8 hours
-Deposit 500-1000 $DATA:  Reset +16 hours
-Deposit > 1000 $DATA:    Full reset (24 hours)
+< 50 $DATA:      +1 hour
+50-200 $DATA:    +4 hours
+200-500 $DATA:   +8 hours
+500-1000 $DATA:  +16 hours
+> 1000 $DATA:    Full reset (24 hours)
 ```
 
-**Why This Works:**
-- Creates constant urgency in the feed
-- Incentivizes deposits (reset the timer, save everyone)
-- Whale incentive (big deposits = full reset)
-- Jackpot creates "last-second hero" content moments
+The last person to deposit before collapse? They win the **jackpot**—50% of the penalty pool. 
 
-### Threat C: THE CULLING (Capacity Enforcement)
+This creates urgency. This creates content. This creates "SOMEONE SAVE THE NETWORK" moments. The timer is always ticking. The feed is always watching.
 
-Each security clearance level has a maximum capacity. When a level is full, new entrants trigger **The Culling**.
+### Threat 3: THE CULLING
 
-**The Selection:** When you jack in to a full level, someone in the bottom 50% of stakes gets randomly eliminated to make room.
+Each level has a capacity limit. When a level is full and someone new wants in, they don't get blocked. Instead, someone in the bottom 50% of stakes gets **culled**.
 
-**The Penalty:** The culled position loses 80% of their stake. They receive 20% back as "severance."
+Lower stake = higher chance of getting kicked out.
 
-**The Risk Display:** Your dashboard shows your "Culling Risk %" based on stake size relative to others.
+The culled operator loses 80% of their stake (redistributed), gets 20% back as "severance."
+
+This means: **maintain a competitive stake size or risk getting replaced.**
+
+Your dashboard shows your "Culling Risk %" at all times. Watch it. If it's high, jack in more—or move to a level where you're safer.
 
 ---
 
-## The Command Center
+## The Cascade
 
-The main screen is the heart of GHOSTNET. It's not a static dashboard—it's a **living terminal** that streams the entire network's activity in real-time.
+This is the economic engine. This is how yield actually works. This is why GHOSTNET isn't a ponzi.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ GHOSTNET v1.0.7 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ NETWORK: ONLINE   │
-├────────────────────────────────────────┬─────────────────────────────────────┤
-│                                        │                                     │
-│           LIVE FEED                    │         YOUR STATUS                 │
-│                                        │                                     │
-│  > 0x7a3f jacked in [DARKNET] 500Đ    │  ┌─────────────────────────────┐   │
-│  > 0x9c2d ████ TRACED ████ -Loss 120Đ │  │ OPERATOR: 0x7a3f...9c2d    │   │
-│  > 0x3b1a extracted 847Đ [+312 gain]  │  │ STATUS: JACKED IN          │   │
-│  > TRACE SCAN [DARKNET] in 00:45      │  │ LEVEL: DARKNET             │   │
-│  > 0x8f2e jacked in [BLACK ICE] 50Đ   │  │ STAKED: 500 $DATA          │   │
-│  > 0x1d4c ████ TRACED ████ -Loss 200Đ │  │                            │   │
-│  > 0x5e7b survived [SUBNET] streak: 12│  │ DEATH RATE: 32% ▼          │   │
-│  > SYSTEM RESET in 04:32:17           │  │ YIELD: 31,500% APY         │   │
-│  > 0x2a9f crew [PHANTOMS] +10% boost  │  │ NEXT SCAN: 01:23           │   │
-│  > 0x6c3d perfect hack run [3x mult]  │  │                            │   │
-│  > 0x4b8e jacked in [MAINFRAME] 1000Đ │  │ EXTRACTED: 2,847 $DATA     │   │
-│  > ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │  │ GHOST STREAK: 7 🔥         │   │
-│                                        │  └─────────────────────────────┘   │
-│  ▼ SCROLL FOR MORE                     │                                     │
-│                                        │  ┌─────────────────────────────┐   │
-├────────────────────────────────────────┤  │ ACTIVE MODIFIERS            │   │
-│                                        │  │                             │   │
-│        NETWORK VITALS                  │  │ ✓ Trace Evasion    -15%    │   │
-│                                        │  │ ✓ Hack Run 3x      2h rem  │   │
-│  TOTAL VALUE LOCKED    $4,847,291     │  │ ✓ Daily Boost      +5%     │   │
-│  ████████████████████░░ 89% CAPACITY   │  │ ✓ Crew Bonus       +10%    │   │
-│                                        │  │                             │   │
-│  OPERATORS ONLINE         1,247       │  └─────────────────────────────┘   │
-│  ███████████░░░░░░░░░ 58% OF ATH       │                                     │
-│                                        │  ┌─────────────────────────────┐   │
-│  SYSTEM RESET    ████████░░ 04:32:17  │  │ QUICK ACTIONS               │   │
-│  ▲ CRITICAL - NEEDS DEPOSITS           │  │                             │   │
-│                                        │  │ [J] JACK IN MORE            │   │
-│  LAST HOUR:                            │  │ [E] EXTRACT ALL             │   │
-│  ├─ Jacked In:    +$127,400           │  │ [T] TRACE EVASION           │   │
-│  ├─ Extracted:    -$89,200            │  │ [H] HACK RUN                │   │
-│  ├─ Traced/Lost:  -$34,100            │  │ [C] CREW                    │   │
-│  └─ Net Flow:     +$4,100 ▲           │  │ [P] DEAD POOL               │   │
-│                                        │  │                             │   │
-│  BURN RATE: 847 $DATA/hr 🔥           │  └─────────────────────────────┘   │
-│                                        │                                     │
-├────────────────────────────────────────┴─────────────────────────────────────┤
-│                                                                              │
-│  [NETWORK]  [POSITION]  [GAMES]  [CREW]  [MARKET]  [LEADERBOARD]  [?]       │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Key Principles
-
-1. **Information Density**: Every pixel conveys meaningful data
-2. **Constant Motion**: Something is always updating, scrolling, changing
-3. **Urgency Signals**: Timers, countdowns, warnings everywhere
-4. **Social Proof**: See others winning, losing, playing in real-time
-5. **Your Position**: Always visible, always updating
-
----
-
-## The Live Feed
-
-The dopamine engine. A real-time stream of everything happening on the network.
-
-### Event Types
-
-| Type | Example | Visual | Sound |
-|------|---------|--------|-------|
-| **Jack In** | `> 0x7a3f jacked in [DARKNET] 500Đ` | Green text, pulse | Connection beep |
-| **Extraction** | `> 0x3b1a extracted 847Đ [+312 gain] 💰` | Gold/cyan, coin animation | Cash register |
-| **Death (Traced)** | `> 0x9c2d ████ TRACED ████ -Loss 120Đ 💀` | RED FLASH, glitch | Alarm buzz, flatline |
-| **Survival** | `> 0x5e7b survived [SUBNET] streak: 12 👻` | Green pulse | Soft chime |
-| **Scan Warning** | `> ⚠ TRACE SCAN [DARKNET] in 00:45 ⚠` | Amber, pulsing | Warning klaxon |
-| **System Reset** | `> ⛔ SYSTEM RESET in 00:05:00 ⛔` | Red, urgent | Escalating alarm |
-| **Jackpot** | `> 🔥 0x2a9f JACKPOT [BLACK ICE] survived at 95% 🔥` | GOLD, particles | Fanfare |
-| **Crew Event** | `> [PHANTOMS] completed raid - all +10% ⚡` | Crew color | Team victory |
-| **Mini-Game** | `> 0x6c3d perfect hack run [3x multiplier] ⚡` | Cyan highlight | Achievement |
-| **Whale Alert** | `> 🐋 WHALE: 0x4b8e jacked in 10,000Đ 🐋` | Large text, glow | Deep horn |
-
----
-
-## The Cascade (Redistribution)
-
-When a player is traced, their capital flows through the **60/30/10 Rule**:
+When someone gets traced, their stake doesn't go to the devs. It doesn't vanish. It cascades:
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
@@ -298,139 +232,176 @@ When a player is traced, their capital flows through the **60/30/10 Rule**:
 ║  TRACED POSITION: 100 $DATA                                       ║
 ║                                                                   ║
 ║  ┌─────────────────────────────────────────────────────────────┐ ║
-║  │ 60% → THE REWARD POOL (60 $DATA)                            │ ║
-║  │                                                              │ ║
-║  │ Split between:                                               │ ║
-║  │ ├── 30 $DATA → Survivors of SAME level (Jackpot)           │ ║
-║  │ └── 30 $DATA → Sent UPWARD to safer levels (Yield)         │ ║
+║  │ 60% → REWARD POOL (60 $DATA)                                │ ║
+║  │   └── 30 goes to survivors in your level (jackpot)          │ ║
+║  │   └── 30 flows UPWARD to safer levels (yield)               │ ║
 ║  └─────────────────────────────────────────────────────────────┘ ║
 ║                                                                   ║
 ║  ┌─────────────────────────────────────────────────────────────┐ ║
-║  │ 30% → THE FURNACE (30 $DATA)                                │ ║
-║  │                                                              │ ║
-║  │ Action: Sent immediately to 0xdead                          │ ║
-║  │ Result: Permanent supply reduction (DEFLATION)              │ ║
+║  │ 30% → BURNED FOREVER (30 $DATA) 🔥                          │ ║
+║  │   └── Sent to 0xdead. Never coming back.                    │ ║
 ║  └─────────────────────────────────────────────────────────────┘ ║
 ║                                                                   ║
 ║  ┌─────────────────────────────────────────────────────────────┐ ║
-║  │ 10% → PROTOCOL REVENUE (10 $DATA)                           │ ║
-║  │                                                              │ ║
-║  │ Action: Sent to Protocol Treasury                           │ ║
-║  │ Use: Operations, development, marketing                     │ ║
+║  │ 10% → PROTOCOL (10 $DATA)                                   │ ║
+║  │   └── Operations, development, we gotta eat too             │ ║
 ║  └─────────────────────────────────────────────────────────────┘ ║
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-### The Upward Stream
+Read that again. **30% of every death is burned.**
 
-Dead capital flows UP the security clearance ladder:
+Not redistributed. Not paid out. **Burned.** Sent to a dead address. Removed from existence forever.
+
+This is why the tokenomics work. This is why we're not a ponzi. Deaths reduce supply. More activity = more burns = deflationary pressure. The furnace never stops.
+
+### The Upward Flow
+
+Capital flows UP the clearance ladder:
 
 ```
-BLACK ICE deaths    → Split among VAULT, MAINFRAME, SUBNET, DARKNET
-DARKNET deaths      → Split among VAULT, MAINFRAME, SUBNET
-SUBNET deaths       → Split among VAULT, MAINFRAME
-MAINFRAME deaths    → Split to VAULT only
-VAULT deaths        → N/A (0% death rate)
+BLACK ICE deaths    → Feeds DARKNET, SUBNET, MAINFRAME, VAULT
+DARKNET deaths      → Feeds SUBNET, MAINFRAME, VAULT
+SUBNET deaths       → Feeds MAINFRAME, VAULT
+MAINFRAME deaths    → Feeds VAULT
+VAULT deaths        → N/A (0% death rate, remember?)
 ```
 
-This creates sustainable yield without inflation. Degens fund whales.
+The safe levels eat the risky levels. That's the design. That's why it's sustainable. Whales don't need new money to make yield—they need degens to keep dying.
+
+And trust us. Degens keep dying.
 
 ---
 
-## The Hyper-Furnace (Burn Economics)
+## The Feed
 
-GHOSTNET has five burn engines. We do not rely on just one source of deflationary pressure.
-
-### Engine A: The ETH Toll Booth
-
-Every protocol interaction incurs a flat **$2.00 fee** (payable in ETH):
+The dopamine engine. The content machine. The reason you'll check GHOSTNET 47 times a day.
 
 ```
-TRIGGERED BY:
-├── Jack In (Deposit)
-├── Extract (Withdraw)
-├── Claim Rewards
-├── Enter Hack Run
-└── Place Dead Pool Bet
-
-FEE DISTRIBUTION:
-├── 90% ($1.80) → AUTO-BUYBACK & BURN
-│   └── Contract swaps ETH for $DATA on DEX
-│   └── Purchased $DATA sent to 0xdead
-└── 10% ($0.20) → OPERATIONS
+╔══════════════════════════════════════════════════════════════════╗
+║ GHOSTNET v1.0 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ ONLINE     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║  > 0x7a3f jacked in [DARKNET] 500 $DATA                         ║
+║  > 0x9c2d ████ TRACED ████ -Loss 120 $DATA 💀                   ║
+║  > 0x3b1a extracted 847 $DATA [+312 gain] 💰                    ║
+║  > 0x8f2e survived [BLACK ICE] at 90% death rate 🔥             ║
+║  > ⚠ TRACE SCAN [SUBNET] in 00:45 ⚠                            ║
+║  > 0x1d4c ████ TRACED ████ -Loss 200 $DATA 💀                   ║
+║  > 🐋 WHALE ALERT: 0x4b8e jacked in 10,000 $DATA                ║
+║  > [PHANTOMS] completed crew raid - all members +10% ⚡          ║
+║  > 0x6c3d perfect hack run [3x multiplier active] ⚡             ║
+║  > SYSTEM RESET in 04:32:17 - needs deposits                    ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
-### Engine B: The Trading Tax
+Every jack-in. Every extraction. Every death. Every survival. Every whale. Every crew achievement. Every close call.
 
-Every DEX buy/sell incurs a **10% tax**:
+All of it. Real-time. No delay.
 
-```
-├── 9% → THE FURNACE (burned)
-└── 1% → TREASURY
-```
+When you see `████ TRACED ████`—that operator just lost their stack. Just now. Not a minute ago. Just now. And part of their money just flowed to you.
 
-### Engine C: Game Burns (30% of Deaths)
+You'll watch this for hours. We're not sorry.
 
-Every traced position = 30% burned (from The Cascade).
+### Feed Event Types
 
-### Engine D: Dead Pool Rake
+| Event | What It Means | Your Reaction |
+|-------|---------------|---------------|
+| Jack In | New operator entered | More TVL, your death rate drops slightly |
+| Extraction | Someone cashed out | They're out, one less competitor |
+| **TRACED** | Someone died | 💀 RIP to them, money to you |
+| Survived | Someone made it | 👻 Ghost status maintained |
+| Scan Warning | Death roll coming | 😰 Clench time |
+| Whale Alert | Big deposit | 🐋 Timer reset, everyone safer |
+| Crew Event | Team achievement | ⚡ Coordination pays off |
+| Jackpot | Rare survival | 🔥 Legend status |
 
-The prediction market burns 5% of every betting pot:
-```
-Dead Pool Pot: 1,000 $DATA
-├── Winners split: 950 $DATA (95%)
-└── BURNED: 50 $DATA (5%)
-```
+The traced feed the living. That's the way.
 
-### Engine E: Consumables & Items
+---
 
-Purchased in the Black Market, 100% burned:
+## The Burn Engines
 
-| Item | Cost | Effect |
-|------|------|--------|
+Five ways $DATA gets destroyed. This is how we stay deflationary.
+
+### Engine 1: The Death Tax
+
+30% of every traced position is burned. Not redistributed. **Burned.**
+
+Someone dies with 1,000 $DATA? 300 $DATA goes to 0xdead. Forever.
+
+### Engine 2: The ETH Toll Booth
+
+Every protocol interaction costs $2.00 in ETH.
+
+- Jack in? $2.
+- Extract? $2.
+- Claim rewards? $2.
+- Enter a mini-game? $2.
+
+90% of that fee ($1.80) automatically buys $DATA on the DEX and burns it. Instant. Automatic. Every transaction.
+
+### Engine 3: The Trading Tax
+
+10% tax on every DEX trade. 9% of that is burned.
+
+Panic selling? You're burning supply.
+Buying the dip? You're burning supply.
+Every trade burns.
+
+### Engine 4: The Dead Pool Rake
+
+5% of every betting pot in the prediction market is burned.
+
+More bets = more burns.
+
+### Engine 5: Consumables
+
+Items in the Black Market are 100% burned:
+
+| Item | Cost (Burned) | Effect |
+|------|---------------|--------|
 | Stimpack | 50 $DATA | +25% yield for 4h |
 | EMP | 100 $DATA | Pause your timer 1h |
 | Ghost Protocol | 200 $DATA | Skip one trace scan |
 | Exploit Kit | 75 $DATA | Unlock hack run paths |
 | ICE Breaker | 150 $DATA | -10% trace rate 24h |
 
-### Combined Burn Impact
+Want an edge? Pay for it. The tokens get burned.
+
+### The Math
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║                    BURN ECONOMICS SUMMARY                         ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                   ║
-║  SCENARIO: $100,000 Daily Protocol Volume                         ║
-║                                                                   ║
-║  SOURCE                          BURN AMOUNT                      ║
-║  ──────────────────────────────────────────────                  ║
-║  Game Deaths (30% of ~$30k)      ~9,000 $DATA                    ║
-║  ETH Toll ($1.80 × ~2000 txns)   ~3,600 $DATA (via buyback)      ║
-║  Trading Tax (9% of ~$50k)       ~4,500 $DATA                    ║
-║  Dead Pool Rake (5% of ~$10k)    ~500 $DATA                      ║
-║  Consumables                     ~1,000 $DATA                    ║
-║  ──────────────────────────────────────────────                  ║
-║  TOTAL DAILY BURN                ~18,600 $DATA                   ║
-║                                                                   ║
-║  vs. Daily Emission (from Mine)  ~82,000 $DATA                   ║
-║                                                                   ║
-║  BREAK-EVEN POINT:                                                ║
-║  At ~$175k daily volume, burns exceed emissions = NET DEFLATION  ║
-║                                                                   ║
-╚══════════════════════════════════════════════════════════════════╝
+AT $100,000 DAILY VOLUME:
+
+Game Deaths:        ~9,000 $DATA burned
+ETH Toll Buybacks:  ~3,600 $DATA burned  
+Trading Tax:        ~4,500 $DATA burned
+Dead Pool Rake:     ~500 $DATA burned
+Consumables:        ~1,000 $DATA burned
+────────────────────────────────────────
+TOTAL DAILY BURN:   ~18,600 $DATA
+
+vs. Daily Emission: ~82,000 $DATA
+
+BREAK-EVEN: ~$175,000 daily volume
+
+Above that? NET DEFLATION. Supply shrinks every day.
 ```
+
+The furnace never stops. The supply only goes down.
 
 ---
 
-## Mini-Games
+## The Mini-Games
 
-### Mini-Game 1: Trace Evasion (Typing Challenge)
+The passive game is pure luck. The active game gives you an edge. Here's how operators reduce their death rate.
 
-**Purpose:** Reduce your death probability  
-**Availability:** Anytime, unlimited  
-**Duration:** 30-60 seconds  
+### Trace Evasion (Typing Challenge)
+
+Type hacker commands to scramble your trace signature. The faster and more accurate you type, the harder you are to trace.
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
@@ -449,156 +420,108 @@ Purchased in the Black Market, 100% burned:
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-#### Command Library
-
-Typed commands look like real hacking:
+Commands from the library look like real hacking:
 ```
 ssh -L 8080:localhost:443 ghost@proxy.darknet.io
 nmap -sS -sV -p- --script vuln target.subnet
 curl -X POST -H 'Auth: Bearer token' https://api.ghost/extract
 openssl enc -aes-256-cbc -salt -in data.bin -out cipher.enc
-gpg --encrypt --recipient ghost@net --armor payload.dat
 msfconsole -q -x 'use exploit/multi/handler; set PAYLOAD'
-sqlmap -u 'target.io/id=1' --dump --batch --level=5
 sudo iptables -A INPUT -s 0.0.0.0/0 -j DROP && ghost --activate
-rsync -avz --progress /vault/data ghost@exit:/extracted/
 ```
 
-#### Reward Tiers
+**Rewards:**
 
-| Performance | Death Reduction | Duration |
-|-------------|-----------------|----------|
-| < 50% accuracy | No bonus | - |
-| 50-69% accuracy | -5% | Until next scan |
-| 70-84% accuracy | -10% | Until next scan |
-| 85-94% accuracy | -15% | Until next scan |
-| 95-99% accuracy | -20% | Until next scan |
-| 100% (Perfect) | -25% | Until next scan |
-| **Speed Bonus:** >80 WPM + 95% acc | Additional -5% | |
-| **Speed Bonus:** >100 WPM + 95% acc | Additional -10% | |
+| Performance | Death Rate Reduction |
+|-------------|----------------------|
+| 50-69% accuracy | -5% |
+| 70-84% accuracy | -10% |
+| 85-94% accuracy | -15% |
+| 95-99% accuracy | -20% |
+| 100% perfect | -25% |
+| Speed bonus (>80 WPM + 95% acc) | Additional -5% |
+| Speed bonus (>100 WPM + 95% acc) | Additional -10% |
 
-**Maximum reduction: -35% death rate**
+**Maximum reduction: -35% death rate.** Active operators have a massive edge.
 
----
+### Hack Runs (Yield Multiplier)
 
-### Mini-Game 2: Hack Runs (Yield Multiplier)
-
-**Purpose:** Earn temporary yield multipliers  
-**Cost:** 50-200 $DATA entry fee  
-**Duration:** 3-5 minutes  
+Pay an entry fee. Navigate through 5 nodes. Make decisions at each one. Type the commands. Survive, and you get a yield multiplier.
 
 ```
-START ──▶ NODE 1 ──▶ NODE 2 ──▶ NODE 3 ──▶ NODE 4 ──▶ NODE 5 ──▶ EXTRACT
-            │          │          │          │          │
-         FIREWALL   PATROL    DATA CACHE    TRAP      ICE WALL
+START ──▶ FIREWALL ──▶ PATROL ──▶ DATA CACHE ──▶ TRAP ──▶ ICE WALL ──▶ EXTRACT
+              │           │           │          │           │
+           [Medium]    [Easy]     [High]    [V.High]    [V.Hard]
 ```
 
-#### Node Types
+Each node gives you choices. Harder paths = better rewards. Easier paths = safer but less payout.
 
-| Node Type | Risk | Reward | Difficulty |
-|-----------|------|--------|------------|
-| FIREWALL | Medium | Standard | Medium |
-| PATROL | Low | Low | Easy |
-| DATA CACHE | High | High | Medium |
-| TRAP | Very High | Skip | Hard |
-| ICE WALL | Medium | Standard | Very Hard |
-| HONEYPOT | Variable | Variable | Tricky |
-| BACKDOOR | Low | Shortcut | Easy |
+| Run Result | Multiplier | Duration |
+|------------|------------|----------|
+| Failed (died) | None, lose entry fee | - |
+| Survived 3/5 | 1.25x yield | 4 hours |
+| Survived 4/5 | 1.5x yield | 4 hours |
+| Survived 5/5 | 2x yield | 4 hours |
+| Perfect (no damage) | 3x yield | 4 hours |
 
-#### Rewards
+Entry fee: 50-200 $DATA. High risk, high reward. Just like everything else.
 
-| Result | Multiplier | Duration |
-|--------|------------|----------|
-| Failed (died) | None | - |
-| Survived 3/5 | 1.25x | 4 hours |
-| Survived 4/5 | 1.5x | 4 hours |
-| Survived 5/5 | 2x | 4 hours |
-| Perfect (no damage) | 3x | 4 hours |
+### Dead Pool (Prediction Market)
 
----
-
-### Mini-Game 3: Dead Pool (Prediction Market)
-
-**Purpose:** Bet on network outcomes  
-**Availability:** Continuous 15-minute rounds  
+Bet on network outcomes. Pure degenerate gambling on top of the degenerate game.
 
 ```
-╔══════════════════════════════════════════════════════════════════╗
-║                         THE DEAD POOL                             ║
-║                    "Bet on Entropy"                               ║
-╠══════════════════════════════════════════════════════════════════╣
-║                                                                   ║
-║  THE QUESTION:                                                    ║
-║  "How many operators will be TRACED in the next BLACK ICE scan?" ║
-║                                                                   ║
-║  ┌──────────────────────┬──────────────────────┐                 ║
-║  │   [UNDER 50]         │   [OVER 50]          │                 ║
-║  │   Pool: 12,400Đ      │   Pool: 8,200Đ       │                 ║
-║  │   Payout: 1.66x      │   Payout: 2.51x      │                 ║
-║  └──────────────────────┴──────────────────────┘                 ║
-║                                                                   ║
-║  Current BLACK ICE: 127 operators, 80% death rate                ║
-║  Expected deaths: ~102 (Line seems LOW → OVER might be value)    ║
-║                                                                   ║
-╚══════════════════════════════════════════════════════════════════╝
+THE QUESTION:
+"How many operators will be TRACED in the next BLACK ICE scan?"
+
+[UNDER 50]              [OVER 50]
+Pool: 12,400 $DATA      Pool: 8,200 $DATA
+Payout: 1.66x           Payout: 2.51x
 ```
 
-#### Betting Options
+**Round types:**
+- Death Count: Over/under on deaths
+- Whale Watch: Will a 1000+ $DATA position die?
+- Survival Streak: Will anyone hit 10+ streak?
+- System Reset: Will timer hit critical?
 
-| Round Type | Question | Options |
-|------------|----------|---------|
-| Death Count | How many traced? | Over/Under |
-| Survival Streak | Will anyone hit 10? | Yes/No |
-| Whale Watch | Will 1000+Đ position die? | Yes/No |
-| System Reset | Will timer hit <1 hour? | Yes/No |
-| Perfect Run | Will anyone perfect a hack run? | Yes/No |
+5% rake on every pot goes to the furnace. More gambling = more burns.
 
-#### The Hedge Play
+**Pro tip:** Hedge your position. If you're in BLACK ICE, bet on high deaths. If you die, at least you win the bet.
 
-Smart players hedge their positions:
-```
-Your position: BLACK ICE, 100Đ (85% death rate)
-Hedge: Bet 30Đ on "HIGH DEATHS"
+### Daily Ops
 
-If you survive (15%): Keep 100Đ, lose 30Đ bet = +70Đ
-If you die (85%): Lose 100Đ, win ~60Đ from bet = -40Đ
-
-HEDGE REDUCES VARIANCE BY 60%
-```
-
----
-
-### Mini-Game 4: Daily Ops
-
-**Purpose:** Daily engagement with small rewards  
-**Resets:** Every 24 hours  
+Quick daily tasks for consistent bonuses:
 
 ```
 ✓ SIGNAL CHECK      Complete 1 typing challenge    → +5% yield
 ○ NETWORK PATROL    Check in 3 times today         → -3% death
-○ DATA PACKET       Claim daily $DATA              → 10Đ free
-○ CREW SYNC         3 crew members complete        → +10% crew
-○ STREAK KEEPER     7 days straight                → 100Đ bonus
+○ DATA PACKET       Claim daily $DATA              → 10 $DATA free
+○ CREW SYNC         3 crew members complete        → +10% crew bonus
+○ STREAK KEEPER     7 days straight                → 100 $DATA bonus
 ```
 
----
+Show up every day. Stack small edges. They add up.
 
-### Mini-Game 5: PvP Duels
+### PvP Duels
 
-**Purpose:** Competitive typing battles  
-**Duration:** 60 seconds  
-**Wager:** Winner takes 90% (10% burned)  
+Challenge another operator. Both wager. Both type. Winner takes 90%. 10% burned.
 
 ```
-YOU (0x7a3f)                    VS                    OPPONENT (0x9c2d)
-Rank: #847                                           Rank: #234
-████████████████░░░░░░░░ 42%                        ██████████████░░░░░░░░░░ 38%
-WPM: 78    ACC: 96%                                 WPM: 71    ACC: 94%
+YOU (0x7a3f)                VS                OPPONENT (0x9c2d)
+████████████████░░░░░░ 42%                   ██████████████░░░░░░░░ 38%
+WPM: 78    ACC: 96%                          WPM: 71    ACC: 94%
+
+WAGER: 50 $DATA each | Winner takes 90 $DATA | 10 $DATA burned
 ```
+
+Think you're fast? Prove it. Put money on it.
 
 ---
 
 ## The Crew System
+
+Solo operators survive. Crews thrive.
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
@@ -606,118 +529,114 @@ WPM: 78    ACC: 96%                                 WPM: 71    ACC: 94%
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
 ║  MEMBERS: 12/20                        RANK: #47                  ║
-║  TOTAL STAKED: 14,200Đ                                           ║
+║  TOTAL STAKED: 14,200 $DATA                                       ║
 ║                                                                   ║
 ║  ACTIVE BONUSES:                                                  ║
-║  ├── Crew Size (10+)      +5% yield for all members              ║
+║  ├── Crew Size (10+)      +5% yield for all                      ║
 ║  ├── Daily Sync (3/3)     +10% yield today                       ║
 ║  └── Survival Streak (8)  -3% death rate for all                 ║
 ║                                                                   ║
-║  MEMBERS ONLINE:                                                  ║
-║  ● 0x7a3f (You)    DARKNET    500Đ    Streak: 7                 ║
-║  ● 0x9c2d          SUBNET     300Đ    Streak: 4                 ║
-║  ● 0x3b1a          BLACK ICE  100Đ    Streak: 2                 ║
+║  CREW CHAT:                                                       ║
+║  [0x9c2d]: gl everyone, scan in 2 min                            ║
+║  [0x3b1a]: im so cooked lmao                                     ║
+║  [You]: we got this                                               ║
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-### Crew Bonuses
+**Crew Bonuses:**
 
 | Milestone | Bonus |
 |-----------|-------|
 | 5 members | +2% yield |
 | 10 members | +5% yield |
 | 15 members | +8% yield |
-| 20 members (full) | +12% yield |
+| 20 members (max) | +12% yield |
 | Daily sync (3 complete) | +10% yield (24h) |
 | Crew survival streak | -1% death per level (max -10%) |
 | Weekly raid complete | 2x yield (24h) |
 
----
-
-## Dopamine Mechanics
-
-Every element is designed to trigger dopamine:
-
-```
-ANTICIPATION
-├── Countdown timers everywhere
-├── "Next scan in..." tension
-├── System reset = shared anxiety
-└── Watching feed for deaths/wins
-
-VARIABLE REWARDS
-├── Death is probabilistic (not certain)
-├── Typing performance affects outcomes
-├── Big wins rare but visible
-└── Jackpot moments in feed
-
-SOCIAL PROOF
-├── See others winning in real-time
-├── See others dying (scarcity mindset)
-├── Whale alerts create FOMO
-└── Crew achievements visible
-
-NEAR MISSES
-├── "You survived with 32% death rate!"
-├── Streaks that almost continue
-└── Almost beating someone in PvP
-
-LOSS AVERSION
-├── Can see exactly what you'd lose
-├── Stake visible at all times
-└── Deaths of similar positions highlighted
-```
+Find your people. Coordinate. Win together.
 
 ---
 
-## Visual Design System
+## The Dopamine Stack
 
-### Color Palette
+We designed every element to hit different:
 
+**ANTICIPATION**
+- Countdown timers everywhere
+- "Next scan in..." creates tension
+- System reset timer = shared anxiety
+- Watching the feed for deaths/wins
+
+**VARIABLE REWARDS**
+- Death is probabilistic (never certain)
+- Typing performance affects outcomes
+- Big wins are rare but visible
+- Jackpot moments in the feed
+
+**SOCIAL PROOF**
+- See others winning in real-time
+- See others dying (scarcity mindset)
+- Whale alerts create FOMO
+- Crew achievements visible to all
+
+**NEAR MISSES**
+- "You survived at 32% death rate!"
+- Streaks that almost continue
+- Almost perfect typing scores
+- Almost beating someone in PvP
+
+**LOSS AVERSION**
+- Can see exactly what you'd lose
+- Stake visible at all times
+- Deaths of similar positions highlighted
+- "This could be you" energy
+
+You'll check the feed compulsively. You'll feel the scan countdowns. You'll celebrate survivals and mourn deaths (while pocketing the cascade).
+
+That's by design. We're not sorry.
+
+---
+
+## The Visual Language
+
+Terminal aesthetics. Hacker fantasy. Casino mechanics.
+
+**Colors:**
 ```css
-/* Core Colors */
---bg-primary: #0a0a0a;        /* Near black */
---bg-secondary: #0f0f0f;      /* Panels */
-
-/* Terminal Green */
---green-bright: #00ff00;      /* Primary */
---green-mid: #00cc00;         /* Secondary */
+--green-bright: #00ff00;    /* Primary - the matrix green */
 --green-glow: rgba(0,255,0,0.3);
-
-/* Status Colors */
---cyan: #00ffff;              /* Info, links */
---amber: #ffaa00;             /* Warnings */
---red: #ff0000;               /* Deaths, danger */
---gold: #ffd700;              /* Jackpots */
---profit: #00ff88;            /* Gains */
---loss: #ff4444;              /* Losses */
+--red: #ff0000;             /* Deaths, danger, losses */
+--gold: #ffd700;            /* Jackpots, big wins */
+--cyan: #00ffff;            /* Info, links, interactive */
+--amber: #ffaa00;           /* Warnings */
 ```
 
-### Typography
+**Typography:** IBM Plex Mono. Monospace everything. We're hackers, not bankers.
 
-```css
-font-family: 'IBM Plex Mono', 'Fira Code', monospace;
-```
+**Effects:**
+- CRT scanlines (subtle, constant)
+- Screen flicker (8-second cycle)
+- Death flash (red pulse when someone gets traced)
+- Jackpot glow (gold particles on big wins)
+- Text glow on important numbers
 
-### Effects
+**Sound:** ZzFX synthesized sounds. Beeps for connections. Chimes for survivals. Alarms for deaths. Fanfares for jackpots.
 
-- **CRT Scanlines:** Repeating gradient overlay
-- **Screen Flicker:** 8-second subtle opacity animation
-- **Text Glow:** Green shadow on important text
-- **Death Flash:** Red background pulse on traces
-- **Jackpot:** Gold glow with scale animation
+When you see `████ TRACED ████`, your screen should flash red for a split second. That's someone's money becoming your money. Feel it.
 
 ---
 
-## Tokenomics: $DATA
+## $DATA Tokenomics
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║                         $DATA TOKEN                               ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                   ║
-║  Total Supply:     100,000,000 (100M)                            ║
+║  Total Supply:     100,000,000 (fixed, deflationary)             ║
 ║  Network:          MegaETH                                        ║
 ║  Launch FDV:       $500,000                                       ║
 ║  Initial Price:    $0.005 per $DATA                              ║
@@ -725,112 +644,122 @@ font-family: 'IBM Plex Mono', 'Fira Code', monospace;
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
-### Distribution
+**Distribution:**
 
-| Allocation | % | Amount | Vesting |
-|------------|---|--------|---------|
-| **THE MINE** (Game Rewards) | 60% | 60,000,000 | 24-month linear |
-| **PRESALE** | 15% | 15,000,000 | 100% at TGE |
-| **LIQUIDITY** | 9% | 9,000,000 | **BURNED 🔥** |
-| **TEAM** | 8% | 8,000,000 | 1mo cliff + 24mo vest |
-| **TREASURY** | 8% | 8,000,000 | Unlocked |
+| Allocation | % | Amount | What Happens |
+|------------|---|--------|--------------|
+| THE MINE | 60% | 60,000,000 | Game rewards, vested 24 months |
+| PRESALE | 15% | 15,000,000 | 100% unlocked at launch |
+| LIQUIDITY | 9% | 9,000,000 | **BURNED** 🔥 Can't rug. |
+| TEAM | 8% | 8,000,000 | 1mo cliff + 24mo vest |
+| TREASURY | 8% | 8,000,000 | Growth, partnerships |
 
-**Liquidity is BURNED.** LP tokens sent to 0xdead at launch. We cannot rug.
+Read that liquidity line again. **BURNED.** Not locked. Burned. The LP tokens are sent to 0xdead at launch. They don't exist anymore. We cannot withdraw them. Ever.
 
-### Emission Schedule
+We're stuck here with you.
+
+**Emission:**
 
 ```
-Daily Emission: ~82,000 $DATA (from The Mine)
+Daily emission from THE MINE: ~82,000 $DATA
 
-DISTRIBUTION BY LEVEL:
-├── VAULT:     5% of daily
-├── MAINFRAME: 10% of daily
-├── SUBNET:    20% of daily
-├── DARKNET:   30% of daily
-└── BLACK ICE: 35% of daily
+Distributed by clearance:
+├── VAULT:     5%
+├── MAINFRAME: 10%
+├── SUBNET:    20%
+├── DARKNET:   30%
+└── BLACK ICE: 35%
+
+Higher risk = bigger share of emissions.
 ```
 
 ---
 
 ## Why GHOSTNET Wins
 
-| Problem | Solution |
-|---------|----------|
+| The Problem | Our Answer |
+|-------------|------------|
 | "Crypto games are boring" | Real-time feed of wins and losses. Pure dopamine. |
-| "I have to play constantly" | 100% passive option. Stake and forget. |
+| "I have to play constantly" | 100% passive option. Jack in and forget. |
 | "Devs always rug" | Liquidity is **BURNED**. We literally can't. |
-| "Tokenomics are ponzi" | 30% of every death burns forever. Deflationary. |
-| "No skill in gambling" | Mini-games provide real edges. -35% death rate possible. |
-| "L2s are slow" | Built on MegaETH. 10ms blocks. Feels like a video game. |
+| "Tokenomics are ponzi" | 30% of every death burns. Deflationary by design. |
+| "No skill in gambling" | Mini-games give -35% death rate to skilled operators. |
+| "L2s are slow" | MegaETH. 10ms blocks. Feels like a video game. |
+
+We're not the first survival game. We're not the first DeFi game. We're not the first thing on MegaETH.
+
+But we're the first to combine all of it into something that actually feels good to play. Real-time. Real risk. Real rewards.
 
 ---
 
-## Who This Is For
+## Who Should Jack In
 
 ### The Degen
-High risk tolerance. Active on CT. Chases narratives. Wants the thrill. "Ape in, send it."
+You know who you are. High risk tolerance. CT native. Chasing the next 10x. You'll live in BLACK ICE. You'll lose sometimes. You'll win sometimes. You'll tell everyone about both.
 
 ### The Yield Seeker
-Has capital ($10k+). Wants returns without management. "What's the APY? Is it sustainable?"
+You have capital. You want returns. You don't want to babysit positions. Jack into THE VAULT or MAINFRAME. Let the degens below fund your yield. Check back weekly. Sleep at night.
 
 ### The Competitive Gamer
-Skilled at games. Wants to monetize typing speed. "Skill gap matters."
+You're fast. You want to prove it. The typing games are for you. Reduce your death rate through pure skill. Climb the leaderboards. Flex your ghost streak.
 
 ### The Voyeur
-Enjoys watching drama. The feed is content. "lmao rekt"
+You might not even play. But you'll watch the feed for hours. Deaths, survivals, whale alerts, close calls. It's content. It's entertainment. It's free.
 
 ---
 
-## What This Is NOT
+## What This Isn't
 
-- **Not a DEX.** The swap exists only for $DATA liquidity.
-- **Not passive staking.** Even THE VAULT engages through the feed.
-- **Not pay-to-win.** Skill provides edges, not wealth.
-- **Not a casino.** Pure RNG is boring. Typing adds skill.
-- **Not for TradFi.** This is for degens who accept high risk.
-- **Not multi-chain.** MegaETH-native. Real-time requires it.
+Let's be clear about what we're NOT:
 
----
-
-## Success Criteria
-
-**User outcomes:**
-- Genuine tension before trace scans
-- Mini-game skill = measurable survival edges
-- The feed becomes appointment viewing
-- "I survived BLACK ICE at 90%" stories
-
-**Metrics:**
-- 1,000+ DAU within 30 days
-- $500k TVL within 60 days
-- Net deflationary at $175k+ daily volume
-- 40%+ 7-day retention
-- 10+ minute average session
-
-**Cultural impact:**
-- "I got ghosted" = I survived
-- "I got traced" = I lost
-- GHOSTNET enters crypto vocabulary
+- **Not a DEX.** The swap exists for $DATA liquidity. That's it.
+- **Not passive staking.** Even THE VAULT is designed for engagement through the feed.
+- **Not pay-to-win.** Money doesn't buy survival. Skill does.
+- **Not a casino.** Pure RNG is boring. Typing games add skill layers.
+- **Not for normies.** This is for degens who understand and accept risk.
+- **Not multi-chain.** MegaETH only. The experience requires real-time.
 
 ---
 
 ## The Risk
 
 ```
-⚠️ GHOSTNET IS HIGH-RISK ⚠️
-
-BLACK ICE has a 90% death rate.
-DARKNET has a 40% death rate.
-You can lose everything.
-
-Liquidity is burned (we can't rug).
-But you can still get rekt.
-
-Only stake what you can afford to lose.
-This is not financial advice.
-
-Welcome to the network.
+╔══════════════════════════════════════════════════════════════════╗
+║                         ⚠️ WARNING ⚠️                             ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║  GHOSTNET IS HIGH-RISK.                                          ║
+║                                                                   ║
+║  BLACK ICE has a 90% death rate.                                 ║
+║  DARKNET has a 40% death rate.                                   ║
+║  You can lose everything.                                        ║
+║                                                                   ║
+║  Liquidity is burned. We can't rug you.                          ║
+║  But you can still get traced.                                   ║
+║  You can still lose your entire stake.                           ║
+║  You can still get rekt.                                         ║
+║                                                                   ║
+║  Only jack in with what you can afford to lose.                  ║
+║  This is not financial advice.                                   ║
+║  This is not a safe investment.                                  ║
+║  This is a game. A dangerous one.                                ║
+║                                                                   ║
+║  You've been warned.                                             ║
+║                                                                   ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## The Network Is Live
+
+The feed is burning. Operators are jacking in. Scans are running. The cascade is flowing. The furnace is hungry.
+
+The only question is: **are you brave enough?**
+
+Jack in. Don't get traced.
+
+*Play fast. Die young. Or don't die at all.*
 
 ---
 
@@ -843,7 +772,3 @@ Welcome to the network.
 | See quality requirements (35 NFRs) | [[quality]] |
 | See roadmap and priorities | [[roadmap]] |
 | Navigate the codebase | [[codebase]] |
-
----
-
-*Play fast. Die young. Or don't die at all.*
