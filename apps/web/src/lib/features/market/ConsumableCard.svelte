@@ -46,7 +46,7 @@
 
 	<footer class="card-footer">
 		<div class="price">
-			<AmountDisplay amount={consumable.price} symbol="DATA" decimals={0} />
+			<AmountDisplay amount={consumable.price} symbol="DATA" displayDecimals={0} />
 		</div>
 
 		<Button

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { DailyProgress } from '$lib/core/types';
 	import { DAILY_REWARDS } from '$lib/core/types/daily';
+	import { formatPercentNumber } from '$lib/core/utils';
 
 	interface Props {
 		/** Daily progress data */
@@ -29,9 +30,9 @@
 	function getRewardLabel(dayIndex: number): string {
 		const reward = DAILY_REWARDS[dayIndex];
 		if (reward.type === 'death_rate') {
-			return `${Math.abs(reward.value * 100)}%`;
+			return formatPercentNumber(Math.abs(reward.value));
 		} else if (reward.type === 'yield') {
-			return `+${reward.value * 100}%`;
+			return formatPercentNumber(reward.value, { showSign: true });
 		}
 		return 'BONUS';
 	}

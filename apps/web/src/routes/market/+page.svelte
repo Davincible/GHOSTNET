@@ -12,6 +12,7 @@
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
 	import { getProvider } from '$lib/core/stores/index.svelte';
+	import { formatWei } from '$lib/core/utils';
 	import {
 		generateActiveRounds,
 		generateMockHistoryList,
@@ -87,7 +88,7 @@
 			};
 		}
 
-		toast.success(`Bet placed: ${(Number(amount) / 1e18).toFixed(2)} Đ on ${side.toUpperCase()}`);
+		toast.success(`Bet placed: ${formatWei(amount)} Đ on ${side.toUpperCase()}`);
 		handleCloseBetModal();
 	}
 

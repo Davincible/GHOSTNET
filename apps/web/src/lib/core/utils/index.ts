@@ -14,3 +14,16 @@ export {
 	calculateAccuracy,
 	formatPercent,
 } from './format';
+
+export {
+	formatNumber,
+	formatCompact,
+	formatWei,
+	formatPercentNumber,
+	formatMultiplier,
+	formatSmart,
+	type FormatNumberOptions,
+	type FormatCompactOptions,
+	type FormatWeiOptions,
+	type FormatPercentOptions,
+} from './numbers';

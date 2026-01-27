@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { OwnedConsumable, Consumable } from '$lib/core/types';
 	import { getConsumable } from '$lib/core/types/market';
+	import { formatPercentNumber } from '$lib/core/utils';
 	import { Modal } from '$lib/ui/modal';
 	import { Button } from '$lib/ui/primitives';
 	import { Stack } from '$lib/ui/layout';
@@ -33,9 +34,9 @@
 		const { effect } = c;
 		switch (effect.type) {
 			case 'yield_boost':
-				return `+${Math.round(effect.value * 100)}% yield for ${formatDuration(effect.duration)}`;
+				return `${formatPercentNumber(effect.value, { showSign: true })} yield for ${formatDuration(effect.duration)}`;
 			case 'death_rate':
-				return `${Math.round(effect.value * 100)}% death rate for ${formatDuration(effect.duration)}`;
+				return `${formatPercentNumber(effect.value, { showSign: true })} death rate for ${formatDuration(effect.duration)}`;
 			case 'timer_pause':
 				return `Pause scan timer for ${formatDuration(effect.duration)}`;
 			case 'skip_scan':

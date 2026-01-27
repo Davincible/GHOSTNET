@@ -1,11 +1,20 @@
 <script lang="ts">
+	import { formatWei, formatNumber } from '$lib/core/utils';
+
 	type Format = 'full' | 'compact' | 'precise';
 
 	interface Props {
 		/** Amount as bigint (wei-like units) */
 		amount: bigint;
-		/** Number of decimals in the token (default 18) */
+		/**
+		 * Number of decimals in the token (default 18).
+		 *
+		 * @deprecated Use `tokenDecimals` instead — this name was ambiguous
+		 * and frequently confused with display precision.
+		 */
 		decimals?: number;
+		/** Number of decimals in the token (default 18) */
+		tokenDecimals?: number;
 		/** Token symbol to display */
 		symbol?: string;
 		/** Use Đ symbol for $DATA */
@@ -16,13 +25,14 @@
 		showSign?: boolean;
 		/** Color based on positive/negative */
 		colorize?: boolean;
-		/** Maximum decimal places to show */
+		/** Maximum decimal places to show in formatted output */
 		displayDecimals?: number;
 	}
 
 	let {
 		amount,
 		decimals = 18,
+		tokenDecimals,
 		symbol = '',
 		useDataSymbol = true,
 		format = 'compact',
@@ -31,53 +41,36 @@
 		displayDecimals = 2,
 	}: Props = $props();
 
-	// Convert bigint to number for display
+	// tokenDecimals takes priority over deprecated decimals prop
+	const resolvedTokenDecimals = $derived(tokenDecimals ?? decimals);
+
 	function formatAmount(amt: bigint): string {
-		const divisor = 10n ** BigInt(decimals);
-		const integerPart = amt / divisor;
-		const fractionalPart = amt % divisor;
-
-		// Convert to number for formatting
-		const numValue = Number(integerPart) + Number(fractionalPart) / Number(divisor);
-		const absValue = Math.abs(numValue);
-
-		let formatted: string;
-
 		switch (format) {
 			case 'compact':
-				if (absValue >= 1_000_000) {
-					formatted = (absValue / 1_000_000).toFixed(displayDecimals) + 'M';
-				} else if (absValue >= 1_000) {
-					formatted = (absValue / 1_000).toFixed(displayDecimals) + 'K';
-				} else if (absValue >= 1) {
-					formatted = absValue.toFixed(displayDecimals);
-				} else if (absValue > 0) {
-					formatted = absValue.toFixed(Math.min(6, displayDecimals + 4));
-				} else {
-					formatted = '0';
-				}
-				break;
+				return formatWei(amt, {
+					tokenDecimals: resolvedTokenDecimals,
+					displayDecimals,
+					compact: true,
+					showSign,
+				});
 
 			case 'precise':
-				formatted = absValue.toFixed(Math.min(8, decimals));
-				break;
+				return formatWei(amt, {
+					tokenDecimals: resolvedTokenDecimals,
+					displayDecimals: 8,
+					showSign,
+				});
 
 			case 'full':
 			default:
-				formatted = absValue.toLocaleString('en-US', {
-					minimumFractionDigits: 0,
-					maximumFractionDigits: displayDecimals,
+				return formatWei(amt, {
+					tokenDecimals: resolvedTokenDecimals,
+					displayDecimals,
+					separators: true,
+					showSign,
+					trimZeros: true,
 				});
 		}
-
-		// Handle sign
-		if (numValue < 0) {
-			formatted = '-' + formatted;
-		} else if (showSign && numValue > 0) {
-			formatted = '+' + formatted;
-		}
-
-		return formatted;
 	}
 
 	let displayAmount = $derived(formatAmount(amount));

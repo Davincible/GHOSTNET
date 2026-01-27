@@ -162,7 +162,7 @@
 								class:positive={store.stats.netProfit > 0n}
 								class:negative={store.stats.netProfit < 0n}
 							>
-								<AmountDisplay amount={store.stats.netProfit} symbol="DATA" decimals={0} showSign />
+								<AmountDisplay amount={store.stats.netProfit} symbol="DATA" displayDecimals={0} showSign />
 							</span>
 						</div>
 						<div class="stat">
@@ -199,7 +199,7 @@
 												>
 											</div>
 											<div class="challenge-wager">
-												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" decimals={0} />
+												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" displayDecimals={0} />
 											</div>
 											<div class="challenge-actions">
 												<Button
@@ -231,7 +231,7 @@
 												<span class="status-text">Waiting for opponent...</span>
 											</div>
 											<div class="challenge-wager">
-												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" decimals={0} />
+												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" displayDecimals={0} />
 											</div>
 											<div class="challenge-actions">
 												<Button
@@ -276,7 +276,7 @@
 										class:positive={entry.netAmount > 0n}
 										class:negative={entry.netAmount < 0n}
 									>
-										<AmountDisplay amount={entry.netAmount} symbol="DATA" decimals={0} showSign />
+										<AmountDisplay amount={entry.netAmount} symbol="DATA" displayDecimals={0} showSign />
 									</span>
 								</div>
 							{/each}
@@ -305,7 +305,7 @@
 						<div class="pulse-ring"></div>
 						<div class="wager-display">
 							<span class="label">WAGER</span>
-							<AmountDisplay amount={waitingDuel.wagerAmount} symbol="DATA" decimals={0} />
+							<AmountDisplay amount={waitingDuel.wagerAmount} symbol="DATA" displayDecimals={0} />
 						</div>
 						<p class="waiting-text">Searching for an opponent...</p>
 						<Button variant="ghost" onclick={() => handleCancelDuel(waitingDuel.id)}>CANCEL</Button>
@@ -372,12 +372,12 @@
 				<!-- Wager Info -->
 				<div class="wager-info">
 					<span class="label">WAGER:</span>
-					<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" decimals={0} />
+					<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" displayDecimals={0} />
 					<span class="potential">Win: </span>
 					<AmountDisplay
 						amount={calculateDuelWinnings(store.state.duel.wagerAmount).payout}
 						symbol="DATA"
-						decimals={0}
+						displayDecimals={0}
 					/>
 				</div>
 			</div>
@@ -395,12 +395,12 @@
 						{#if store.state.youWon}
 							<div class="payout-display">
 								<span class="label">PAYOUT</span>
-								<AmountDisplay amount={store.state.payout} symbol="DATA" decimals={0} />
+								<AmountDisplay amount={store.state.payout} symbol="DATA" displayDecimals={0} />
 							</div>
 						{:else}
 							<div class="loss-display">
 								<span class="label">LOST</span>
-								<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" decimals={0} />
+								<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" displayDecimals={0} />
 							</div>
 						{/if}
 
@@ -479,7 +479,7 @@
 
 			<div class="payout-preview">
 				<span class="label">POTENTIAL WIN:</span>
-				<AmountDisplay amount={potentialPayout} symbol="DATA" decimals={0} />
+				<AmountDisplay amount={potentialPayout} symbol="DATA" displayDecimals={0} />
 				<span class="rake-note">(5% rake burned)</span>
 			</div>
 		</Stack>
