@@ -9,7 +9,7 @@
 	let { src = 'https://i.imgur.com/59R2ABZ.mp4', active = true }: Props = $props();
 
 	let videoEl: HTMLVideoElement | undefined = $state();
-	let isMuted = $state(true);
+	let isMuted = $state(false);
 	let isPlaying = $state(false);
 	let hasEnded = $state(false);
 	let progress = $state(0);
@@ -17,6 +17,30 @@
 	let loadError = $state(false);
 
 	let progressPercent = $derived(duration > 0 ? (progress / duration) * 100 : 0);
+
+	// ─── Smooth progress via requestAnimationFrame ─────────────
+	// ontimeupdate fires ~4x/sec which causes visible stepping.
+	// Instead we poll currentTime at display refresh rate (60fps).
+	let rafId: number | undefined;
+
+	function startProgressLoop() {
+		function tick() {
+			if (videoEl && !videoEl.paused && !videoEl.ended) {
+				progress = videoEl.currentTime;
+				duration = videoEl.duration || 0;
+				rafId = requestAnimationFrame(tick);
+			}
+		}
+		cancelProgressLoop();
+		rafId = requestAnimationFrame(tick);
+	}
+
+	function cancelProgressLoop() {
+		if (rafId !== undefined) {
+			cancelAnimationFrame(rafId);
+			rafId = undefined;
+		}
+	}
 
 	// ─── Autoplay / pause when active changes ──────────────────
 	$effect(() => {
@@ -27,7 +51,13 @@
 			});
 		} else {
 			videoEl.pause();
+			cancelProgressLoop();
 		}
+	});
+
+	// Cleanup on unmount
+	$effect(() => {
+		return () => cancelProgressLoop();
 	});
 
 	// ─── Actions ───────────────────────────────────────────────
@@ -69,22 +99,25 @@
 	function handlePlay() {
 		isPlaying = true;
 		hasEnded = false;
+		startProgressLoop();
 	}
 
 	function handlePause() {
 		isPlaying = false;
-	}
-
-	function handleTimeUpdate() {
-		if (videoEl) {
-			progress = videoEl.currentTime;
-			duration = videoEl.duration || 0;
-		}
+		cancelProgressLoop();
+		// Sync final position
+		if (videoEl) progress = videoEl.currentTime;
 	}
 
 	function handleEnded() {
 		isPlaying = false;
 		hasEnded = true;
+		cancelProgressLoop();
+		// Snap to 100%
+		if (videoEl) {
+			progress = videoEl.duration || 0;
+			duration = videoEl.duration || 0;
+		}
 	}
 
 	function handleError() {
@@ -111,22 +144,21 @@
 		<div class="video-container">
 			<video
 				bind:this={videoEl}
-				{src}
-				class="video"
-				muted
-				playsinline
+			{src}
+			class="video"
+			playsinline
 				preload="auto"
-				onplay={handlePlay}
-				onpause={handlePause}
-				ontimeupdate={handleTimeUpdate}
-				onended={handleEnded}
-				onerror={handleError}
+			onplay={handlePlay}
+			onpause={handlePause}
+			onended={handleEnded}
+			onerror={handleError}
 			>
 				<track kind="captions" />
 			</video>
 
-			<!-- Play/Pause click zone -->
-			<button class="video-click-zone" onclick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}>
+			<!-- Play/Pause click zone — div (not button) to avoid nesting buttons -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="video-click-zone" onclick={togglePlay} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePlay(); } }} role="button" tabindex="0" aria-label={isPlaying ? 'Pause' : 'Play'}>
 				{#if !isPlaying && !hasEnded}
 					<div class="play-indicator">
 						<span class="play-icon">▶</span>
@@ -138,7 +170,7 @@
 						<span class="replay-text">REPLAY</span>
 					</button>
 				{/if}
-			</button>
+			</div>
 
 			<!-- Scanlines -->
 			<div class="scanlines"></div>
@@ -319,7 +351,7 @@
 		height: 100%;
 		background: var(--color-accent, #00e5cc);
 		box-shadow: 0 0 6px rgba(0, 229, 204, 0.5);
-		transition: width 0.15s linear;
+		/* No transition — rAF provides smooth 60fps updates directly */
 		pointer-events: none;
 	}
 
