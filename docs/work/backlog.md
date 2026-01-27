@@ -29,8 +29,8 @@ Parking lot for ideas, bugs, tech debt, and future work. Not everything here wil
 
 | ID | Description | Impact | Priority | Notes |
 |----|-------------|--------|----------|-------|
-| TD-001 | Archive old product/ docs | Documentation clarity | [P1] | After Blueprint complete |
-| TD-002 | Consolidate remaining architecture docs | Navigation | [P1] | Into Blueprint structure |
+| ~~TD-001~~ | ~~Archive old product/ docs~~ | ~~Documentation clarity~~ | ~~[P1]~~ | ✅ Completed 2026-01-27 |
+| ~~TD-002~~ | ~~Consolidate remaining architecture docs~~ | ~~Navigation~~ | ~~[P1]~~ | ✅ Completed 2026-01-27 |
 | TD-003 | Trim arcade routes from MVP | User confusion | [P1] | Hide/rename so they don't look shippable |
 
 ---

@@ -57,7 +57,7 @@ Must provide:
 - Stream events via WebSocket API to power the web feed
 
 Primary references:
-- `docs/architecture/backend/indexer-architecture.md`
+- `docs/design/backend/indexer-architecture.md`
 - `services/ghostnet-indexer/README.md`
 
 ---

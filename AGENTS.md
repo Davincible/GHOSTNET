@@ -86,12 +86,18 @@ This is a **monorepo** containing:
 │       ├── Cargo.toml
 │       ├── rust-toolchain.toml
 │       └── src/
-├── .opencode/
+├── .Claude/
 │   ├── agents/                 # Agent definitions
 │   └── skill/                  # Development skills (Rust, etc.)
 ├── docs/
-│   ├── architecture/           # Implementation plan, specs
-│   └── product/                # One-pager, product docs
+│   ├── blueprint/              # Product truth (manifesto, architecture, capabilities)
+│   ├── work/                   # Work tracking (status, backlog, epics/)
+│   ├── design/                 # Deep specs (frontend, backend, arcade/, contracts/)
+│   ├── operations/             # Runbooks, emergency procedures, audit scope
+│   ├── integrations/           # Platform guides (megaeth.md, gelato-vrf.md)
+│   ├── decisions/              # ADRs
+│   ├── learnings/              # Documented issues and fixes
+│   └── archive/                # Historical docs
 ├── shell.nix                   # Combined Nix environment
 ├── justfile                    # All commands (web-*, contracts-*, svc-*)
 └── .github/workflows/          # CI pipeline

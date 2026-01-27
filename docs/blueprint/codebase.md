@@ -45,15 +45,16 @@
 │
 ├── docs/
 │   ├── blueprint/              # Product truth (manifesto, architecture, capabilities, quality, roadmap, codebase)
-│   ├── work/                   # Work tracking (status, backlog, recent, epics/)
-│   ├── design/                 # Deep specs (arcade/, contracts/, copy-writing-bible.md)
+│   ├── work/                   # Work tracking (status, backlog, recent, mvp-scope, epics/)
+│   ├── design/                 # Deep specs (frontend-architecture, backend/, arcade/, contracts/)
+│   ├── operations/             # Runbooks, emergency procedures, audit scope
 │   ├── integrations/           # Platform guides (megaeth.md, gelato-vrf.md)
-│   ├── learnings/              # Lessons learned
 │   ├── decisions/              # ADRs
-│   ├── workflow/               # Methodology guides
+│   ├── learnings/              # Lessons learned and fixes
+│   ├── guides/                 # Development guides (backend/)
+│   ├── workflow/               # Documentation methodology guides
 │   ├── sessions/               # Planning session logs
-│   ├── architecture/           # Technical specs (frontend, backend, security, ops)
-│   └── archive/                # Historical docs (old product/, old architecture/)
+│   └── archive/                # Historical docs (old product/, old architecture/, old planning/)
 │
 ├── justfile                    # All commands (just <cmd>)
 ├── shell.nix                   # Nix development environment

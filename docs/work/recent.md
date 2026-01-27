@@ -5,9 +5,23 @@ Quick session handoff for AI agents and team members.
 ---
 
 ## 2026-01-27
+**Agent:** Nori (documentation consolidation - session 2)
+- **Completed:** Full docs reorganization
+  - Archived `docs/architecture-original-old/` 
+  - Moved operational docs → `docs/operations/` (emergency-procedures, runbooks, audit-scope)
+  - Moved frontend/backend architecture → `docs/design/`
+  - Moved ADR to `docs/decisions/ADR-002-circuit-breaker-reset-timelock.md`
+  - Moved MVP scope to `docs/work/mvp-scope.md`
+  - Moved references → `docs/guides/backend/` (timescaledb, rust)
+  - Created `docs/archive/planning/` for historical planning docs
+- **In Progress:** Updating AGENTS.md with new structure
+- **Blocked:** None
+- **Next:** Review cross-links, verify all paths correct
+
+## 2026-01-27 (earlier)
 **Agent:** Nori (documentation consolidation)
 - **Completed:** Created Blueprint structure (manifesto, architecture, capabilities)
-- **In Progress:** Work tracking setup (this file)
+- **In Progress:** Work tracking setup
 - **Blocked:** None
 - **Next:** Archive old docs, complete remaining Blueprint docs
 

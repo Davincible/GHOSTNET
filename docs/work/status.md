@@ -39,7 +39,7 @@ MVP scope defined. Core infrastructure complete (1275 tests passing). Phase 3A g
 | Phase 3A: Hash Crash | 🚧 In Progress | — | Frontend complete, contract deployed to testnet |
 | Phase 3A: Code Duel | 🚧 In Progress | — | Contract complete (101 tests), needs frontend |
 | Phase 3A: Daily Ops | 🚧 In Progress | — | Frontend complete, awaiting testnet deploy |
-| Documentation Consolidation | 🚧 In Progress | — | Blueprint created, work tracking in progress |
+| Documentation Consolidation | ✅ Complete | — | Blueprint, work tracking, design docs reorganized |
 
 ---
 
@@ -66,8 +66,9 @@ MVP scope defined. Core infrastructure complete (1275 tests passing). Phase 3A g
 
 | Item | Completed | Notes |
 |------|-----------|-------|
-| MVP scope document | 2026-01-24 | `docs/architecture/mvp-scope.md` |
+| MVP scope document | 2026-01-24 | `docs/work/mvp-scope.md` |
 | Architecture overview | 2026-01-24 | `docs/blueprint/architecture.md` |
+| Documentation consolidation | 2026-01-27 | Full restructure: blueprint/, work/, design/, operations/ |
 | Blueprint structure | 2026-01-27 | `docs/blueprint/` created |
 | Daily Ops frontend | 2026-01-25 | 7 components, contract provider |
 | CODE DUEL security tests | 2026-01-25 | 57 additional tests |
@@ -114,4 +115,4 @@ MVP scope defined. Core infrastructure complete (1275 tests passing). Phase 3A g
 - [[backlog]] - Ideas and future work
 - [[dependencies]] - Dependency graph and blockers
 - [[epics/EPIC-001-core-game-loop/epic]] - Primary active epic
-- `docs/architecture/mvp-scope.md` - MVP boundary definition
+- `docs/work/mvp-scope.md` - MVP boundary definition
