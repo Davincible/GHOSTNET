@@ -272,15 +272,23 @@
 
 	.run-content {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr);
 		gap: var(--space-4);
 		flex: 1;
 		min-height: 0;
+		align-items: start;
 	}
 
-	.node-map-container,
+	.node-map-container {
+		min-height: 0;
+		max-height: 100%;
+		overflow-y: auto;
+	}
+
 	.current-node-container {
-		min-height: 300px;
+		min-height: 0;
+		position: sticky;
+		top: 0;
 	}
 
 	/* Typing interface styles */
@@ -380,10 +388,105 @@
 		}
 	}
 
-	/* Mobile layout */
-	@media (max-width: 768px) {
+	/* Tablet/narrow layout - switch to stacked */
+	@media (max-width: 900px) {
 		.run-content {
 			grid-template-columns: 1fr;
+			grid-template-rows: auto 1fr;
+		}
+
+		.node-map-container {
+			order: 2;
+			max-height: 250px;
+			overflow-y: auto;
+		}
+
+		.current-node-container {
+			order: 1;
+			position: static;
+		}
+
+		.top-bar {
+			gap: var(--space-2);
+		}
+
+		.stat-label {
+			display: none;
+		}
+
+		.command-target {
+			font-size: var(--text-base);
+			letter-spacing: 0.05em;
+		}
+	}
+
+	/* Mobile layout */
+	@media (max-width: 600px) {
+		.active-run {
+			gap: var(--space-2);
+		}
+
+		.top-bar {
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: var(--space-2);
+		}
+
+		.timer {
+			width: 100%;
+			justify-content: center;
+			order: 1;
+		}
+
+		.stat {
+			order: 2;
+		}
+
+		/* Show labels again on mobile since they're stacked */
+		.stat-label {
+			display: inline;
+		}
+
+		.timer-label,
+		.stat-label {
+			font-size: 10px;
+		}
+
+		.node-map-container {
+			max-height: 180px;
+		}
+
+		.command-display {
+			padding: var(--space-2);
+		}
+
+		.command-target {
+			font-size: var(--text-sm);
+			letter-spacing: 0.02em;
+		}
+	}
+
+	/* Small mobile */
+	@media (max-width: 400px) {
+		.timer-value {
+			font-size: var(--text-base);
+		}
+
+		.stat-value {
+			font-size: var(--text-xs);
+		}
+
+		.typing-stats {
+			flex-direction: column;
+			gap: var(--space-1);
+		}
+
+		.typing-hint {
+			font-size: 10px;
+		}
+
+		.node-map-container {
+			max-height: 150px;
 		}
 	}
 </style>

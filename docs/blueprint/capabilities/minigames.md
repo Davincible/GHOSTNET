@@ -323,6 +323,211 @@ Requires `arcade-coordinator` backend service for matchmaking (not yet implement
 
 ---
 
+### 🟣 FR-GAME-010: Memory Dump (Slot Machine)
+
+**What:** Cyberpunk-themed slot machine where players "dump" corrupted memory sectors to extract data fragments.
+
+**Entry:** 5-100 $DATA per spin
+
+**Burn:** 5% rake (burned immediately)
+
+**Thematic Framing:**
+
+Not a "slot machine" - it's a **Memory Sector Dump**:
+- "Spin" = "DUMP SECTOR"
+- "Reels" = "Memory Banks"  
+- "Symbols" = "Data Fragments"
+- "Jackpot" = "CORE DUMP"
+- "Bet" = "Extraction Fee"
+
+**Core Mechanics:**
+
+5 reels, 3 rows, 9 paylines. Players select extraction fee and dump sectors.
+
+**Symbol Set:**
+
+| Symbol | Name | Rarity | 3-Match | 4-Match | 5-Match |
+|--------|------|--------|---------|---------|---------|
+| 👻 `[GH]` | GHOST | Common | 2x | 5x | 10x |
+| 💀 `[TR]` | TRACE | Common | 2x | 5x | 10x |
+| 🔥 `[BN]` | BURN | Common | 2x | 5x | 10x |
+| 📊 `[DA]` | DATA | Uncommon | 5x | 15x | 50x |
+| 🔐 `[CR]` | CRYPTO | Uncommon | 5x | 15x | 50x |
+| ⚡ `[VT]` | VOLT | Rare | 10x | 50x | 200x |
+| 🌐 `[NT]` | NET | Rare | 10x | 50x | 200x |
+| 💎 `[CO]` | CORE | Epic | 25x | 100x | 500x |
+| 🎰 `[**]` | WILD | Legendary | - | - | 1000x |
+| 🕳️ `[//]` | VOID | Special | Triggers bonus |
+
+**Payline Configuration:**
+
+```
+Line 1: ─ ─ ─ ─ ─  (middle row)
+Line 2: ▔ ▔ ▔ ▔ ▔  (top row)  
+Line 3: ▁ ▁ ▁ ▁ ▁  (bottom row)
+Line 4: ╲         (diagonal TL→BR)
+Line 5: ╱         (diagonal BL→TR)
+Line 6: ∨ ─ ─ ─ ∧ (V shape)
+Line 7: ∧ ─ ─ ─ ∨ (inverted V)
+Line 8: ─ ∨ ─ ∧ ─ (W shape)
+Line 9: ─ ∧ ─ ∨ ─ (M shape)
+```
+
+**Special Features:**
+
+1. **CORE DUMP (Jackpot)**
+   - 5x CORE symbols = Progressive jackpot
+   - 1% of all bets feed jackpot pool
+   - Full screen celebration animation
+
+2. **VOID SCATTER (Bonus Round)**
+   - 3+ VOID symbols triggers "Deep Memory Access"
+   - Player picks 3 of 6 memory addresses
+   - Each reveals multiplier (2x, 5x, 10x, 25x, 50x) or BUST
+   - BUST ends bonus immediately
+
+3. **GHOST CHAIN (Streak Bonus)**
+   - Consecutive wins increase multiplier:
+     - 2 wins: 1.5x next win
+     - 3 wins: 2x next win
+     - 4 wins: 3x next win
+     - 5+ wins: 5x + FREE DUMP
+   - Chain breaks on any loss
+
+4. **MEMORY CORRUPTION (Risk Feature)**
+   - After any win, option to double-or-nothing
+   - 50/50 coin flip: EXTRACT (take winnings) or CORRUPT (risk for 2x)
+   - Auto-extracts after 5 second timeout
+
+**Volatility Modes:**
+
+| Mode | RTP | Max Win | Description |
+|------|-----|---------|-------------|
+| LOW | 96% | 100x | Stable memory - frequent small wins |
+| MEDIUM | 94% | 500x | Standard sector - balanced (default) |
+| HIGH | 92% | 2000x | Corrupted zone - rare big wins |
+| EXTREME | 88% | 5000x | Black Ice memory - jackpot hunting |
+
+**Economics:**
+
+```
+Extraction Fee Breakdown (100 $DATA bet):
+├── 90 $DATA → Prize Pool (RTP ~94%)
+├── 5 $DATA  → BURNED 🔥 (The Furnace)
+├── 3 $DATA  → Progressive Jackpot
+└── 2 $DATA  → Protocol Revenue
+
+BURNS PER 1,000 $DATA WAGERED: ~50 $DATA
+```
+
+**GHOSTNET Integration:**
+
+Rare bonus drops can grant main game boosts:
+
+| Rare Drop | Effect | Duration |
+|-----------|--------|----------|
+| GHOST PROTOCOL | -5% death rate | 2 hours |
+| DATA CACHE | +10% yield | 4 hours |
+| VOLT SURGE | 1.5x hack run rewards | 1 run |
+| CORE FRAGMENT | Exclusive high-roller access | 1 session |
+
+**Visual Design:**
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  MEMORY DUMP v1.0 ░░░░░░░░░░░░░░░░░░░░░░░░░  SECTOR: ACTIVE     ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                  ║
+║   BALANCE: 1,247 $DATA            LAST WIN: +125 $DATA          ║
+║                                                                  ║
+║  ┌──────────────────────────────────────────────────────────┐   ║
+║  │   ╔═══════╗ ╔═══════╗ ╔═══════╗ ╔═══════╗ ╔═══════╗    │   ║
+║  │   ║  GH  ║ ║  TR  ║ ║  GH  ║ ║  BN  ║ ║  GH  ║    │   ║
+║  │   ╚═══════╝ ╚═══════╝ ╚═══════╝ ╚═══════╝ ╚═══════╝    │   ║
+║  │                    3x GHOST = 10x                        │   ║
+║  └──────────────────────────────────────────────────────────┘   ║
+║                                                                  ║
+║   EXTRACTION FEE: [5] [10] [25] [50] [100] $DATA                ║
+║                                                                  ║
+║              ┌────────────────────────────┐                     ║
+║              │      [ DUMP SECTOR ]       │                     ║
+║              └────────────────────────────┘                     ║
+║                                                                  ║
+║   VOLATILITY: ███████░░░ MEDIUM         RTP: 94%                ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+**Audio Design:**
+
+| Event | Sound | Description |
+|-------|-------|-------------|
+| Dump Start | `whir-click` | Hard drive spin-up |
+| Reel Spinning | `digital-scroll` | Fast data streaming |
+| Reel Stop | `lock-beep` | Terminal confirmation |
+| Small Win | `data-chime` | Pleasant extraction |
+| Big Win | `jackpot-alarm` | Sirens + celebration |
+| CORE DUMP | `explosion-glitch` | Screen shake + chaos |
+| Loss | `static-buzz` | Brief corruption noise |
+| Ghost Chain | `combo-escalate` | Rising pitch per streak |
+
+**Animation Sequences:**
+
+- **Dump Sequence**: Reels blur with scanlines, lock left-to-right with staggered timing
+- **Win Celebration**: Scaled by win size (pulse → glow → particles → screen shake)
+- **CORE DUMP**: Full blackout → text typeout → explosive reveal → confetti
+
+**Implementation:**
+
+```
+Route: /arcade/memory-dump
+
+Components:
+/lib/features/memory-dump/
+├── components/
+│   ├── SlotMachine.svelte        # Main game container
+│   ├── Reel.svelte               # Individual reel with symbols
+│   ├── Symbol.svelte             # Symbol display + animations
+│   ├── PaylineOverlay.svelte     # Winning line highlights
+│   ├── BetSelector.svelte        # Extraction fee picker
+│   ├── PaytableModal.svelte      # Payout information
+│   ├── BonusRound.svelte         # Deep Memory Access mini-game
+│   ├── CorruptionGamble.svelte   # Risk feature overlay
+│   ├── WinDisplay.svelte         # Win celebration overlay
+│   └── RecentDumps.svelte        # Activity feed
+├── store.svelte.ts               # Game state machine
+├── symbols.ts                    # Symbol definitions + weights
+├── paylines.ts                   # Payline configurations  
+├── audio.ts                      # Sound effects
+└── rng.ts                        # Provably fair (Chainlink VRF)
+```
+
+**Contracts:**
+
+Will use shared `ArcadeCore.sol` for session tracking and payouts.
+New contract: `MemoryDump.sol` for game-specific logic.
+
+**Provably Fair:**
+
+Uses FutureBlockRandomness pattern:
+1. Player commits bet
+2. Contract records future block number (current + 3)
+3. When that block is mined, its hash determines outcome
+4. Player can verify: `keccak256(blockHash, nonce) % weights`
+
+**Implementation Phases:**
+
+1. **Phase 1**: Core slot mechanics (reels, symbols, paylines, basic wins)
+2. **Phase 2**: Audio + animations (satisfaction layer)
+3. **Phase 3**: Special features (Ghost Chain, Corruption gamble)
+4. **Phase 4**: VOID bonus round
+5. **Phase 5**: Progressive jackpot + GHOSTNET integration
+6. **Phase 6**: Provably fair on-chain verification
+
+**Related:** [[FR-ECON-006]], [[FR-GAME-004]]
+
+---
+
 ## Domain Rules
 
 ### Business Rules

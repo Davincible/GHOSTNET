@@ -57,12 +57,10 @@
 				<span class="stat-label">NODES:</span>
 				<span class="stat-value">{mainNodeCount}</span>
 			</div>
-			{#if run.shortcuts > 0}
-				<div class="stat-row" role="listitem">
-					<span class="stat-label">SHORTCUTS:</span>
-					<span class="stat-value shortcut">{run.shortcuts}</span>
-				</div>
-			{/if}
+			<div class="stat-row" role="listitem">
+				<span class="stat-label">SHORTCUTS:</span>
+				<span class="stat-value shortcut">{run.shortcuts > 0 ? run.shortcuts : '—'}</span>
+			</div>
 		</div>
 
 		<!-- Select button -->
@@ -121,5 +119,20 @@
 
 	.stat-value.shortcut {
 		color: var(--color-amber);
+	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 480px) {
+		.difficulty-label {
+			font-size: var(--text-base);
+		}
+
+		.difficulty-tier {
+			font-size: 10px;
+		}
+
+		.stat-row {
+			font-size: var(--text-xs);
+		}
 	}
 </style>

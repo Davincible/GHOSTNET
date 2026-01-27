@@ -89,3 +89,5 @@ result
 # ============================================================================
 *.log
 services/target
+apps/web/static/intro_video_01.mp4
+apps/web/static/intro_video_01.mp4

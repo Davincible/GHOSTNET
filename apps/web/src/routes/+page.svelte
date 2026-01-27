@@ -8,6 +8,7 @@
 	import { QuickActionsPanel } from '$lib/features/actions';
 	import { NavigationBar } from '$lib/features/nav';
 	import { WelcomePanel } from '$lib/features/welcome';
+	import { IntroVideoModal } from '$lib/features/intro';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
 	import { FAQPanel } from '$lib/features/faq';
 	import { DailyOpsPanel } from '$lib/features/daily';
@@ -54,6 +55,7 @@
 	let showJackInModal = $state(false);
 	let showExtractModal = $state(false);
 	let showSettingsModal = $state(false);
+	let showIntroVideo = $state(true);
 
 	// Action handlers
 	function handleJackIn() {
@@ -229,7 +231,10 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="command-center">
-	<Header onSettings={() => (showSettingsModal = true)} />
+	<Header
+		onSettings={() => (showSettingsModal = true)}
+		onIntro={() => (showIntroVideo = true)}
+	/>
 	<KeyboardHints />
 
 	<main class="main-content">
@@ -292,6 +297,7 @@
 <JackInModal open={showJackInModal} onclose={() => (showJackInModal = false)} />
 <ExtractModal open={showExtractModal} onclose={() => (showExtractModal = false)} />
 <SettingsModal open={showSettingsModal} onclose={() => (showSettingsModal = false)} />
+<IntroVideoModal open={showIntroVideo} onclose={() => (showIntroVideo = false)} />
 
 <!-- Toast notifications -->
 <ToastContainer />
@@ -306,6 +312,9 @@
 
 	.main-content {
 		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 		padding: var(--space-4) var(--space-6);
 		width: 100%;
 		max-width: 1200px;

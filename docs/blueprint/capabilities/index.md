@@ -91,6 +91,7 @@ Active boost layer and arcade games.
 | FR-GAME-007 | ICE Breaker (skill game) | 🟣 | [[capabilities/minigames#🟣-fr-game-007-ice-breaker]] |
 | FR-GAME-008 | Binary Bet (binary options) | 🟣 | [[capabilities/minigames#🟣-fr-game-008-binary-bet]] |
 | FR-GAME-009 | Bounty Hunt (strategy game) | 🟣 | [[capabilities/minigames#🟣-fr-game-009-bounty-hunt]] |
+| FR-GAME-010 | Memory Dump (slot machine) | 🟣 | [[capabilities/minigames#🟣-fr-game-010-memory-dump-slot-machine]] |
 
 ---
 
@@ -118,9 +119,9 @@ Community, crews, and competitive features.
 | Core Game | 0 | 1 | 8 | 2 |
 | Operations | 0 | 0 | 1 | 1 |
 | Economy | 0 | 1 | 5 | 5 |
-| Mini-Games | 0 | 4 | 3 | 2 |
+| Mini-Games | 0 | 4 | 4 | 2 |
 | Social | 1 | 1 | 2 | 4 |
-| **Total** | **1** | **7** | **19** | **14** |
+| **Total** | **1** | **7** | **20** | **14** |
 
 ---
 

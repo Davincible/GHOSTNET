@@ -110,4 +110,33 @@
 		outline: 2px solid var(--color-accent);
 		outline-offset: 2px;
 	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		.selection-view {
+			max-width: 100%;
+		}
+
+		.runs-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.title {
+			font-size: var(--text-lg);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.title {
+			font-size: var(--text-base);
+		}
+
+		.subtitle {
+			font-size: var(--text-xs);
+		}
+
+		.cancel-btn {
+			font-size: var(--text-xs);
+		}
+	}
 </style>

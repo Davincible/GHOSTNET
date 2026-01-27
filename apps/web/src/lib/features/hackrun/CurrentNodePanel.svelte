@@ -190,4 +190,61 @@
 		font-size: var(--text-xs);
 		letter-spacing: var(--tracking-wider);
 	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		.node-icon {
+			font-size: var(--text-xl);
+		}
+
+		.node-name {
+			font-size: var(--text-base);
+		}
+
+		.challenge-command {
+			font-size: var(--text-xs);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.node-header {
+			gap: var(--space-2);
+		}
+
+		.node-icon {
+			font-size: var(--text-lg);
+		}
+
+		.node-name {
+			font-size: var(--text-sm);
+		}
+
+		.node-description {
+			font-size: var(--text-xs);
+		}
+
+		.stat-row {
+			font-size: var(--text-xs);
+		}
+
+		.challenge-preview {
+			padding: var(--space-1);
+		}
+
+		.challenge-label {
+			font-size: 10px;
+		}
+
+		.warning-box {
+			padding: var(--space-1);
+		}
+
+		.warning-icon {
+			font-size: var(--text-base);
+		}
+
+		.warning-text {
+			font-size: 10px;
+		}
+	}
 </style>

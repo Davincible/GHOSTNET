@@ -275,4 +275,48 @@
 	.legend-icon.pending {
 		color: var(--color-text-muted);
 	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		.node {
+			padding: var(--space-1) var(--space-2);
+		}
+
+		.node-icon {
+			font-size: var(--text-base);
+			min-width: 2rem;
+		}
+
+		.node-name {
+			font-size: var(--text-xs);
+		}
+
+		.node-type {
+			font-size: 10px;
+		}
+
+		.node-status-indicator {
+			font-size: var(--text-xs);
+		}
+
+		.connection-line {
+			height: var(--space-2);
+		}
+
+		.legend {
+			flex-wrap: wrap;
+			gap: var(--space-2);
+			font-size: 10px;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.node-icon {
+			display: none;
+		}
+
+		.legend-item span:last-child {
+			display: none;
+		}
+	}
 </style>

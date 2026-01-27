@@ -3,7 +3,8 @@
 	import { browser } from '$app/environment';
 	import { Shell, Box } from '$lib/ui/terminal';
 	import { Stack } from '$lib/ui/layout';
-	import { getAudioManager } from '$lib/core/audio';
+	import { getSettings } from '$lib/core/settings';
+	import { createAudioManager } from '$lib/core/audio';
 	import {
 		getHackRunStore,
 		RunSelectionView,
@@ -13,7 +14,8 @@
 	import type { HackRun, HackRunNode, NodeResult } from '$lib/core/types/hackrun';
 
 	const store = getHackRunStore();
-	const audio = getAudioManager();
+	const settings = getSettings();
+	const audio = createAudioManager(settings);
 
 	// Local state for typing
 	let typed = $state('');
@@ -21,6 +23,15 @@
 
 	// Track previous state for audio
 	let prevStatus = $state<string>('idle');
+	let prevCountdown = $state<number>(0);
+	let prevTimePercent = $state<number>(100);
+	let prevNodeIndex = $state<number>(-1);
+	let correctStreak = $state<number>(0);
+	
+	// Time warning thresholds
+	const TIME_WARNING_THRESHOLD = 30; // percent
+	const TIME_DANGER_THRESHOLD = 15; // percent
+	const STREAK_MILESTONE = 5; // correct chars for bonus sound
 
 	// Initialize selection on mount
 	$effect(() => {
@@ -31,6 +42,7 @@
 
 	// Handle run selection
 	function handleSelectRun(run: HackRun): void {
+		audio.click();
 		store.startRun(run);
 	}
 
@@ -43,6 +55,8 @@
 	function handleStartNode(): void {
 		typed = '';
 		typingStartTime = Date.now();
+		correctStreak = 0; // Reset streak for new node
+		audio.open();
 		store.startNode();
 	}
 
@@ -50,10 +64,18 @@
 	function handleNodeComplete(result: NodeResult): void {
 		store.completeNode(result);
 		typed = '';
+		correctStreak = 0;
 
-		// Play sound
+		// Play sound based on performance
 		if (result.success) {
-			audio.roundComplete();
+			// Tiered success sounds based on accuracy
+			if (result.accuracy >= 0.99) {
+				audio.jackpot(); // Perfect or near-perfect
+			} else if (result.accuracy >= 0.95) {
+				audio.survived(); // Excellent
+			} else {
+				audio.roundComplete(); // Good
+			}
 		} else {
 			audio.traced();
 		}
@@ -61,17 +83,20 @@
 
 	// Handle abort
 	function handleAbort(): void {
+		audio.close();
 		store.abort();
 	}
 
 	// Handle run again
 	function handleNewRun(): void {
+		audio.click();
 		store.reset();
 		store.selectDifficulty();
 	}
 
 	// Handle exit
 	function handleExit(): void {
+		audio.close();
 		store.reset();
 		goto('/');
 	}
@@ -104,7 +129,7 @@
 				status === 'node_result'
 			) {
 				event.preventDefault();
-				store.abort();
+				handleAbort();
 			}
 			return;
 		}
@@ -148,8 +173,16 @@
 				const targetChar = node.challenge.command[typed.length - 1];
 				const isCorrect = event.key === targetChar;
 				if (isCorrect) {
-					audio.keystroke();
+					correctStreak++;
+					
+					// Milestone sound every N correct chars
+					if (correctStreak > 0 && correctStreak % STREAK_MILESTONE === 0) {
+						audio.success(); // Satisfying milestone sound
+					} else {
+						audio.keystroke();
+					}
 				} else {
+					correctStreak = 0; // Reset streak on error
 					audio.keystrokeError();
 				}
 			}
@@ -182,10 +215,80 @@
 		}
 	});
 
-	// Countdown audio
+	// Countdown audio - play on each tick
 	$effect(() => {
 		if (store.state.status === 'countdown') {
-			audio.countdown();
+			const currentSeconds = store.state.secondsLeft;
+			if (currentSeconds !== prevCountdown && currentSeconds > 0) {
+				audio.countdown();
+				prevCountdown = currentSeconds;
+			}
+		} else {
+			prevCountdown = 0;
+		}
+	});
+
+	// Time warning audio - plays when crossing thresholds
+	$effect(() => {
+		const status = store.state.status;
+		if (status === 'running' || status === 'node_typing' || status === 'node_result') {
+			const timeRemaining = store.state.timeRemaining;
+			const timeLimit = store.state.run.timeLimit;
+			const timePercent = (timeRemaining / timeLimit) * 100;
+
+			// Crossed into danger zone
+			if (prevTimePercent > TIME_DANGER_THRESHOLD && timePercent <= TIME_DANGER_THRESHOLD) {
+				audio.danger();
+			}
+			// Crossed into warning zone
+			else if (prevTimePercent > TIME_WARNING_THRESHOLD && timePercent <= TIME_WARNING_THRESHOLD) {
+				audio.warning();
+			}
+
+			prevTimePercent = timePercent;
+		} else {
+			prevTimePercent = 100;
+		}
+	});
+
+	// Node advancement audio - plays when moving to next node
+	$effect(() => {
+		const status = store.state.status;
+		if (status === 'running' || status === 'node_typing' || status === 'node_result') {
+			const progress = store.state.progress;
+			const currentIndex = progress.findIndex((p) => p.status === 'current');
+			
+			// Advanced to a new node (not the first one)
+			if (currentIndex > prevNodeIndex && prevNodeIndex >= 0) {
+				audio.success();
+			}
+			
+			prevNodeIndex = currentIndex;
+		} else if (status === 'countdown') {
+			prevNodeIndex = -1; // Reset for new run
+		}
+	});
+
+	// Danger zone ambient pulse - repeating warning when time critical
+	$effect(() => {
+		if (!browser) return;
+		
+		const status = store.state.status;
+		const isActive = status === 'running' || status === 'node_typing' || status === 'node_result';
+		
+		if (!isActive) return;
+		
+		const timeRemaining = store.state.timeRemaining;
+		const timeLimit = store.state.run.timeLimit;
+		const timePercent = (timeRemaining / timeLimit) * 100;
+		
+		// Only pulse in danger zone during typing
+		if (timePercent <= TIME_DANGER_THRESHOLD && status === 'node_typing') {
+			const pulseInterval = setInterval(() => {
+				audio.scanWarning(); // Subtle repeating pulse
+			}, 2000); // Every 2 seconds
+			
+			return () => clearInterval(pulseInterval);
 		}
 	});
 </script>
@@ -296,6 +399,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
+		min-height: 100dvh;
 		padding: var(--space-4);
 	}
 
@@ -303,6 +407,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: var(--space-2);
 		margin-bottom: var(--space-6);
 		padding-bottom: var(--space-3);
 		border-bottom: 1px solid var(--color-bg-tertiary);
@@ -321,6 +426,7 @@
 		letter-spacing: var(--tracking-wide);
 		cursor: pointer;
 		transition: all var(--duration-fast) var(--ease-default);
+		flex-shrink: 0;
 	}
 
 	.back-button:hover {
@@ -344,10 +450,14 @@
 		font-size: var(--text-lg);
 		font-weight: var(--font-bold);
 		letter-spacing: var(--tracking-wider);
+		text-align: center;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.spacer {
 		width: 100px;
+		flex-shrink: 0;
 	}
 
 	.page-content {
@@ -355,6 +465,34 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: flex-start;
+		min-height: 0;
+	}
+
+	/* Mobile header adjustments */
+	@media (max-width: 480px) {
+		.hackrun-page {
+			padding: var(--space-2);
+		}
+
+		.page-header {
+			margin-bottom: var(--space-4);
+		}
+
+		.back-button span {
+			display: none;
+		}
+
+		.back-button {
+			padding: var(--space-2);
+		}
+
+		.page-title {
+			font-size: var(--text-base);
+		}
+
+		.spacer {
+			width: 40px;
+		}
 	}
 
 	/* Countdown View */
@@ -473,6 +611,27 @@
 		50% {
 			transform: scale(1.05);
 			opacity: 0.8;
+		}
+	}
+
+	/* Responsive: countdown and failed views */
+	@media (max-width: 480px) {
+		.countdown-view,
+		.failed-view {
+			max-width: 100%;
+			margin: var(--space-4) 0;
+		}
+
+		.countdown-number {
+			font-size: 4rem;
+		}
+
+		.failed-actions {
+			flex-direction: column;
+		}
+
+		.action-btn {
+			width: 100%;
 		}
 	}
 </style>

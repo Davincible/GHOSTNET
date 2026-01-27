@@ -232,14 +232,73 @@
 		gap: var(--space-2);
 	}
 
+	/* Tablet responsiveness */
+	@media (max-width: 768px) {
+		.complete-view {
+			max-width: 100%;
+		}
+
+		.status-title {
+			font-size: var(--text-lg);
+		}
+
+		.multiplier-info {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+		}
+
+		.actions {
+			flex-direction: column;
+			width: 100%;
+		}
+
+		.actions :global(button) {
+			width: 100%;
+		}
+	}
+
 	/* Mobile responsiveness */
 	@media (max-width: 480px) {
 		.stats-grid {
 			grid-template-columns: repeat(2, 1fr);
+			gap: var(--space-1);
 		}
 
 		.stats-grid .stat-card:last-child {
 			grid-column: 1 / -1;
+		}
+
+		.stat-card {
+			padding: var(--space-1);
+		}
+
+		.stat-label {
+			font-size: 10px;
+		}
+
+		.stat-value {
+			font-size: var(--text-sm);
+		}
+
+		.stat-value.multiplier {
+			font-size: var(--text-base);
+		}
+
+		.status-icon {
+			font-size: var(--text-2xl);
+		}
+
+		.status-title {
+			font-size: var(--text-base);
+		}
+
+		.multiplier-icon {
+			font-size: var(--text-lg);
+		}
+
+		.multiplier-label {
+			font-size: var(--text-xs);
 		}
 	}
 </style>

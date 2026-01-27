@@ -7,9 +7,11 @@
 	interface Props {
 		/** Callback when settings is clicked */
 		onSettings?: () => void;
+		/** Callback when intro video is clicked */
+		onIntro?: () => void;
 	}
 
-	let { onSettings }: Props = $props();
+	let { onSettings, onIntro }: Props = $props();
 
 	const provider = getProvider();
 
@@ -45,6 +47,18 @@
 					<Badge variant="danger">OFFLINE</Badge>
 				{/if}
 			</div>
+			{#if onIntro}
+				<button
+					class="intro-btn"
+					onclick={onIntro}
+					aria-label="Watch intro"
+					title="Watch intro"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<polygon points="5,3 19,12 5,21" fill="currentColor" stroke="none"></polygon>
+					</svg>
+				</button>
+			{/if}
 			<button
 				class="settings-btn"
 				onclick={onSettings}
@@ -140,7 +154,8 @@
 		text-transform: uppercase;
 	}
 
-	.settings-btn {
+	.settings-btn,
+	.intro-btn {
 		background: transparent;
 		border: 1px solid var(--color-border-default);
 		color: var(--color-text-tertiary);
@@ -152,13 +167,15 @@
 		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.settings-btn:hover {
+	.settings-btn:hover,
+	.intro-btn:hover {
 		color: var(--color-accent);
 		border-color: var(--color-accent-dim);
 		background: var(--color-bg-tertiary);
 	}
 
-	.settings-btn svg {
+	.settings-btn svg,
+	.intro-btn svg {
 		width: 16px;
 		height: 16px;
 	}
