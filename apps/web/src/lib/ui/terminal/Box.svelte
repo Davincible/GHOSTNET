@@ -143,10 +143,6 @@
 		white-space: nowrap;
 	}
 
-	.box-border-bottom {
-		align-items: end;
-	}
-
 	.box-corner {
 		flex-shrink: 0;
 	}
@@ -158,13 +154,12 @@
 	.box-h-fill {
 		flex: 1 1 0;
 		min-width: 0;
+		height: 1em;
 		overflow: hidden;
 		color: transparent; /* invisible by default — clean, minimal look */
 	}
 
-	/* Repeating dash chars, clipped to available width.
-	   display:block ensures this takes the visible line;
-	   the inline {c.h} text overflows to a second line and gets clipped. */
+	/* Repeating dash chars, clipped to available width. */
 	.box-h-fill::before {
 		content: '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────';
 		display: block;
