@@ -60,7 +60,12 @@ Before drawing shapes, name the forces:
 | `blackout` | `filter: brightness(0.35) saturate(0.3)` — dark but readable | Dead, offline, inactive |
 | `dimmed` | `opacity: 0.5`, `filter: saturate(0.5)` | Secondary importance |
 | `focused` | `filter: brightness(1.05)`, `transform: scale(1.01)` | Active panel in multi-panel layout |
-| `locked` | `filter: brightness(0.5) saturate(0.3) blur(2px)`, `opacity: 0.6` | Coming soon, unavailable, requires unlock |
+
+**Blur modifier** (separate `blur` boolean prop, orthogonal to attention):
+
+| Prop | Visual | Use Case |
+|------|--------|----------|
+| `blur=true` | `backdrop-filter: blur(3px)` via `::before` pseudo-element | Coming soon, unavailable. Composes with any attention state (e.g. `dimmed + blur`). |
 
 ### 3.3 Ambient Effects — Persistent visual behaviors
 

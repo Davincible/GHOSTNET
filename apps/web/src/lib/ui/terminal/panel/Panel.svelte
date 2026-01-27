@@ -61,6 +61,10 @@
 		// ── Ambient ──
 		/** Persistent ambient visual effect */
 		ambientEffect?: PanelAmbientEffect | null;
+
+		// ── Visual modifiers ──
+		/** Apply backdrop blur over panel content (composes with any attention/ambient state) */
+		blur?: boolean;
 	}
 
 	let {
@@ -81,6 +85,7 @@
 		attention = null,
 		onAttentionEnd,
 		ambientEffect = null,
+		blur = false,
 	}: Props = $props();
 
 	// ── Settings gate ──
@@ -174,7 +179,7 @@
 	class:panel-attn-blackout={effectsOn && attention === 'blackout'}
 	class:panel-attn-dimmed={effectsOn && attention === 'dimmed'}
 	class:panel-attn-focused={effectsOn && attention === 'focused'}
-	class:panel-attn-locked={effectsOn && attention === 'locked'}
+	class:panel-blur={effectsOn && blur}
 	class:panel-ambient-pulse={effectsOn && ambientEffect === 'pulse'}
 	class:panel-ambient-heartbeat={effectsOn && ambientEffect === 'heartbeat'}
 	class:panel-ambient-static={effectsOn && ambientEffect === 'static'}
@@ -484,13 +489,25 @@
 			transform var(--duration-normal) var(--ease-default);
 	}
 
-	.panel-attn-locked {
-		filter: brightness(0.5) saturate(0.3) blur(2px);
-		opacity: 0.6;
+	/* ═══════════════════════════════════════════════════════════
+	   BLUR — orthogonal modifier via backdrop-filter pseudo-element.
+	   Composes freely with any attention state or ambient effect
+	   because it uses backdrop-filter on ::before, not filter on .panel.
+	   ═══════════════════════════════════════════════════════════ */
+
+	.panel-blur::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+		z-index: 2;
+		pointer-events: none;
+		transition: backdrop-filter var(--duration-slow) var(--ease-default);
+	}
+
+	.panel-blur {
 		user-select: none;
-		transition:
-			filter var(--duration-slow) var(--ease-default),
-			opacity var(--duration-slow) var(--ease-default);
 	}
 
 	/* ═══════════════════════════════════════════════════════════
@@ -645,9 +662,10 @@
 			opacity: 1;
 		}
 
-		/* Remove blur for reduced motion — keep dim only */
-		.panel-attn-locked {
-			filter: brightness(0.5) saturate(0.3);
+		/* Remove blur for reduced motion */
+		.panel-blur::before {
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
 		}
 	}
 </style>

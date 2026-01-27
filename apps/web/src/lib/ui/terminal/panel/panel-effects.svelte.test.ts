@@ -46,9 +46,6 @@ describe('resolveAttentionBorderColor', () => {
 		expect(resolveAttentionBorderColor('blackout')).toBeNull();
 	});
 
-	it('returns dim for locked', () => {
-		expect(resolveAttentionBorderColor('locked')).toBe('dim');
-	});
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -88,9 +85,6 @@ describe('resolveAttentionGlow', () => {
 		expect(resolveAttentionGlow('dimmed')).toBe(false);
 	});
 
-	it('returns false for locked', () => {
-		expect(resolveAttentionGlow('locked')).toBe(false);
-	});
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -126,9 +120,6 @@ describe('isTransientAttention', () => {
 		expect(isTransientAttention('focused')).toBe(false);
 	});
 
-	it('identifies locked as persistent', () => {
-		expect(isTransientAttention('locked')).toBe(false);
-	});
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -230,7 +221,6 @@ describe('needsOverlay', () => {
 		expect(needsOverlay('blackout', null)).toBe(false);
 		expect(needsOverlay('dimmed', null)).toBe(false);
 		expect(needsOverlay('focused', null)).toBe(false);
-		expect(needsOverlay('locked', null)).toBe(false);
 	});
 
 	it('returns true for static ambient', () => {

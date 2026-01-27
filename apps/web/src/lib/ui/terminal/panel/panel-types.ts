@@ -25,7 +25,7 @@ export type PanelAnimationSpeed = 'fast' | 'normal' | 'slow';
 export type PanelTransientAttention = 'highlight' | 'alert' | 'success' | 'critical';
 
 /** Persistent attention states — remain until cleared */
-export type PanelPersistentAttention = 'blackout' | 'dimmed' | 'focused' | 'locked';
+export type PanelPersistentAttention = 'blackout' | 'dimmed' | 'focused';
 
 /** All attention states */
 export type PanelAttention = PanelTransientAttention | PanelPersistentAttention;

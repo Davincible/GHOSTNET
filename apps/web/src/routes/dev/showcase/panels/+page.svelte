@@ -17,6 +17,7 @@
 	let activeBorderColor = $state<PanelBorderColor>('default');
 	let activeVariant = $state<PanelVariant>('single');
 	let activeGlow = $state(false);
+	let activeBlur = $state(false);
 
 	// Key to force re-mount for enter animations
 	let enterKey = $state(0);
@@ -84,6 +85,7 @@
 						variant={activeVariant}
 						borderColor={activeBorderColor}
 						glow={activeGlow}
+						blur={activeBlur}
 						attention={activeAttention}
 						onAttentionEnd={clearAttention}
 						ambientEffect={activeAmbient}
@@ -162,6 +164,20 @@
 							</Row>
 						</div>
 
+						<!-- Blur -->
+						<div class="control-group">
+							<span class="control-label">BLUR</span>
+							<Row gap={1}>
+								<Button
+									size="sm"
+									variant={activeBlur ? 'primary' : 'ghost'}
+									onclick={() => (activeBlur = !activeBlur)}
+								>
+									{activeBlur ? 'ON' : 'OFF'}
+								</Button>
+							</Row>
+						</div>
+
 						<!-- Transient Attention -->
 						<div class="control-group">
 							<span class="control-label">ATTENTION (TRANSIENT)</span>
@@ -182,7 +198,7 @@
 						<div class="control-group">
 							<span class="control-label">ATTENTION (PERSISTENT)</span>
 							<Row gap={1} wrap>
-								{#each ['blackout', 'dimmed', 'focused', 'locked'] as a (a)}
+								{#each ['blackout', 'dimmed', 'focused'] as a (a)}
 									<Button
 										size="sm"
 										variant={activeAttention === a ? 'primary' : 'ghost'}
@@ -193,7 +209,7 @@
 										{a.toUpperCase()}
 									</Button>
 								{/each}
-								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused' || activeAttention === 'locked'}
+								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused'}
 									<Button size="sm" variant="danger" onclick={clearAttention}>
 										CLEAR
 									</Button>
@@ -288,7 +304,7 @@
 				PERSISTENT
 				<Badge variant="warning" compact>MANUAL CLEAR</Badge>
 			</h3>
-			<div class="demo-grid demo-grid-2">
+			<div class="demo-grid demo-grid-3">
 				<div class="demo-card">
 					<Panel title="BLACKOUT" attention="blackout">
 						<div class="demo-content">
@@ -307,13 +323,6 @@
 					<Panel title="FOCUSED" attention="focused">
 						<div class="demo-content">
 							<p class="demo-desc">Slight brightness + scale. Active panel.</p>
-						</div>
-					</Panel>
-				</div>
-				<div class="demo-card">
-					<Panel title="LOCKED" attention="locked">
-						<div class="demo-content">
-							<p class="demo-desc">Blurred + dimmed. Coming soon, unavailable, requires unlock.</p>
 						</div>
 					</Panel>
 				</div>
@@ -456,12 +465,53 @@
 	</section>
 
 	<!-- ═══════════════════════════════════════════════════════════
+	     SECTION: Blur
+	     ═══════════════════════════════════════════════════════════ -->
+	<section class="showcase-section">
+		<div class="section-header">
+			<h2 class="section-title">BLUR</h2>
+			<p class="section-subtitle">Standalone boolean prop. Uses backdrop-filter so it composes freely with any attention state or ambient effect.</p>
+		</div>
+
+		<div class="demo-grid demo-grid-2">
+			<div class="demo-card">
+				<Panel title="BLUR ONLY" blur>
+					<div class="demo-content">
+						<p class="demo-desc">blur=true alone. Content visible but frosted. Disables text selection.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="DIMMED + BLUR" attention="dimmed" blur>
+					<div class="demo-content">
+						<p class="demo-desc">Coming soon / unavailable. Dimmed + blurred = clearly inaccessible.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="BLACKOUT + BLUR" attention="blackout" blur>
+					<div class="demo-content">
+						<p class="demo-desc">Locked out. Darkened + blurred = hard to read, but shape still visible.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="NORMAL (NO BLUR)" >
+					<div class="demo-content">
+						<p class="demo-desc">blur=false (default). Clear, crisp content.</p>
+					</div>
+				</Panel>
+			</div>
+		</div>
+	</section>
+
+	<!-- ═══════════════════════════════════════════════════════════
 	     SECTION: Composition
 	     ═══════════════════════════════════════════════════════════ -->
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">COMPOSITION</h2>
-			<p class="section-subtitle">Effects compose orthogonally. A panel can simultaneously have an ambient effect, attention state, and border style.</p>
+			<p class="section-subtitle">Effects compose orthogonally. A panel can simultaneously have an ambient effect, attention state, blur, and border style.</p>
 		</div>
 
 		<div class="demo-grid demo-grid-2">

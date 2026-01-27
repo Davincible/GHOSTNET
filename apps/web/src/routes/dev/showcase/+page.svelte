@@ -10,7 +10,7 @@
 			description: 'Container component with lifecycle animations, attention states, and ambient effects.',
 			href: '/dev/showcase/panels',
 			status: 'ACTIVE',
-			count: '7 attention states, 4 ambient effects, 2 enter animations',
+			count: '6 attention states, 4 ambient effects, 2 enter animations, blur modifier',
 		},
 		{
 			name: 'BUTTONS',
