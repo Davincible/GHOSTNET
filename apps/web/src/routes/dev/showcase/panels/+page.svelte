@@ -17,7 +17,7 @@
 	let activeBorderColor = $state<PanelBorderColor>('default');
 	let activeVariant = $state<PanelVariant>('single');
 	let activeGlow = $state(false);
-	let activeBlur = $state(false);
+	let activeBlur = $state<boolean | 'content'>(false);
 
 	// Key to force re-mount for enter animations
 	let enterKey = $state(0);
@@ -92,9 +92,7 @@
 						enterAnimation={activeEnter}
 					>
 						<div class="preview-content">
-							<p class="preview-text">
-								SYSTEM ONLINE // MONITORING ACTIVE
-							</p>
+							<p class="preview-text">SYSTEM ONLINE // MONITORING ACTIVE</p>
 							<div class="preview-stats">
 								<div class="stat">
 									<span class="stat-label">OPERATORS</span>
@@ -170,10 +168,24 @@
 							<Row gap={1}>
 								<Button
 									size="sm"
-									variant={activeBlur ? 'primary' : 'ghost'}
-									onclick={() => (activeBlur = !activeBlur)}
+									variant={activeBlur === false ? 'primary' : 'ghost'}
+									onclick={() => (activeBlur = false)}
 								>
-									{activeBlur ? 'ON' : 'OFF'}
+									OFF
+								</Button>
+								<Button
+									size="sm"
+									variant={activeBlur === true ? 'primary' : 'ghost'}
+									onclick={() => (activeBlur = true)}
+								>
+									FULL
+								</Button>
+								<Button
+									size="sm"
+									variant={activeBlur === 'content' ? 'primary' : 'ghost'}
+									onclick={() => (activeBlur = 'content')}
+								>
+									CONTENT
 								</Button>
 							</Row>
 						</div>
@@ -210,9 +222,7 @@
 									</Button>
 								{/each}
 								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused'}
-									<Button size="sm" variant="danger" onclick={clearAttention}>
-										CLEAR
-									</Button>
+									<Button size="sm" variant="danger" onclick={clearAttention}>CLEAR</Button>
 								{/if}
 							</Row>
 						</div>
@@ -260,7 +270,9 @@
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">ATTENTION STATES</h2>
-			<p class="section-subtitle">Transient states auto-resolve after animation. Persistent states remain until cleared.</p>
+			<p class="section-subtitle">
+				Transient states auto-resolve after animation. Persistent states remain until cleared.
+			</p>
 		</div>
 
 		<!-- Transient -->
@@ -270,12 +282,7 @@
 				<Badge variant="info" compact>AUTO-RESOLVE</Badge>
 			</h3>
 			<div class="demo-grid demo-grid-2">
-				{#each [
-					{ state: 'highlight', desc: 'Border brightens, subtle brightness pulse', color: 'bright' },
-					{ state: 'alert', desc: 'Red border + glow, brightness pulse, red overlay', color: 'red' },
-					{ state: 'success', desc: 'Cyan border + glow, brief brightness pulse', color: 'cyan' },
-					{ state: 'critical', desc: 'Red border, rapid pulse + panel shake', color: 'red' },
-				] as item (item.state)}
+				{#each [{ state: 'highlight', desc: 'Border brightens, subtle brightness pulse', color: 'bright' }, { state: 'alert', desc: 'Red border + glow, brightness pulse, red overlay', color: 'red' }, { state: 'success', desc: 'Cyan border + glow, brief brightness pulse', color: 'cyan' }, { state: 'critical', desc: 'Red border, rapid pulse + panel shake', color: 'red' }] as item (item.state)}
 					<div class="demo-card">
 						<Panel
 							title={item.state.toUpperCase()}
@@ -336,28 +343,36 @@
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">AMBIENT EFFECTS</h2>
-			<p class="section-subtitle">Persistent visual behaviors that indicate system state. Infinite animations.</p>
+			<p class="section-subtitle">
+				Persistent visual behaviors that indicate system state. Infinite animations.
+			</p>
 		</div>
 
 		<div class="demo-grid demo-grid-2">
 			<div class="demo-card">
 				<Panel title="PULSE" ambientEffect="pulse">
 					<div class="demo-content">
-						<p class="demo-desc">Slow brightness breathing, 4s cycle. Panel is alive, active data.</p>
+						<p class="demo-desc">
+							Slow brightness breathing, 4s cycle. Panel is alive, active data.
+						</p>
 					</div>
 				</Panel>
 			</div>
 			<div class="demo-card">
 				<Panel title="HEARTBEAT" ambientEffect="heartbeat">
 					<div class="demo-content">
-						<p class="demo-desc">Brief brightness spikes at intervals, 2s cycle. Connected and healthy.</p>
+						<p class="demo-desc">
+							Brief brightness spikes at intervals, 2s cycle. Connected and healthy.
+						</p>
 					</div>
 				</Panel>
 			</div>
 			<div class="demo-card">
 				<Panel title="STATIC" ambientEffect="static">
 					<div class="demo-content">
-						<p class="demo-desc">Faint TV noise pattern overlay. Degraded connection, stale data.</p>
+						<p class="demo-desc">
+							Faint TV noise pattern overlay. Degraded connection, stale data.
+						</p>
 					</div>
 				</Panel>
 			</div>
@@ -381,10 +396,7 @@
 		</div>
 
 		<div class="demo-grid demo-grid-2">
-			{#each [
-				{ animation: 'boot', desc: 'CRT power-on: panel expands from horizontal line via clip-path, content fades in.' },
-				{ animation: 'glitch', desc: 'Brief clip-path displacement + hue-rotate, then resolves to normal.' },
-			] as item (item.animation)}
+			{#each [{ animation: 'boot', desc: 'CRT power-on: panel expands from horizontal line via clip-path, content fades in.' }, { animation: 'glitch', desc: 'Brief clip-path displacement + hue-rotate, then resolves to normal.' }] as item (item.animation)}
 				{@const key = `enter-${item.animation}-${enterKey}`}
 				<div class="demo-card">
 					{#key key}
@@ -415,7 +427,9 @@
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">BORDER VARIANTS</h2>
-			<p class="section-subtitle">Box drawing styles and color options from the existing Panel API.</p>
+			<p class="section-subtitle">
+				Box drawing styles and color options from the existing Panel API.
+			</p>
 		</div>
 
 		<!-- Variants -->
@@ -462,6 +476,33 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Border Fill -->
+		<div class="subsection">
+			<h3 class="subsection-title">BORDER FILL</h3>
+			<div class="demo-grid demo-grid-2">
+				<div class="demo-card">
+					<Panel title="DEFAULT (EMPTY)">
+						<p class="demo-desc">borderFill=false (default). Clean minimal look &mdash; only corners and title visible.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="FILLED" borderFill>
+						<p class="demo-desc">borderFill=true &mdash; dash characters fill horizontal borders.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="FILLED + GLOW" borderColor="cyan" glow borderFill>
+						<p class="demo-desc">Combines with glow and color. Full wired-up terminal look.</p>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="FILLED DOUBLE" variant="double" borderColor="bright" borderFill>
+						<p class="demo-desc">Double border variant with fill. Heavy frame style.</p>
+					</Panel>
+				</div>
+			</div>
+		</div>
 	</section>
 
 	<!-- ═══════════════════════════════════════════════════════════
@@ -470,37 +511,79 @@
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">BLUR</h2>
-			<p class="section-subtitle">Standalone boolean prop. Uses backdrop-filter so it composes freely with any attention state or ambient effect.</p>
+			<p class="section-subtitle">
+				Two modes: blur=true (full panel via backdrop-filter) or blur="content" (content only,
+				borders stay crisp). Composes with any attention/ambient state.
+			</p>
 		</div>
 
-		<div class="demo-grid demo-grid-2">
-			<div class="demo-card">
-				<Panel title="BLUR ONLY" blur>
-					<div class="demo-content">
-						<p class="demo-desc">blur=true alone. Content visible but frosted. Disables text selection.</p>
-					</div>
-				</Panel>
+		<!-- Full blur -->
+		<div class="subsection">
+			<h3 class="subsection-title">
+				FULL PANEL
+				<Badge variant="info" compact>blur=true</Badge>
+			</h3>
+			<div class="demo-grid demo-grid-2">
+				<div class="demo-card">
+					<Panel title="BLUR ONLY" blur>
+						<div class="demo-content">
+							<p class="demo-desc">
+								blur=true alone. Entire panel frosted including border. Disables text selection.
+							</p>
+						</div>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="DIMMED + BLUR" attention="dimmed" blur>
+						<div class="demo-content">
+							<p class="demo-desc">
+								Coming soon / unavailable. Dimmed + blurred = clearly inaccessible.
+							</p>
+						</div>
+					</Panel>
+				</div>
 			</div>
-			<div class="demo-card">
-				<Panel title="DIMMED + BLUR" attention="dimmed" blur>
-					<div class="demo-content">
-						<p class="demo-desc">Coming soon / unavailable. Dimmed + blurred = clearly inaccessible.</p>
-					</div>
-				</Panel>
-			</div>
-			<div class="demo-card">
-				<Panel title="BLACKOUT + BLUR" attention="blackout" blur>
-					<div class="demo-content">
-						<p class="demo-desc">Locked out. Darkened + blurred = hard to read, but shape still visible.</p>
-					</div>
-				</Panel>
-			</div>
-			<div class="demo-card">
-				<Panel title="NORMAL (NO BLUR)" >
-					<div class="demo-content">
-						<p class="demo-desc">blur=false (default). Clear, crisp content.</p>
-					</div>
-				</Panel>
+		</div>
+
+		<!-- Content-only blur -->
+		<div class="subsection">
+			<h3 class="subsection-title">
+				CONTENT ONLY
+				<Badge variant="info" compact>blur="content"</Badge>
+			</h3>
+			<div class="demo-grid demo-grid-2">
+				<div class="demo-card">
+					<Panel title="CONTENT BLUR" blur="content">
+						<div class="demo-content">
+							<p class="demo-desc">
+								blur="content" &mdash; inner content blurred, ASCII border characters stay crisp.
+							</p>
+						</div>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="BLACKOUT + CONTENT BLUR" attention="blackout" blur="content">
+						<div class="demo-content">
+							<p class="demo-desc">
+								Locked out. Content unreadable but border still visible and sharp.
+							</p>
+						</div>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="CONTENT BLUR + SCAN" ambientEffect="scan" blur="content">
+						<div class="demo-content">
+							<p class="demo-desc">Content obscured while scan effect runs over crisp border.</p>
+						</div>
+					</Panel>
+				</div>
+				<div class="demo-card">
+					<Panel title="NORMAL (NO BLUR)">
+						<div class="demo-content">
+							<p class="demo-desc">blur=false (default). Clear, crisp content.</p>
+						</div>
+					</Panel>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -511,52 +594,36 @@
 	<section class="showcase-section">
 		<div class="section-header">
 			<h2 class="section-title">COMPOSITION</h2>
-			<p class="section-subtitle">Effects compose orthogonally. A panel can simultaneously have an ambient effect, attention state, blur, and border style.</p>
+			<p class="section-subtitle">
+				Effects compose orthogonally. A panel can simultaneously have an ambient effect, attention
+				state, blur, and border style.
+			</p>
 		</div>
 
 		<div class="demo-grid demo-grid-2">
 			<div class="demo-card">
-				<Panel
-					title="LIVE + PULSE"
-					borderColor="cyan"
-					glow
-					ambientEffect="pulse"
-				>
+				<Panel title="LIVE + PULSE" borderColor="cyan" glow ambientEffect="pulse">
 					<div class="demo-content">
 						<p class="demo-desc">Cyan border with glow + pulse ambient. A healthy, active panel.</p>
 					</div>
 				</Panel>
 			</div>
 			<div class="demo-card">
-				<Panel
-					title="DEGRADED + STATIC"
-					borderColor="amber"
-					ambientEffect="static"
-				>
+				<Panel title="DEGRADED + STATIC" borderColor="amber" ambientEffect="static">
 					<div class="demo-content">
 						<p class="demo-desc">Amber border + static overlay. Connection issues.</p>
 					</div>
 				</Panel>
 			</div>
 			<div class="demo-card">
-				<Panel
-					title="MONITORING + SCAN"
-					variant="double"
-					borderColor="bright"
-					ambientEffect="scan"
-				>
+				<Panel title="MONITORING + SCAN" variant="double" borderColor="bright" ambientEffect="scan">
 					<div class="demo-content">
 						<p class="demo-desc">Double border + scan sweep. Active surveillance.</p>
 					</div>
 				</Panel>
 			</div>
 			<div class="demo-card">
-				<Panel
-					title="VITAL + HEARTBEAT"
-					borderColor="bright"
-					glow
-					ambientEffect="heartbeat"
-				>
+				<Panel title="VITAL + HEARTBEAT" borderColor="bright" glow ambientEffect="heartbeat">
 					<div class="demo-content">
 						<p class="demo-desc">Bright border with glow + heartbeat. Core system vital.</p>
 					</div>
@@ -654,15 +721,16 @@
 	}
 
 	.demo-grid-2 {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
 	.demo-grid-3 {
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 
 	.demo-card {
 		min-width: 0;
+		overflow: hidden;
 	}
 
 	.demo-content {
@@ -682,13 +750,14 @@
 	/* ── Playground ── */
 
 	.playground-layout {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
+		display: flex;
 		gap: var(--space-4);
-		align-items: start;
+		align-items: flex-start;
 	}
 
 	.playground-preview {
+		flex: 1 1 0;
+		min-width: 0;
 		position: sticky;
 		top: var(--space-4);
 	}
@@ -732,6 +801,8 @@
 	}
 
 	.playground-controls {
+		flex: 0 0 260px;
+		min-width: 260px;
 		max-height: 80vh;
 		overflow-y: auto;
 		scrollbar-width: thin;
@@ -775,11 +846,17 @@
 
 	@media (max-width: 900px) {
 		.playground-layout {
-			grid-template-columns: 1fr;
+			flex-direction: column;
 		}
 
 		.playground-preview {
 			position: static;
+		}
+
+		.playground-controls {
+			flex: 1 1 auto;
+			min-width: 0;
+			width: 100%;
 		}
 
 		.demo-grid-2 {
@@ -793,7 +870,7 @@
 
 	@media (min-width: 901px) and (max-width: 1200px) {
 		.demo-grid-3 {
-			grid-template-columns: repeat(2, 1fr);
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
 </style>

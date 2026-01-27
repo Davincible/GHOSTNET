@@ -30,6 +30,8 @@
 		borderColor?: PanelBorderColor;
 		/** Add glow effect to border */
 		glow?: boolean;
+		/** Show dash characters filling horizontal borders */
+		borderFill?: boolean;
 		/** Enable scrolling for content */
 		scrollable?: boolean;
 		/** Max height when scrollable (CSS value) */
@@ -63,8 +65,8 @@
 		ambientEffect?: PanelAmbientEffect | null;
 
 		// ── Visual modifiers ──
-		/** Apply backdrop blur over panel content (composes with any attention/ambient state) */
-		blur?: boolean;
+		/** Apply blur effect. `true` = content blurred + title masked, `'content'` = content blurred only (title stays readable). Borders always stay crisp. */
+		blur?: boolean | 'content';
 	}
 
 	let {
@@ -72,6 +74,7 @@
 		variant = 'single',
 		borderColor = 'default',
 		glow = false,
+		borderFill = false,
 		scrollable = false,
 		maxHeight = '400px',
 		minHeight,
@@ -111,6 +114,13 @@
 		return resolveAttentionGlow(attention) ?? glow;
 	});
 
+	// ── Title masking ──
+	// When blur={true}, replace title characters with * to obscure it while keeping borders crisp
+	let effectiveTitle = $derived.by(() => {
+		if (!effectsOn || blur !== true || !title) return title;
+		return '*'.repeat(title.length);
+	});
+
 	// ── Enter animation state ──
 	let hasEntered = $state(true);
 
@@ -130,10 +140,7 @@
 		if (!isPanelAnimation(e.animationName)) return;
 
 		// Enter animation completed
-		if (
-			e.animationName === 'panel-enter-boot' ||
-			e.animationName === 'panel-enter-glitch'
-		) {
+		if (e.animationName === 'panel-enter-boot' || e.animationName === 'panel-enter-glitch') {
 			hasEntered = true;
 			return;
 		}
@@ -179,7 +186,7 @@
 	class:panel-attn-blackout={effectsOn && attention === 'blackout'}
 	class:panel-attn-dimmed={effectsOn && attention === 'dimmed'}
 	class:panel-attn-focused={effectsOn && attention === 'focused'}
-	class:panel-blur={effectsOn && blur}
+	class:panel-blurred={effectsOn && !!blur}
 	class:panel-ambient-pulse={effectsOn && ambientEffect === 'pulse'}
 	class:panel-ambient-heartbeat={effectsOn && ambientEffect === 'heartbeat'}
 	class:panel-ambient-static={effectsOn && ambientEffect === 'static'}
@@ -191,10 +198,11 @@
 	onanimationend={handleAnimationEnd}
 >
 	<Box
-		{title}
+		title={effectiveTitle}
 		{variant}
 		borderColor={effectiveBorderColor}
 		glow={effectiveGlow}
+		{borderFill}
 		{padding}
 	>
 		{#if scrollable}
@@ -204,16 +212,17 @@
 					bind:this={scrollContainer}
 					onscroll={updateScrollState}
 				>
-					{@render children()}
-				</div>
-				{#if showScrollHint && canScrollUp}
-					<div class="scroll-hint scroll-hint-top">
-						<span class="text-green-dim text-xs">&#9650; SCROLL UP</span>
+					<div class="panel-inner" class:panel-inner-blur={effectsOn && !!blur}>
+						{@render children()}
 					</div>
-				{/if}
+				</div>
 				{#if showScrollHint && canScrollDown}
 					<div class="scroll-hint scroll-hint-bottom">
 						<span class="text-green-dim text-xs">&#9660; SCROLL FOR MORE</span>
+					</div>
+				{:else if showScrollHint && canScrollUp}
+					<div class="scroll-hint scroll-hint-top">
+						<span class="text-green-dim text-xs">&#9650; SCROLL UP</span>
 					</div>
 				{/if}
 				{#if footer}
@@ -223,7 +232,9 @@
 				{/if}
 			</div>
 		{:else}
-			{@render children()}
+			<div class="panel-inner" class:panel-inner-blur={effectsOn && !!blur}>
+				{@render children()}
+			</div>
 			{#if footer}
 				<div class="panel-footer">
 					{@render footer()}
@@ -490,24 +501,19 @@
 	}
 
 	/* ═══════════════════════════════════════════════════════════
-	   BLUR — orthogonal modifier via backdrop-filter pseudo-element.
-	   Composes freely with any attention state or ambient effect
-	   because it uses backdrop-filter on ::before, not filter on .panel.
+	   BLUR — content filter with crisp borders.
+	   Both blur={true} and blur="content" use inner wrapper blur.
+	   blur={true} also masks the title text (handled in script).
 	   ═══════════════════════════════════════════════════════════ */
 
-	.panel-blur::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		backdrop-filter: blur(3px);
-		-webkit-backdrop-filter: blur(3px);
-		z-index: 2;
-		pointer-events: none;
-		transition: backdrop-filter var(--duration-slow) var(--ease-default);
+	.panel-blurred {
+		user-select: none;
 	}
 
-	.panel-blur {
+	.panel-inner-blur {
+		filter: blur(3px);
 		user-select: none;
+		transition: filter var(--duration-slow) var(--ease-default);
 	}
 
 	/* ═══════════════════════════════════════════════════════════
@@ -663,9 +669,8 @@
 		}
 
 		/* Remove blur for reduced motion */
-		.panel-blur::before {
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
+		.panel-inner-blur {
+			filter: none;
 		}
 	}
 </style>

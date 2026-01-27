@@ -122,7 +122,7 @@
 
 	.showcase-layout {
 		display: grid;
-		grid-template-columns: 200px 1fr;
+		grid-template-columns: 200px minmax(0, 1fr);
 		gap: var(--space-6);
 	}
 

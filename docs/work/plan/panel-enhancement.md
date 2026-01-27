@@ -61,11 +61,12 @@ Before drawing shapes, name the forces:
 | `dimmed` | `opacity: 0.5`, `filter: saturate(0.5)` | Secondary importance |
 | `focused` | `filter: brightness(1.05)`, `transform: scale(1.01)` | Active panel in multi-panel layout |
 
-**Blur modifier** (separate `blur` boolean prop, orthogonal to attention):
+**Blur modifier** (separate `blur` prop, orthogonal to attention):
 
 | Prop | Visual | Use Case |
 |------|--------|----------|
-| `blur=true` | `backdrop-filter: blur(3px)` via `::before` pseudo-element | Coming soon, unavailable. Composes with any attention state (e.g. `dimmed + blur`). |
+| `blur={true}` | `backdrop-filter: blur(3px)` via `::before` pseudo-element over entire panel | Full obscuration — borders and content both frosted. |
+| `blur="content"` | `filter: blur(3px)` on inner content wrapper, borders stay crisp | Content hidden but panel structure visible. ASCII borders remain sharp. |
 
 ### 3.3 Ambient Effects — Persistent visual behaviors
 
@@ -393,6 +394,9 @@ interface Props {
 
   // ── Ambient ──
   ambientEffect?: PanelAmbientEffect | null;  // default: null
+
+  // ── Visual modifiers ──
+  blur?: boolean | 'content';                  // default: false
 }
 ```
 

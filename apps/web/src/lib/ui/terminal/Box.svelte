@@ -13,6 +13,8 @@
 		borderColor?: BorderColor;
 		/** Add glow effect to border */
 		glow?: boolean;
+		/** Show dash characters filling the horizontal border (default: empty space) */
+		borderFill?: boolean;
 		/** Padding inside the box */
 		padding?: 0 | 1 | 2 | 3 | 4;
 		children: Snippet;
@@ -23,6 +25,7 @@
 		variant = 'single',
 		borderColor = 'default',
 		glow = false,
+		borderFill = false,
 		padding = 3,
 		children,
 	}: Props = $props();
@@ -64,7 +67,7 @@
 	let c = $derived(chars[variant]);
 </script>
 
-<div class="box box-border-{borderColor}" class:box-glow={glow} style:--box-padding={padding}>
+<div class="box box-border-{borderColor}" class:box-glow={glow} class:box-border-fill={borderFill} style:--box-padding={padding}>
 	<!-- Top border -->
 	<div class="box-border box-border-top">
 		<span class="box-corner">{c.tl}</span>
@@ -140,6 +143,10 @@
 		white-space: nowrap;
 	}
 
+	.box-border-bottom {
+		align-items: end;
+	}
+
 	.box-corner {
 		flex-shrink: 0;
 	}
@@ -149,32 +156,24 @@
 	}
 
 	.box-h-fill {
-		flex-grow: 1;
+		flex: 1 1 0;
+		min-width: 0;
 		overflow: hidden;
-		/* Use repeating background for horizontal line */
-		background: linear-gradient(to right, currentColor 0, currentColor 0.6em, transparent 0.6em);
-		background-size: 0.6em 1px;
-		background-repeat: repeat-x;
-		background-position: 0 50%;
-		color: transparent;
+		color: transparent; /* invisible by default — clean, minimal look */
 	}
 
-	/* Fallback for the fill - use :before with repeating chars */
+	/* Repeating dash chars, clipped to available width.
+	   display:block ensures this takes the visible line;
+	   the inline {c.h} text overflows to a second line and gets clipped. */
 	.box-h-fill::before {
 		content: '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────';
-		color: inherit;
 		display: block;
 		overflow: hidden;
 	}
 
-	/* Reset the color inheritance for the fill */
-	.box-border-default .box-h-fill::before,
-	.box-border-bright .box-h-fill::before,
-	.box-border-dim .box-h-fill::before,
-	.box-border-cyan .box-h-fill::before,
-	.box-border-amber .box-h-fill::before,
-	.box-border-red .box-h-fill::before {
-		color: currentColor;
+	/* Opt-in: show dash characters filling horizontal borders */
+	.box-border-fill .box-h-fill {
+		color: inherit;
 	}
 
 	.box-title {
