@@ -61,9 +61,29 @@ This is what crypto gaming should feel like. Not a spreadsheet. A video game whe
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Don't want to play?** You don't have to. Jack in, close your browser, come back whenever. The network runs 24/7.
+### The Two-Layer Design
 
-**Want an edge?** Play mini-games. Type fast, hack nodes, predict deaths. Active operators can reduce their death rate by up to 35%. Passive operators... well, they're gambling on pure luck.
+**Layer 1: Passive Economic Core**
+
+Most people don't want to play—they want to invest and get rich. The core game requires ZERO interaction after staking:
+- Jack in at your chosen clearance
+- Accumulate yield passively
+- Survive automated trace scans (RNG death rolls)
+- Extract whenever you want
+
+Close your browser. Go to sleep. Come back richer (or traced). The network runs 24/7 without you.
+
+**Layer 2: Active Boost Games**
+
+Optional mini-games that provide significant edges for those who engage:
+- **Trace Evasion** — Type fast, reduce your death probability (up to -35%)
+- **Hack Runs** — Complete runs for yield multipliers (up to 3x)
+- **Dead Pool** — Bet on network outcomes (and hedge your positions)
+- **Daily Ops** — Consistent small boosts (compound advantage)
+- **Crew Raids** — Coordinated team challenges (social layer)
+- **PvP Duels** — Competitive typing for wagers (skill flex)
+
+Active operators have a massive edge. Passive operators? They're gambling on pure luck.
 
 Your choice. Both work. Both can win. Both can lose.
 
@@ -140,6 +160,24 @@ When someone in BLACK ICE gets traced, their stake doesn't vanish. It flows upwa
 Want safe yield? Park in THE VAULT and let the degens below fund your returns.
 
 Want massive gains? Jack into BLACK ICE and pray. 90% death rate. But if you survive... you eat everyone else's stack.
+
+### The Network Effect (It Gets Safer)
+
+Here's the part most people miss: **more players = lower death rates for everyone.**
+
+```
+NETWORK MODIFIER
+────────────────
+
+TVL < $100k:      Death rates x1.2   (early = dangerous)
+TVL $100k-$500k:  Death rates x1.0   (normal)
+TVL $500k-$1M:    Death rates x0.9   (getting safer)
+TVL > $1M:        Death rates x0.85  (network strength bonus)
+```
+
+When you see whale alerts in the feed—when big deposits land—your death rate actually *decreases*. The network rewards growth. Watch someone jack in with 10,000 $DATA? Your odds just got better.
+
+This is positive-sum game theory. The bigger the network, the safer everyone is. But there's still always death. Just... less of it.
 
 ---
 
@@ -393,6 +431,34 @@ Above that? NET DEFLATION. Supply shrinks every day.
 
 The furnace never stops. The supply only goes down.
 
+### The Flywheel (Why Burns Work Either Way)
+
+Here's the beautiful thing about multi-engine burns:
+
+```
+IF TOKEN PRICE DUMPS:
+├── Trading tax (9%) burns more supply per dollar traded
+├── Panic selling = accelerated burns
+├── Lower price = more tokens burned per $1 of fees
+└── Creates natural price floor through supply destruction
+
+IF TOKEN PRICE PUMPS:
+├── More dollar value flowing through game
+├── Higher ETH fees ($2 fixed) buy more tokens
+├── Attracts more players = more game volume = more burns
+└── Creates positive flywheel
+
+IF GAME ACTIVITY DROPS:
+├── System reset timer accelerates toward zero
+├── Jackpot incentive increases (be the hero who saves the network)
+├── Fear of collapse drives new deposits
+└── Self-correcting mechanism
+```
+
+The system punishes inaction more than any market direction. Dumps burn. Pumps burn. Activity burns. The only thing that doesn't burn is... nothing. And nothing triggers system collapse.
+
+We engineered this to be anti-fragile. Stress makes it stronger.
+
 ---
 
 ## The Mini-Games
@@ -487,7 +553,34 @@ Payout: 1.66x           Payout: 2.51x
 
 5% rake on every pot goes to the furnace. More gambling = more burns.
 
-**Pro tip:** Hedge your position. If you're in BLACK ICE, bet on high deaths. If you die, at least you win the bet.
+### The Hedge Play
+
+Smart operators use Dead Pool to reduce variance. Here's the math:
+
+```
+THE HEDGE CALCULATOR
+────────────────────
+
+Your position: BLACK ICE, 100 $DATA
+Your death rate: 85%
+Expected outcome: Lose 100 $DATA (85% of the time)
+
+HEDGE STRATEGY: Bet 30 $DATA on "HIGH DEATHS" (OVER)
+
+Scenario 1: You survive (15%)
+├── Keep 100 $DATA position + yield
+├── Lose 30 $DATA bet (deaths were probably high)
+└── Net: +70 $DATA position
+
+Scenario 2: You get traced (85%)
+├── Lose 100 $DATA position
+├── Win ~60 $DATA from bet (2x on your 30)
+└── Net: -40 $DATA (reduced from -100)
+
+HEDGE REDUCES YOUR VARIANCE BY 60%
+```
+
+This is degenerate game theory at its finest. You can't eliminate risk—but you can shape it. The Dead Pool isn't just gambling on others. It's risk management for yourself.
 
 ### Daily Ops
 
@@ -556,6 +649,37 @@ Solo operators survive. Crews thrive.
 | Crew survival streak | -1% death per level (max -10%) |
 | Weekly raid complete | 2x yield (24h) |
 
+### Crew Raids
+
+Weekly coordinated challenges. Your crew vs. the clock.
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║                       WEEKLY CREW RAID                            ║
+║                    "Operation: Data Heist"                        ║
+╠══════════════════════════════════════════════════════════════════╣
+║                                                                   ║
+║  OBJECTIVE: Collectively complete 100 typing challenges           ║
+║  TIME LIMIT: 1 hour                                               ║
+║  REWARD: All crew members get 2x yield for 24 hours               ║
+║                                                                   ║
+║  PROGRESS:                                                        ║
+║  ████████████████████████████████░░░░░░░░░░░░░░░░  67/100        ║
+║                                                                   ║
+║  TIME REMAINING: 34:22                                            ║
+║                                                                   ║
+║  TOP CONTRIBUTORS:                                                ║
+║  1. 0x7a3f (You)    23 challenges                                ║
+║  2. 0x9c2d          18 challenges                                ║
+║  3. 0x3b1a          12 challenges                                ║
+║                                                                   ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+Completion unlocks 2x yield for ALL crew members for 24 hours. Fail, and you get nothing. The crew either wins together or loses together.
+
+This is where the Discord pings fly. This is where alliances form. This is where GHOSTNET becomes social.
+
 Find your people. Coordinate. Win together.
 
 ---
@@ -594,9 +718,45 @@ We designed every element to hit different:
 - Deaths of similar positions highlighted
 - "This could be you" energy
 
+**PROGRESS**
+- Yield accumulating in real-time (watch the number climb)
+- Ghost streak counter (flex your survival runs)
+- Daily ops completion (daily dopamine hits)
+- Leaderboard climbing (competitive juice)
+
 You'll check the feed compulsively. You'll feel the scan countdowns. You'll celebrate survivals and mourn deaths (while pocketing the cascade).
 
 That's by design. We're not sorry.
+
+### Streamable Moments
+
+GHOSTNET is designed to be watched. Here's what makes content:
+
+**High Tension:**
+- Trace scan countdown (final 10 seconds)
+- Survival at high death rate ("I SURVIVED 90%!")
+- System reset close calls ("THE TIMER IS AT 30 SECONDS")
+- Typing challenge under pressure
+
+**Big Wins:**
+- Perfect hack runs (all 5 nodes, no damage, 3x multiplier)
+- Jackpot survivals in BLACK ICE
+- PvP duel victories with trash talk
+- Massive whale extractions
+
+**Social:**
+- Crew raid coordination in Discord
+- PvP tournament brackets
+- Chat reactions when someone gets traced
+- Alliance/rivalry drama between crews
+
+**Strategy:**
+- Optimal level selection breakdowns
+- Typing technique tutorials (WPM optimization)
+- Hack run path optimization
+- Hedging strategies explained
+
+This isn't just a game. It's content. Watch parties during scan countdowns. Stream highlights of close calls. Clip compilations of deaths and survivals. We built for the timeline.
 
 ---
 
@@ -748,6 +908,29 @@ Let's be clear about what we're NOT:
 ║                                                                   ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
+
+---
+
+## Network Health
+
+How do you know if GHOSTNET is thriving? Watch these numbers:
+
+```
+HEALTHY NETWORK INDICATORS
+──────────────────────────
+
+TVL:               > $500k (network strength bonus active)
+Daily Volume:      > $175k (net deflationary)
+System Timer:      > 4 hours (comfortable margin)
+Burn Rate:         > 82k $DATA/day (outpacing emissions)
+DAU/MAU Ratio:     > 30% (sticky users)
+Mini-game Rate:    > 40% of operators engaging (skill layer working)
+Crew Participation: > 60% of operators in crews (social layer working)
+```
+
+When these metrics are green, the flywheel is spinning. When they're red, opportunity knocks—the jackpot incentives increase, the hero rewards get bigger.
+
+The network tells you its health in real-time. Watch the feed. Read the vitals. Adapt your strategy.
 
 ---
 

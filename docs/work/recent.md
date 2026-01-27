@@ -4,8 +4,24 @@ Quick session handoff for AI agents and team members.
 
 ---
 
-## 2026-01-27
-**Agent:** Nori (documentation consolidation - session 2)
+## 2026-01-27 (session 3)
+**Agent:** Nori (manifesto enhancement)
+- **Completed:** Enhanced manifesto.md from archived product docs
+  - Added "Network Modifier" section (TVL = safety, positive-sum)
+  - Added "Two-Layer Design" (passive core + active boost layer)
+  - Added "Crew Raids" detailed mechanic (weekly coordinated challenges)
+  - Added "Hedge Calculator" to Dead Pool (strategic variance reduction)
+  - Added "Price Stability Flywheel" (why burns work either way)
+  - Added "Streamable Moments" (content creation angle)
+  - Added "Progress" to dopamine stack (tracking/achievement)
+  - Added "Network Health" metrics section
+- **Manifesto:** 775 → 957 lines (+182 lines of strategic content)
+- **Source material:** `docs/archive/product/master-design.md`, `one-pager.md`
+- **Blocked:** None
+- **Next:** Continue with implementation work
+
+## 2026-01-27 (session 2)
+**Agent:** Nori (documentation consolidation)
 - **Completed:** Full docs reorganization
   - Archived `docs/architecture-original-old/` 
   - Moved operational docs → `docs/operations/` (emergency-procedures, runbooks, audit-scope)
