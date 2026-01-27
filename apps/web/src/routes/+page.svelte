@@ -12,6 +12,8 @@
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
 	import { FAQPanel } from '$lib/features/faq';
 	import { DailyOpsPanel } from '$lib/features/daily';
+	import { GettingStartedPanel } from '$lib/features/getting-started';
+	import { WalletModal } from '$lib/features/modals';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
@@ -55,6 +57,7 @@
 	let showJackInModal = $state(false);
 	let showExtractModal = $state(false);
 	let showSettingsModal = $state(false);
+	let showWalletModal = $state(false);
 	let showIntroVideo = $state(
 		browser ? localStorage.getItem('ghostnet_intro_seen') !== 'true' : false
 	);
@@ -94,6 +97,10 @@
 		if (feedElement) {
 			feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
+	}
+
+	function handleConnectWallet() {
+		showWalletModal = true;
 	}
 
 	function handleNavigate(id: string) {
@@ -233,10 +240,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="command-center">
-	<Header
-		onSettings={() => (showSettingsModal = true)}
-		onIntro={() => (showIntroVideo = true)}
-	/>
+	<Header onSettings={() => (showSettingsModal = true)} onIntro={() => (showIntroVideo = true)} />
 	<KeyboardHints />
 
 	<main class="main-content">
@@ -269,14 +273,18 @@
 			<div class="column column-right">
 				<PositionPanel />
 				<ModifiersPanel />
-				<!-- Daily Ops: check-in and missions -->
-				<DailyOpsPanel
-					progress={dailyState.progress}
-					missions={dailyState.missions}
-					onCheckIn={handleDailyCheckIn}
-					onClaimMission={handleClaimMission}
-					{checkingIn}
-				/>
+				<!-- Getting Started replaces Daily Ops when wallet not connected -->
+				{#if provider.currentUser}
+					<DailyOpsPanel
+						progress={dailyState.progress}
+						missions={dailyState.missions}
+						onCheckIn={handleDailyCheckIn}
+						onClaimMission={handleClaimMission}
+						{checkingIn}
+					/>
+				{:else}
+					<GettingStartedPanel onConnectWallet={handleConnectWallet} />
+				{/if}
 				<!-- Network Vitals: hidden on mobile (accessible via nav) -->
 				<div class="hide-mobile">
 					<NetworkVitalsPanel />
@@ -302,10 +310,14 @@
 <JackInModal open={showJackInModal} onclose={() => (showJackInModal = false)} />
 <ExtractModal open={showExtractModal} onclose={() => (showExtractModal = false)} />
 <SettingsModal open={showSettingsModal} onclose={() => (showSettingsModal = false)} />
-<IntroVideoModal open={showIntroVideo} onclose={() => {
-	showIntroVideo = false;
-	if (browser) localStorage.setItem('ghostnet_intro_seen', 'true');
-}} />
+<WalletModal open={showWalletModal} onclose={() => (showWalletModal = false)} />
+<IntroVideoModal
+	open={showIntroVideo}
+	onclose={() => {
+		showIntroVideo = false;
+		if (browser) localStorage.setItem('ghostnet_intro_seen', 'true');
+	}}
+/>
 
 <!-- Toast notifications -->
 <ToastContainer />
