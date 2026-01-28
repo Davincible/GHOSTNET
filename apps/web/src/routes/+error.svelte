@@ -80,7 +80,7 @@
 			</div>
 
 			<div class="error-divider">
-				{'─'.repeat(48)}
+				{'─'.repeat(36)}
 			</div>
 
 			<p class="error-description">{errorInfo.description}</p>
@@ -122,6 +122,8 @@
 		min-height: 100vh;
 		padding: var(--space-6);
 		background: var(--color-bg-void);
+		width: fit-content;
+		margin: 0 auto;
 	}
 
 	.error-content {
@@ -129,23 +131,27 @@
 		flex-direction: column;
 		align-items: center;
 		gap: var(--space-4);
-		max-width: 600px;
+		min-width: 360px;
+		max-width: 420px;
+		padding: var(--space-4) var(--space-6);
 		text-align: center;
 	}
 
 	.error-art {
 		font-family: var(--font-mono);
-		font-size: 0.5rem;
+		font-size: 0.45rem;
 		line-height: 1;
 		color: var(--color-red);
 		text-shadow: 0 0 10px var(--color-red);
 		white-space: pre;
 		margin: 0;
+		overflow: hidden;
+		max-width: 100%;
 	}
 
 	@media (min-width: 640px) {
 		.error-art {
-			font-size: 0.7rem;
+			font-size: 0.55rem;
 		}
 	}
 

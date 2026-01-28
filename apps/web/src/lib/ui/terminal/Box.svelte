@@ -164,6 +164,8 @@
 		content: '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────';
 		display: block;
 		overflow: hidden;
+		width: 0;
+		min-width: 100%;
 	}
 
 	/* Opt-in: show dash characters filling horizontal borders */
