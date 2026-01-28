@@ -77,7 +77,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
     error MultipleContributionsNotAllowed();
     error PresaleSoldOut();
     error AllocationBelowMinimum(uint256 allocation, uint256 minAllocation);
-    error InvalidTrancheSupply();
+    error ZeroTrancheSupply();
     error InvalidTranchePrice();
     error InvalidCurveParams();
     error EndPriceMustExceedStartPrice();
@@ -89,6 +89,8 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
     error PricingNotConfigured();
     error EmergencyDeadlineNotSet();
     error ETHRefundFailed();
+    error NoETHToWithdraw();
+    error WrongPricingMode();
 
     // ══════════════════════════════════════════════════════════════════════════════
     // EVENTS
@@ -100,7 +102,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
         uint256 ethAmount,
         uint256 dataAllocation,
         uint256 avgPrice,
-        uint256 currentPrice
+        uint256 spotPrice
     );
 
     /// @notice Emitted when the presale transitions to OPEN
@@ -120,6 +122,9 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
 
     /// @notice Emitted when a contributor claims a refund
     event Refunded(address indexed contributor, uint256 ethAmount);
+
+    /// @notice Emitted when all tranches are cleared
+    event TranchesCleared();
 
     /// @notice Emitted when the owner withdraws raised ETH
     event ETHWithdrawn(address indexed to, uint256 amount);
@@ -170,6 +175,9 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
 
     /// @notice Number of unique contributors
     uint256 public contributorCount;
+
+    /// @dev Cached total presale supply (updated by addTranche, clearTranches, setCurve)
+    uint256 private _cachedTotalSupply;
 
     // ══════════════════════════════════════════════════════════════════════════════
     // CONSTRUCTOR
@@ -270,10 +278,11 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
         emit Contributed(msg.sender, ethSpent, allocation, avgPrice, spotPrice);
     }
 
-    /// @notice Preview how much $DATA a given ETH amount would buy at current state
+    /// @notice Preview how much $DATA a given ETH amount would buy at current state (estimate)
     /// @param ethAmount Amount of ETH to simulate
     /// @return dataAmount Estimated $DATA allocation
     /// @return priceImpact Price change percentage (bonding curve only, 0 for tranches)
+    /// @dev For bonding curve mode, the actual ETH spent may differ slightly due to rounding verification in contribute(). Use as an estimate only.
     function preview(uint256 ethAmount) external view returns (uint256 dataAmount, uint256 priceImpact) {
         if (pricingMode == PricingMode.TRANCHE) {
             (dataAmount,) = _previewTrancheAllocation(ethAmount, totalSold);
@@ -320,14 +329,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
     /// @notice Get total presale supply across all tranches or curve
     /// @return supply Total $DATA available in the presale
     function totalPresaleSupply() public view returns (uint256 supply) {
-        if (pricingMode == PricingMode.TRANCHE) {
-            uint256 len = tranches.length;
-            for (uint256 i; i < len; ++i) {
-                supply += tranches[i].supply;
-            }
-        } else {
-            supply = curve.totalSupply;
-        }
+        supply = _cachedTotalSupply;
     }
 
     // ══════════════════════════════════════════════════════════════════════════════
@@ -363,7 +365,8 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
     /// @param pricePerToken ETH per 1e18 $DATA
     function addTranche(uint256 supply, uint256 pricePerToken) external onlyOwner {
         if (state != PresaleState.PENDING) revert PresaleNotPending();
-        if (supply == 0) revert InvalidTrancheSupply();
+        if (pricingMode != PricingMode.TRANCHE) revert WrongPricingMode();
+        if (supply == 0) revert ZeroTrancheSupply();
         if (pricePerToken == 0) revert InvalidTranchePrice();
 
         uint256 len = tranches.length;
@@ -372,13 +375,17 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
         }
 
         tranches.push(TrancheConfig({ supply: supply, pricePerToken: pricePerToken }));
+        _cachedTotalSupply += supply;
     }
 
     /// @notice Remove all tranches and re-add (for reconfiguration)
     /// @dev Only callable in PENDING state
     function clearTranches() external onlyOwner {
         if (state != PresaleState.PENDING) revert PresaleNotPending();
+        if (pricingMode != PricingMode.TRANCHE) revert WrongPricingMode();
+        _cachedTotalSupply = 0;
         delete tranches;
+        emit TranchesCleared();
     }
 
     /// @notice Set bonding curve parameters (BONDING_CURVE mode only, PENDING state)
@@ -388,10 +395,12 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
     /// @param _totalSupply Total $DATA available on curve
     function setCurve(uint256 startPrice, uint256 endPrice, uint256 _totalSupply) external onlyOwner {
         if (state != PresaleState.PENDING) revert PresaleNotPending();
+        if (pricingMode != PricingMode.BONDING_CURVE) revert WrongPricingMode();
         if (_totalSupply == 0 || startPrice == 0) revert InvalidCurveParams();
         if (endPrice <= startPrice) revert EndPriceMustExceedStartPrice();
 
         curve = CurveConfig({ startPrice: startPrice, endPrice: endPrice, totalSupply: _totalSupply });
+        _cachedTotalSupply = _totalSupply;
     }
 
     /// @notice Open the presale for contributions
@@ -435,6 +444,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
         if (to == address(0)) revert InvalidAddress();
 
         uint256 amount = address(this).balance;
+        if (amount == 0) revert NoETHToWithdraw();
 
         (bool success,) = payable(to).call{ value: amount }("");
         if (!success) revert ETHRefundFailed();
@@ -543,7 +553,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
                 // All remaining ETH fits in this tranche
                 allocation += tokensAtPrice;
                 ethSpent += (tokensAtPrice * price) / 1e18;
-                remainingETH -= (tokensAtPrice * price) / 1e18;
+                remainingETH = 0;
                 sold += tokensAtPrice;
             } else {
                 // Buy remaining in this tranche, advance to next
@@ -597,7 +607,7 @@ contract GhostPresale is Ownable2Step, ReentrancyGuard, Pausable, IGhostPresale 
                 allocation += tokensAtPrice;
                 uint256 cost = (tokensAtPrice * price) / 1e18;
                 ethSpent += cost;
-                remainingETH -= cost;
+                remainingETH = 0;
                 sold += tokensAtPrice;
             } else {
                 allocation += trancheRemaining;

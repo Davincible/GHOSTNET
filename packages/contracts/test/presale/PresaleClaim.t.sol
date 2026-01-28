@@ -787,6 +787,20 @@ contract PresaleClaimTest is Test {
         assertTrue(claim.claimed(bob));
         assertTrue(claim.claimed(charlie));
     }
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 10. M-3: SNAPSHOT AFTER CLAIMING ENABLED
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_SnapshotAllocations_RevertWhen_ClaimingEnabled() public {
+        _enableClaiming();
+
+        address[] memory accounts = new address[](1);
+        accounts[0] = alice;
+
+        vm.prank(owner);
+        vm.expectRevert(IPresaleClaim.AlreadyEnabled.selector);
+        claim.snapshotAllocations(accounts);
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════════

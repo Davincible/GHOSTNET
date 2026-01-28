@@ -1120,7 +1120,7 @@ contract GhostPresaleTest is Test {
 
     function test_AddTranche_RevertWhen_ZeroSupply() public {
         vm.prank(owner);
-        vm.expectRevert(GhostPresale.InvalidTrancheSupply.selector);
+        vm.expectRevert(GhostPresale.ZeroTrancheSupply.selector);
         presale.addTranche(0, TRANCHE_1_PRICE);
     }
 
@@ -1230,6 +1230,184 @@ contract GhostPresaleTest is Test {
 
         // Preview and actual should match
         assertEq(previewData, actualData);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 13. ADDITIONAL COVERAGE — Fuzz, Monotonicity, Griefing, State Guards
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function testFuzz_Contribute_Tranche_CrossesBoundary(uint256 ethAmount) public {
+        // Small tranches to force crossing
+        vm.startPrank(owner);
+        GhostPresale p = new GhostPresale(GhostPresale.PricingMode.TRANCHE, owner);
+        GhostPresale.PresaleConfig memory cfg = _standardConfig();
+        cfg.minContribution = 0.001 ether;
+        cfg.maxContribution = 500 ether;
+        cfg.maxPerWallet = 500 ether;
+        p.setConfig(cfg);
+        p.addTranche(100e18, 1e18);   // 100 tokens @ 1 ETH
+        p.addTranche(100e18, 2e18);   // 100 tokens @ 2 ETH
+        p.addTranche(100e18, 3e18);   // 100 tokens @ 3 ETH
+        p.open();
+        vm.stopPrank();
+
+        ethAmount = bound(ethAmount, 0.001 ether, 400 ether);
+
+        uint256 balanceBefore = alice.balance;
+        vm.prank(alice);
+        uint256 allocation = p.contribute{ value: ethAmount }(0);
+
+        uint256 ethSpent = balanceBefore - alice.balance;
+
+        // Invariants
+        assertGt(allocation, 0);
+        assertLe(ethSpent, ethAmount);
+        assertLe(p.totalSold(), 300e18); // never exceed total supply
+        assertEq(p.totalRaised(), p.contributions(alice));
+    }
+
+    function testFuzz_Curve_RoundTrip_CostVerification(uint256 ethAmount) public {
+        ethAmount = bound(ethAmount, 0.01 ether, 50 ether);
+
+        _configureAndOpenCurve();
+
+        // Simulate: compute tokens for ETH, then compute cost for those tokens
+        (uint256 previewTokens,) = curvePresale.preview(ethAmount);
+        if (previewTokens == 0) return;
+
+        // Contribute and check actual cost
+        uint256 balanceBefore = alice.balance;
+        vm.prank(alice);
+        uint256 allocation = curvePresale.contribute{ value: ethAmount }(0);
+        uint256 ethSpent = balanceBefore - alice.balance;
+
+        // The actual ETH spent should be <= ethAmount
+        assertLe(ethSpent, ethAmount);
+        // Preview and actual allocation should be very close (within rounding)
+        // Allow 1 token of difference due to rounding paths
+        uint256 diff = allocation > previewTokens
+            ? allocation - previewTokens
+            : previewTokens - allocation;
+        assertLe(diff, 1e18, "Preview vs actual allocation diverged by more than 1 token");
+    }
+
+    function test_Curve_PriceNeverDecreases_AfterContributions() public {
+        _configureAndOpenCurve();
+
+        uint256 priceBefore = curvePresale.currentPrice();
+
+        // Multiple contributions, price should never decrease
+        address[3] memory contributors = [alice, bob, carol];
+        for (uint256 i; i < 3; ++i) {
+            vm.prank(contributors[i]);
+            curvePresale.contribute{ value: 5 ether }(0);
+
+            uint256 priceAfter = curvePresale.currentPrice();
+            assertGe(priceAfter, priceBefore, "Price decreased after contribution");
+            priceBefore = priceAfter;
+        }
+    }
+
+    function test_Contribute_ZeroValue_WhenNoMinContribution() public {
+        // Configure with minContribution=0
+        vm.startPrank(owner);
+        GhostPresale p = new GhostPresale(GhostPresale.PricingMode.TRANCHE, owner);
+        GhostPresale.PresaleConfig memory cfg = _standardConfig();
+        cfg.minContribution = 0;
+        p.setConfig(cfg);
+        p.addTranche(TRANCHE_1_SUPPLY, TRANCHE_1_PRICE);
+        p.open();
+        vm.stopPrank();
+
+        // 0-value contribution: tokensAtPrice = 0, ethSpent = 0
+        // This should either revert or produce 0 allocation
+        vm.prank(alice);
+        uint256 allocation = p.contribute{ value: 0 }(0);
+
+        // Allocation is 0 — no tokens bought
+        assertEq(allocation, 0);
+        // But contributorCount was incremented — this is the griefing vector
+        // Documenting current behavior: contributor count inflated
+        assertEq(p.contributorCount(), 1);
+    }
+
+    function test_EmergencyRefunds_RevertWhen_Finalized() public {
+        _configureAndOpenTranche();
+
+        vm.prank(alice);
+        presale.contribute{ value: 1 ether }(0);
+
+        vm.prank(owner);
+        presale.finalize();
+
+        vm.warp(block.timestamp + EMERGENCY_DEADLINE + 1);
+
+        vm.prank(stranger);
+        vm.expectRevert(GhostPresale.PresaleNotOpen.selector);
+        presale.emergencyRefunds();
+    }
+
+    function test_EnableRefunds_RevertWhen_Finalized() public {
+        _configureAndOpenTranche();
+
+        vm.prank(owner);
+        presale.finalize();
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                GhostPresale.InvalidState.selector,
+                GhostPresale.PresaleState.FINALIZED,
+                GhostPresale.PresaleState.OPEN
+            )
+        );
+        presale.enableRefunds();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════════
+    // 14. NEW CONTRACT CHANGES — M-2, L-3, L-4
+    // ══════════════════════════════════════════════════════════════════════════════
+
+    function test_WithdrawETH_RevertWhen_ZeroBalance() public {
+        _configureAndOpenTranche();
+
+        vm.prank(owner);
+        presale.finalize();
+
+        // No contributions — balance is 0
+        vm.prank(owner);
+        vm.expectRevert(GhostPresale.NoETHToWithdraw.selector);
+        presale.withdrawETH(owner);
+    }
+
+    function test_AddTranche_RevertWhen_WrongPricingMode() public {
+        GhostPresale cp = _deployCurvePresale();
+        vm.prank(owner);
+        vm.expectRevert(GhostPresale.WrongPricingMode.selector);
+        cp.addTranche(TRANCHE_1_SUPPLY, TRANCHE_1_PRICE);
+    }
+
+    function test_SetCurve_RevertWhen_WrongPricingMode() public {
+        vm.prank(owner);
+        vm.expectRevert(GhostPresale.WrongPricingMode.selector);
+        presale.setCurve(CURVE_START_PRICE, CURVE_END_PRICE, CURVE_SUPPLY);
+    }
+
+    function test_ClearTranches_RevertWhen_WrongPricingMode() public {
+        GhostPresale cp = _deployCurvePresale();
+        vm.prank(owner);
+        vm.expectRevert(GhostPresale.WrongPricingMode.selector);
+        cp.clearTranches();
+    }
+
+    function test_ClearTranches_EmitsTranchesCleared() public {
+        vm.startPrank(owner);
+        presale.addTranche(TRANCHE_1_SUPPLY, TRANCHE_1_PRICE);
+
+        vm.expectEmit(false, false, false, false);
+        emit GhostPresale.TranchesCleared();
+        presale.clearTranches();
+        vm.stopPrank();
     }
 
     function testFuzz_Contribute_Curve_VariedConfigs(

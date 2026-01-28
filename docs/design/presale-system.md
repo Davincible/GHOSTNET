@@ -259,7 +259,7 @@ error EndPriceMustExceedStartPrice();
 error NoContribution();
 error InvalidAddress();
 error InvalidEndTime(uint256 newEndTime, uint256 currentEndTime);
-error RefundsNotEnabled();
+error PresaleNotRefunding();       // Renamed from RefundsNotEnabled in Review 3
 error EmergencyDeadlineNotReached(uint256 current, uint256 deadline);
 error PricingNotConfigured();
 error ETHRefundFailed();
@@ -515,8 +515,10 @@ function snapshotAllocations(address[] calldata accounts) external onlyOwner;
 
 /// @notice Recover unclaimed tokens after deadline (owner only)
 /// @dev Requires block.timestamp > claimDeadline.
-///      Transfers only the unclaimed portion: balanceOf(this) - (totalAllocated - totalClaimed).
-///      After recovery, disables further claiming to prevent race conditions.
+///      Transfers the entire token balance and sets recovered = true, permanently disabling claims.
+///      The entire balance is transferred rather than computing unclaimed tokens, because
+///      recovered = true atomically disables all further claims. This is simpler and avoids
+///      accounting complexity.
 function recoverUnclaimed(address to) external onlyOwner;
 ```
 
@@ -856,8 +858,8 @@ This ensures presale claimers receive their full allocation without the 10% tran
 |------|------------|
 | Double claim | `claimed` mapping, checked before transfer |
 | Insufficient $DATA balance | `enableClaiming()` verifies `balanceOf >= totalSold` |
-| Unclaimed tokens locked forever | `recoverUnclaimed()` requires `block.timestamp > claimDeadline`. Transfers only unclaimed portion. Disables further claims after recovery |
-| Recovery/claim race | `recoverUnclaimed()` sets `recovered = true`, blocking further claims. Recovers `balance - (totalSold - totalClaimed)` only |
+| Unclaimed tokens locked forever | `recoverUnclaimed()` requires `block.timestamp > claimDeadline`. Transfers entire token balance and sets `recovered = true`, permanently disabling claims |
+| Recovery/claim race | `recoverUnclaimed()` sets `recovered = true`, atomically blocking all further claims. Entire balance is transferred — no accounting math needed |
 | Presale contract compromised | `snapshotAllocations()` backup; PresaleClaim reads allocations via view — no state mutation risk |
 | Missing Ownable | Inherits Ownable2Step |
 | No emergency pause | Inherits Pausable |

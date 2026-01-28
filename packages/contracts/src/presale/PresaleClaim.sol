@@ -143,6 +143,7 @@ contract PresaleClaim is Ownable2Step, ReentrancyGuard, Pausable, IPresaleClaim 
     function snapshotAllocations(
         address[] calldata accounts
     ) external onlyOwner {
+        if (claimingEnabled) revert AlreadyEnabled();
         for (uint256 i; i < accounts.length; ++i) {
             snapshotted[accounts[i]] = presale.allocations(accounts[i]);
         }
