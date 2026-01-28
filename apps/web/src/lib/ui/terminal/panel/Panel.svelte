@@ -67,6 +67,12 @@
 		// ── Visual modifiers ──
 		/** Apply blur effect. `true` = content blurred + title masked, `'content'` = content blurred only (title stays readable). Borders always stay crisp. */
 		blur?: boolean | 'content';
+
+		// ── Coming Soon ──
+		/** Show a "COMING SOON" badge centered over the panel content */
+		comingSoon?: boolean;
+		/** Custom label for the coming soon badge */
+		comingSoonLabel?: string;
 	}
 
 	let {
@@ -89,6 +95,8 @@
 		onAttentionEnd,
 		ambientEffect = null,
 		blur = false,
+		comingSoon = false,
+		comingSoonLabel = 'COMING SOON',
 	}: Props = $props();
 
 	// ── Settings gate ──
@@ -267,6 +275,19 @@
 	<!-- Effect overlay — pointer-events: none so it never blocks interaction -->
 	{#if showOverlay}
 		<div class="panel-overlay" aria-hidden="true"></div>
+	{/if}
+
+	<!-- Coming Soon badge — floats centered over blurred content -->
+	{#if comingSoon}
+		<div class="panel-coming-soon" aria-label={comingSoonLabel}>
+			<div class="panel-coming-soon-glow"></div>
+			<div class="panel-coming-soon-badge">
+				<span class="panel-coming-soon-bracket">[</span>
+				<span class="panel-coming-soon-text">{comingSoonLabel}</span>
+				<span class="panel-coming-soon-bracket">]</span>
+			</div>
+			<div class="panel-coming-soon-scanline"></div>
+		</div>
 	{/if}
 </div>
 
@@ -767,6 +788,111 @@
 		100% {
 			top: 100%;
 		}
+	}
+
+	/* ═══════════════════════════════════════════════════════════
+	   COMING SOON
+	   ═══════════════════════════════════════════════════════════ */
+
+	.panel-coming-soon {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	/* Radial glow behind the badge */
+	.panel-coming-soon-glow {
+		position: absolute;
+		width: 240px;
+		height: 80px;
+		background: radial-gradient(
+			ellipse at center,
+			color-mix(in srgb, var(--color-accent) 10%, transparent) 0%,
+			color-mix(in srgb, var(--color-accent) 4%, transparent) 40%,
+			transparent 70%
+		);
+		animation: coming-soon-glow-pulse 4s ease-in-out infinite;
+	}
+
+	.panel-coming-soon-badge {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-8);
+		border: var(--border-width) solid var(--color-accent-dim);
+		background: color-mix(in srgb, var(--color-bg-void) 95%, var(--color-accent));
+		box-shadow:
+			0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent),
+			0 0 30px color-mix(in srgb, var(--color-accent) 8%, transparent);
+		animation: coming-soon-badge-pulse 4s ease-in-out infinite;
+	}
+
+	.panel-coming-soon-bracket {
+		font-family: var(--font-mono);
+		font-size: var(--text-xl);
+		font-weight: var(--font-bold);
+		color: var(--color-accent-dim);
+		text-shadow: 0 0 4px color-mix(in srgb, var(--color-accent-dim) 50%, transparent);
+	}
+
+	.panel-coming-soon-text {
+		font-family: var(--font-mono);
+		font-size: var(--text-base);
+		font-weight: var(--font-bold);
+		letter-spacing: var(--tracking-widest);
+		color: var(--color-accent);
+		text-transform: uppercase;
+		text-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 35%, transparent);
+	}
+
+	/* Horizontal scan line that sweeps across the badge */
+	.panel-coming-soon-scanline {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 200px;
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			var(--color-accent) 30%,
+			var(--color-accent-bright, var(--color-accent)) 50%,
+			var(--color-accent) 70%,
+			transparent 100%
+		);
+		opacity: 0.6;
+		animation: coming-soon-scanline 4s ease-in-out infinite;
+	}
+
+	@keyframes coming-soon-glow-pulse {
+		0%, 100% { opacity: 0.5; transform: scale(1); }
+		50% { opacity: 0.8; transform: scale(1.05); }
+	}
+
+	@keyframes coming-soon-badge-pulse {
+		0%, 100% {
+			box-shadow:
+				0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent),
+				0 0 30px color-mix(in srgb, var(--color-accent) 8%, transparent);
+		}
+		50% {
+			box-shadow:
+				0 0 18px color-mix(in srgb, var(--color-accent) 25%, transparent),
+				0 0 40px color-mix(in srgb, var(--color-accent) 12%, transparent);
+		}
+	}
+
+	@keyframes coming-soon-scanline {
+		0% { top: calc(50% - 30px); opacity: 0; }
+		20% { opacity: 0.6; }
+		50% { top: calc(50% + 30px); opacity: 0.6; }
+		80% { opacity: 0; }
+		100% { top: calc(50% - 30px); opacity: 0; }
 	}
 
 	/* ═══════════════════════════════════════════════════════════

@@ -5,6 +5,7 @@
   and a contextual status banner driven by pageState.
 -->
 <script lang="ts">
+	import AsciiTypewriter from '$lib/features/welcome/AsciiTypewriter.svelte';
 	import type { PresalePageState } from './types';
 
 	interface Props {
@@ -12,6 +13,14 @@
 	}
 
 	let { pageState }: Props = $props();
+	let logoComplete = $state(false);
+
+	const LOGO = ` ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███╗   ██╗███████╗████████╗
+██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝████╗  ██║██╔════╝╚══██╔══╝
+██║  ███╗███████║██║   ██║███████╗   ██║   ██╔██╗ ██║█████╗     ██║   
+██║   ██║██╔══██║██║   ██║╚════██║   ██║   ██║╚██╗██║██╔══╝     ██║   
+╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   ██║ ╚████║███████╗   ██║   
+ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═══╝╚══════╝   ╚═╝`;
 
 	const STATUS_MAP: Record<PresalePageState, { text: string; class: string }> = {
 		NOT_STARTED: { text: 'SIGNAL INTERCEPTED — AWAITING LAUNCH', class: 'pending' },
@@ -27,19 +36,22 @@
 </script>
 
 <section class="hero">
-	<pre class="ascii-art" aria-label="GHOSTNET">{@html `
- ██████  ██   ██  ██████  ███████ ████████ ███    ██ ███████ ████████
-██       ██   ██ ██    ██ ██         ██    ████   ██ ██         ██
-██   ███ ███████ ██    ██ ███████    ██    ██ ██  ██ █████      ██
-██    ██ ██   ██ ██    ██      ██    ██    ██  ██ ██ ██         ██
- ██████  ██   ██  ██████  ███████    ██    ██   ████ ███████    ██`.trim()}</pre>
+	<div class="ascii-art" aria-label="GHOSTNET">
+		<AsciiTypewriter
+			text={LOGO}
+			charDelay={3}
+			lineDelay={30}
+			glitchChance={0.02}
+			onComplete={() => (logoComplete = true)}
+		/>
+	</div>
 
-	<p class="tagline">
+	<p class="tagline" class:fade-in={logoComplete}>
 		A network is coming. Jack in. Survive trace scans. Extract gains.
 		<span class="tagline-accent">When others die, you profit.</span>
 	</p>
 
-	<div class="trust-badges">
+	<div class="trust-badges" class:fade-in={logoComplete}>
 		<span class="badge">LP BURNED 🔥</span>
 		<span class="separator">│</span>
 		<span class="badge">TEAM 24mo VEST</span>
@@ -49,7 +61,7 @@
 		<span class="badge">MEGAETH</span>
 	</div>
 
-	<div class="status-banner {status.class}">
+	<div class="status-banner {status.class}" class:fade-in={logoComplete}>
 		{status.text}
 	</div>
 </section>
@@ -65,14 +77,36 @@
 	}
 
 	.ascii-art {
-		font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-		font-size: clamp(0.35rem, 1.2vw, 0.55rem);
-		line-height: 1.2;
-		color: var(--color-accent, #00e5cc);
-		margin: 0;
-		overflow-x: auto;
+		font-size: clamp(0.28rem, 1vw, 0.48rem);
+		overflow: hidden;
 		max-width: 100%;
-		white-space: pre;
+	}
+
+	/* AsciiTypewriter styles are scoped inside its own component;
+	   the wrapper just constrains sizing and hides overflow. */
+
+	.tagline,
+	.trust-badges,
+	.status-banner {
+		opacity: 0;
+		transform: translateY(6px);
+		transition: none;
+	}
+
+	.fade-in {
+		opacity: 1;
+		transform: translateY(0);
+		transition:
+			opacity 0.6s ease-out,
+			transform 0.6s ease-out;
+	}
+
+	.trust-badges.fade-in {
+		transition-delay: 0.15s;
+	}
+
+	.status-banner.fade-in {
+		transition-delay: 0.3s;
 	}
 
 	.tagline {

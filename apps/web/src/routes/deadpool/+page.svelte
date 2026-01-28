@@ -5,6 +5,7 @@
 	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
+	import { Panel } from '$lib/ui/terminal';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { formatWei } from '$lib/core/utils';
 	import {
@@ -122,18 +123,21 @@
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'DEAD POOL' }]} />
 
 	<main class="main-content">
-		<Stack gap={4}>
-			<DeadPoolHeader stats={userStats} balance={userBalance} onHelp={handleHelp} />
+		<Panel title="DEAD POOL" blur="content" attention="dimmed" comingSoon>
+			<Stack gap={4}>
+				<DeadPoolHeader stats={userStats} balance={userBalance} onHelp={handleHelp} />
 
-			<section class="section">
-				<h2 class="section-title">ACTIVE ROUNDS</h2>
-				<ActiveRoundsGrid {rounds} onBet={handleBet} />
-			</section>
+				<section class="section">
+					<h2 class="section-title">ACTIVE ROUNDS</h2>
+					<ActiveRoundsGrid {rounds} onBet={handleBet} />
+				</section>
 
-			<section class="section">
-				<ResultsPanel {history} limit={5} />
-			</section>
-		</Stack>
+				<section class="section">
+					<ResultsPanel {history} limit={5} />
+				</section>
+			</Stack>
+		</Panel>
+
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

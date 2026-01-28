@@ -10,6 +10,7 @@
 	} from '$lib/features/market';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
+	import { Panel } from '$lib/ui/terminal';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import type { Consumable, OwnedConsumable } from '$lib/core/types';
 
@@ -124,11 +125,13 @@
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'BLACK MARKET' }]} />
 
 	<main class="main-content">
-		<Stack gap={4}>
-			<MarketPanel {userBalance} {userLevel} onBuy={handleBuyConsumable} />
+		<Panel title="BLACK MARKET" blur="content" attention="dimmed" comingSoon>
+			<Stack gap={4}>
+				<MarketPanel {userBalance} {userLevel} onBuy={handleBuyConsumable} />
+				<InventoryPanel inventory={ownedConsumables} onUse={handleUseConsumable} />
+			</Stack>
+		</Panel>
 
-			<InventoryPanel inventory={ownedConsumables} onUse={handleUseConsumable} />
-		</Stack>
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+
 	interface Props {
 		/** Video source URL */
 		src?: string;
@@ -7,6 +9,11 @@
 	}
 
 	let { src = 'https://i.imgur.com/59R2ABZ.mp4', active = true }: Props = $props();
+
+	let mounted = $state(false);
+	$effect(() => {
+		mounted = browser;
+	});
 
 	let videoEl: HTMLVideoElement | undefined = $state();
 	let isMuted = $state(false);
@@ -138,7 +145,12 @@
 </script>
 
 <div class="video-player">
-	{#if loadError}
+	{#if !mounted}
+		<!-- SSR placeholder — avoids hydration mismatch from video element -->
+		<div class="loading-state">
+			<span class="loading-text">LOADING FEED...</span>
+		</div>
+	{:else if loadError}
 		<div class="error-state">
 			<span class="error-icon">[!]</span>
 			<span class="error-text">VIDEO FEED CORRUPTED</span>
@@ -451,6 +463,22 @@
 	/* ═══════════════════════════════════════════════════════════════
 	   ERROR STATE
 	   ═══════════════════════════════════════════════════════════════ */
+
+	.loading-state {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		aspect-ratio: 16 / 9;
+		background: #000;
+		font-family: var(--font-mono, monospace);
+		color: var(--color-text-tertiary, #555);
+		font-size: var(--text-sm, 0.875rem);
+		letter-spacing: 0.1em;
+	}
+
+	.loading-text {
+		animation: error-blink 1s step-end infinite;
+	}
 
 	.error-state {
 		display: flex;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
 	import { Row } from '$lib/ui/layout';
 
 	/**
@@ -31,15 +32,23 @@
 	let showComingSoon = $state(false);
 	let comingSoonFeature = $state('');
 
-	const navItems: NavItem[] = [
-		{ id: 'network', label: 'NETWORK', href: '/' },
-		{ id: 'arcade', label: 'ARCADE', href: '/arcade' },
-		{ id: 'crew', label: 'CREW', href: '/crew' },
-		{ id: 'pool', label: 'DEAD POOL', href: '/deadpool' },
-		{ id: 'market', label: 'MARKET', href: '/market' },
-		{ id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },
-		{ id: 'help', label: '?', href: '/help' },
-	];
+	let isLocalhost = $derived(browser && window.location.hostname === 'localhost');
+
+	let navItems = $derived.by((): NavItem[] => {
+		const items: NavItem[] = [
+			{ id: 'network', label: 'NETWORK', href: '/' },
+			{ id: 'arcade', label: 'ARCADE', href: '/arcade' },
+			{ id: 'crew', label: 'CREW', href: '/crew' },
+			{ id: 'pool', label: 'DEAD POOL', href: '/deadpool' },
+			{ id: 'market', label: 'MARKET', href: '/market' },
+			{ id: 'leaderboard', label: 'RANKS', href: '/leaderboard' },
+			{ id: 'help', label: '?', href: '/help' },
+		];
+		if (isLocalhost) {
+			items.push({ id: 'showcase', label: 'SHOWCASE', href: '/dev/showcase' });
+		}
+		return items;
+	});
 
 	function handleClick(item: NavItem) {
 		// Handle "coming soon" features - show toast and don't navigate

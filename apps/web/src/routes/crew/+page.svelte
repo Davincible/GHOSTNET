@@ -13,6 +13,7 @@
 	} from '$lib/features/crew';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack, Row } from '$lib/ui/layout';
+	import { Panel } from '$lib/ui/terminal';
 	import { Button } from '$lib/ui/primitives';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import {
@@ -160,41 +161,44 @@
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'CREW' }]} />
 
 	<main class="main-content">
-		{#if crew}
-			<!-- User is in a crew -->
-			<Stack gap={4}>
-				<CrewHeader {crew} />
+		<Panel title="CREW" blur="content" attention="dimmed" comingSoon>
+			{#if crew}
+				<!-- User is in a crew -->
+				<Stack gap={4}>
+					<CrewHeader {crew} />
 
-				<div class="content-grid">
-					<!-- Left column: Bonuses + Members -->
-					<div class="column">
-						<BonusesPanel bonuses={crew.bonuses} />
-						<MembersPanel {members} onViewAll={handleViewAllMembers} />
+					<div class="content-grid">
+						<!-- Left column: Bonuses + Members -->
+						<div class="column">
+							<BonusesPanel bonuses={crew.bonuses} />
+							<MembersPanel {members} onViewAll={handleViewAllMembers} />
+						</div>
+
+						<!-- Right column: Activity -->
+						<div class="column">
+							<ActivityFeed {activity} />
+						</div>
 					</div>
 
-					<!-- Right column: Activity -->
-					<div class="column">
-						<ActivityFeed {activity} />
-					</div>
-				</div>
+					<!-- Action buttons -->
+					<Row gap={3} justify="start" class="action-buttons">
+						<Button variant="secondary" onclick={handleInviteMember}>INVITE MEMBER</Button>
+						<Button variant="ghost" onclick={handleLeaveCrew}>LEAVE CREW</Button>
+						<Button variant="ghost" onclick={handleCrewSettings}>SETTINGS</Button>
+					</Row>
+				</Stack>
+			{:else}
+				<!-- User is not in a crew -->
+				<NoCrewView
+					{pendingInvites}
+					onCreateCrew={() => (showCreateModal = true)}
+					onBrowseCrews={() => (showBrowserModal = true)}
+					onAcceptInvite={handleAcceptInvite}
+					onDeclineInvite={handleDeclineInvite}
+				/>
+			{/if}
+		</Panel>
 
-				<!-- Action buttons -->
-				<Row gap={3} justify="start" class="action-buttons">
-					<Button variant="secondary" onclick={handleInviteMember}>INVITE MEMBER</Button>
-					<Button variant="ghost" onclick={handleLeaveCrew}>LEAVE CREW</Button>
-					<Button variant="ghost" onclick={handleCrewSettings}>SETTINGS</Button>
-				</Row>
-			</Stack>
-		{:else}
-			<!-- User is not in a crew -->
-			<NoCrewView
-				{pendingInvites}
-				onCreateCrew={() => (showCreateModal = true)}
-				onBrowseCrews={() => (showBrowserModal = true)}
-				onAcceptInvite={handleAcceptInvite}
-				onDeclineInvite={handleDeclineInvite}
-			/>
-		{/if}
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

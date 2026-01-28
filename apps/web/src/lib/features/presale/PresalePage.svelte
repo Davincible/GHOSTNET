@@ -20,7 +20,6 @@
 	import PresaleFeed from './PresaleFeed.svelte';
 	import PositionSection from './PositionSection.svelte';
 	import ConfirmationOverlay from './ConfirmationOverlay.svelte';
-	import TokenomicsSection from './TokenomicsSection.svelte';
 	import TrustAnchors from './TrustAnchors.svelte';
 	import RefundSection from './RefundSection.svelte';
 	import ClaimSection from './ClaimSection.svelte';
@@ -100,7 +99,7 @@
 			{/if}
 
 			<!-- ════ STATE-SPECIFIC SECTIONS ════ -->
-			{#if presale.pageState === 'LIVE'}
+			{#if presale.pageState === 'NOT_STARTED' || presale.pageState === 'LIVE'}
 				<!-- Contribution Form -->
 				<section class="section-gap">
 					{#if showConfirmation && wallet.address}
@@ -172,11 +171,6 @@
 					/>
 				</section>
 			{/if}
-
-			<!-- ════ TOKENOMICS (always visible) ════ -->
-			<section class="section-gap">
-				<TokenomicsSection />
-			</section>
 
 			<!-- ════ TRUST ANCHORS (always visible) ════ -->
 			<section class="section-gap">
