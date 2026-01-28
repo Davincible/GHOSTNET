@@ -35,6 +35,12 @@
 
 	const arcadeGames: GameCard[] = [
 		{
+			icon: '@',
+			name: 'Ghost Maze',
+			description: 'Navigate the maze. Collect data. Evade tracers',
+			href: '/arcade/ghost-maze',
+		},
+		{
 			icon: '↗',
 			name: 'Hash Crash',
 			description: 'Bet on the multiplier. Cash out before it crashes',
