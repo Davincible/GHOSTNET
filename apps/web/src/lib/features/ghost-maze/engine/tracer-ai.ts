@@ -133,8 +133,21 @@ export function updateHunter(
 	tracer: TracerState,
 	grid: MazeGrid,
 	playerPos: Coord,
+	isScatter = false,
 ): Direction | null {
 	const data = tracer.data as HunterTracerData;
+
+	// In scatter mode: force scatter behavior — go to home corner
+	if (isScatter) {
+		data.chasing = false;
+		data.chaseTicks = 0;
+		const scatterPath = findPath(grid, tracer.pos, data.homeCorner);
+		if (scatterPath && scatterPath.length > 1) {
+			const dir = getPathDirection([tracer.pos, ...scatterPath.slice(1)]);
+			if (dir && canMove(grid, tracer.pos, dir)) return dir;
+		}
+		return directionToward(grid, tracer.pos, data.homeCorner, tracer.dir);
+	}
 
 	const dist = manhattanDistance(tracer.pos, playerPos);
 	const inLOS = dist <= HUNTER_LOS_RANGE && hasLineOfSight(grid, tracer.pos, playerPos);
@@ -356,6 +369,7 @@ export function updateSwarm(
 	grid: MazeGrid,
 	playerPos: Coord,
 	allTracers?: TracerState[],
+	isScatter = false,
 ): Direction | null {
 	const data = tracer.data as SwarmTracerData;
 	const validDirs = getValidDirectionsExcept(grid, tracer.pos, OPPOSITE_DIRECTION[tracer.dir]);
@@ -363,6 +377,11 @@ export function updateSwarm(
 	if (validDirs.length === 0) {
 		const reverse = OPPOSITE_DIRECTION[tracer.dir];
 		return canMove(grid, tracer.pos, reverse) ? reverse : null;
+	}
+
+	// In scatter mode: random walk (loose formation)
+	if (isScatter) {
+		return validDirs[Math.floor(Math.random() * validDirs.length)];
 	}
 
 	// Find partner position (if available)

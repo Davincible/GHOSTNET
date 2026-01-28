@@ -22,6 +22,15 @@ export interface GhostMazeAudio {
 	gameOver(): void;
 	phantomTeleport(): void;
 	comboMilestone(): void;
+	moveTick(): void;
+	proximityWarning(distance: number): void;
+	nearMiss(): void;
+	comboBreak(): void;
+	bonusAppear(): void;
+	bonusCollect(): void;
+	dangerZone(): void;
+	scatterStart(): void;
+	chaseStart(): void;
 }
 
 export function createGhostMazeAudio(audioManager: AudioManager): GhostMazeAudio {
@@ -90,6 +99,61 @@ export function createGhostMazeAudio(audioManager: AudioManager): GhostMazeAudio
 
 		comboMilestone() {
 			const params: ZzFXParams = [0.5, , 700, 0.02, 0.04, 0.06, 1, 1.8];
+			audioManager.playDynamic(params);
+		},
+
+		moveTick() {
+			// Soft mechanical click — very short, very quiet, high pitch
+			const params: ZzFXParams = [0.15, , 1200, , 0.01, , 4, 2];
+			audioManager.playDynamic(params);
+		},
+
+		proximityWarning(distance: number) {
+			// Low heartbeat thump, volume scales inversely with distance
+			const volume = Math.min(0.4, Math.max(0.1, 0.15 + (1 - distance / 4) * 0.25));
+			const params: ZzFXParams = [volume, , 65, 0.02, 0.06, 0.1, 0, 0.5];
+			audioManager.playDynamic(params);
+		},
+
+		nearMiss() {
+			// Sharp whoosh — quick high-to-low sweep, slightly distorted
+			const params: ZzFXParams = [0.4, , 900, , 0.04, 0.06, 3, 1.5, -80];
+			audioManager.playDynamic(params);
+		},
+
+		comboBreak() {
+			// Descending fail tone — 400 to 200Hz drop
+			const params: ZzFXParams = [0.35, , 400, 0.01, 0.06, 0.08, 1, 1, -40];
+			audioManager.playDynamic(params);
+		},
+
+		bonusAppear() {
+			// Sparkly rising shimmer — treasure appearing
+			const params: ZzFXParams = [0.4, , 600, 0.02, 0.08, 0.12, 1, 2, 30, , 150, 0.04];
+			audioManager.playDynamic(params);
+		},
+
+		bonusCollect() {
+			// Bright rewarding cha-ching — slightly louder than dataCollect
+			const params: ZzFXParams = [0.6, , 800, 0.01, 0.04, 0.08, 1, 1.5, , , 400, 0.03];
+			audioManager.playDynamic(params);
+		},
+
+		dangerZone() {
+			// Ominous low rumble — sustained warning tone
+			const params: ZzFXParams = [0.35, , 55, 0.1, 0.3, 0.4, 3, 0.3, , , , , , 0.2];
+			audioManager.playDynamic(params);
+		},
+
+		scatterStart() {
+			// Brief upward relief tone — relaxing
+			const params: ZzFXParams = [0.4, , 350, 0.02, 0.06, 0.1, 1, 1.2, 25];
+			audioManager.playDynamic(params);
+		},
+
+		chaseStart() {
+			// Sharp staccato tension spike — alerting
+			const params: ZzFXParams = [0.5, , 500, , 0.03, 0.02, 4, 2, , , , , , , , , , 0.4, 0.01];
 			audioManager.playDynamic(params);
 		},
 	};

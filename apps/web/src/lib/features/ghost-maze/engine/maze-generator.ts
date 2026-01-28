@@ -18,8 +18,10 @@ import { DIRECTIONS, DIRECTION_VECTORS, OPPOSITE_DIRECTION } from '../types';
 import {
 	MAX_DEAD_END_LENGTH,
 	MIN_TRACER_SPAWN_DISTANCE,
-	POWER_NODES_PER_LEVEL,
 } from '../constants';
+
+/** Default fallback for power nodes when not specified in config */
+const POWER_NODES_PER_LEVEL = 4;
 
 // ============================================================================
 // SEEDED PRNG (Mulberry32)
@@ -95,6 +97,8 @@ export interface GenerateMazeConfig {
 	readonly tracerCount: number;
 	/** Target number of data packets */
 	readonly dataPackets: number;
+	/** Number of power nodes to place (defaults to 4) */
+	readonly powerNodes?: number;
 }
 
 /**
@@ -120,7 +124,8 @@ export function generateMaze(config: GenerateMazeConfig): MazeGrid {
 	const playerSpawn: Coord = { x: Math.floor(width / 2), y: height - 1 };
 
 	const tracerSpawns = placeTracerSpawns(cells, width, height, tracerCount, playerSpawn, rng);
-	const powerNodePositions = placePowerNodes(cells, width, height, rng);
+	const powerNodeCount = config.powerNodes ?? POWER_NODES_PER_LEVEL;
+	const powerNodePositions = placePowerNodes(cells, width, height, rng, powerNodeCount);
 	const totalDataPackets = placeDataPackets(cells, width, height, dataPackets, playerSpawn, tracerSpawns, powerNodePositions, rng);
 
 	// 6. Reset visited flags (used during generation only)
@@ -392,6 +397,7 @@ function placePowerNodes(
 	width: number,
 	height: number,
 	rng: () => number,
+	powerNodeCount: number,
 ): Coord[] {
 	// Place one per quadrant
 	const quadrants = [
@@ -402,8 +408,7 @@ function placePowerNodes(
 	];
 
 	const positions: Coord[] = [];
-
-	for (let i = 0; i < Math.min(POWER_NODES_PER_LEVEL, quadrants.length); i++) {
+	for (let i = 0; i < Math.min(powerNodeCount, quadrants.length); i++) {
 		const center = quadrants[i];
 		// Search nearby for a valid cell (not a pure wall junction)
 		const radius = 3;

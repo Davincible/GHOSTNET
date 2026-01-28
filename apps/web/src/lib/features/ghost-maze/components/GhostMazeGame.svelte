@@ -10,7 +10,7 @@
 	import { createGhostMazeAudio } from '../audio';
 	import { getAudioManager } from '$lib/core/audio';
 	import { browser } from '$app/environment';
-	import { LEVELS, TOTAL_LEVELS, GHOST_MODE_WARNING_TICKS } from '../constants';
+	import { LEVELS, TOTAL_LEVELS, GHOST_MODE_WARNING_TICKS, TICK_RATE } from '../constants';
 	import type { EntryTier } from '../types';
 
 	interface Props {
@@ -36,6 +36,10 @@
 		gameState.ghostModeActive &&
 		gameState.ghostModeRemaining > 0 &&
 		gameState.ghostModeRemaining <= GHOST_MODE_WARNING_TICKS
+	);
+
+	let ghostModeTotal = $derived(
+		Math.round((LEVELS[gameState.currentLevel - 1]?.ghostModeDuration ?? 7) * TICK_RATE)
 	);
 
 	// EMP flash: briefly true when EMP is deployed, auto-resets
@@ -140,6 +144,11 @@
 						invincible={gameState.isInvincible}
 						dead={phase === 'player_death'}
 						{empFlash}
+						scorePopups={store.scorePopups}
+						nearMiss={store.nearMissThisTick}
+						nearestTracerDistance={store.nearestTracerDistance}
+						dangerZone={store.dangerZone}
+						scatterChasePhase={store.scatterChasePhase}
 					/>
 				</Box>
 
@@ -155,6 +164,9 @@
 					hasEmp={gameState.hasEmp}
 					ghostModeActive={gameState.ghostModeActive}
 					ghostModeRemaining={gameState.ghostModeRemaining}
+					{ghostModeTotal}
+					dangerZone={store.dangerZone}
+					scatterChasePhase={store.scatterChasePhase}
 				/>
 
 				{#if phase === 'paused' || gameState.isPaused}

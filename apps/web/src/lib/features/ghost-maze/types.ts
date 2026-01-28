@@ -79,7 +79,7 @@ export interface MazeGrid {
 export type TracerType = 'patrol' | 'hunter' | 'phantom' | 'swarm';
 
 /** Tracer behavioral mode */
-export type TracerMode = 'normal' | 'frightened' | 'frozen' | 'dead';
+export type TracerMode = 'normal' | 'frightened' | 'frozen' | 'dead' | 'returning';
 
 /** State of a single tracer entity */
 export interface TracerState {
@@ -139,6 +139,44 @@ export interface SwarmTracerData {
 	readonly partnerId: number;
 	/** Offset from ideal pursuit direction for flocking */
 	readonly flockOffset: Direction;
+}
+
+// ============================================================================
+// SCATTER / CHASE
+// ============================================================================
+
+/** The current phase of the scatter/chase cycle */
+export type ScatterChasePhase = 'scatter' | 'chase';
+
+// ============================================================================
+// BONUS ITEMS
+// ============================================================================
+
+import type { BonusType } from './constants';
+
+/** A bonus item placed in the maze */
+export interface BonusItem {
+	readonly type: BonusType;
+	readonly pos: Coord;
+	/** Ticks remaining before the item vanishes */
+	lifetime: number;
+}
+
+// ============================================================================
+// SCORE POPUPS
+// ============================================================================
+
+/** A floating score popup that animates and fades */
+export interface ScorePopup {
+	readonly id: number;
+	readonly text: string;
+	/** Position in text-grid coordinates */
+	readonly x: number;
+	readonly y: number;
+	/** Ticks remaining before removal */
+	ticksLeft: number;
+	/** Color class: 'default' | 'bonus' | 'tracer' | 'combo' */
+	readonly variant: 'default' | 'bonus' | 'tracer' | 'combo';
 }
 
 // ============================================================================
@@ -225,6 +263,8 @@ export const MAZE_CHARS = {
 	TRACER_SWARM: 's',
 	TRACER_FRIGHTENED: '\u2591', // ░
 	TRACER_FROZEN: '\u2588', // █
+	TRACER_RETURNING: '\u25C9', // ◉ (eyes returning to base)
+	BONUS_ITEM: '$',
 	EMPTY: ' ',
 
 	// HUD
@@ -243,7 +283,9 @@ export interface RenderEntity {
 		| 'tracer-swarm'
 		| 'tracer-frightened'
 		| 'tracer-frozen'
-		| 'power-node';
+		| 'tracer-returning'
+		| 'power-node'
+		| 'bonus-item';
 	readonly x: number;
 	readonly y: number;
 	readonly char: string;

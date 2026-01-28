@@ -52,6 +52,10 @@ export interface LevelConfig {
 	readonly theme: string;
 	/** Percentage of walls to remove to create loops (0-1) */
 	readonly loopFactor: number;
+	/** Ghost mode duration in seconds (shrinks per level) */
+	readonly ghostModeDuration: number;
+	/** Number of power nodes placed in this level */
+	readonly powerNodes: number;
 }
 
 /**
@@ -119,54 +123,64 @@ export const LEVELS: readonly LevelConfig[] = [
 		gridHeight: 15,
 		tracerMix: { patrol: 1, hunter: 0, phantom: 0, swarm: 0 },
 		tracerDensity: 0.7,       // ~2 tracers on 21×15
-		dataDensity: 0.35,
+		dataDensity: 0.50,        // More dots — less empty walking
 		playerSpeed: 1.0,
 		theme: 'MAINFRAME',
 		loopFactor: 0.2,
+		ghostModeDuration: 7,     // Generous intro
+		powerNodes: 2,            // Only 2 — don't trivialize
 	},
 	{
 		level: 2,
 		gridWidth: 25,
 		gridHeight: 17,
 		tracerMix: { patrol: 2, hunter: 1, phantom: 0, swarm: 0 },
-		tracerDensity: 0.8,       // ~3 tracers on 25×17
-		dataDensity: 0.4,
+		tracerDensity: 0.8,       // ~3 tracers
+		dataDensity: 0.55,
 		playerSpeed: 1.1,
 		theme: 'SUBNET',
 		loopFactor: 0.2,
+		ghostModeDuration: 6,
+		powerNodes: 3,
 	},
 	{
 		level: 3,
 		gridWidth: 29,
 		gridHeight: 19,
 		tracerMix: { patrol: 2, hunter: 1, phantom: 1, swarm: 0 },
-		tracerDensity: 0.9,       // ~5 tracers on 29×19
-		dataDensity: 0.45,
+		tracerDensity: 0.9,       // ~5 tracers
+		dataDensity: 0.55,
 		playerSpeed: 1.2,
 		theme: 'DARKNET',
-		loopFactor: 0.22,
+		loopFactor: 0.18,         // Fewer loops = more dead ends
+		ghostModeDuration: 5,
+		powerNodes: 3,
 	},
 	{
 		level: 4,
 		gridWidth: 33,
 		gridHeight: 21,
 		tracerMix: { patrol: 1, hunter: 1, phantom: 1, swarm: 2 },
-		tracerDensity: 1.0,       // ~7 tracers on 33×21
-		dataDensity: 0.5,
+		tracerDensity: 1.0,       // ~7 tracers
+		dataDensity: 0.55,
 		playerSpeed: 1.3,
 		theme: 'BLACK ICE',
-		loopFactor: 0.22,
+		loopFactor: 0.16,
+		ghostModeDuration: 4.5,
+		powerNodes: 3,
 	},
 	{
 		level: 5,
 		gridWidth: 37,
 		gridHeight: 23,
 		tracerMix: { patrol: 0, hunter: 2, phantom: 1, swarm: 4 },
-		tracerDensity: 1.2,       // ~10 tracers on 37×23
-		dataDensity: 0.55,
+		tracerDensity: 1.2,       // ~10 tracers
+		dataDensity: 0.60,
 		playerSpeed: 1.5,
 		theme: 'CORE',
-		loopFactor: 0.25,
+		loopFactor: 0.14,         // Tight mazes
+		ghostModeDuration: 3.5,
+		powerNodes: 4,
 	},
 ] as const;
 
@@ -190,20 +204,17 @@ export const EXTRA_LIFE_SCORE = 50_000;
 export const RESPAWN_INVINCIBILITY_TICKS = Math.round(2 * TICK_RATE); // 2 seconds
 
 /** Death animation duration (ticks) */
-export const DEATH_ANIMATION_TICKS = Math.round(0.5 * TICK_RATE); // 0.5 seconds
+export const DEATH_ANIMATION_TICKS = Math.round(1.2 * TICK_RATE); // 1.2 seconds (longer = weightier)
 
 // ============================================================================
 // GHOST MODE (Power Node)
 // ============================================================================
 
-/** Ghost mode duration (ticks) */
-export const GHOST_MODE_TICKS = Math.round(8 * TICK_RATE); // 8 seconds
-
 /** Ghost mode warning threshold (ticks remaining) */
 export const GHOST_MODE_WARNING_TICKS = Math.round(2 * TICK_RATE); // 2 seconds before end
 
 /** Tracer respawn delay after being destroyed in ghost mode (ticks) */
-export const TRACER_RESPAWN_TICKS = Math.round(15 * TICK_RATE); // 15 seconds
+export const TRACER_RESPAWN_TICKS = Math.round(8 * TICK_RATE); // 8 seconds (was 15 — too long)
 
 /** Frightened tracer speed multiplier */
 export const FRIGHTENED_SPEED_MULT = 0.5;
@@ -213,7 +224,7 @@ export const FRIGHTENED_SPEED_MULT = 0.5;
 // ============================================================================
 
 /** EMP freeze duration (ticks) */
-export const EMP_FREEZE_TICKS = Math.round(5 * TICK_RATE); // 5 seconds
+export const EMP_FREEZE_TICKS = Math.round(3 * TICK_RATE); // 3 seconds (was 5 — too generous)
 
 // ============================================================================
 // TRACER SPEEDS (relative to player speed of 1.0)
@@ -240,13 +251,104 @@ export const HUNTER_CHASE_TICKS = Math.round(5 * TICK_RATE); // 5 seconds
 export const HUNTER_PATH_REFRESH_TICKS = Math.round(0.5 * TICK_RATE); // 500ms
 
 /** Phantom teleport interval (ticks) */
-export const PHANTOM_TELEPORT_TICKS = Math.round(15 * TICK_RATE); // 15 seconds
+export const PHANTOM_TELEPORT_TICKS = Math.round(10 * TICK_RATE); // 10s (was 15 — too infrequent)
 
 /** Phantom teleport warning duration before teleport (ticks) */
 export const PHANTOM_WARNING_TICKS = Math.round(1 * TICK_RATE); // 1 second
 
 /** Minimum distance from player for phantom teleport destination (cells) */
 export const PHANTOM_MIN_TELEPORT_DISTANCE = 5;
+
+// ============================================================================
+// SCATTER / CHASE CYCLE — The Heartbeat
+// ============================================================================
+
+/**
+ * Tracers alternate between SCATTER (wander/patrol, predictable)
+ * and CHASE (hunt the player, aggressive). This creates rhythm —
+ * the player learns to recognize when danger escalates and relaxes.
+ *
+ * In scatter mode: patrol goes to waypoints, hunter goes to home corner,
+ * phantom drifts randomly, swarm loosens formation.
+ *
+ * In chase mode: all tracers target the player with their unique behaviors.
+ */
+export interface ScatterChaseConfig {
+	/** Duration of scatter phase (ticks) */
+	readonly scatterTicks: number;
+	/** Duration of chase phase (ticks) */
+	readonly chaseTicks: number;
+}
+
+/**
+ * Scatter/chase timings per level. Later levels = longer chase, shorter scatter.
+ * Each cycle: scatter → chase → scatter → chase → ...
+ */
+export const SCATTER_CHASE_CONFIGS: readonly ScatterChaseConfig[] = [
+	{ scatterTicks: Math.round(7 * TICK_RATE), chaseTicks: Math.round(7 * TICK_RATE) },   // L1: balanced
+	{ scatterTicks: Math.round(6 * TICK_RATE), chaseTicks: Math.round(8 * TICK_RATE) },   // L2: slight chase bias
+	{ scatterTicks: Math.round(5 * TICK_RATE), chaseTicks: Math.round(10 * TICK_RATE) },  // L3: aggressive
+	{ scatterTicks: Math.round(4 * TICK_RATE), chaseTicks: Math.round(12 * TICK_RATE) },  // L4: relentless
+	{ scatterTicks: Math.round(3 * TICK_RATE), chaseTicks: Math.round(15 * TICK_RATE) },  // L5: brutal
+] as const;
+
+// ============================================================================
+// ESCALATION — Cruise Elroy
+// ============================================================================
+
+/**
+ * When data remaining drops below thresholds, tracers speed up.
+ * This creates end-of-level tension where the last few packets are frantic.
+ */
+export const ESCALATION_THRESHOLDS = [
+	{ dataFraction: 0.30, speedBoost: 0.10 }, // 30% remaining: +10% speed
+	{ dataFraction: 0.15, speedBoost: 0.20 }, // 15% remaining: +20% speed (danger zone)
+] as const;
+
+/**
+ * Proximity alert range (Manhattan distance in cells).
+ * When any tracer is within this range, UI shows danger indicators.
+ */
+export const PROXIMITY_ALERT_RANGE = 4;
+
+/**
+ * Near-miss range — adjacent cell. Triggers screen flash.
+ */
+export const NEAR_MISS_RANGE = 1;
+
+// ============================================================================
+// BONUS ITEMS
+// ============================================================================
+
+/**
+ * Bonus items spawn mid-level and disappear after a timer.
+ * They reward map awareness and risk-taking.
+ */
+
+/** Ticks between checking if a bonus should spawn */
+export const BONUS_SPAWN_CHECK_INTERVAL = Math.round(12 * TICK_RATE); // Check every 12s
+
+/** Probability of spawning when check fires (0-1) */
+export const BONUS_SPAWN_CHANCE = 0.5;
+
+/** How long a bonus item stays before vanishing (ticks) */
+export const BONUS_LIFETIME_TICKS = Math.round(8 * TICK_RATE); // 8 seconds to grab it
+
+/** Bonus item types and their effects */
+export const BONUS_TYPES = {
+	SCORE_BURST: { points: 500, label: '+500', char: '$' },
+	SPEED_BOOST: { points: 100, label: 'SPEED', char: '»', durationTicks: Math.round(5 * TICK_RATE) },
+	EXTRA_LIFE: { points: 0, label: '+LIFE', char: '♥' },
+} as const;
+
+export type BonusType = keyof typeof BONUS_TYPES;
+
+/** Weighted pool for bonus selection. Extra life is rare. */
+export const BONUS_WEIGHTS: readonly { type: BonusType; weight: number }[] = [
+	{ type: 'SCORE_BURST', weight: 5 },
+	{ type: 'SPEED_BOOST', weight: 3 },
+	{ type: 'EXTRA_LIFE', weight: 1 },
+] as const;
 
 // ============================================================================
 // INPUT
@@ -260,7 +362,7 @@ export const INPUT_BUFFER_TICKS = 3; // ~200ms at 15 ticks/s
 // ============================================================================
 
 /** Combo decay timeout (ticks) — reset combo after this many ticks without collecting */
-export const COMBO_DECAY_TICKS = Math.round(1.5 * TICK_RATE); // 1.5 seconds
+export const COMBO_DECAY_TICKS = Math.round(0.8 * TICK_RATE); // 0.8 seconds (was 1.5 — too easy)
 
 /** Combo multiplier thresholds */
 export const COMBO_MULTIPLIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
@@ -332,15 +434,12 @@ export const MAX_DEAD_END_LENGTH = 3;
 /** Minimum distance from player spawn to any tracer spawn (cells) */
 export const MIN_TRACER_SPAWN_DISTANCE = 8;
 
-/** Number of power nodes per level */
-export const POWER_NODES_PER_LEVEL = 4;
-
 // ============================================================================
 // UI TIMING
 // ============================================================================
 
 /** Level intro display duration (ticks) */
-export const LEVEL_INTRO_TICKS = Math.round(2 * TICK_RATE); // 2 seconds
+export const LEVEL_INTRO_TICKS = Math.round(1.2 * TICK_RATE); // 1.2s (was 2 — too slow)
 
 /** Level clear celebration duration (ticks) */
-export const LEVEL_CLEAR_TICKS = Math.round(2 * TICK_RATE); // 2 seconds
+export const LEVEL_CLEAR_TICKS = Math.round(1.5 * TICK_RATE); // 1.5s (was 2 — too slow)

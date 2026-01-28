@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { MAZE_CHARS } from '../types';
-	import { GHOST_MODE_TICKS, MAX_LIVES } from '../constants';
+	import { MAX_LIVES } from '../constants';
 
 	interface Props {
 		score: number;
@@ -14,6 +14,9 @@
 		hasEmp: boolean;
 		ghostModeActive: boolean;
 		ghostModeRemaining: number;
+		ghostModeTotal: number;
+		dangerZone: boolean;
+		scatterChasePhase: 'scatter' | 'chase';
 	}
 
 	let {
@@ -28,6 +31,9 @@
 		hasEmp,
 		ghostModeActive,
 		ghostModeRemaining,
+		ghostModeTotal,
+		dangerZone,
+		scatterChasePhase,
 	}: Props = $props();
 
 	let livesDisplay = $derived(
@@ -37,7 +43,7 @@
 	let dataCollected = $derived(dataTotal - dataRemaining);
 
 	let ghostProgress = $derived(
-		ghostModeActive ? Math.round((ghostModeRemaining / GHOST_MODE_TICKS) * 10) : 0
+		ghostModeActive && ghostModeTotal > 0 ? Math.round((ghostModeRemaining / ghostModeTotal) * 10) : 0
 	);
 	let ghostBar = $derived(
 		ghostModeActive
@@ -48,12 +54,14 @@
 	let formattedScore = $derived(score.toLocaleString());
 </script>
 
-<div class="hud">
+<div class="hud" class:danger-zone={dangerZone}>
 	<div class="hud-row">
 		<span class="hud-item">SCORE: <span class="hud-value">{formattedScore}</span></span>
 		<span class="hud-item">LIVES: <span class="hud-lives">{livesDisplay}</span></span>
 		<span class="hud-item">LVL: <span class="hud-value">{level}/{totalLevels}</span></span>
-		<span class="hud-item">DATA: <span class="hud-value">{dataCollected}/{dataTotal}</span></span>
+		<span class="hud-item" class:data-danger={dangerZone}>
+			DATA: <span class="hud-value">{dataCollected}/{dataTotal}</span>
+		</span>
 	</div>
 	<div class="hud-row">
 		{#if combo > 0}
@@ -67,12 +75,20 @@
 		<span class="hud-item" class:emp-ready={hasEmp} class:emp-used={!hasEmp}>
 			EMP: [{hasEmp ? 'READY' : 'USED'}]
 		</span>
+		<span class="hud-item phase-indicator" class:phase-chase={scatterChasePhase === 'chase'}>
+			{scatterChasePhase === 'chase' ? 'ALERT' : 'CLEAR'}
+		</span>
 		{#if ghostModeActive}
 			<span class="hud-item ghost-bar">
 				GHOST: <span class="ghost-progress">{ghostBar}</span>
 			</span>
 		{/if}
 	</div>
+	{#if dangerZone}
+		<div class="hud-row danger-warning">
+			<span class="danger-text">⚠ LOW DATA — TRACERS ACCELERATING</span>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -142,8 +158,51 @@
 		text-shadow: 0 0 4px var(--color-cyan-glow);
 	}
 
+	/* Scatter/Chase phase indicator */
+	.phase-indicator {
+		color: var(--color-accent-dim);
+		opacity: 0.5;
+	}
+
+	.phase-chase {
+		color: var(--color-red);
+		opacity: 1;
+		animation: chase-blink 0.8s ease-in-out infinite alternate;
+	}
+
+	/* Danger zone */
+	.danger-zone {
+		border-top-color: var(--color-red);
+	}
+
+	.data-danger {
+		color: var(--color-red);
+		animation: danger-pulse 0.6s ease-in-out infinite alternate;
+	}
+
+	.danger-warning {
+		justify-content: center;
+	}
+
+	.danger-text {
+		color: var(--color-red);
+		font-size: var(--text-xs);
+		letter-spacing: var(--tracking-wider);
+		animation: danger-pulse 0.6s ease-in-out infinite alternate;
+	}
+
 	@keyframes combo-glow {
 		from { text-shadow: 0 0 2px rgba(255, 215, 0, 0.2); }
 		to { text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+	}
+
+	@keyframes chase-blink {
+		from { opacity: 0.6; }
+		to { opacity: 1; }
+	}
+
+	@keyframes danger-pulse {
+		from { opacity: 0.5; }
+		to { opacity: 1; text-shadow: 0 0 4px var(--color-red-glow); }
 	}
 </style>

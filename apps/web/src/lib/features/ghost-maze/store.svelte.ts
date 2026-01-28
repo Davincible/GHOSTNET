@@ -23,6 +23,9 @@ import type {
 	PhantomTracerData,
 	PatrolTracerData,
 	SwarmTracerData,
+	ScatterChasePhase,
+	BonusItem,
+	ScorePopup,
 } from './types';
 import { DIRECTION_VECTORS, OPPOSITE_DIRECTION, MAZE_CHARS } from './types';
 import {
@@ -43,6 +46,8 @@ import {
 	updateFrightened,
 	updatePhantom,
 	generatePatrolWaypoints,
+	findPath,
+	getPathDirection,
 } from './engine';
 import type { PhantomAction } from './engine';
 import {
@@ -53,7 +58,6 @@ import {
 	EXTRA_LIFE_SCORE,
 	RESPAWN_INVINCIBILITY_TICKS,
 	DEATH_ANIMATION_TICKS,
-	GHOST_MODE_TICKS,
 	GHOST_MODE_WARNING_TICKS,
 	TRACER_RESPAWN_TICKS,
 	EMP_FREEZE_TICKS,
@@ -73,7 +77,17 @@ import {
 	PHANTOM_TELEPORT_TICKS,
 	computeTracers,
 	computeDataPackets,
+	SCATTER_CHASE_CONFIGS,
+	ESCALATION_THRESHOLDS,
+	PROXIMITY_ALERT_RANGE,
+	NEAR_MISS_RANGE,
+	BONUS_SPAWN_CHECK_INTERVAL,
+	BONUS_SPAWN_CHANCE,
+	BONUS_LIFETIME_TICKS,
+	BONUS_TYPES,
+	BONUS_WEIGHTS,
 } from './constants';
+import type { BonusType } from './constants';
 import { createFrameLoop } from '$lib/features/arcade/engine';
 import type { GhostMazeAudio } from './audio';
 
@@ -123,6 +137,25 @@ export interface GhostMazeState {
 	// EMP
 	empFreezeRemaining: number;
 
+	// Scatter/Chase cycle
+	scatterChasePhase: ScatterChasePhase;
+	scatterChaseTimer: number;
+
+	// Escalation (Cruise Elroy)
+	escalationSpeedBoost: number;
+
+	// Bonus items
+	bonusItem: BonusItem | null;
+	bonusSpawnTimer: number;
+	speedBoostRemaining: number;
+
+	// Proximity detection
+	nearestTracerDistance: number;
+	nearMissThisTick: boolean;
+
+	// Score popups
+	scorePopups: ScorePopup[];
+
 	// UI
 	isPaused: boolean;
 	error: string | null;
@@ -133,6 +166,11 @@ export interface GhostMazeStore {
 	readonly renderEntities: RenderEntity[];
 	readonly mazeText: string;
 	readonly comboMultiplier: number;
+	readonly scorePopups: ScorePopup[];
+	readonly nearestTracerDistance: number;
+	readonly nearMissThisTick: boolean;
+	readonly dangerZone: boolean;
+	readonly scatterChasePhase: ScatterChasePhase;
 
 	startGame(tier: EntryTier, seed?: number): void;
 	togglePause(): void;
@@ -183,6 +221,15 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		levelStartTick: 0,
 		phaseTimer: 0,
 		empFreezeRemaining: 0,
+		scatterChasePhase: 'scatter',
+		scatterChaseTimer: 0,
+		escalationSpeedBoost: 0,
+		bonusItem: null,
+		bonusSpawnTimer: BONUS_SPAWN_CHECK_INTERVAL,
+		speedBoostRemaining: 0,
+		nearestTracerDistance: Infinity,
+		nearMissThisTick: false,
+		scorePopups: [],
 		isPaused: false,
 		error: null,
 	});
@@ -194,6 +241,10 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 	let currentTick = 0;
 	let extraLifeAwarded = false;
 	let playerMoveAccumulator = 0;
+
+	// Score popup ID counter
+	let popupIdCounter = 0;
+	const POPUP_LIFETIME = Math.round(0.8 * TICK_RATE);
 
 	// Game loop (fixed timestep inside frame loop)
 	const gameLoop = createGameLoop({
@@ -210,6 +261,8 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 	// ─────────────────────────────────────────────────────────────────────
 
 	const comboMultiplier = $derived(getComboMultiplier(state.combo));
+
+	const dangerZone = $derived(state.dataTotal > 0 && state.dataRemaining / state.dataTotal <= 0.15);
 
 	const renderEntities = $derived.by(() => {
 		if (!state.maze) return [];
@@ -237,7 +290,10 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 			let type: RenderEntity['type'];
 			let char: string;
 
-			if (tracer.mode === 'frightened') {
+			if (tracer.mode === 'returning') {
+				type = 'tracer-returning';
+				char = MAZE_CHARS.TRACER_RETURNING;
+			} else if (tracer.mode === 'frightened') {
 				type = 'tracer-frightened';
 				char = MAZE_CHARS.TRACER_FRIGHTENED;
 			} else if (tracer.mode === 'frozen') {
@@ -278,6 +334,19 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 					});
 				}
 			}
+		}
+
+		// Bonus item
+		if (state.bonusItem) {
+			const bp = toText(state.bonusItem.pos);
+			const bonusDef = BONUS_TYPES[state.bonusItem.type];
+			entities.push({
+				id: 'bonus-item',
+				type: 'bonus-item',
+				x: bp.x,
+				y: bp.y,
+				char: bonusDef.char,
+			});
 		}
 
 		return entities;
@@ -405,6 +474,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		currentTick = 0;
 		extraLifeAwarded = false;
 		playerMoveAccumulator = 0;
+		popupIdCounter = 0;
 
 		state.phase = 'level_intro';
 		state.currentLevel = 1;
@@ -430,6 +500,15 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		state.empFreezeRemaining = 0;
 		state.isInvincible = false;
 		state.phaseTimer = LEVEL_INTRO_TICKS;
+		state.scatterChasePhase = 'scatter';
+		state.scatterChaseTimer = 0;
+		state.escalationSpeedBoost = 0;
+		state.bonusItem = null;
+		state.bonusSpawnTimer = BONUS_SPAWN_CHECK_INTERVAL;
+		state.speedBoostRemaining = 0;
+		state.nearestTracerDistance = Infinity;
+		state.nearMissThisTick = false;
+		state.scorePopups = [];
 
 		setupLevel(1);
 
@@ -461,6 +540,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 			loopFactor: config.loopFactor,
 			tracerCount,
 			dataPackets,
+			powerNodes: config.powerNodes,
 		});
 
 		const tracers = createTracers(tracerConfigs, maze);
@@ -481,6 +561,22 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		state.empFreezeRemaining = 0;
 		state.isInvincible = false;
 		state.levelStartTick = currentTick;
+
+		// Scatter/chase cycle
+		const scConfig = SCATTER_CHASE_CONFIGS[level - 1];
+		state.scatterChasePhase = 'scatter';
+		state.scatterChaseTimer = scConfig.scatterTicks;
+
+		// Escalation
+		state.escalationSpeedBoost = 0;
+
+		// Bonus items
+		state.bonusItem = null;
+		state.bonusSpawnTimer = BONUS_SPAWN_CHECK_INTERVAL;
+		state.speedBoostRemaining = 0;
+
+		// Score popups
+		state.scorePopups = [];
 	}
 
 	function createTracers(
@@ -701,32 +797,131 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 			}
 		}
 
-		// 8. Move tracers
-		updateTracers(maze, levelConfig.playerSpeed);
+		// 8. Escalation — recompute speed boost based on data remaining
+		{
+			const dataFraction = state.dataTotal > 0 ? state.dataRemaining / state.dataTotal : 1;
+			let boost = 0;
+			for (const threshold of ESCALATION_THRESHOLDS) {
+				if (dataFraction <= threshold.dataFraction) {
+					boost = threshold.speedBoost;
+				}
+			}
+			if (boost > state.escalationSpeedBoost) {
+				state.escalationSpeedBoost = boost;
+				if (boost >= 0.20) audio?.dangerZone();
+			}
+		}
 
-		// 9. Check collisions with tracers
+		// 9. Scatter/chase cycle — the heartbeat
+		// Ghost mode overrides: skip timer while ghost mode active
+		if (!state.ghostModeActive) {
+			state.scatterChaseTimer--;
+			if (state.scatterChaseTimer <= 0) {
+				const scConfig = SCATTER_CHASE_CONFIGS[state.currentLevel - 1];
+				if (state.scatterChasePhase === 'scatter') {
+					state.scatterChasePhase = 'chase';
+					state.scatterChaseTimer = scConfig.chaseTicks;
+					audio?.chaseStart();
+				} else {
+					state.scatterChasePhase = 'scatter';
+					state.scatterChaseTimer = scConfig.scatterTicks;
+					audio?.scatterStart();
+				}
+			}
+		}
+
+		// 10. Move tracers
+		const isScatter = state.scatterChasePhase === 'scatter' && !state.ghostModeActive;
+		updateTracers(maze, levelConfig.playerSpeed, isScatter, state.escalationSpeedBoost);
+
+		// 11. Check collisions with tracers
 		checkTracerCollisions();
 
-		// 10. Update combo decay
+		// 12. Proximity detection & near-miss
+		{
+			let nearest = Infinity;
+			let nearMiss = false;
+			for (const t of state.tracers) {
+				if (t.mode === 'dead' || t.mode === 'returning' || t.mode === 'frozen') continue;
+				const d = Math.abs(state.playerPos.x - t.pos.x) + Math.abs(state.playerPos.y - t.pos.y);
+				if (d < nearest) nearest = d;
+				if (d <= NEAR_MISS_RANGE && t.mode !== 'frightened') nearMiss = true;
+			}
+			state.nearestTracerDistance = nearest;
+
+			if (nearMiss && !state.isInvincible && !state.ghostModeActive) {
+				state.nearMissThisTick = true;
+				audio?.nearMiss();
+			} else {
+				state.nearMissThisTick = false;
+			}
+
+			// Proximity heartbeat
+			if (nearest <= PROXIMITY_ALERT_RANGE && !state.ghostModeActive && !state.isInvincible) {
+				// Play every 8 ticks (~2x/sec) to avoid spam
+				if (currentTick % 8 === 0) {
+					audio?.proximityWarning(nearest);
+				}
+			}
+		}
+
+		// 13. Bonus item lifecycle
+		if (state.bonusItem) {
+			state.bonusItem.lifetime--;
+			if (state.bonusItem.lifetime <= 0) {
+				state.bonusItem = null;
+			}
+		}
+
+		// 14. Check bonus collection
+		if (state.bonusItem && overlaps(state.playerPos, state.bonusItem.pos)) {
+			collectBonus(state.bonusItem);
+			state.bonusItem = null;
+		}
+
+		// 15. Bonus spawn timer
+		state.bonusSpawnTimer--;
+		if (state.bonusSpawnTimer <= 0 && !state.bonusItem) {
+			state.bonusSpawnTimer = BONUS_SPAWN_CHECK_INTERVAL;
+			if (rng!() < BONUS_SPAWN_CHANCE) {
+				spawnBonusItem(maze);
+			}
+		}
+
+		// 16. Speed boost decay
+		if (state.speedBoostRemaining > 0) {
+			state.speedBoostRemaining--;
+		}
+
+		// 17. Update combo decay
 		if (state.comboTimer > 0) {
 			state.comboTimer--;
 			if (state.comboTimer <= 0 && state.combo > 0) {
+				if (state.combo > 5) audio?.comboBreak();
 				state.combo = 0;
 				state.comboTimer = 0;
 			}
 		}
 
-		// 11. Check invincibility decay
+		// 18. Score popup decay
+		for (let i = state.scorePopups.length - 1; i >= 0; i--) {
+			state.scorePopups[i].ticksLeft--;
+			if (state.scorePopups[i].ticksLeft <= 0) {
+				state.scorePopups.splice(i, 1);
+			}
+		}
+
+		// 19. Check invincibility decay
 		if (state.isInvincible) {
 			// Invincibility is managed by respawn timer
 		}
 
-		// 12. Check level clear
+		// 20. Check level clear
 		if (state.dataRemaining <= 0) {
 			triggerLevelClear();
 		}
 
-		// 13. Check extra life
+		// 21. Check extra life
 		if (!extraLifeAwarded && state.score >= EXTRA_LIFE_SCORE && state.lives < MAX_LIVES) {
 			state.lives++;
 			extraLifeAwarded = true;
@@ -739,7 +934,11 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 	function movePlayer(maze: MazeGrid): void {
 		// Fractional accumulator: accumulate speed each tick, move when >= 1
 		const levelConfig = LEVELS[state.currentLevel - 1];
-		const rate = BASE_PLAYER_RATE * (levelConfig?.playerSpeed ?? 1.0);
+		let rate = BASE_PLAYER_RATE * (levelConfig?.playerSpeed ?? 1.0);
+
+		// Speed boost from bonus item
+		rate *= state.speedBoostRemaining > 0 ? 1.5 : 1.0;
+
 		playerMoveAccumulator += rate;
 		if (playerMoveAccumulator < 1) return;
 		playerMoveAccumulator -= 1;
@@ -755,6 +954,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 				state.playerPos = newPos;
 				state.playerDir = buffered;
 				input.consumeBuffer();
+				audio?.moveTick();
 			}
 		}
 	}
@@ -778,7 +978,11 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 		// Score with combo multiplier
 		const mult = getComboMultiplier(state.combo);
-		state.score += SCORE_DATA_PACKET * mult;
+		const points = SCORE_DATA_PACKET * mult;
+		state.score += points;
+
+		// Score popup
+		addScorePopup(`+${points}`, state.playerPos);
 
 		// Audio
 		audio?.dataCollect(state.combo);
@@ -800,9 +1004,10 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 	}
 
 	function activateGhostMode(): void {
+		const levelConfig = LEVELS[state.currentLevel - 1];
 		state.phase = 'ghost_mode';
 		state.ghostModeActive = true;
-		state.ghostModeRemaining = GHOST_MODE_TICKS;
+		state.ghostModeRemaining = Math.round(levelConfig.ghostModeDuration * TICK_RATE);
 		state.tracersDestroyedThisGhostMode = 0;
 		audio?.ghostModeStart();
 
@@ -820,6 +1025,11 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		state.ghostModeActive = false;
 		state.ghostModeRemaining = 0;
 		audio?.ghostModeEnd();
+
+		// Reset scatter/chase to scatter when ghost mode ends
+		const scConfig = SCATTER_CHASE_CONFIGS[state.currentLevel - 1];
+		state.scatterChasePhase = 'scatter';
+		state.scatterChaseTimer = scConfig.scatterTicks;
 
 		for (const tracer of state.tracers) {
 			if (tracer.mode === 'frightened') {
@@ -848,9 +1058,42 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		}
 	}
 
-	function updateTracers(maze: MazeGrid, playerSpeed: number): void {
+	/**
+	 * Random direction for a tracer, avoiding reversal.
+	 * Used for phantom scatter mode and other random walk behaviors.
+	 */
+	function randomTracerDirection(maze: MazeGrid, pos: Coord, currentDir: Direction): Direction | null {
+		const opposite = OPPOSITE_DIRECTION[currentDir];
+		const dirs = getValidDirections(maze, pos).filter(d => d !== opposite);
+		if (dirs.length > 0) return dirs[Math.floor((rng?.() ?? Math.random()) * dirs.length)];
+		return canMove(maze, pos, opposite) ? opposite : null;
+	}
+
+	function updateTracers(maze: MazeGrid, playerSpeed: number, isScatter: boolean, escalationBoost: number): void {
 		for (const tracer of state.tracers) {
-			// Handle dead tracers (respawn timer)
+			// Handle returning tracers (eyes going home)
+			if (tracer.mode === 'returning') {
+				const spawnPos = maze.tracerSpawns[tracer.id % maze.tracerSpawns.length];
+				if (overlaps(tracer.pos, spawnPos)) {
+					tracer.mode = state.ghostModeActive ? 'frightened' : 'normal';
+					continue;
+				}
+				// Move toward spawn using A* at double speed (always moves)
+				const path = findPath(maze, tracer.pos, spawnPos);
+				if (path && path.length > 1) {
+					const dir = getPathDirection([tracer.pos, ...path.slice(1)]);
+					if (dir) {
+						const newPos = tryMove(maze, tracer.pos, dir);
+						if (newPos) {
+							tracer.pos = newPos;
+							tracer.dir = dir;
+						}
+					}
+				}
+				continue;
+			}
+
+			// Handle dead tracers (respawn timer — legacy fallback)
 			if (tracer.mode === 'dead') {
 				tracer.respawnTimer--;
 				if (tracer.respawnTimer <= 0) {
@@ -865,9 +1108,9 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 			// Frozen tracers don't move
 			if (tracer.mode === 'frozen') continue;
 
-			// Speed check
+			// Speed check (with escalation boost)
 			const isFrightened = tracer.mode === 'frightened';
-			if (!shouldTracerMove(tracer.type, currentTick, playerSpeed, isFrightened)) continue;
+			if (!shouldTracerMove(tracer.type, currentTick, playerSpeed * (1 + escalationBoost), isFrightened)) continue;
 
 			// Get movement direction based on AI type
 			let dir: Direction | null = null;
@@ -880,10 +1123,15 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 						dir = updatePatrol(tracer, maze, state.playerPos, rng!);
 						break;
 					case 'hunter':
-						dir = updateHunter(tracer, maze, state.playerPos);
+						dir = updateHunter(tracer, maze, state.playerPos, isScatter);
 						break;
 					case 'phantom': {
 						if (!rng) break;
+						if (isScatter) {
+							// In scatter: pure random walk
+							dir = randomTracerDirection(maze, tracer.pos, tracer.dir);
+							break;
+						}
 						const action: PhantomAction = updatePhantom(tracer, maze, state.playerPos, rng);
 						if (action.type === 'teleport' && action.destination) {
 							tracer.pos = { ...action.destination };
@@ -894,7 +1142,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 						break;
 					}
 					case 'swarm':
-						dir = updateSwarm(tracer, maze, state.playerPos, state.tracers);
+						dir = updateSwarm(tracer, maze, state.playerPos, state.tracers, isScatter);
 						break;
 				}
 			}
@@ -914,13 +1162,12 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		if (state.isInvincible) return;
 
 		for (const tracer of state.tracers) {
-			if (tracer.mode === 'dead' || tracer.mode === 'frozen') continue;
+			if (tracer.mode === 'dead' || tracer.mode === 'frozen' || tracer.mode === 'returning') continue;
 			if (!overlaps(state.playerPos, tracer.pos)) continue;
 
 			if (tracer.mode === 'frightened') {
-				// Destroy tracer
-				tracer.mode = 'dead';
-				tracer.respawnTimer = TRACER_RESPAWN_TICKS;
+				// Destroy tracer — switch to returning mode (eyes going home)
+				tracer.mode = 'returning';
 
 				// Score (doubling cascade)
 				const destroyScore =
@@ -929,6 +1176,9 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 				state.tracersDestroyedThisGhostMode++;
 				state.totalTracersDestroyed++;
 				audio?.tracerDestroyed();
+
+				// Score popup
+				addScorePopup(`+${destroyScore}`, tracer.pos, 'tracer');
 			} else {
 				// Player hit!
 				triggerPlayerDeath();
@@ -979,7 +1229,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 				// Reset tracers to home positions
 				if (state.maze) {
 					for (const tracer of state.tracers) {
-						if (tracer.mode !== 'dead') {
+						if (tracer.mode !== 'dead' && tracer.mode !== 'returning') {
 							const spawnIdx = tracer.id % state.maze.tracerSpawns.length;
 							tracer.pos = { ...state.maze.tracerSpawns[spawnIdx] };
 							tracer.mode = 'normal';
@@ -1024,7 +1274,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 		// Perfect clear (all data + all tracers destroyed)
 		const allTracersDestroyed = state.tracers.every(
-			(t) => t.mode === 'dead' || t.respawnTimer > 0,
+			(t) => t.mode === 'dead' || t.mode === 'returning' || t.respawnTimer > 0,
 		);
 		if (allTracersDestroyed) {
 			state.score += SCORE_PERFECT_CLEAR * levelNum;
@@ -1092,6 +1342,87 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		return 1;
 	}
 
+	function addScorePopup(text: string, pos: Coord, variant: ScorePopup['variant'] = 'default'): void {
+		const tp = { x: pos.x * 2 + 1, y: pos.y * 2 + 1 };
+		state.scorePopups.push({
+			id: popupIdCounter++,
+			text,
+			x: tp.x,
+			y: tp.y,
+			ticksLeft: POPUP_LIFETIME,
+			variant,
+		});
+	}
+
+	function spawnBonusItem(maze: MazeGrid): void {
+		// Pick a random empty cell that's not too close to the player
+		const emptyCells: Coord[] = [];
+		for (let y = 0; y < maze.height; y++) {
+			for (let x = 0; x < maze.width; x++) {
+				const cell = maze.cells[y * maze.width + x];
+				if (cell.content === 'empty') {
+					const dist = Math.abs(x - state.playerPos.x) + Math.abs(y - state.playerPos.y);
+					if (dist >= 5) {
+						emptyCells.push({ x, y });
+					}
+				}
+			}
+		}
+
+		if (emptyCells.length === 0) return;
+
+		const pos = emptyCells[Math.floor(rng!() * emptyCells.length)];
+
+		// Select type from weighted pool
+		const totalWeight = BONUS_WEIGHTS.reduce((sum, bw) => sum + bw.weight, 0);
+		let roll = rng!() * totalWeight;
+		let selectedType: BonusType = 'SCORE_BURST';
+		for (const bw of BONUS_WEIGHTS) {
+			roll -= bw.weight;
+			if (roll <= 0) {
+				selectedType = bw.type;
+				break;
+			}
+		}
+
+		state.bonusItem = {
+			type: selectedType,
+			pos,
+			lifetime: BONUS_LIFETIME_TICKS,
+		};
+
+		audio?.bonusAppear();
+	}
+
+	function collectBonus(item: BonusItem): void {
+		const def = BONUS_TYPES[item.type];
+
+		// Apply points
+		if (def.points > 0) {
+			state.score += def.points;
+		}
+
+		// Apply type-specific effects
+		switch (item.type) {
+			case 'EXTRA_LIFE':
+				if (state.lives < MAX_LIVES) {
+					state.lives++;
+				}
+				break;
+			case 'SPEED_BOOST':
+				state.speedBoostRemaining = BONUS_TYPES.SPEED_BOOST.durationTicks;
+				break;
+			case 'SCORE_BURST':
+				// Points already added above
+				break;
+		}
+
+		audio?.bonusCollect();
+
+		// Score popup
+		addScorePopup(def.label, item.pos, 'bonus');
+	}
+
 	// ─────────────────────────────────────────────────────────────────────
 	// RETURN
 	// ─────────────────────────────────────────────────────────────────────
@@ -1108,6 +1439,21 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		},
 		get comboMultiplier() {
 			return comboMultiplier;
+		},
+		get scorePopups() {
+			return state.scorePopups;
+		},
+		get nearestTracerDistance() {
+			return state.nearestTracerDistance;
+		},
+		get nearMissThisTick() {
+			return state.nearMissThisTick;
+		},
+		get dangerZone() {
+			return dangerZone;
+		},
+		get scatterChasePhase() {
+			return state.scatterChasePhase;
 		},
 		startGame,
 		togglePause,
