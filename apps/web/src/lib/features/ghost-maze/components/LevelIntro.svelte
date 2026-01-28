@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { LEVELS } from '../constants';
+	import { LEVELS, computeTracers, computeDataPackets } from '../constants';
+	import type { TracerType } from '../types';
 
 	interface Props {
 		level: number;
@@ -9,16 +10,20 @@
 
 	let config = $derived(LEVELS[level - 1]);
 	let theme = $derived(config?.theme ?? 'UNKNOWN');
-	let tracerCount = $derived(config?.tracers.reduce((s, t) => s + t.count, 0) ?? 0);
-	let dataPackets = $derived(config?.dataPackets ?? 0);
+	let tracerConfigs = $derived(config ? computeTracers(config) : []);
+	let tracerCount = $derived(tracerConfigs.reduce((s, t) => s + t.count, 0));
+	let dataPackets = $derived(config ? computeDataPackets(config) : 0);
 
 	// Find new tracer type introduced this level
 	let newTracer = $derived.by(() => {
 		if (level <= 1) return null;
-		const prevTypes = new Set(
-			LEVELS.slice(0, level - 1).flatMap((l) => l.tracers.map((t) => t.type)),
+		const prevTypes = new Set<TracerType>(
+			LEVELS.slice(0, level - 1).flatMap((l) => {
+				const configs = computeTracers(l);
+				return configs.map((t) => t.type);
+			}),
 		);
-		const currentTypes = config?.tracers.map((t) => t.type) ?? [];
+		const currentTypes = tracerConfigs.map((t) => t.type);
 		const newType = currentTypes.find((t) => !prevTypes.has(t));
 		if (!newType) return null;
 		const labels: Record<string, string> = {
@@ -29,9 +34,7 @@
 		return labels[newType] ?? newType.toUpperCase();
 	});
 
-	let levelText = $derived(
-		`L E V E L   ${level}`.split('').join(''),
-	);
+	let levelText = $derived(`L E V E L   ${level}`);
 	let themeText = $derived(
 		theme.split('').join(' '),
 	);

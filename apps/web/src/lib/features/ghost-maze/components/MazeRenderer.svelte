@@ -10,10 +10,14 @@
 		maze: MazeGrid | null;
 		/** Whether player is in ghost mode */
 		ghostMode?: boolean;
+		/** Whether ghost mode is about to expire (last 2s) */
+		ghostModeWarning?: boolean;
 		/** Whether player is invincible (blinking) */
 		invincible?: boolean;
 		/** Whether player is dead (flash red) */
 		dead?: boolean;
+		/** Whether EMP was just deployed (screen flash) */
+		empFlash?: boolean;
 	}
 
 	let {
@@ -21,17 +25,33 @@
 		entities,
 		maze,
 		ghostMode = false,
+		ghostModeWarning = false,
 		invincible = false,
 		dead = false,
+		empFlash = false,
 	}: Props = $props();
 
-	let cols = $derived(maze?.width ?? 21);
-	let rows = $derived(maze?.height ?? 15);
+	// Text grid dimensions: (logical * 2 + 1)
+	let cols = $derived(maze ? maze.width * 2 + 1 : 21);
+	let rows = $derived(maze ? maze.height * 2 + 1 : 15);
+
+	// Responsive font sizing: scale so the maze fills available width.
+	// Monospace ch-to-fontSize ratio is ~0.6 (IBM Plex Mono).
+	const CH_RATIO = 0.602;
+	let containerWidth = $state(0);
+	let fontSize = $derived.by(() => {
+		if (containerWidth <= 0 || cols <= 0) return 14;
+		const ideal = containerWidth / (cols * CH_RATIO);
+		// Clamp between 8px (tiny screens) and 20px (large monitors)
+		return Math.min(20, Math.max(8, Math.floor(ideal)));
+	});
 </script>
 
 <div
 	class="maze-container"
-	style="--cols: {cols}; --rows: {rows}"
+	class:emp-flash={empFlash}
+	style="--cols: {cols}; --rows: {rows}; font-size: {fontSize}px"
+	bind:clientWidth={containerWidth}
 >
 	<!-- Static maze (walls + data packets) -->
 	<pre class="maze-grid">{mazeText}</pre>
@@ -43,6 +63,7 @@
 			class:ghost-player={entity.type === 'player' && ghostMode}
 			class:invincible-player={entity.type === 'player' && invincible}
 			class:dead-player={entity.type === 'player' && dead}
+			class:frightened-warning={entity.type === 'tracer-frightened' && ghostModeWarning}
 			style="left: {entity.x}ch; top: calc({entity.y} * var(--line-h));"
 		>
 			{entity.char}
@@ -54,12 +75,13 @@
 	.maze-container {
 		position: relative;
 		font-family: var(--font-mono);
-		font-size: 14px;
+		/* font-size set dynamically via inline style for responsive scaling */
 		--line-h: 1.2em;
 		line-height: var(--line-h);
 		color: var(--color-accent-dim);
 		overflow: hidden;
 		user-select: none;
+		width: 100%;
 	}
 
 	.maze-grid {
@@ -73,12 +95,16 @@
 		z-index: 10;
 		pointer-events: none;
 		font-weight: bold;
+		/* Tracers glide smoothly between positions */
+		transition: left 120ms ease-out, top 120ms ease-out;
+		will-change: left, top;
 	}
 
-	/* Player */
+	/* Player — instant snap, no transition (crisp input feel) */
 	.entity-player {
 		color: var(--color-accent-bright);
 		text-shadow: 0 0 8px var(--color-accent-glow);
+		transition: none;
 	}
 
 	.ghost-player {
@@ -121,6 +147,11 @@
 		animation: blink 0.3s step-end infinite;
 	}
 
+	.frightened-warning {
+		animation: blink 0.1s step-end infinite !important;
+		color: var(--color-red) !important;
+	}
+
 	.entity-tracer-frozen {
 		color: var(--color-cyan);
 		opacity: 0.8;
@@ -134,6 +165,17 @@
 	}
 
 	/* Animations */
+	/* EMP screen flash */
+	.emp-flash {
+		animation: emp-burst 0.3s ease-out;
+	}
+
+	@keyframes emp-burst {
+		0% { filter: brightness(3) saturate(0); }
+		30% { filter: brightness(2) saturate(0.3); }
+		100% { filter: brightness(1) saturate(1); }
+	}
+
 	@keyframes ghost-pulse {
 		from {
 			text-shadow: 0 0 8px var(--color-cyan-glow);

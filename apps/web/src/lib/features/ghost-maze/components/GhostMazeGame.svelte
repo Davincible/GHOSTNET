@@ -7,7 +7,10 @@
 	import GameOver from './GameOver.svelte';
 	import PauseOverlay from './PauseOverlay.svelte';
 	import { createGhostMazeStore, type GhostMazeStore } from '../store.svelte';
-	import { LEVELS, TOTAL_LEVELS } from '../constants';
+	import { createGhostMazeAudio } from '../audio';
+	import { getAudioManager } from '$lib/core/audio';
+	import { browser } from '$app/environment';
+	import { LEVELS, TOTAL_LEVELS, GHOST_MODE_WARNING_TICKS } from '../constants';
 	import type { EntryTier } from '../types';
 
 	interface Props {
@@ -17,7 +20,8 @@
 
 	let { store: externalStore }: Props = $props();
 
-	const store = externalStore ?? createGhostMazeStore();
+	const audio = browser ? createGhostMazeAudio(getAudioManager()) : undefined;
+	const store = externalStore ?? createGhostMazeStore({ audio });
 	let gameState = $derived(store.state);
 	let phase = $derived(gameState.phase);
 
@@ -27,6 +31,25 @@
 		phase === 'player_death' ||
 		phase === 'respawn'
 	);
+
+	let ghostModeWarning = $derived(
+		gameState.ghostModeActive &&
+		gameState.ghostModeRemaining > 0 &&
+		gameState.ghostModeRemaining <= GHOST_MODE_WARNING_TICKS
+	);
+
+	// EMP flash: briefly true when EMP is deployed, auto-resets
+	let empFlash = $state(false);
+	let prevHasEmp = true;
+
+	$effect(() => {
+		// Detect EMP going from true -> false
+		if (prevHasEmp && !gameState.hasEmp) {
+			empFlash = true;
+			setTimeout(() => { empFlash = false; }, 300);
+		}
+		prevHasEmp = gameState.hasEmp;
+	});
 
 	onMount(() => {
 		return () => store.cleanup();
@@ -48,10 +71,7 @@
 	}
 
 	function handleResume() {
-		// Store handles pause/unpause via keyboard
-		// This is a fallback for clicking the resume button
-		const event = new KeyboardEvent('keydown', { key: 'Escape' });
-		window.dispatchEvent(event);
+		store.togglePause();
 	}
 
 	function handleQuit() {
@@ -116,8 +136,10 @@
 						entities={store.renderEntities}
 						maze={gameState.maze}
 						ghostMode={gameState.ghostModeActive}
+						{ghostModeWarning}
 						invincible={gameState.isInvincible}
 						dead={phase === 'player_death'}
+						{empFlash}
 					/>
 				</Box>
 
@@ -179,8 +201,9 @@
 		flex-direction: column;
 		gap: var(--space-4);
 		padding: var(--space-4);
-		max-width: 900px;
+		max-width: 1200px;
 		margin: 0 auto;
+		width: 100%;
 	}
 
 	/* Header */

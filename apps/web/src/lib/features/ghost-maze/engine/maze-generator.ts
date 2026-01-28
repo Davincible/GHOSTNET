@@ -121,7 +121,7 @@ export function generateMaze(config: GenerateMazeConfig): MazeGrid {
 
 	const tracerSpawns = placeTracerSpawns(cells, width, height, tracerCount, playerSpawn, rng);
 	const powerNodePositions = placePowerNodes(cells, width, height, rng);
-	const totalDataPackets = placeDataPackets(cells, width, height, dataPackets, playerSpawn, tracerSpawns, powerNodePositions);
+	const totalDataPackets = placeDataPackets(cells, width, height, dataPackets, playerSpawn, tracerSpawns, powerNodePositions, rng);
 
 	// 6. Reset visited flags (used during generation only)
 	for (const cell of cells) {
@@ -443,6 +443,7 @@ function placeDataPackets(
 	playerSpawn: Coord,
 	tracerSpawns: Coord[],
 	powerNodePositions: Coord[],
+	rng: () => number,
 ): number {
 	// Place data packets on all empty corridor cells
 	const reserved = new Set<string>();
@@ -464,6 +465,9 @@ function placeDataPackets(
 			}
 		}
 	}
+
+	// Shuffle so packets are distributed evenly across the maze
+	shuffle(corridorCells, rng);
 
 	// Place up to targetCount packets (or all corridor cells if fewer)
 	const count = Math.min(targetCount, corridorCells.length);

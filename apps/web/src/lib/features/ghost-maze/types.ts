@@ -107,6 +107,8 @@ export interface PatrolTracerData {
 	waypoints: Coord[];
 	/** Current waypoint index */
 	waypointIndex: number;
+	/** Cached A* path to current waypoint */
+	currentPath: Coord[];
 }
 
 export interface HunterTracerData {

@@ -137,12 +137,21 @@ export function createInputHandler(): InputHandler {
 				state.buffered = state.current;
 			}
 		}
+
+		// Re-fill buffer from held key for continuous movement.
+		// This ensures "hold to keep moving" works, while a tap
+		// (which clears current on keyup) only produces one buffered move.
+		if (state.current !== null && state.buffered === null) {
+			state.buffered = state.current;
+		}
 	}
 
 	function consumeBuffer(): Direction | null {
 		const dir = state.buffered;
 		if (dir) {
-			state.buffered = state.current; // Fall back to held direction
+			// Clear buffer — tick() will re-fill from held key if still pressed.
+			// This ensures a single tap produces exactly one move.
+			state.buffered = null;
 			state.bufferTicks = 0;
 		}
 		return dir;

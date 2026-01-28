@@ -9,6 +9,7 @@
 
 import { browser } from '$app/environment';
 import type {
+	CellContent,
 	Coord,
 	Direction,
 	MazeGrid,
@@ -70,8 +71,11 @@ import {
 	LEVEL_INTRO_TICKS,
 	LEVEL_CLEAR_TICKS,
 	PHANTOM_TELEPORT_TICKS,
+	computeTracers,
+	computeDataPackets,
 } from './constants';
 import { createFrameLoop } from '$lib/features/arcade/engine';
+import type { GhostMazeAudio } from './audio';
 
 // ============================================================================
 // STATE INTERFACE
@@ -131,6 +135,7 @@ export interface GhostMazeStore {
 	readonly comboMultiplier: number;
 
 	startGame(tier: EntryTier, seed?: number): void;
+	togglePause(): void;
 	cleanup(): void;
 }
 
@@ -138,7 +143,12 @@ export interface GhostMazeStore {
 // STORE FACTORY
 // ============================================================================
 
-export function createGhostMazeStore(): GhostMazeStore {
+export interface GhostMazeStoreOptions {
+	audio?: GhostMazeAudio;
+}
+
+export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): GhostMazeStore {
+	const audio = options.audio ?? null;
 	// ─────────────────────────────────────────────────────────────────────
 	// STATE
 	// ─────────────────────────────────────────────────────────────────────
@@ -183,6 +193,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 	let inputLog: InputRecord[] = [];
 	let currentTick = 0;
 	let extraLifeAwarded = false;
+	let playerMoveAccumulator = 0;
 
 	// Game loop (fixed timestep inside frame loop)
 	const gameLoop = createGameLoop({
@@ -204,13 +215,17 @@ export function createGhostMazeStore(): GhostMazeStore {
 		if (!state.maze) return [];
 		const entities: RenderEntity[] = [];
 
+		// Helper: convert logical cell coord to text grid coord
+		const toText = (c: Coord) => ({ x: c.x * 2 + 1, y: c.y * 2 + 1 });
+
 		// Player
 		if (state.phase === 'playing' || state.phase === 'ghost_mode' || state.phase === 'respawn') {
+			const tp = toText(state.playerPos);
 			entities.push({
 				id: 'player',
 				type: 'player',
-				x: state.playerPos.x,
-				y: state.playerPos.y,
+				x: tp.x,
+				y: tp.y,
 				char: MAZE_CHARS.PLAYER,
 			});
 		}
@@ -238,11 +253,12 @@ export function createGhostMazeStore(): GhostMazeStore {
 				}[tracer.type];
 			}
 
+			const tt = toText(tracer.pos);
 			entities.push({
 				id: `tracer-${tracer.id}`,
 				type,
-				x: tracer.pos.x,
-				y: tracer.pos.y,
+				x: tt.x,
+				y: tt.y,
 				char,
 			});
 		}
@@ -252,11 +268,12 @@ export function createGhostMazeStore(): GhostMazeStore {
 			for (const pos of state.maze.powerNodePositions) {
 				const cell = getCell(state.maze, pos.x, pos.y);
 				if (cell?.content === 'power_node') {
+					const tp = toText(pos);
 					entities.push({
 						id: `pn-${pos.x}-${pos.y}`,
 						type: 'power-node',
-						x: pos.x,
-						y: pos.y,
+						x: tp.x,
+						y: tp.y,
 						char: MAZE_CHARS.POWER_NODE,
 					});
 				}
@@ -266,9 +283,113 @@ export function createGhostMazeStore(): GhostMazeStore {
 		return entities;
 	});
 
+	// Cache the wall template: only recompute when maze identity changes (new level).
+	// Cell content (data packets collected) is stamped in separately.
+	let cachedMazeId: MazeGrid | null = null;
+	let cachedWallTemplate: string[] = [];
+	let cachedCellPositions: { lineIdx: number; charIdx: number; cx: number; cy: number }[] = [];
+
+	function ensureWallCache(maze: MazeGrid): void {
+		if (cachedMazeId === maze) return;
+		cachedMazeId = maze;
+
+		const tw = maze.width * 2 + 1;
+		const th = maze.height * 2 + 1;
+		const { cells, width, height } = maze;
+
+		function hasHWall(tx: number, ty: number): boolean {
+			const cx = (tx - 1) / 2;
+			if (ty === 0) return cells[cx].walls.up;
+			if (ty === th - 1) return cells[(height - 1) * width + cx].walls.down;
+			const cyAbove = ty / 2 - 1;
+			return cells[cyAbove * width + cx].walls.down;
+		}
+
+		function hasVWall(tx: number, ty: number): boolean {
+			const cy = (ty - 1) / 2;
+			if (tx === 0) return cells[cy * width].walls.left;
+			if (tx === tw - 1) return cells[cy * width + (width - 1)].walls.right;
+			const cxLeft = tx / 2 - 1;
+			return cells[cy * width + cxLeft].walls.right;
+		}
+
+		function cornerCharFn(tx: number, ty: number): string {
+			const up = ty > 0 && hasVWall(tx, ty - 1);
+			const down = ty < th - 1 && hasVWall(tx, ty + 1);
+			const left = tx > 0 && hasHWall(tx - 1, ty);
+			const right = tx < tw - 1 && hasHWall(tx + 1, ty);
+			const n = (up ? 1 : 0) + (down ? 1 : 0) + (left ? 1 : 0) + (right ? 1 : 0);
+
+			if (n === 0) return MAZE_CHARS.EMPTY;
+			if (n === 1) {
+				if (up || down) return MAZE_CHARS.WALL_V;
+				return MAZE_CHARS.WALL_H;
+			}
+			if (n === 2) {
+				if (up && down) return MAZE_CHARS.WALL_V;
+				if (left && right) return MAZE_CHARS.WALL_H;
+				if (down && right) return MAZE_CHARS.CORNER_TL;
+				if (down && left) return MAZE_CHARS.CORNER_TR;
+				if (up && right) return MAZE_CHARS.CORNER_BL;
+				if (up && left) return MAZE_CHARS.CORNER_BR;
+			}
+			if (n === 3) {
+				if (!up) return MAZE_CHARS.TEE_T;
+				if (!down) return MAZE_CHARS.TEE_B;
+				if (!left) return MAZE_CHARS.TEE_L;
+				if (!right) return MAZE_CHARS.TEE_R;
+			}
+			return MAZE_CHARS.CROSS;
+		}
+
+		cachedCellPositions = [];
+		const lines: string[] = [];
+
+		for (let ty = 0; ty < th; ty++) {
+			let line = '';
+			for (let tx = 0; tx < tw; tx++) {
+				const isEvenY = ty % 2 === 0;
+				const isEvenX = tx % 2 === 0;
+
+				if (isEvenY && isEvenX) {
+					line += cornerCharFn(tx, ty);
+				} else if (isEvenY && !isEvenX) {
+					line += hasHWall(tx, ty) ? MAZE_CHARS.WALL_H : MAZE_CHARS.EMPTY;
+				} else if (!isEvenY && isEvenX) {
+					line += hasVWall(tx, ty) ? MAZE_CHARS.WALL_V : MAZE_CHARS.EMPTY;
+				} else {
+					// Cell center — use placeholder; will be stamped per-frame
+					const cx = (tx - 1) / 2;
+					const cy = (ty - 1) / 2;
+					cachedCellPositions.push({ lineIdx: ty, charIdx: tx, cx, cy });
+					line += MAZE_CHARS.EMPTY; // placeholder
+				}
+			}
+			lines.push(line);
+		}
+
+		cachedWallTemplate = lines;
+	}
+
 	const mazeText = $derived.by(() => {
 		if (!state.maze) return '';
-		return renderMazeToText(state.maze);
+		const maze = state.maze;
+
+		ensureWallCache(maze);
+
+		// Stamp cell content onto a copy of the wall template
+		const lines = [...cachedWallTemplate];
+		for (const { lineIdx, charIdx, cx, cy } of cachedCellPositions) {
+			const cell = maze.cells[cy * maze.width + cx];
+			const ch = cell.content === 'data' ? MAZE_CHARS.DATA_PACKET : MAZE_CHARS.EMPTY;
+			if (ch !== MAZE_CHARS.EMPTY) {
+				// Replace single char in the line
+				const line = lines[lineIdx];
+				lines[lineIdx] = line.substring(0, charIdx) + ch + line.substring(charIdx + 1);
+			}
+		}
+
+		return lines.join('\n');
 	});
 
 	// ─────────────────────────────────────────────────────────────────────
@@ -283,34 +404,32 @@ export function createGhostMazeStore(): GhostMazeStore {
 		inputLog = [];
 		currentTick = 0;
 		extraLifeAwarded = false;
+		playerMoveAccumulator = 0;
 
-		state = {
-			...state,
-			phase: 'level_intro',
-			currentLevel: 1,
-			lives: INITIAL_LIVES,
-			score: 0,
-			combo: 0,
-			comboTimer: 0,
-			maxCombo: 0,
-			entryTier: tier,
-			seed: gameSeed,
-			hitThisLevel: false,
-			allTracersDestroyedThisLevel: false,
-			levelsCleared: 0,
-			perfectLevels: 0,
-			totalTracersDestroyed: 0,
-			totalDataCollected: 0,
-			isPaused: false,
-			error: null,
-			hasEmp: true,
-			ghostModeActive: false,
-			ghostModeRemaining: 0,
-			tracersDestroyedThisGhostMode: 0,
-			empFreezeRemaining: 0,
-			isInvincible: false,
-			phaseTimer: LEVEL_INTRO_TICKS,
-		};
+		state.phase = 'level_intro';
+		state.currentLevel = 1;
+		state.lives = INITIAL_LIVES;
+		state.score = 0;
+		state.combo = 0;
+		state.comboTimer = 0;
+		state.maxCombo = 0;
+		state.entryTier = tier;
+		state.seed = gameSeed;
+		state.hitThisLevel = false;
+		state.allTracersDestroyedThisLevel = false;
+		state.levelsCleared = 0;
+		state.perfectLevels = 0;
+		state.totalTracersDestroyed = 0;
+		state.totalDataCollected = 0;
+		state.isPaused = false;
+		state.error = null;
+		state.hasEmp = true;
+		state.ghostModeActive = false;
+		state.ghostModeRemaining = 0;
+		state.tracersDestroyedThisGhostMode = 0;
+		state.empFreezeRemaining = 0;
+		state.isInvincible = false;
+		state.phaseTimer = LEVEL_INTRO_TICKS;
 
 		setupLevel(1);
 
@@ -318,8 +437,10 @@ export function createGhostMazeStore(): GhostMazeStore {
 		gameLoop.reset();
 		frameLoop.start();
 
-		// Set up keyboard listeners
+		// Set up keyboard listeners (remove first to prevent leaks on re-start)
 		if (browser) {
+			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('keyup', handleKeyUp);
 			window.addEventListener('keydown', handleKeyDown);
 			window.addEventListener('keyup', handleKeyUp);
 		}
@@ -329,7 +450,9 @@ export function createGhostMazeStore(): GhostMazeStore {
 		const config = LEVELS[level - 1];
 		if (!config || !rng) return;
 
-		const tracerCount = config.tracers.reduce((sum, t) => sum + t.count, 0);
+		const tracerConfigs = computeTracers(config);
+		const tracerCount = tracerConfigs.reduce((sum, t) => sum + t.count, 0);
+		const dataPackets = computeDataPackets(config);
 
 		const maze = generateMaze({
 			width: config.gridWidth,
@@ -337,30 +460,27 @@ export function createGhostMazeStore(): GhostMazeStore {
 			seed: rng() * 2 ** 32,
 			loopFactor: config.loopFactor,
 			tracerCount,
-			dataPackets: config.dataPackets,
+			dataPackets,
 		});
 
-		const tracers = createTracers(config.tracers, maze);
+		const tracers = createTracers(tracerConfigs, maze);
 
-		state = {
-			...state,
-			currentLevel: level,
-			maze,
-			dataRemaining: maze.totalDataPackets,
-			dataTotal: maze.totalDataPackets,
-			playerPos: { ...maze.playerSpawn },
-			playerDir: 'up',
-			tracers,
-			hitThisLevel: false,
-			allTracersDestroyedThisLevel: false,
-			hasEmp: true,
-			ghostModeActive: false,
-			ghostModeRemaining: 0,
-			tracersDestroyedThisGhostMode: 0,
-			empFreezeRemaining: 0,
-			isInvincible: false,
-			levelStartTick: currentTick,
-		};
+		state.currentLevel = level;
+		state.maze = maze;
+		state.dataRemaining = maze.totalDataPackets;
+		state.dataTotal = maze.totalDataPackets;
+		state.playerPos = { ...maze.playerSpawn };
+		state.playerDir = 'up';
+		state.tracers = tracers;
+		state.hitThisLevel = false;
+		state.allTracersDestroyedThisLevel = false;
+		state.hasEmp = true;
+		state.ghostModeActive = false;
+		state.ghostModeRemaining = 0;
+		state.tracersDestroyedThisGhostMode = 0;
+		state.empFreezeRemaining = 0;
+		state.isInvincible = false;
+		state.levelStartTick = currentTick;
 	}
 
 	function createTracers(
@@ -370,22 +490,37 @@ export function createGhostMazeStore(): GhostMazeStore {
 		const tracers: TracerState[] = [];
 		let id = 0;
 		let spawnIdx = 0;
+		// Track swarm IDs so we can pair them correctly
+		let swarmIndexInGroup = 0;
+		let swarmBaseId = -1;
 
 		for (const cfg of configs) {
+			if (cfg.type === 'swarm') {
+				swarmIndexInGroup = 0;
+				swarmBaseId = id;
+			}
+
 			for (let i = 0; i < cfg.count; i++) {
 				const spawnPos = maze.tracerSpawns[spawnIdx % maze.tracerSpawns.length];
 				spawnIdx++;
 
+				const currentId = id++;
+
 				const tracer: TracerState = {
-					id: id++,
+					id: currentId,
 					type: cfg.type,
 					pos: { ...spawnPos },
 					dir: 'left',
 					mode: 'normal',
 					respawnTimer: 0,
-					data: createTracerData(cfg.type, spawnPos, maze, id - 1, rng!),
+					data: createTracerData(cfg.type, spawnPos, maze, currentId, rng!,
+						cfg.type === 'swarm' ? { swarmBaseId, swarmIndexInGroup } : undefined),
 				};
 				tracers.push(tracer);
+
+				if (cfg.type === 'swarm') {
+					swarmIndexInGroup++;
+				}
 			}
 		}
 
@@ -398,6 +533,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 		maze: MazeGrid,
 		id: number,
 		rng: () => number,
+		swarmInfo?: { swarmBaseId: number; swarmIndexInGroup: number },
 	) {
 		switch (type) {
 			case 'patrol':
@@ -405,6 +541,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 					type: 'patrol' as const,
 					waypoints: generatePatrolWaypoints(maze, spawnPos, rng),
 					waypointIndex: 0,
+					currentPath: [] as Coord[],
 				};
 			case 'hunter':
 				return {
@@ -424,14 +561,19 @@ export function createGhostMazeStore(): GhostMazeStore {
 					teleportTimer: PHANTOM_TELEPORT_TICKS,
 					teleportWarning: false,
 				};
-			case 'swarm':
+			case 'swarm': {
+				// Pair swarm tracers: 0↔1, 2↔3, etc. within the swarm group
+				const si = swarmInfo!;
+				const pairOffset = si.swarmIndexInGroup % 2 === 0 ? 1 : -1;
+				const partnerId = si.swarmBaseId + si.swarmIndexInGroup + pairOffset;
 				return {
 					type: 'swarm' as const,
-					partnerId: id % 2 === 0 ? id + 1 : id - 1,
+					partnerId,
 					flockOffset: (['up', 'down', 'left', 'right'] as const)[
 						Math.floor(rng() * 4)
 					],
 				};
+			}
 		}
 	}
 
@@ -462,11 +604,12 @@ export function createGhostMazeStore(): GhostMazeStore {
 
 	function togglePause(): void {
 		if (state.phase === 'playing' || state.phase === 'ghost_mode') {
-			state = { ...state, phase: 'paused', isPaused: true };
+			state.phase = 'paused';
+			state.isPaused = true;
 			gameLoop.pause();
 		} else if (state.phase === 'paused') {
-			const resumePhase = state.ghostModeActive ? 'ghost_mode' : 'playing';
-			state = { ...state, phase: resumePhase as GhostMazePhase, isPaused: false };
+			state.phase = state.ghostModeActive ? 'ghost_mode' : 'playing';
+			state.isPaused = false;
 			gameLoop.resume();
 		}
 	}
@@ -507,7 +650,8 @@ export function createGhostMazeStore(): GhostMazeStore {
 	function tickLevelIntro(): void {
 		state.phaseTimer--;
 		if (state.phaseTimer <= 0) {
-			state = { ...state, phase: 'playing', phaseTimer: 0 };
+			state.phase = 'playing';
+			state.phaseTimer = 0;
 		}
 	}
 
@@ -540,6 +684,10 @@ export function createGhostMazeStore(): GhostMazeStore {
 		// 6. Update ghost mode timer
 		if (state.ghostModeActive) {
 			state.ghostModeRemaining--;
+			// Warning beep when about to expire
+			if (state.ghostModeRemaining === GHOST_MODE_WARNING_TICKS) {
+				audio?.ghostModeWarning();
+			}
 			if (state.ghostModeRemaining <= 0) {
 				endGhostMode();
 			}
@@ -563,7 +711,8 @@ export function createGhostMazeStore(): GhostMazeStore {
 		if (state.comboTimer > 0) {
 			state.comboTimer--;
 			if (state.comboTimer <= 0 && state.combo > 0) {
-				state = { ...state, combo: 0, comboTimer: 0 };
+				state.combo = 0;
+				state.comboTimer = 0;
 			}
 		}
 
@@ -584,8 +733,21 @@ export function createGhostMazeStore(): GhostMazeStore {
 		}
 	}
 
+	/** Base player move rate: cells per tick. At 15 tps, 0.5 = 7.5 cells/sec. */
+	const BASE_PLAYER_RATE = 0.5;
+
 	function movePlayer(maze: MazeGrid): void {
-		// Try buffered direction first
+		// Fractional accumulator: accumulate speed each tick, move when >= 1
+		const levelConfig = LEVELS[state.currentLevel - 1];
+		const rate = BASE_PLAYER_RATE * (levelConfig?.playerSpeed ?? 1.0);
+		playerMoveAccumulator += rate;
+		if (playerMoveAccumulator < 1) return;
+		playerMoveAccumulator -= 1;
+
+		// Move from buffer only. The input tick() re-fills the buffer from
+		// held keys each tick, so holding a direction = continuous movement.
+		// A tap sets the buffer once; after it's consumed, no re-fill since
+		// current is null (key released). This gives exactly one move per tap.
 		const buffered = input.state.buffered;
 		if (buffered && canMove(maze, state.playerPos, buffered)) {
 			const newPos = tryMove(maze, state.playerPos, buffered);
@@ -593,17 +755,6 @@ export function createGhostMazeStore(): GhostMazeStore {
 				state.playerPos = newPos;
 				state.playerDir = buffered;
 				input.consumeBuffer();
-				return;
-			}
-		}
-
-		// Fall back to current held direction
-		const current = input.state.current;
-		if (current && canMove(maze, state.playerPos, current)) {
-			const newPos = tryMove(maze, state.playerPos, current);
-			if (newPos) {
-				state.playerPos = newPos;
-				state.playerDir = current;
 			}
 		}
 	}
@@ -614,20 +765,26 @@ export function createGhostMazeStore(): GhostMazeStore {
 
 		if (cell.content === 'data') {
 			// Collect
-			maze.cells[idx] = { ...cell, content: 'empty' };
-			state.dataRemaining--;
-			state.totalDataCollected++;
+		(cell as { content: CellContent }).content = 'empty';
+		state.dataRemaining--;
+		state.totalDataCollected++;
 
-			// Combo
-			state.combo++;
-			state.comboTimer = COMBO_DECAY_TICKS;
-			if (state.combo > state.maxCombo) {
-				state.maxCombo = state.combo;
-			}
+		// Combo
+		state.combo++;
+		state.comboTimer = COMBO_DECAY_TICKS;
+		if (state.combo > state.maxCombo) {
+			state.maxCombo = state.combo;
+		}
 
-			// Score with combo multiplier
-			const mult = getComboMultiplier(state.combo);
-			state.score += SCORE_DATA_PACKET * mult;
+		// Score with combo multiplier
+		const mult = getComboMultiplier(state.combo);
+		state.score += SCORE_DATA_PACKET * mult;
+
+		// Audio
+		audio?.dataCollect(state.combo);
+		if (state.combo === 5 || state.combo === 10 || state.combo === 20 || state.combo === 50) {
+			audio?.comboMilestone();
+		}
 		}
 	}
 
@@ -636,19 +793,18 @@ export function createGhostMazeStore(): GhostMazeStore {
 		const cell = maze.cells[idx];
 
 		if (cell.content === 'power_node') {
-			maze.cells[idx] = { ...cell, content: 'empty' };
+			(cell as { content: CellContent }).content = 'empty';
+			audio?.powerNodeGrab();
 			activateGhostMode();
 		}
 	}
 
 	function activateGhostMode(): void {
-		state = {
-			...state,
-			phase: 'ghost_mode',
-			ghostModeActive: true,
-			ghostModeRemaining: GHOST_MODE_TICKS,
-			tracersDestroyedThisGhostMode: 0,
-		};
+		state.phase = 'ghost_mode';
+		state.ghostModeActive = true;
+		state.ghostModeRemaining = GHOST_MODE_TICKS;
+		state.tracersDestroyedThisGhostMode = 0;
+		audio?.ghostModeStart();
 
 		// Set all active tracers to frightened
 		for (const tracer of state.tracers) {
@@ -660,12 +816,10 @@ export function createGhostMazeStore(): GhostMazeStore {
 	}
 
 	function endGhostMode(): void {
-		state = {
-			...state,
-			phase: 'playing',
-			ghostModeActive: false,
-			ghostModeRemaining: 0,
-		};
+		state.phase = 'playing';
+		state.ghostModeActive = false;
+		state.ghostModeRemaining = 0;
+		audio?.ghostModeEnd();
 
 		for (const tracer of state.tracers) {
 			if (tracer.mode === 'frightened') {
@@ -677,6 +831,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 	function activateEmp(): void {
 		state.hasEmp = false;
 		state.empFreezeRemaining = EMP_FREEZE_TICKS;
+		audio?.empDeploy();
 
 		for (const tracer of state.tracers) {
 			if (tracer.mode === 'normal' || tracer.mode === 'frightened') {
@@ -722,7 +877,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 			} else {
 				switch (tracer.type) {
 					case 'patrol':
-						dir = updatePatrol(tracer, maze, state.playerPos);
+						dir = updatePatrol(tracer, maze, state.playerPos, rng!);
 						break;
 					case 'hunter':
 						dir = updateHunter(tracer, maze, state.playerPos);
@@ -732,13 +887,14 @@ export function createGhostMazeStore(): GhostMazeStore {
 						const action: PhantomAction = updatePhantom(tracer, maze, state.playerPos, rng);
 						if (action.type === 'teleport' && action.destination) {
 							tracer.pos = { ...action.destination };
+							audio?.phantomTeleport();
 						} else if (action.direction) {
 							dir = action.direction;
 						}
 						break;
 					}
 					case 'swarm':
-						dir = updateSwarm(tracer, maze, state.playerPos);
+						dir = updateSwarm(tracer, maze, state.playerPos, state.tracers);
 						break;
 				}
 			}
@@ -772,6 +928,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 				state.score += destroyScore;
 				state.tracersDestroyedThisGhostMode++;
 				state.totalTracersDestroyed++;
+				audio?.tracerDestroyed();
 			} else {
 				// Player hit!
 				triggerPlayerDeath();
@@ -785,17 +942,16 @@ export function createGhostMazeStore(): GhostMazeStore {
 	// ─────────────────────────────────────────────────────────────────────
 
 	function triggerPlayerDeath(): void {
-		state = {
-			...state,
-			phase: 'player_death',
-			lives: state.lives - 1,
-			hitThisLevel: true,
-			phaseTimer: DEATH_ANIMATION_TICKS,
-			combo: 0,
-			comboTimer: 0,
-			ghostModeActive: false,
-			ghostModeRemaining: 0,
-		};
+		audio?.playerHit();
+		state.phase = 'player_death';
+		state.lives = state.lives - 1;
+		state.hitThisLevel = true;
+		state.phaseTimer = DEATH_ANIMATION_TICKS;
+		state.combo = 0;
+		state.comboTimer = 0;
+		playerMoveAccumulator = 0;
+		state.ghostModeActive = false;
+		state.ghostModeRemaining = 0;
 
 		// Reset tracer modes
 		for (const tracer of state.tracers) {
@@ -807,17 +963,18 @@ export function createGhostMazeStore(): GhostMazeStore {
 		state.phaseTimer--;
 		if (state.phaseTimer <= 0) {
 			if (state.lives <= 0) {
-				state = { ...state, phase: 'game_over' };
+				state.phase = 'game_over';
 				endGame();
 			} else {
 				// Respawn
-				state = {
-					...state,
-					phase: 'respawn',
-					playerPos: state.maze ? { ...state.maze.playerSpawn } : state.playerPos,
-					isInvincible: true,
-					phaseTimer: RESPAWN_INVINCIBILITY_TICKS,
-				};
+				audio?.respawn();
+				state.phase = 'respawn';
+				if (state.maze) {
+					state.playerPos = { ...state.maze.playerSpawn };
+				}
+				state.isInvincible = true;
+				playerMoveAccumulator = 0;
+				state.phaseTimer = RESPAWN_INVINCIBILITY_TICKS;
 
 				// Reset tracers to home positions
 				if (state.maze) {
@@ -840,7 +997,9 @@ export function createGhostMazeStore(): GhostMazeStore {
 	function tickRespawn(): void {
 		state.phaseTimer--;
 		if (state.phaseTimer <= 0) {
-			state = { ...state, phase: 'playing', isInvincible: false, phaseTimer: 0 };
+			state.phase = 'playing';
+			state.isInvincible = false;
+			state.phaseTimer = 0;
 		}
 	}
 
@@ -874,11 +1033,9 @@ export function createGhostMazeStore(): GhostMazeStore {
 
 		state.levelsCleared++;
 
-		state = {
-			...state,
-			phase: 'level_clear',
-			phaseTimer: LEVEL_CLEAR_TICKS,
-		};
+		state.phase = 'level_clear';
+		state.phaseTimer = LEVEL_CLEAR_TICKS;
+		audio?.levelClear();
 	}
 
 	function tickLevelClear(): void {
@@ -890,12 +1047,13 @@ export function createGhostMazeStore(): GhostMazeStore {
 				if (state.perfectLevels === TOTAL_LEVELS) {
 					state.score += SCORE_FULL_RUN_PERFECT;
 				}
-				state = { ...state, phase: 'game_over' };
+				state.phase = 'game_over';
 				endGame();
 			} else {
 				// Next level
 				const nextLevel = state.currentLevel + 1;
-				state = { ...state, phase: 'level_intro', phaseTimer: LEVEL_INTRO_TICKS };
+				state.phase = 'level_intro';
+				state.phaseTimer = LEVEL_INTRO_TICKS;
 				setupLevel(nextLevel);
 			}
 		}
@@ -906,6 +1064,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 	// ─────────────────────────────────────────────────────────────────────
 
 	function endGame(): void {
+		audio?.gameOver();
 		frameLoop.stop();
 		if (browser) {
 			window.removeEventListener('keydown', handleKeyDown);
@@ -934,44 +1093,6 @@ export function createGhostMazeStore(): GhostMazeStore {
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
-	// MAZE RENDERING (text)
-	// ─────────────────────────────────────────────────────────────────────
-
-	function renderMazeToText(maze: MazeGrid): string {
-		const lines: string[] = [];
-
-		for (let y = 0; y < maze.height; y++) {
-			let line = '';
-			for (let x = 0; x < maze.width; x++) {
-				const cell = maze.cells[y * maze.width + x];
-
-				if (cell.content === 'data') {
-					line += MAZE_CHARS.DATA_PACKET;
-				} else if (cell.content === 'power_node') {
-					line += MAZE_CHARS.EMPTY; // Rendered as overlay
-				} else {
-					// Determine wall character based on which walls this cell has
-					const hasAnyWall = cell.walls.up || cell.walls.down || cell.walls.left || cell.walls.right;
-					const allWalls = cell.walls.up && cell.walls.down && cell.walls.left && cell.walls.right;
-
-					if (allWalls) {
-						line += MAZE_CHARS.CROSS;
-					} else if (hasAnyWall && cell.walls.up && cell.walls.down && !cell.walls.left && !cell.walls.right) {
-						line += MAZE_CHARS.WALL_V;
-					} else if (hasAnyWall && !cell.walls.up && !cell.walls.down && cell.walls.left && cell.walls.right) {
-						line += MAZE_CHARS.WALL_H;
-					} else {
-						line += MAZE_CHARS.EMPTY;
-					}
-				}
-			}
-			lines.push(line);
-		}
-
-		return lines.join('\n');
-	}
-
-	// ─────────────────────────────────────────────────────────────────────
 	// RETURN
 	// ─────────────────────────────────────────────────────────────────────
 
@@ -989,6 +1110,7 @@ export function createGhostMazeStore(): GhostMazeStore {
 			return comboMultiplier;
 		},
 		startGame,
+		togglePause,
 		cleanup,
 	};
 }

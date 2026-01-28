@@ -26,16 +26,90 @@ export interface TracerSpawnConfig {
 	readonly count: number;
 }
 
+/**
+ * Tracer mix: fractional weights for each type.
+ * These are proportions — the dynamic count system distributes
+ * the total tracer budget across types by these weights.
+ */
+export interface TracerMix {
+	readonly patrol: number;
+	readonly hunter: number;
+	readonly phantom: number;
+	readonly swarm: number;
+}
+
 export interface LevelConfig {
 	readonly level: number;
 	readonly gridWidth: number;
 	readonly gridHeight: number;
-	readonly tracers: readonly TracerSpawnConfig[];
-	readonly dataPackets: number;
+	/** Tracer mix weights (proportional). Counts computed from grid area. */
+	readonly tracerMix: TracerMix;
+	/** Tracer density: tracers per 100 cells of grid area */
+	readonly tracerDensity: number;
+	/** Data packet density: fraction of corridor cells to fill (0-1) */
+	readonly dataDensity: number;
 	readonly playerSpeed: number;
 	readonly theme: string;
 	/** Percentage of walls to remove to create loops (0-1) */
 	readonly loopFactor: number;
+}
+
+/**
+ * Compute concrete tracer spawn configs from level config and grid dimensions.
+ * Total count = floor(area * density / 100), distributed by mix weights.
+ * Swarm tracers are always rounded to even (they travel in pairs).
+ */
+export function computeTracers(config: LevelConfig): TracerSpawnConfig[] {
+	const area = config.gridWidth * config.gridHeight;
+	const total = Math.max(1, Math.floor(area * config.tracerDensity / 100));
+
+	const mix = config.tracerMix;
+	const totalWeight = mix.patrol + mix.hunter + mix.phantom + mix.swarm;
+	if (totalWeight === 0) return [];
+
+	const result: TracerSpawnConfig[] = [];
+	let remaining = total;
+
+	// Allocate in order: swarm first (needs even count), then others
+	const types: TracerType[] = ['swarm', 'phantom', 'hunter', 'patrol'];
+	for (const type of types) {
+		const weight = mix[type];
+		if (weight <= 0) continue;
+
+		let count: number;
+		if (type === 'patrol') {
+			// Patrol gets whatever remains
+			count = remaining;
+		} else {
+			count = Math.round((weight / totalWeight) * total);
+			// Swarm must be even and at least 2
+			if (type === 'swarm') {
+				count = Math.max(2, count % 2 === 0 ? count : count + 1);
+			}
+			count = Math.min(count, remaining);
+			// Re-enforce even constraint after min clamping
+			if (type === 'swarm' && count % 2 !== 0) {
+				count = Math.max(0, count - 1);
+			}
+		}
+
+		if (count > 0) {
+			result.push({ type, count });
+			remaining -= count;
+		}
+	}
+
+	return result;
+}
+
+/**
+ * Compute data packet count from grid area and density.
+ */
+export function computeDataPackets(config: LevelConfig): number {
+	const area = config.gridWidth * config.gridHeight;
+	// Rough corridor estimate: ~60% of cells are corridors after generation
+	const corridorEstimate = Math.floor(area * 0.6);
+	return Math.max(10, Math.floor(corridorEstimate * config.dataDensity));
 }
 
 export const LEVELS: readonly LevelConfig[] = [
@@ -43,8 +117,9 @@ export const LEVELS: readonly LevelConfig[] = [
 		level: 1,
 		gridWidth: 21,
 		gridHeight: 15,
-		tracers: [{ type: 'patrol', count: 2 }],
-		dataPackets: 60,
+		tracerMix: { patrol: 1, hunter: 0, phantom: 0, swarm: 0 },
+		tracerDensity: 0.7,       // ~2 tracers on 21×15
+		dataDensity: 0.35,
 		playerSpeed: 1.0,
 		theme: 'MAINFRAME',
 		loopFactor: 0.2,
@@ -53,11 +128,9 @@ export const LEVELS: readonly LevelConfig[] = [
 		level: 2,
 		gridWidth: 25,
 		gridHeight: 17,
-		tracers: [
-			{ type: 'patrol', count: 2 },
-			{ type: 'hunter', count: 1 },
-		],
-		dataPackets: 90,
+		tracerMix: { patrol: 2, hunter: 1, phantom: 0, swarm: 0 },
+		tracerDensity: 0.8,       // ~3 tracers on 25×17
+		dataDensity: 0.4,
 		playerSpeed: 1.1,
 		theme: 'SUBNET',
 		loopFactor: 0.2,
@@ -66,12 +139,9 @@ export const LEVELS: readonly LevelConfig[] = [
 		level: 3,
 		gridWidth: 29,
 		gridHeight: 19,
-		tracers: [
-			{ type: 'patrol', count: 2 },
-			{ type: 'hunter', count: 1 },
-			{ type: 'phantom', count: 1 },
-		],
-		dataPackets: 120,
+		tracerMix: { patrol: 2, hunter: 1, phantom: 1, swarm: 0 },
+		tracerDensity: 0.9,       // ~5 tracers on 29×19
+		dataDensity: 0.45,
 		playerSpeed: 1.2,
 		theme: 'DARKNET',
 		loopFactor: 0.22,
@@ -80,13 +150,9 @@ export const LEVELS: readonly LevelConfig[] = [
 		level: 4,
 		gridWidth: 33,
 		gridHeight: 21,
-		tracers: [
-			{ type: 'patrol', count: 1 },
-			{ type: 'hunter', count: 1 },
-			{ type: 'phantom', count: 1 },
-			{ type: 'swarm', count: 2 },
-		],
-		dataPackets: 150,
+		tracerMix: { patrol: 1, hunter: 1, phantom: 1, swarm: 2 },
+		tracerDensity: 1.0,       // ~7 tracers on 33×21
+		dataDensity: 0.5,
 		playerSpeed: 1.3,
 		theme: 'BLACK ICE',
 		loopFactor: 0.22,
@@ -95,12 +161,9 @@ export const LEVELS: readonly LevelConfig[] = [
 		level: 5,
 		gridWidth: 37,
 		gridHeight: 23,
-		tracers: [
-			{ type: 'hunter', count: 2 },
-			{ type: 'phantom', count: 1 },
-			{ type: 'swarm', count: 4 },
-		],
-		dataPackets: 200,
+		tracerMix: { patrol: 0, hunter: 2, phantom: 1, swarm: 4 },
+		tracerDensity: 1.2,       // ~10 tracers on 37×23
+		dataDensity: 0.55,
 		playerSpeed: 1.5,
 		theme: 'CORE',
 		loopFactor: 0.25,
@@ -197,7 +260,7 @@ export const INPUT_BUFFER_TICKS = 3; // ~200ms at 15 ticks/s
 // ============================================================================
 
 /** Combo decay timeout (ticks) — reset combo after this many ticks without collecting */
-export const COMBO_DECAY_TICKS = Math.round(0.5 * TICK_RATE); // 500ms
+export const COMBO_DECAY_TICKS = Math.round(1.5 * TICK_RATE); // 1.5 seconds
 
 /** Combo multiplier thresholds */
 export const COMBO_MULTIPLIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [

@@ -75,8 +75,6 @@ export function hasLineOfSight(grid: MazeGrid, from: Coord, to: Coord): boolean 
 		// Vertical line of sight
 		const minY = Math.min(from.y, to.y);
 		const maxY = Math.max(from.y, to.y);
-		const dir: Direction = from.y < to.y ? 'down' : 'up';
-
 		for (let y = minY; y < maxY; y++) {
 			if (hasWall(grid, from.x, y, 'down')) return false;
 		}
