@@ -31,7 +31,7 @@
 	let particles: THREE.Points;
 	let connections: THREE.LineSegments;
 	let outerRing: THREE.LineLoop;
-	let innerSphere: THREE.LineSegments;
+	let rabbitEmblem: THREE.Mesh;
 	let mouseX = 0;
 	let mouseY = 0;
 
@@ -88,7 +88,7 @@
 		createParticles();
 		createConnections();
 		createOuterRing();
-		createInnerSphere();
+		createRabbitEmblem();
 	}
 
 	function createParticles() {
@@ -231,19 +231,40 @@
 		scene.add(ring2);
 	}
 
-	function createInnerSphere() {
-		// Wireframe icosahedron core
-		const geometry = new THREE.IcosahedronGeometry(0.8, 1);
-		const wireframe = new THREE.WireframeGeometry(geometry);
+	function createRabbitEmblem() {
+		// Load rabbit head SVG as holographic emblem in center of globe.
+		// Rasterize to canvas for crisp rendering at any resolution,
+		// then use as Three.js texture with additive blending so the
+		// black background becomes fully transparent.
+		const img = new Image();
+		img.onload = () => {
+			const scale = 2; // 2x for retina crispness
+			const canvas = document.createElement('canvas');
+			canvas.width = img.naturalWidth * scale;
+			canvas.height = img.naturalHeight * scale;
+			const ctx = canvas.getContext('2d')!;
+			ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-		const material = new THREE.LineBasicMaterial({
-			color: COLORS.accent,
-			transparent: true,
-			opacity: 0.15,
-		});
+			const texture = new THREE.CanvasTexture(canvas);
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
 
-		innerSphere = new THREE.LineSegments(wireframe, material);
-		scene.add(innerSphere);
+			const aspect = img.naturalWidth / img.naturalHeight;
+			const planeHeight = 1.8;
+			const planeWidth = planeHeight * aspect;
+
+			const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
+			const material = new THREE.MeshBasicMaterial({
+				map: texture,
+				transparent: true,
+				blending: THREE.AdditiveBlending,
+				depthWrite: false,
+			});
+
+			rabbitEmblem = new THREE.Mesh(geometry, material);
+			scene.add(rabbitEmblem);
+		};
+		img.src = '/rabbit_head.svg';
 	}
 
 	function onMouseMove(event: MouseEvent) {
@@ -268,9 +289,10 @@
 			connections.rotation.x = Math.sin(time * 0.2) * 0.1;
 		}
 
-		if (innerSphere) {
-			innerSphere.rotation.y -= rotationSpeed * 0.5;
-			innerSphere.rotation.x += rotationSpeed * 0.3;
+		if (rabbitEmblem) {
+			// Gentle floating pulse — the emblem stays facing the camera
+			const pulse = Math.sin(time * 1.5) * 0.02;
+			rabbitEmblem.scale.setScalar(1 + pulse);
 		}
 
 		if (outerRing) {

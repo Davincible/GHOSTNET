@@ -29,6 +29,7 @@
 <header class="header">
 	<div class="header-left">
 		<h1 class="logo">
+			<img src="/rabbit_head.svg" alt="" class="logo-rabbit" aria-hidden="true" />
 			<span class="logo-text glow-green">GHOSTNET</span>
 			<span class="logo-version">v1.0.7</span>
 		</h1>
@@ -48,12 +49,7 @@
 				{/if}
 			</div>
 			{#if onIntro}
-				<button
-					class="intro-btn"
-					onclick={onIntro}
-					aria-label="Watch intro"
-					title="Watch intro"
-				>
+				<button class="intro-btn" onclick={onIntro} aria-label="Watch intro" title="Watch intro">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<polygon points="5,3 19,12 5,21" fill="currentColor" stroke="none"></polygon>
 					</svg>
@@ -102,9 +98,16 @@
 
 	.logo {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		gap: var(--space-2);
 		margin: 0;
+	}
+
+	.logo-rabbit {
+		height: 24px;
+		width: auto;
+		margin-bottom: var(--space-1);
+		filter: drop-shadow(0 0 4px var(--color-accent-glow));
 	}
 
 	.logo-text {
