@@ -189,10 +189,22 @@ export function createWalletStore() {
 	}
 
 	/**
-	 * Connect wallet using injected provider
-	 * @param target - Optional target wallet: 'metaMask', 'coinbaseWallet', or undefined for any
+	 * Injected target — either a wagmi built-in string ('metaMask', 'coinbaseWallet', 'phantom')
+	 * or a full target object with provider resolution function.
 	 */
-	async function connectWallet(target?: 'metaMask' | 'coinbaseWallet') {
+	type InjectedTarget =
+		| string
+		| {
+				id: string;
+				name: string;
+				provider: string | ((window: Window & Record<string, unknown>) => unknown);
+		  };
+
+	/**
+	 * Connect wallet using injected provider
+	 * @param target - Wallet target: a built-in string, a target object with provider function, or undefined for any injected wallet
+	 */
+	async function connectWallet(target?: InjectedTarget) {
 		// SSR guard - should not be called during SSR
 		if (!browser) {
 			console.error('[Wallet] connectWallet called in non-browser environment');
@@ -217,7 +229,7 @@ export function createWalletStore() {
 
 			// Create connector with specific target if provided
 			const connector = injected({
-				target: target,
+				target: target as Parameters<typeof injected>[0]['target'],
 				shimDisconnect: true,
 			});
 
