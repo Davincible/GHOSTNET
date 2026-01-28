@@ -14,6 +14,7 @@
 	import { DailyOpsPanel } from '$lib/features/daily';
 	import { GettingStartedPanel } from '$lib/features/getting-started';
 	import { WalletModal } from '$lib/features/modals';
+	import { SwapPanel } from '$lib/features/swap';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
@@ -272,6 +273,7 @@
 			<!-- Right Column: Position, Network Stats, Actions -->
 			<div class="column column-right">
 				<PositionPanel />
+				<SwapPanel />
 				<ModifiersPanel />
 				<!-- Getting Started replaces Daily Ops when wallet not connected -->
 				{#if provider.currentUser}
