@@ -24,7 +24,7 @@
 	const PROGRESS_INTERVAL = 50;
 	const TRANSITION_DURATION = 400;
 
-	const totalSlides = 7;
+	const totalSlides = 5;
 
 	// Auto-advance slides
 	let progressInterval: ReturnType<typeof setInterval>;
@@ -197,40 +197,8 @@
 						</div>
 					{/if}
 
-					<!-- Slide 1: THE MECHANIC -->
+					<!-- Slide 1: THE TWIST -->
 					{#if currentSlide === 1}
-						<div class="slide slide-mechanic">
-							<h2 class="slide-title">HOW IT WORKS</h2>
-							<div class="flow-diagram">
-								<div class="flow-step" style="--delay: 0">
-									<span class="step-icon bracket">[&gt;&gt;]</span>
-									<span class="step-name">JACK IN</span>
-									<span class="step-desc">Stake $DATA</span>
-								</div>
-								<div class="flow-arrow" style="--delay: 1">▼</div>
-								<div class="flow-step" style="--delay: 2">
-									<span class="step-icon bracket">[++]</span>
-									<span class="step-name">EARN</span>
-									<span class="step-desc">Yield accumulates</span>
-								</div>
-								<div class="flow-arrow" style="--delay: 3">▼</div>
-								<div class="flow-step" style="--delay: 4">
-									<span class="step-icon bracket">[??]</span>
-									<span class="step-name">SURVIVE</span>
-									<span class="step-desc">The trace scan</span>
-								</div>
-								<div class="flow-arrow" style="--delay: 5">▼</div>
-								<div class="flow-step" style="--delay: 6">
-									<span class="step-icon bracket">[&lt;&lt;]</span>
-									<span class="step-name">EXTRACT</span>
-									<span class="step-desc">Take your gains</span>
-								</div>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Slide 2: THE TWIST -->
-					{#if currentSlide === 2}
 						<div class="slide slide-twist">
 							<h2 class="twist-headline">
 								WHEN OTHERS <span class="glow-danger">DIE</span>,<br />
@@ -259,8 +227,8 @@
 						</div>
 					{/if}
 
-					<!-- Slide 3: THE RISK -->
-					{#if currentSlide === 3}
+					<!-- Slide 2: THE RISK -->
+					{#if currentSlide === 2}
 						<div class="slide slide-risk">
 							<h2 class="slide-title">CHOOSE YOUR RISK</h2>
 							<div class="risk-ladder">
@@ -301,51 +269,8 @@
 						</div>
 					{/if}
 
-					<!-- Slide 4: THE EDGE -->
-					{#if currentSlide === 4}
-						<div class="slide slide-edge">
-							<h2 class="edge-headline">
-								DON'T JUST WATCH.<br />
-								<span class="glow-accent">FIGHT BACK.</span>
-							</h2>
-							<div class="edge-options">
-								<div class="edge-item" style="--delay: 0">
-									<span class="edge-icon bracket">&gt;_</span>
-									<div class="edge-info">
-										<span class="edge-name">TRACE EVASION</span>
-										<span class="edge-desc"
-											>Type fast. Reduce death rate up to <span class="highlight">-25%</span></span
-										>
-									</div>
-								</div>
-								<div class="edge-item" style="--delay: 1">
-									<span class="edge-icon bracket">&lt;/&gt;</span>
-									<div class="edge-info">
-										<span class="edge-name">HACK RUNS</span>
-										<span class="edge-desc"
-											>Complete runs. Earn <span class="highlight">3x yield</span> multipliers</span
-										>
-									</div>
-								</div>
-								<div class="edge-item" style="--delay: 2">
-									<span class="edge-icon bracket">%$</span>
-									<div class="edge-info">
-										<span class="edge-name">DEAD POOL</span>
-										<span class="edge-desc"
-											>Bet on outcomes. Win more <span class="highlight">$DATA</span></span
-										>
-									</div>
-								</div>
-							</div>
-							<p class="edge-tagline">
-								<span class="dim">Passive is fine.</span>
-								<span class="glow-profit">Active is better.</span>
-							</p>
-						</div>
-					{/if}
-
-					<!-- Slide 5: THE TRUST -->
-					{#if currentSlide === 5}
+				<!-- Slide 3: THE TRUST -->
+					{#if currentSlide === 3}
 						<div class="slide slide-trust">
 							<div class="trust-icon-container">
 								<div class="burn-animation">
@@ -368,8 +293,8 @@
 						</div>
 					{/if}
 
-					<!-- Slide 6: THE CTA -->
-					{#if currentSlide === 6}
+					<!-- Slide 4: THE CTA -->
+					{#if currentSlide === 4}
 						<div class="slide slide-cta">
 							<h2 class="cta-headline">
 								THE NETWORK IS <span class="glow-profit blink">LIVE</span>.<br />
