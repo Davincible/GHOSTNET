@@ -46,6 +46,10 @@
 	$effect(() => {
 		if (!videoEl) return;
 		if (active) {
+			// Reset to beginning each time the modal opens
+			videoEl.currentTime = 0;
+			progress = 0;
+			hasEnded = false;
 			videoEl.play().catch(() => {
 				// Autoplay may be blocked — user can click play
 			});
@@ -144,28 +148,46 @@
 		<div class="video-container">
 			<video
 				bind:this={videoEl}
-			{src}
-			class="video"
-			playsinline
+				{src}
+				class="video"
+				playsinline
 				preload="auto"
-			onplay={handlePlay}
-			onpause={handlePause}
-			onended={handleEnded}
-			onerror={handleError}
+				onplay={handlePlay}
+				onpause={handlePause}
+				onended={handleEnded}
+				onerror={handleError}
 			>
 				<track kind="captions" />
 			</video>
 
 			<!-- Play/Pause click zone — div (not button) to avoid nesting buttons -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="video-click-zone" onclick={togglePlay} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); togglePlay(); } }} role="button" tabindex="0" aria-label={isPlaying ? 'Pause' : 'Play'}>
+			<div
+				class="video-click-zone"
+				onclick={togglePlay}
+				onkeydown={(e) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						togglePlay();
+					}
+				}}
+				role="button"
+				tabindex="0"
+				aria-label={isPlaying ? 'Pause' : 'Play'}
+			>
 				{#if !isPlaying && !hasEnded}
 					<div class="play-indicator">
 						<span class="play-icon">▶</span>
 					</div>
 				{/if}
 				{#if hasEnded}
-					<button class="replay-indicator" onclick={(e) => { e.stopPropagation(); replay(); }}>
+					<button
+						class="replay-indicator"
+						onclick={(e) => {
+							e.stopPropagation();
+							replay();
+						}}
+					>
 						<span class="replay-icon">↻</span>
 						<span class="replay-text">REPLAY</span>
 					</button>
@@ -194,7 +216,12 @@
 
 				<!-- Right: mute -->
 				<div class="controls-right">
-					<button class="ctrl-btn unmute-btn" class:muted={isMuted} onclick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'}>
+					<button
+						class="ctrl-btn unmute-btn"
+						class:muted={isMuted}
+						onclick={toggleMute}
+						aria-label={isMuted ? 'Unmute' : 'Mute'}
+					>
 						<span class="ctrl-icon">{isMuted ? '🔇' : '🔊'}</span>
 						<span class="ctrl-label">{isMuted ? 'UNMUTE' : 'MUTE'}</span>
 					</button>
@@ -406,8 +433,13 @@
 	}
 
 	@keyframes unmute-pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.5; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.5;
+		}
 	}
 
 	.time-display {
@@ -444,8 +476,13 @@
 	}
 
 	@keyframes error-blink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	/* ═══════════════════════════════════════════════════════════════

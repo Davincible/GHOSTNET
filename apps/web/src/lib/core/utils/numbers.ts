@@ -127,9 +127,10 @@ export function formatNumber(value: number, options: FormatNumberOptions = {}): 
 			const dotIndex = formatted.indexOf('.');
 			const currentDecimals = dotIndex === -1 ? 0 : formatted.length - dotIndex - 1;
 			if (currentDecimals < minDecimals) {
-				formatted = dotIndex === -1
-					? formatted + '.' + '0'.repeat(minDecimals)
-					: formatted + '0'.repeat(minDecimals - currentDecimals);
+				formatted =
+					dotIndex === -1
+						? formatted + '.' + '0'.repeat(minDecimals)
+						: formatted + '0'.repeat(minDecimals - currentDecimals);
 			}
 		}
 	}
@@ -154,12 +155,7 @@ export function formatNumber(value: number, options: FormatNumberOptions = {}): 
  * @example formatCompact(-1234)       => "-1.2K"
  */
 export function formatCompact(value: number, options: FormatCompactOptions = {}): string {
-	const {
-		decimals = 1,
-		trimZeros = true,
-		showSign = false,
-		lowercase = false,
-	} = options;
+	const { decimals = 1, trimZeros = true, showSign = false, lowercase = false } = options;
 
 	if (!Number.isFinite(value)) return '—';
 	if (Object.is(value, -0)) value = 0;
@@ -261,12 +257,7 @@ export function formatWei(amount: bigint, options: FormatWeiOptions = {}): strin
  * @example formatPercent(0.05, { showSign: true })    => "+5%"
  */
 export function formatPercentNumber(value: number, options: FormatPercentOptions = {}): string {
-	const {
-		decimals = 0,
-		alreadyScaled = false,
-		showSign = false,
-		symbol = true,
-	} = options;
+	const { decimals = 0, alreadyScaled = false, showSign = false, symbol = true } = options;
 
 	if (!Number.isFinite(value)) return '—';
 

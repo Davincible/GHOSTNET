@@ -153,7 +153,13 @@
 </svelte:head>
 
 <Header />
-<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'TRACE EVASION' }]} />
+<Breadcrumb
+	path={[
+		{ label: 'NETWORK', href: '/' },
+		{ label: 'ARCADE', href: '/arcade' },
+		{ label: 'TRACE EVASION' },
+	]}
+/>
 
 <Shell>
 	<div class="typing-page">

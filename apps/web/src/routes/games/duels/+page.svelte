@@ -137,7 +137,13 @@
 </svelte:head>
 
 <Header />
-<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'PVP DUELS' }]} />
+<Breadcrumb
+	path={[
+		{ label: 'NETWORK', href: '/' },
+		{ label: 'ARCADE', href: '/arcade' },
+		{ label: 'PVP DUELS' },
+	]}
+/>
 
 <Shell>
 	<div class="duels-page">
@@ -162,7 +168,12 @@
 								class:positive={store.stats.netProfit > 0n}
 								class:negative={store.stats.netProfit < 0n}
 							>
-								<AmountDisplay amount={store.stats.netProfit} symbol="DATA" displayDecimals={0} showSign />
+								<AmountDisplay
+									amount={store.stats.netProfit}
+									symbol="DATA"
+									displayDecimals={0}
+									showSign
+								/>
 							</span>
 						</div>
 						<div class="stat">
@@ -199,7 +210,11 @@
 												>
 											</div>
 											<div class="challenge-wager">
-												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" displayDecimals={0} />
+												<AmountDisplay
+													amount={challenge.wagerAmount}
+													symbol="DATA"
+													displayDecimals={0}
+												/>
 											</div>
 											<div class="challenge-actions">
 												<Button
@@ -231,7 +246,11 @@
 												<span class="status-text">Waiting for opponent...</span>
 											</div>
 											<div class="challenge-wager">
-												<AmountDisplay amount={challenge.wagerAmount} symbol="DATA" displayDecimals={0} />
+												<AmountDisplay
+													amount={challenge.wagerAmount}
+													symbol="DATA"
+													displayDecimals={0}
+												/>
 											</div>
 											<div class="challenge-actions">
 												<Button
@@ -276,7 +295,12 @@
 										class:positive={entry.netAmount > 0n}
 										class:negative={entry.netAmount < 0n}
 									>
-										<AmountDisplay amount={entry.netAmount} symbol="DATA" displayDecimals={0} showSign />
+										<AmountDisplay
+											amount={entry.netAmount}
+											symbol="DATA"
+											displayDecimals={0}
+											showSign
+										/>
 									</span>
 								</div>
 							{/each}
@@ -400,7 +424,11 @@
 						{:else}
 							<div class="loss-display">
 								<span class="label">LOST</span>
-								<AmountDisplay amount={store.state.duel.wagerAmount} symbol="DATA" displayDecimals={0} />
+								<AmountDisplay
+									amount={store.state.duel.wagerAmount}
+									symbol="DATA"
+									displayDecimals={0}
+								/>
 							</div>
 						{/if}
 

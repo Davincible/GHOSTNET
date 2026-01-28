@@ -291,38 +291,26 @@
 							</Row>
 						</div>
 
-						<!-- Transient Attention -->
+						<!-- Attention -->
 						<div class="control-group">
-							<span class="control-label">ATTENTION (TRANSIENT)</span>
+							<span class="control-label">ATTENTION</span>
 							<Row gap={1} wrap>
-								{#each ['highlight', 'alert', 'success', 'critical'] as a (a)}
-									<Button
-										size="sm"
-										variant="ghost"
-										onclick={() => triggerAttention(a as PanelAttention)}
-									>
-										{a.toUpperCase()}
-									</Button>
-								{/each}
-							</Row>
-						</div>
-
-						<!-- Persistent Attention -->
-						<div class="control-group">
-							<span class="control-label">ATTENTION (PERSISTENT)</span>
-							<Row gap={1} wrap>
-								{#each ['blackout', 'dimmed', 'focused'] as a (a)}
+								{#each ['highlight', 'alert', 'success', 'critical', 'blackout', 'dimmed', 'focused'] as a (a)}
 									<Button
 										size="sm"
 										variant={activeAttention === a ? 'primary' : 'ghost'}
 										onclick={() => {
-											activeAttention = activeAttention === a ? null : (a as PanelAttention);
+											if (activeAttention === a) {
+												clearAttention();
+											} else {
+												triggerAttention(a as PanelAttention);
+											}
 										}}
 									>
 										{a.toUpperCase()}
 									</Button>
 								{/each}
-								{#if activeAttention === 'blackout' || activeAttention === 'dimmed' || activeAttention === 'focused'}
+								{#if activeAttention}
 									<Button size="sm" variant="danger" onclick={clearAttention}>CLEAR</Button>
 								{/if}
 							</Row>

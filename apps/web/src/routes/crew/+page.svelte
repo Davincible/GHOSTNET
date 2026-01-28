@@ -234,7 +234,7 @@
 
 	.content-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr; /* Mobile first: single column */
 		gap: var(--space-4);
 	}
 
@@ -242,6 +242,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		min-width: 0; /* Allow column to shrink below content size */
 	}
 
 	:global(.action-buttons) {
@@ -249,15 +250,28 @@
 		border-top: 1px solid var(--color-border-subtle);
 	}
 
-	/* Mobile responsiveness */
+	/* Mobile spacing */
 	@media (max-width: 767px) {
 		.main-content {
 			padding: var(--space-2);
 		}
 
 		.content-grid {
-			grid-template-columns: 1fr;
 			gap: var(--space-2);
+		}
+	}
+
+	/* Tablet: 60/40 split */
+	@media (min-width: 768px) {
+		.content-grid {
+			grid-template-columns: 3fr 2fr;
+		}
+	}
+
+	/* Desktop: wider left column for bonuses + members */
+	@media (min-width: 1024px) {
+		.content-grid {
+			grid-template-columns: 2fr 1fr;
 		}
 	}
 </style>

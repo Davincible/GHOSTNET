@@ -19,7 +19,7 @@
 	let {
 		collapsedCount = 6,
 		expandedCount = 20,
-		collapsedHeight = '145px',
+		collapsedHeight = '175px',
 		expandedHeight = '500px',
 	}: Props = $props();
 
@@ -53,39 +53,43 @@
 {/if}
 
 <div class="feed-panel-wrapper" class:expanded>
-<Panel title="LIVE FEED" scrollable maxHeight={currentHeight} minHeight={collapsedHeight}>
-	{#snippet footer()}
-		<Row justify="between" align="center">
-			<Row gap={2} align="center">
-				<span class="streaming-dot" aria-hidden="true"></span>
-				<span class="streaming-text">STREAMING</span>
-				{#if provider.connectionStatus === 'connected'}
-					<Badge variant="success" compact>LIVE</Badge>
-				{:else}
-					<Badge variant="warning" compact pulse>BUFFERING</Badge>
+	<Panel title="LIVE FEED" scrollable maxHeight={currentHeight} minHeight={collapsedHeight}>
+		{#snippet footer()}
+			<Row justify="between" align="center">
+				<Row gap={2} align="center">
+					<span class="streaming-dot" aria-hidden="true"></span>
+					<span class="streaming-text">STREAMING</span>
+					{#if provider.connectionStatus === 'connected'}
+						<Badge variant="success" compact>LIVE</Badge>
+					{:else}
+						<Badge variant="warning" compact pulse>BUFFERING</Badge>
+					{/if}
+				</Row>
+				{#if hasMore}
+					<button
+						class="expand-btn"
+						onclick={() => (expanded = !expanded)}
+						aria-expanded={expanded}
+					>
+						{expanded ? '▲ LESS' : '▼ MORE'}
+					</button>
 				{/if}
 			</Row>
-			{#if hasMore}
-				<button class="expand-btn" onclick={() => (expanded = !expanded)} aria-expanded={expanded}>
-					{expanded ? '▲ LESS' : '▼ MORE'}
-				</button>
-			{/if}
-		</Row>
-	{/snippet}
+		{/snippet}
 
-	<div class="feed-list" role="log" aria-live="polite" aria-label="Live network events">
-		{#each visibleEvents as event (event.id)}
-			<FeedItem
-				{event}
-				currentUserAddress={provider.currentUser?.address}
-				isNew={event.id === lastEventId}
-			/>
-		{/each}
-		{#if visibleEvents.length === 0}
-			<p class="feed-empty">Waiting for network events...</p>
-		{/if}
-	</div>
-</Panel>
+		<div class="feed-list" role="log" aria-live="polite" aria-label="Live network events">
+			{#each visibleEvents as event (event.id)}
+				<FeedItem
+					{event}
+					currentUserAddress={provider.currentUser?.address}
+					isNew={event.id === lastEventId}
+				/>
+			{/each}
+			{#if visibleEvents.length === 0}
+				<p class="feed-empty">Waiting for network events...</p>
+			{/if}
+		</div>
+	</Panel>
 </div>
 
 <style>

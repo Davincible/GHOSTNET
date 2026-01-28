@@ -122,10 +122,10 @@
 
 			<!-- Price breakdown -->
 			<div class="price-section">
-			<div class="price-row">
-				<span class="price-label">Unit Price:</span>
-				<AmountDisplay amount={consumable.price} symbol="DATA" displayDecimals={0} />
-			</div>
+				<div class="price-row">
+					<span class="price-label">Unit Price:</span>
+					<AmountDisplay amount={consumable.price} symbol="DATA" displayDecimals={0} />
+				</div>
 
 				{#if discountPercent > 0}
 					<div class="price-row discount">
@@ -134,20 +134,20 @@
 					</div>
 				{/if}
 
-			<div class="price-row total">
-				<span class="price-label">Total:</span>
-				<AmountDisplay amount={totalPrice} symbol="DATA" displayDecimals={0} />
-			</div>
+				<div class="price-row total">
+					<span class="price-label">Total:</span>
+					<AmountDisplay amount={totalPrice} symbol="DATA" displayDecimals={0} />
+				</div>
 			</div>
 
 			<!-- Balance check -->
 			{#if !canAfford}
-			<div class="error-message">
-				Insufficient balance. You have <AmountDisplay
-					amount={balance}
-					symbol="DATA"
-					displayDecimals={0}
-				/>
+				<div class="error-message">
+					Insufficient balance. You have <AmountDisplay
+						amount={balance}
+						symbol="DATA"
+						displayDecimals={0}
+					/>
 				</div>
 			{/if}
 		</Stack>

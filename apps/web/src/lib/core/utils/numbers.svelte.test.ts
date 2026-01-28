@@ -63,7 +63,9 @@ describe('formatNumber', () => {
 	});
 
 	it('respects minDecimals with trimZeros and no separators', () => {
-		expect(formatNumber(1.0, { decimals: 4, minDecimals: 2, trimZeros: true, separators: false })).toBe('1.00');
+		expect(
+			formatNumber(1.0, { decimals: 4, minDecimals: 2, trimZeros: true, separators: false })
+		).toBe('1.00');
 	});
 
 	it('formats large numbers', () => {

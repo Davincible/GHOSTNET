@@ -162,7 +162,13 @@
 </svelte:head>
 
 <Header />
-<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'DAILY OPS' }]} />
+<Breadcrumb
+	path={[
+		{ label: 'NETWORK', href: '/' },
+		{ label: 'ARCADE', href: '/arcade' },
+		{ label: 'DAILY OPS' },
+	]}
+/>
 
 <Shell>
 	<div class="daily-ops-page">

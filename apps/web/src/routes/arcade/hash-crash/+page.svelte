@@ -18,7 +18,13 @@
 </svelte:head>
 
 <Header />
-<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE', href: '/arcade' }, { label: 'HASH CRASH' }]} />
+<Breadcrumb
+	path={[
+		{ label: 'NETWORK', href: '/' },
+		{ label: 'ARCADE', href: '/arcade' },
+		{ label: 'HASH CRASH' },
+	]}
+/>
 
 <Shell>
 	<div class="hash-crash-page">

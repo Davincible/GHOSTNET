@@ -243,30 +243,25 @@
 	});
 </script>
 
-<Modal {open} {onclose} title="CONNECT WALLET" maxWidth="sm">
+<Modal {open} {onclose} title="CONNECT WALLET" maxWidth="md">
 	<Stack gap={3}>
 		<p class="description">Select a wallet to jack into GHOSTNET</p>
 
-		<!-- Tier 1: Primary wallets -->
-		<div class="wallet-list">
-			{#each detectedTier1 as w (w.id)}
+		<!-- Tier 1: Primary injected wallets (grid) -->
+		<div class="primary-grid">
+			{#each detectedTier1.filter((w) => w.connectionType === 'injected') as w (w.id)}
 				<button
-					class="wallet-option"
+					class="wallet-card"
 					class:connecting={isConnecting === w.id}
-					class:not-detected={w.connectionType === 'injected' && !detectedIds.has(w.id)}
+					class:not-detected={!detectedIds.has(w.id)}
 					onclick={() => connectWallet(w)}
 					disabled={isConnecting !== null}
 				>
-					<span class="wallet-icon">{w.icon}</span>
-					<div class="wallet-info">
-						<span class="wallet-name">
-							{w.name}
-							{#if w.connectionType === 'injected' && detectedIds.has(w.id)}
-								<span class="detected-badge">DETECTED</span>
-							{/if}
-						</span>
-						<span class="wallet-desc">{w.description}</span>
-					</div>
+					<span class="card-icon">{w.icon}</span>
+					<span class="card-name">{w.name}</span>
+					{#if detectedIds.has(w.id)}
+						<span class="detected-dot" title="Detected"></span>
+					{/if}
 					{#if isConnecting === w.id}
 						<span class="connecting-indicator">...</span>
 					{/if}
@@ -274,11 +269,28 @@
 			{/each}
 		</div>
 
+		<!-- WalletConnect: separate full-width option -->
+		{#each detectedTier1.filter((w) => w.connectionType === 'walletconnect') as w (w.id)}
+			<button
+				class="walletconnect-option"
+				class:connecting={isConnecting === w.id}
+				onclick={() => connectWallet(w)}
+				disabled={isConnecting !== null}
+			>
+				<span class="wc-icon">{w.icon}</span>
+				<span class="wc-label">WalletConnect</span>
+				<span class="wc-desc">Scan QR code with any mobile wallet</span>
+				{#if isConnecting === w.id}
+					<span class="connecting-indicator">...</span>
+				{/if}
+			</button>
+		{/each}
+
 		<!-- Tier 2: Extended wallets (collapsible) -->
 		{#if detectedTier2.length > 0}
 			<button class="tier2-toggle" onclick={() => (showAllWallets = !showAllWallets)}>
 				<span class="toggle-label"
-					>{showAllWallets ? '▼ HIDE' : '▶ SHOW ALL'} WALLETS ({detectedTier2.length})</span
+					>{showAllWallets ? '▼ HIDE' : '▶ MORE'} WALLETS ({detectedTier2.length})</span
 				>
 			</button>
 
@@ -286,16 +298,16 @@
 				<div class="wallet-grid">
 					{#each detectedTier2 as w (w.id)}
 						<button
-							class="wallet-option compact"
+							class="wallet-cell"
 							class:connecting={isConnecting === w.id}
 							class:not-detected={!detectedIds.has(w.id)}
 							onclick={() => connectWallet(w)}
 							disabled={isConnecting !== null}
 						>
-							<span class="wallet-icon compact-icon">{w.icon}</span>
-							<span class="wallet-name">{w.name}</span>
-							{#if isConnecting === w.id}
-								<span class="connecting-indicator">...</span>
+							<span class="cell-icon">{w.icon}</span>
+							<span class="cell-name">{w.name}</span>
+							{#if detectedIds.has(w.id)}
+								<span class="detected-dot small" title="Detected"></span>
 							{/if}
 						</button>
 					{/each}
@@ -326,13 +338,89 @@
 		margin: 0;
 	}
 
-	.wallet-list {
-		display: flex;
-		flex-direction: column;
+	/* ═══════════════════════════════════════════════════════
+	   TIER 1: Primary wallet grid (2x2 cards)
+	   ═══════════════════════════════════════════════════════ */
+	.primary-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
 		gap: var(--space-2);
 	}
 
-	.wallet-option {
+	.wallet-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-4) var(--space-3);
+		background: var(--color-surface-raised);
+		border: var(--border-width) solid var(--color-border-subtle);
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+		text-align: center;
+	}
+
+	.wallet-card:hover:not(:disabled) {
+		border-color: var(--color-accent);
+		background: var(--color-surface-hover);
+	}
+
+	.wallet-card:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.wallet-card.connecting {
+		border-color: var(--color-accent);
+		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	.wallet-card.not-detected {
+		opacity: 0.4;
+	}
+
+	.wallet-card.not-detected:hover:not(:disabled) {
+		opacity: 0.7;
+	}
+
+	.card-icon {
+		font-size: var(--text-3xl);
+		line-height: 1;
+	}
+
+	.card-name {
+		font-size: var(--text-sm);
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
+	/* Green dot for detected wallets */
+	.detected-dot {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--color-accent);
+		box-shadow: 0 0 6px var(--color-accent);
+	}
+
+	.detected-dot.small {
+		width: 6px;
+		height: 6px;
+		top: 6px;
+		right: 6px;
+	}
+
+	/* ═══════════════════════════════════════════════════════
+	   WALLETCONNECT: Full-width row
+	   ═══════════════════════════════════════════════════════ */
+	.walletconnect-option {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
@@ -347,21 +435,43 @@
 		width: 100%;
 	}
 
-	.wallet-option:hover:not(:disabled) {
+	.walletconnect-option:hover:not(:disabled) {
 		border-color: var(--color-accent);
 		background: var(--color-surface-hover);
 	}
 
-	.wallet-option:disabled {
+	.walletconnect-option:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 	}
 
-	.wallet-option.connecting {
+	.walletconnect-option.connecting {
 		border-color: var(--color-accent);
 		animation: pulse 1.5s ease-in-out infinite;
 	}
 
+	.wc-icon {
+		font-size: var(--text-2xl);
+		width: 36px;
+		text-align: center;
+		flex-shrink: 0;
+	}
+
+	.wc-label {
+		font-size: var(--text-sm);
+		font-weight: 500;
+		flex-shrink: 0;
+	}
+
+	.wc-desc {
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		margin-left: auto;
+	}
+
+	/* ═══════════════════════════════════════════════════════
+	   SHARED
+	   ═══════════════════════════════════════════════════════ */
 	@keyframes pulse {
 		0%,
 		100% {
@@ -370,47 +480,6 @@
 		50% {
 			opacity: 0.7;
 		}
-	}
-
-	.wallet-icon {
-		font-size: var(--text-2xl);
-		width: 40px;
-		text-align: center;
-	}
-
-	.wallet-info {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.wallet-name {
-		font-size: var(--text-sm);
-		font-weight: 500;
-	}
-
-	.wallet-desc {
-		font-size: var(--text-xs);
-		color: var(--color-text-tertiary);
-	}
-
-	.wallet-option.not-detected {
-		opacity: 0.45;
-	}
-
-	.wallet-option.not-detected:hover:not(:disabled) {
-		opacity: 0.7;
-	}
-
-	.detected-badge {
-		font-size: 9px;
-		color: var(--color-accent);
-		border: 1px solid var(--color-accent);
-		padding: 0 4px;
-		margin-left: var(--space-1);
-		vertical-align: middle;
-		letter-spacing: 0.05em;
 	}
 
 	.connecting-indicator {
@@ -428,7 +497,9 @@
 		}
 	}
 
-	/* ── Tier 2 toggle ── */
+	/* ═══════════════════════════════════════════════════════
+	   TIER 2: Expandable grid
+	   ═══════════════════════════════════════════════════════ */
 	.tier2-toggle {
 		display: flex;
 		align-items: center;
@@ -454,31 +525,73 @@
 		text-transform: uppercase;
 	}
 
-	/* ── Tier 2 grid ── */
 	.wallet-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(3, 1fr);
 		gap: var(--space-1);
-		max-height: 240px;
+		max-height: 260px;
 		overflow-y: auto;
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-border-subtle) transparent;
 	}
 
-	.wallet-option.compact {
-		flex-direction: row;
+	.wallet-cell {
+		position: relative;
+		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2);
-		font-size: var(--text-xs);
+		justify-content: center;
+		gap: 4px;
+		padding: var(--space-2) var(--space-1);
+		background: var(--color-surface-raised);
+		border: var(--border-width) solid var(--color-border-subtle);
+		color: var(--color-text-primary);
+		font-family: var(--font-mono);
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-default);
+		text-align: center;
 	}
 
-	.compact-icon {
-		font-size: var(--text-base);
-		width: 24px;
-		min-width: 24px;
+	.wallet-cell:hover:not(:disabled) {
+		border-color: var(--color-accent);
+		background: var(--color-surface-hover);
 	}
 
+	.wallet-cell:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.wallet-cell.connecting {
+		border-color: var(--color-accent);
+		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	.wallet-cell.not-detected {
+		opacity: 0.35;
+	}
+
+	.wallet-cell.not-detected:hover:not(:disabled) {
+		opacity: 0.65;
+	}
+
+	.cell-icon {
+		font-size: var(--text-lg);
+		line-height: 1;
+	}
+
+	.cell-name {
+		font-size: 10px;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 100%;
+	}
+
+	/* ═══════════════════════════════════════════════════════
+	   STATUS
+	   ═══════════════════════════════════════════════════════ */
 	.error-message {
 		padding: var(--space-2) var(--space-3);
 		background: rgba(255, 0, 85, 0.1);
