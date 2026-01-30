@@ -1,0 +1,6 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"rootDirectory": "apps/web",
+	"framework": "sveltekit",
+	"bunVersion": "1.x"
+}
