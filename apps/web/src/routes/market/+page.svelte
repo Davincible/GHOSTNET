@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import {
 		MarketPanel,
 		InventoryPanel,
@@ -121,6 +122,7 @@
 </svelte:head>
 
 <div class="market-page">
+	<Sidebar />
 	<Header />
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'BLACK MARKET' }]} />
 
@@ -173,6 +175,13 @@
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.main-content {
+			padding-left: calc(var(--space-6) + 60px);
+		}
 	}
 
 	@media (max-width: 767px) {

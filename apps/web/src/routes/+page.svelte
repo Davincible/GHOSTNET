@@ -7,6 +7,7 @@
 	import { NetworkVitalsPanel } from '$lib/features/network';
 	import { QuickActionsPanel, GameNavigationCard } from '$lib/features/actions';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { WelcomePanel } from '$lib/features/welcome';
 	import { IntroVideoModal } from '$lib/features/intro';
 	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
@@ -241,6 +242,12 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="command-center">
+	<Sidebar
+		onJackIn={handleJackIn}
+		onExtract={handleExtract}
+		onSettings={() => (showSettingsModal = true)}
+		onWallet={handleConnectWallet}
+	/>
 	<Header onSettings={() => (showSettingsModal = true)} onIntro={() => (showIntroVideo = true)} />
 	<KeyboardHints />
 
@@ -341,6 +348,13 @@
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.main-content {
+			padding-left: calc(var(--space-6) + 60px); /* sidebar width + gap */
+		}
 	}
 
 	/* ════════════════════════════════════════════════════════════════

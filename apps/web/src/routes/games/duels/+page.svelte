@@ -12,6 +12,7 @@
 	import { createDuelStore } from '$lib/features/duels';
 	import { MOCK_USER_ADDRESS } from '$lib/core/providers/mock/generators/duel';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { Shell, Box } from '$lib/ui/terminal';
 	import { Button, ProgressBar, Badge } from '$lib/ui/primitives';
@@ -136,6 +137,7 @@
 	<title>PvP Duels | GHOSTNET</title>
 </svelte:head>
 
+<Sidebar />
 <Header />
 <Breadcrumb
 	path={[
@@ -530,6 +532,13 @@
 		padding: var(--space-4);
 		padding-bottom: var(--space-16);
 		min-height: 100%;
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.duels-page {
+			padding-left: calc(var(--space-4) + 60px);
+		}
 	}
 
 	/* ════════════════════════════════════════════════════════════════ */

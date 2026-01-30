@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { Box } from '$lib/ui/terminal';
 
 	interface GameCard {
@@ -81,6 +82,7 @@
 </svelte:head>
 
 <div class="arcade-page">
+	<Sidebar />
 	<Header />
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'ARCADE' }]} />
 
@@ -150,6 +152,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-6);
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.arcade-content {
+			padding-left: calc(var(--space-6) + 60px);
+		}
 	}
 
 	/* ════════════════════════════════════════════════════════════════

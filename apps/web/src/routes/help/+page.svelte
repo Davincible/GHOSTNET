@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { Box, Shell } from '$lib/ui/terminal';
 	import { Stack, Row } from '$lib/ui/layout';
@@ -215,6 +216,7 @@
 	/>
 </svelte:head>
 
+<Sidebar />
 <Header />
 <Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'HELP' }]} />
 
@@ -302,6 +304,13 @@
 		margin: 0 auto;
 		padding: var(--space-4);
 		padding-bottom: var(--space-16);
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.help-page {
+			padding-left: calc(var(--space-4) + 60px);
+		}
 	}
 
 	.help-header {

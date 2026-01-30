@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import {
 		CrewHeader,
 		BonusesPanel,
@@ -157,6 +158,7 @@
 </svelte:head>
 
 <div class="crew-page">
+	<Sidebar />
 	<Header />
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'CREW' }]} />
 
@@ -234,6 +236,13 @@
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.main-content {
+			padding-left: calc(var(--space-6) + 60px);
+		}
 	}
 
 	.content-grid {

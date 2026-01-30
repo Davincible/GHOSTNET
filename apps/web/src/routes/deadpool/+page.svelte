@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { DeadPoolHeader, ActiveRoundsGrid, ResultsPanel, BetModal } from '$lib/features/deadpool';
 	import { ToastContainer, getToasts } from '$lib/ui/toast';
 	import { Stack } from '$lib/ui/layout';
@@ -119,6 +120,7 @@
 </svelte:head>
 
 <div class="deadpool-page">
+	<Sidebar />
 	<Header />
 	<Breadcrumb path={[{ label: 'NETWORK', href: '/' }, { label: 'DEAD POOL' }]} />
 
@@ -169,6 +171,13 @@
 		width: 100%;
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.main-content {
+			padding-left: calc(var(--space-6) + 60px);
+		}
 	}
 
 	.section {

@@ -6,6 +6,7 @@
 	import { getSettings } from '$lib/core/settings';
 	import { createAudioManager } from '$lib/core/audio';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import {
 		getHackRunStore,
@@ -279,6 +280,7 @@
 	<title>Hack Run | GHOSTNET</title>
 </svelte:head>
 
+<Sidebar />
 <Header />
 <Breadcrumb
 	path={[
@@ -375,6 +377,13 @@
 		min-height: 100dvh;
 		padding: var(--space-4);
 		padding-bottom: var(--space-16);
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.hackrun-page {
+			padding-left: calc(var(--space-4) + 60px);
+		}
 	}
 
 	.page-content {

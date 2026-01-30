@@ -7,6 +7,7 @@
 	import { createTypingGameStore, TOTAL_ROUNDS } from '$lib/features/typing/store.svelte';
 	import { getAudioManager } from '$lib/core/audio';
 	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
 	import { Header, Breadcrumb } from '$lib/features/header';
 	import IdleView from '$lib/features/typing/IdleView.svelte';
 	import CountdownView from '$lib/features/typing/CountdownView.svelte';
@@ -152,6 +153,7 @@
 	<title>Trace Evasion | GHOSTNET</title>
 </svelte:head>
 
+<Sidebar />
 <Header />
 <Breadcrumb
 	path={[
@@ -212,6 +214,13 @@
 		min-height: 100vh;
 		padding: var(--space-4);
 		padding-bottom: var(--space-16);
+	}
+
+	/* Make room for sidebar on desktop */
+	@media (min-width: 1024px) {
+		.typing-page {
+			padding-left: calc(var(--space-4) + 60px);
+		}
 	}
 
 	.page-content {
