@@ -67,6 +67,8 @@
 		// ── Visual modifiers ──
 		/** Apply blur effect. `true` = content blurred + title masked, `'content'` = content blurred only (title stays readable). Borders always stay crisp. */
 		blur?: boolean | 'content';
+		/** Remove background color, showing only borders and content */
+		noBackground?: boolean;
 
 		// ── Coming Soon ──
 		/** Show a "COMING SOON" badge centered over the panel content */
@@ -95,6 +97,7 @@
 		onAttentionEnd,
 		ambientEffect = null,
 		blur = false,
+		noBackground = false,
 		comingSoon = false,
 		comingSoonLabel = 'COMING SOON',
 	}: Props = $props();
@@ -233,6 +236,7 @@
 		glow={effectiveGlow}
 		{borderFill}
 		{padding}
+		{noBackground}
 	>
 		{#if scrollable}
 			<div class="panel-content-wrapper" style:--panel-height={maxHeight}>

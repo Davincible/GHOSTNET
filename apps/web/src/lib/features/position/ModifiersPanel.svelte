@@ -39,7 +39,7 @@
 </script>
 
 {#if provider.modifiers.length > 0}
-	<Box title="ACTIVE MODIFIERS">
+	<Box title="ACTIVE MODIFIERS" noBackground>
 		<Stack gap={2}>
 			{#each provider.modifiers as modifier (modifier.id)}
 				<div class="modifier-item {getModifierClass(modifier.type, modifier.value)}">

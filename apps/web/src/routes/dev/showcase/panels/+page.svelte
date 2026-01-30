@@ -18,6 +18,7 @@
 	let activeVariant = $state<PanelVariant>('single');
 	let activeGlow = $state(false);
 	let activeBlur = $state<boolean | 'content'>(false);
+	let activeNoBackground = $state(false);
 	let activeBorderFill = $state(false);
 	let activePadding = $state<0 | 1 | 2 | 3 | 4>(3);
 	let activeTitle = $state('LIVE PREVIEW');
@@ -92,6 +93,7 @@
 						glow={activeGlow}
 						borderFill={activeBorderFill}
 						blur={activeBlur}
+						noBackground={activeNoBackground}
 						padding={activePadding}
 						attention={activeAttention}
 						onAttentionEnd={clearAttention}
@@ -287,6 +289,27 @@
 									onclick={() => (activeBlur = 'content')}
 								>
 									CONTENT
+								</Button>
+							</Row>
+						</div>
+
+						<!-- No Background -->
+						<div class="control-group">
+							<span class="control-label">BACKGROUND</span>
+							<Row gap={1}>
+								<Button
+									size="sm"
+									variant={activeNoBackground ? 'ghost' : 'primary'}
+									onclick={() => (activeNoBackground = false)}
+								>
+									ON
+								</Button>
+								<Button
+									size="sm"
+									variant={activeNoBackground ? 'primary' : 'ghost'}
+									onclick={() => (activeNoBackground = true)}
+								>
+									OFF
 								</Button>
 							</Row>
 						</div>
@@ -693,6 +716,49 @@
 						</div>
 					</Panel>
 				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- ═══════════════════════════════════════════════════════════
+	     SECTION: No Background
+	     ═══════════════════════════════════════════════════════════ -->
+	<section class="showcase-section">
+		<div class="section-header">
+			<h2 class="section-title">NO BACKGROUND</h2>
+			<p class="section-subtitle">
+				Transparent panels showing only borders and content. Useful for overlay contexts.
+			</p>
+		</div>
+
+		<div class="demo-grid demo-grid-2">
+			<div class="demo-card">
+				<Panel title="DEFAULT (WITH BG)">
+					<div class="demo-content">
+						<p class="demo-desc">Default panel with secondary background color.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="NO BACKGROUND" noBackground>
+					<div class="demo-content">
+						<p class="demo-desc">noBackground=true — transparent, borders only.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="NO BG + GLOW" noBackground glow borderColor="cyan">
+					<div class="demo-content">
+						<p class="demo-desc">Transparent with glow effect. Floating border look.</p>
+					</div>
+				</Panel>
+			</div>
+			<div class="demo-card">
+				<Panel title="NO BG + FILLED" noBackground borderFill borderColor="bright">
+					<div class="demo-content">
+						<p class="demo-desc">Transparent with filled borders. Pure frame style.</p>
+					</div>
+				</Panel>
 			</div>
 		</div>
 	</section>

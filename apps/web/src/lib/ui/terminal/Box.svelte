@@ -17,6 +17,8 @@
 		borderFill?: boolean;
 		/** Padding inside the box */
 		padding?: 0 | 1 | 2 | 3 | 4;
+		/** Remove background color, showing only borders */
+		noBackground?: boolean;
 		children: Snippet;
 	}
 
@@ -27,6 +29,7 @@
 		glow = false,
 		borderFill = false,
 		padding = 3,
+		noBackground = false,
 		children,
 	}: Props = $props();
 
@@ -67,7 +70,7 @@
 	let c = $derived(chars[variant]);
 </script>
 
-<div class="box box-border-{borderColor}" class:box-glow={glow} class:box-border-fill={borderFill} style:--box-padding={padding}>
+<div class="box box-border-{borderColor}" class:box-glow={glow} class:box-border-fill={borderFill} class:box-no-background={noBackground} style:--box-padding={padding}>
 	<!-- Top border -->
 	<div class="box-border box-border-top">
 		<span class="box-corner">{c.tl}</span>
@@ -105,6 +108,10 @@
 		line-height: 1;
 		width: 100%;
 		background: var(--color-bg-secondary);
+	}
+
+	.box-no-background {
+		background: transparent;
 	}
 
 	/* Border colors - more subtle, barely-there */

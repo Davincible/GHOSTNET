@@ -53,7 +53,7 @@
 </script>
 
 <div class="daily-ops">
-	<Box title="DAILY OPS">
+	<Box title="DAILY OPS" noBackground>
 		<Stack gap={4}>
 			<!-- Check-in Section -->
 			<section class="checkin-section">

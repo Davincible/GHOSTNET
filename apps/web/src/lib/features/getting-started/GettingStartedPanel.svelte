@@ -25,9 +25,21 @@
 	}
 
 	let { onConnectWallet }: Props = $props();
+
+	// Collapsible section states
+	let riskLevelsExpanded = $state(false);
+	let keyInsightExpanded = $state(false);
+
+	function toggleRiskLevels() {
+		riskLevelsExpanded = !riskLevelsExpanded;
+	}
+
+	function toggleKeyInsight() {
+		keyInsightExpanded = !keyInsightExpanded;
+	}
 </script>
 
-<Box title="GETTING STARTED">
+<Box title="GETTING STARTED" noBackground>
 	<Stack gap={4}>
 		<!-- One-liner: the game in one sentence -->
 		<p class="briefing-intro">
@@ -72,25 +84,35 @@
 
 		<!-- Section: RISK LEVELS -->
 		<section>
-			<div class="section-divider">
+			<button class="section-divider" onclick={toggleRiskLevels} type="button">
 				<span class="divider-label">RISK LEVELS</span>
-			</div>
+				<span class="divider-toggle" aria-hidden="true">
+					{riskLevelsExpanded ? '▼' : '▶'}
+				</span>
+			</button>
 
-			<RiskLevelsTable />
+			{#if riskLevelsExpanded}
+				<RiskLevelsTable />
+			{/if}
 		</section>
 
 		<!-- Section: THE KEY INSIGHT -->
 		<section>
-			<div class="section-divider">
+			<button class="section-divider" onclick={toggleKeyInsight} type="button">
 				<span class="divider-label">THE KEY INSIGHT</span>
-			</div>
+				<span class="divider-toggle" aria-hidden="true">
+					{keyInsightExpanded ? '▼' : '▶'}
+				</span>
+			</button>
 
-			<p class="key-insight">
-				When someone gets traced, their stake doesn't vanish.
-				<span class="highlight-accent">60% flows to survivors.</span>
-				<span class="highlight-amber">30% is burned forever.</span>
-				You earn yield from other people dying.
-			</p>
+			{#if keyInsightExpanded}
+				<p class="key-insight">
+					When someone gets traced, their stake doesn't vanish.
+					<span class="highlight-accent">60% flows to survivors.</span>
+					<span class="highlight-amber">30% is burned forever.</span>
+					You earn yield from other people dying.
+				</p>
+			{/if}
 		</section>
 
 		<!-- Warning -->
@@ -118,6 +140,17 @@
 		align-items: center;
 		gap: var(--space-2);
 		margin-bottom: var(--space-3);
+		width: 100%;
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		font-family: inherit;
+		transition: opacity var(--duration-fast) var(--ease-default);
+	}
+
+	.section-divider:hover {
+		opacity: 0.8;
 	}
 
 	.section-divider::before,
@@ -133,6 +166,13 @@
 		color: var(--color-text-tertiary);
 		letter-spacing: var(--tracking-wider);
 		white-space: nowrap;
+	}
+
+	.divider-toggle {
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		flex-shrink: 0;
+		order: 1;
 	}
 
 	/* ── Steps list ── */

@@ -145,7 +145,7 @@
 	role="region"
 	aria-label="Welcome to GHOSTNET"
 >
-	<Box title="/// NETWORK INITIALIZATION ///" borderColor="cyan" glow>
+	<Box title="/// NETWORK INITIALIZATION ///" borderColor="cyan" glow noBackground>
 		<div class="panel-container">
 			<!-- Matrix Rain Background -->
 			{#if showMatrixRain}

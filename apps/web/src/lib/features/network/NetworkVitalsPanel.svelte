@@ -38,7 +38,7 @@
 	let netFlowPositive = $derived(netFlow > 0n);
 </script>
 
-<Box title="NETWORK VITALS">
+<Box title="NETWORK VITALS" noBackground>
 	<Stack gap={4}>
 		<!-- Total Value Locked -->
 		<div class="vital-section">

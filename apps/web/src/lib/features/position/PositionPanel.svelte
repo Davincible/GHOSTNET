@@ -57,6 +57,7 @@
 	title={provider.currentUser
 		? `OPERATOR: ${provider.currentUser.address.slice(0, 6)}...${provider.currentUser.address.slice(-4)}`
 		: 'YOUR STATUS'}
+	noBackground
 >
 	{#if provider.currentUser}
 		{#if provider.position}

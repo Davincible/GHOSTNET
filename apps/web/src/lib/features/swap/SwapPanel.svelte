@@ -27,7 +27,7 @@
 	});
 </script>
 
-<Box title="ACQUIRE $DATA" {borderColor}>
+<Box title="ACQUIRE $DATA" {borderColor} noBackground>
 	<Stack gap={4}>
 		<!-- Input: FROM token -->
 		<TokenInput

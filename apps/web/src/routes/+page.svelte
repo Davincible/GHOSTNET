@@ -294,10 +294,13 @@
 				{:else}
 					<GettingStartedPanel onConnectWallet={handleConnectWallet} />
 				{/if}
-				<!-- Network Vitals: hidden on mobile (accessible via nav) -->
-				<div class="hide-mobile">
-					<NetworkVitalsPanel />
-				</div>
+				<!-- Network Vitals: hidden when wallet not connected, hidden on mobile -->
+				{#if provider.currentUser}
+					<div class="hide-mobile">
+						<NetworkVitalsPanel />
+					</div>
+				{/if}
+				<!-- QuickActionsPanel hidden for now
 				<QuickActionsPanel
 					onJackIn={handleJackIn}
 					onExtract={handleExtract}
@@ -307,6 +310,7 @@
 					onCrew={handleCrew}
 					onDeadPool={handleDeadPool}
 				/>
+				-->
 				<!-- FAQPanel hidden for now -->
 			</div>
 		</div>
