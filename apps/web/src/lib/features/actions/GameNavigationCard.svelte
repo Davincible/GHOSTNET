@@ -18,7 +18,7 @@
 	}
 </script>
 
-<Box title="ARCADE" borderColor="cyan">
+<Box title="ARCADE" borderColor="default">
 	<div class="game-grid">
 		{#each games as game (game.name)}
 			<button class="game-tile" onclick={() => navigate(game.href)}>

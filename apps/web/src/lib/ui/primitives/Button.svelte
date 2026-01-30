@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 
-	type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
+	type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'inverted';
 	type Size = 'sm' | 'md' | 'lg';
 
 	interface Props extends HTMLButtonAttributes {
@@ -152,6 +152,24 @@
 	.btn-ghost:hover:not(:disabled) {
 		color: var(--color-text-primary);
 		background-color: var(--color-bg-tertiary);
+	}
+
+	/* Inverted variant - outline by default, filled on hover */
+	.btn-inverted {
+		background-color: transparent;
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.btn-inverted:hover:not(:disabled) {
+		background-color: var(--color-accent);
+		color: var(--color-bg-void);
+		box-shadow: var(--shadow-glow-accent);
+	}
+
+	.btn-inverted:active:not(:disabled) {
+		transform: translateY(1px);
+		background-color: var(--color-accent-dim);
 	}
 
 	/* Full width */

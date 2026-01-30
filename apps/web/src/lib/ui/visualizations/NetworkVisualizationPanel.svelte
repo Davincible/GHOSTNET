@@ -42,7 +42,7 @@
 </script>
 
 <div class="viz-panel" bind:this={containerEl}>
-	<Box title="NETWORK TOPOLOGY" borderColor="bright">
+	<Box title="NETWORK TOPOLOGY" borderColor="default">
 		{#if showStats}
 			<div class="viz-header">
 				<Row justify="between" align="center">

@@ -243,7 +243,7 @@
 	});
 </script>
 
-<Modal {open} {onclose} title="CONNECT WALLET" maxWidth="md">
+<Modal {open} {onclose} title="CONNECT WALLET" width="384px">
 	<Stack gap={3}>
 		<p class="description">Select a wallet to jack into GHOSTNET</p>
 

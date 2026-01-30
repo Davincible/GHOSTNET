@@ -9,6 +9,8 @@
 		title?: string;
 		/** Max width of modal content */
 		maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+		/** Custom width (CSS value), overrides maxWidth when provided */
+		width?: string;
 		/** Close on backdrop click */
 		closeOnBackdrop?: boolean;
 		/** Close on Escape key */
@@ -25,6 +27,7 @@
 		open = false,
 		title,
 		maxWidth = 'md',
+		width,
 		closeOnBackdrop = true,
 		closeOnEscape = true,
 		onclose,
@@ -81,10 +84,11 @@
 <dialog
 	bind:this={dialogEl}
 	class="modal"
-	class:modal-sm={maxWidth === 'sm'}
-	class:modal-md={maxWidth === 'md'}
-	class:modal-lg={maxWidth === 'lg'}
-	class:modal-xl={maxWidth === 'xl'}
+	class:modal-sm={maxWidth === 'sm' && !width}
+	class:modal-md={maxWidth === 'md' && !width}
+	class:modal-lg={maxWidth === 'lg' && !width}
+	class:modal-xl={maxWidth === 'xl' && !width}
+	style:width={width}
 	onclick={handleClick}
 	onclose={handleClose}
 	oncancel={handleCancel}

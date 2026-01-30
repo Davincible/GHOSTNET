@@ -201,7 +201,7 @@
 	}
 
 	.empty-state {
-		padding: var(--space-4) 0;
+		/* No padding - flush with container */
 	}
 
 	.empty-text {

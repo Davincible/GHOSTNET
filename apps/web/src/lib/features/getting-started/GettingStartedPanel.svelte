@@ -39,7 +39,7 @@
 	}
 </script>
 
-<Box title="GETTING STARTED" noBackground>
+<Box title="GETTING STARTED">
 	<Stack gap={4}>
 		<!-- One-liner: the game in one sentence -->
 		<p class="briefing-intro">
@@ -58,7 +58,9 @@
 						Link your wallet to access the network.
 					{/snippet}
 					{#snippet action()}
-						<Button variant="primary" onclick={onConnectWallet} fullWidth>CONNECT WALLET</Button>
+						<div class="connect-button-wrapper">
+						<Button variant="inverted" onclick={onConnectWallet} fullWidth>CONNECT WALLET</Button>
+					</div>
 					{/snippet}
 				</GettingStartedStep>
 
@@ -220,5 +222,64 @@
 		font-size: var(--text-xs);
 		color: var(--color-amber);
 		line-height: var(--leading-relaxed);
+	}
+
+	/* ── Connect button attention animation ──
+	   Smooth rotating border glow using transform (GPU accelerated) */
+	.connect-button-wrapper {
+		position: relative;
+		width: 100%;
+		padding: 2px;
+		overflow: hidden;
+		border-radius: 2px;
+	}
+
+	/* Rotating gradient layer - 4x larger to cover all corners during rotation */
+	.connect-button-wrapper::before {
+		content: '';
+		position: absolute;
+		inset: -100%; /* Extend far beyond wrapper */
+		background: conic-gradient(
+			from 0deg,
+			var(--color-bg-secondary) 0deg,
+			var(--color-bg-secondary) 60deg,
+			var(--color-accent) 90deg,
+			var(--color-accent-bright) 180deg,
+			var(--color-accent) 270deg,
+			var(--color-bg-secondary) 300deg,
+			var(--color-bg-secondary) 360deg
+		);
+		animation: rotate-smooth 3s linear infinite;
+		z-index: 0;
+	}
+
+	/* Mask layer - creates the border effect by covering center */
+	.connect-button-wrapper::after {
+		content: '';
+		position: absolute;
+		inset: 2px;
+		background: var(--color-bg-secondary);
+		border-radius: 1px;
+		z-index: 1;
+	}
+
+	/* Button sits on top */
+	.connect-button-wrapper :global(.btn) {
+		position: relative;
+		z-index: 2;
+	}
+
+	@keyframes rotate-smooth {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* Pause on hover */
+	.connect-button-wrapper:hover::before {
+		animation-play-state: paused;
 	}
 </style>
