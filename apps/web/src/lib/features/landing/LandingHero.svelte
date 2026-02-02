@@ -71,6 +71,14 @@
 		targetFps={60}
 	/>
 
+	<!-- Large Flanking Rabbits -->
+	<div class="rabbit-flank rabbit-left" class:visible={logoComplete}>
+		<img src="/rabbit_head.svg" alt="" aria-hidden="true" />
+	</div>
+	<div class="rabbit-flank rabbit-right" class:visible={logoComplete}>
+		<img src="/rabbit_head.svg" alt="" aria-hidden="true" />
+	</div>
+
 	<!-- Scanline Overlay -->
 	<div class="scanlines"></div>
 	<!-- Main Content -->
@@ -78,10 +86,6 @@
 		<!-- The Title - Animated ASCII Logo -->
 		<header class="hero-header">
 			<div class="ascii-logo">
-				<!-- Rabbit Hat Icon -->
-				<div class="rabbit-icon" class:visible={logoComplete}>
-					<img src="/rabbit_head.svg" alt="GHOSTNET Rabbit" />
-				</div>
 				<div class="logo-container">
 					<AsciiTypewriter
 						text={logoText}
@@ -211,29 +215,78 @@
 		gap: var(--space-2);
 	}
 
-	/* Rabbit Hat Icon */
-	.rabbit-icon {
-		width: clamp(48px, 10vw, 80px);
-		height: auto;
+	/* ═══════════════════════════════════════════════════════════════
+	   FLANKING RABBITS
+	   Large decorative rabbits on left/right edges, partially cut off
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.rabbit-flank {
+		position: fixed;
+		top: 50%;
+		transform: translateY(-50%);
+		height: 66vh;
+		width: auto;
 		opacity: 0;
-		transform: translateY(-10px);
-		transition:
-			opacity 0.6s ease-out,
-			transform 0.6s ease-out;
-		filter: drop-shadow(0 0 12px rgba(0, 229, 204, 0.4)) brightness(1.1) saturate(1.2);
-		margin-bottom: var(--space-2);
+		transition: opacity 1.2s ease-out;
+		pointer-events: none;
+		z-index: 2;
+		/* Cyberpunk glow effect */
+		filter: drop-shadow(0 0 30px rgba(0, 229, 204, 0.3));
 	}
 
-	.rabbit-icon.visible {
-		opacity: 1;
-		transform: translateY(0);
+	.rabbit-flank.visible {
+		opacity: 0.1;
 	}
 
-	.rabbit-icon img {
-		width: 100%;
-		height: auto;
-		/* Apply cyberpunk tint - shift colors toward cyan/teal */
-		filter: hue-rotate(-20deg) brightness(1.05);
+	.rabbit-flank img {
+		height: 100%;
+		width: auto;
+		/* Cyberpunk color treatment */
+		filter: hue-rotate(-15deg) brightness(1.1) saturate(0.8);
+	}
+
+	.rabbit-left {
+		left: 0;
+		--rabbit-x: -45%;
+		transform: translateY(-40%) translateX(-45%);
+	}
+
+	.rabbit-left.visible {
+		animation: rabbit-float-left 8s ease-in-out infinite;
+	}
+
+	.rabbit-right {
+		right: 0;
+		transform: translateY(-40%) translateX(45%) scaleX(-1);
+	}
+
+	.rabbit-right.visible {
+		animation: rabbit-float-right 8s ease-in-out infinite;
+		animation-delay: -4s; /* Offset so they don't move in sync */
+	}
+
+	@keyframes rabbit-float-left {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 30px rgba(0, 229, 204, 0.3));
+			transform: translateY(-40%) translateX(-45%);
+		}
+		50% {
+			filter: drop-shadow(0 0 50px rgba(0, 229, 204, 0.5));
+			transform: translateY(-42%) translateX(-45%);
+		}
+	}
+
+	@keyframes rabbit-float-right {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 30px rgba(0, 229, 204, 0.3));
+			transform: translateY(-40%) translateX(45%) scaleX(-1);
+		}
+		50% {
+			filter: drop-shadow(0 0 50px rgba(0, 229, 204, 0.5));
+			transform: translateY(-42%) translateX(45%) scaleX(-1);
+		}
 	}
 
 	/* Container for the typewriter to prevent layout shift during animation */
@@ -339,10 +392,9 @@
 			padding: var(--space-6) var(--space-3);
 		}
 
-		/* Rabbit icon smaller on mobile */
-		.rabbit-icon {
-			width: 48px;
-			margin-bottom: var(--space-1);
+		/* Hide flanking rabbits on mobile - too distracting */
+		.rabbit-flank {
+			display: none;
 		}
 
 		/* ASCII logo scales down on mobile */
@@ -361,6 +413,21 @@
 
 		.stat-divider {
 			display: none;
+		}
+	}
+
+	/* Tablet - smaller flanking rabbits */
+	@media (max-width: 1024px) and (min-width: 641px) {
+		.rabbit-flank {
+			height: 50vh;
+		}
+
+		.rabbit-left {
+			transform: translateY(-40%) translateX(-48%);
+		}
+
+		.rabbit-right {
+			transform: translateY(-40%) translateX(48%) scaleX(-1);
 		}
 	}
 </style>
