@@ -401,9 +401,12 @@
 
 				<Row justify="between" align="center">
 					<Button variant="ghost" onclick={goBack}>← Back</Button>
-					<Button variant="primary" onclick={proceedToConfirm} disabled={!amountValid}>
-						Continue →
-					</Button>
+					<Row gap={2}>
+						<Button variant="secondary" onclick={proceedToBuyData}>Buy More</Button>
+						<Button variant="primary" onclick={proceedToConfirm} disabled={!amountValid}>
+							Continue →
+						</Button>
+					</Row>
 				</Row>
 			</Stack>
 		{:else if step === 'confirm'}
