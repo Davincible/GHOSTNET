@@ -21,6 +21,7 @@
 
 	// Landing components (progressive disclosure)
 	import { LandingHero, RiskSelector } from '$lib/features/landing';
+	import { MatrixRain } from '$lib/features/welcome';
 
 	// Command Center components (Mode 3: has position)
 	import { FeedPanel } from '$lib/features/feed';
@@ -280,6 +281,31 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="page-container" data-mode={userMode}>
+	<!-- Full-page Matrix Rain for landing mode -->
+	{#if userMode === 'landing'}
+		<div class="page-matrix-rain">
+			<MatrixRain
+				mode="grid"
+				gridStep={1}
+				columns={50}
+				baseSpeed={5.5}
+				trailOpacity={0.4}
+				trailLength={15}
+				generationMultiplier={0.46}
+				fadeRate={0.1}
+				brightHead={false}
+				glow={true}
+				glowRadius={24}
+				headOpacity={0.5}
+				headColor="#ffffff"
+				color="#81e6f3"
+				mutationRate={1}
+				headMutationRate={1}
+				targetFps={60}
+			/>
+		</div>
+	{/if}
+
 	<!-- Header is always visible -->
 	<Header onSettings={() => (showSettingsModal = true)} onIntro={() => (showIntroVideo = true)} />
 
@@ -302,7 +328,6 @@
 		<main class="main-landing">
 			<LandingHero
 				onConnectWallet={handleConnectWallet}
-				onWatchFeed={handleWatchFeed}
 				playersOnline={provider.networkState.operatorsOnline}
 				totalLocked="$4.8M"
 				tracedToday={847}
@@ -392,6 +417,18 @@
 		flex-direction: column;
 		min-height: 100vh;
 		padding-bottom: var(--space-16); /* Room for fixed nav */
+	}
+
+	/* Full-page Matrix Rain background */
+	.page-matrix-rain {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+	}
+
+	.page-matrix-rain :global(.matrix-rain) {
+		filter: blur(0.7px);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════

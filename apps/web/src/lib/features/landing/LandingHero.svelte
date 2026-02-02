@@ -15,7 +15,7 @@
 	 */
 
 	import { BigSteps } from '$lib/features/experiments';
-	import { AsciiTypewriter, MatrixRain } from '$lib/features/welcome';
+	import { AsciiTypewriter } from '$lib/features/welcome';
 
 	// Track when logo animation completes to show subtitle
 	let logoComplete = $state(false);
@@ -50,27 +50,6 @@
 </script>
 
 <div class="landing-hero">
-	<!-- Matrix Rain Background -->
-	<MatrixRain
-		mode="grid"
-		gridStep={1}
-		columns={50}
-		baseSpeed={5.5}
-		trailOpacity={0.4}
-		trailLength={15}
-		generationMultiplier={0.46}
-		fadeRate={0.1}
-		brightHead={false}
-		glow={true}
-		glowRadius={24}
-		headOpacity={0.5}
-		headColor="#ffffff"
-		color="#81e6f3"
-		mutationRate={1}
-		headMutationRate={1}
-		targetFps={60}
-	/>
-
 	<!-- Large Flanking Rabbits -->
 	<div class="rabbit-flank rabbit-left" class:visible={logoComplete}>
 		<img src="/rabbit_head.svg" alt="" aria-hidden="true" />
@@ -139,10 +118,6 @@
 		position: relative;
 		overflow: hidden;
 		animation: terminal-flicker 8s ease-in-out infinite;
-	}
-
-	.landing-hero :global(.matrix-rain) {
-		filter: blur(0.7px);
 	}
 
 	@keyframes terminal-flicker {
