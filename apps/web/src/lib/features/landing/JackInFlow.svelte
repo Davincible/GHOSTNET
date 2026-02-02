@@ -5,10 +5,17 @@
 	 * A step-by-step flow for jacking in, rendered inline (not in a modal).
 	 * Uses the same visual components as JackInModal but in a Panel.
 	 *
+	 * Flow based on user's balance state:
+	 * - No ETH: Show instructions to get ETH
+	 * - Has ETH but no DATA: Show buy DATA interface
+	 * - Has DATA: Level → Amount → Confirm
+	 *
 	 * Steps:
-	 * 1. Level Selection - Choose risk level
-	 * 2. Amount Input - Enter stake amount
-	 * 3. Confirm - Review and execute
+	 * 1. (Optional) Get ETH - Instructions for users with no ETH
+	 * 2. (Optional) Buy DATA - Swap interface for users with no DATA
+	 * 3. Level Selection - Choose risk level
+	 * 4. Amount Input - Enter stake amount
+	 * 5. Confirm - Review and execute
 	 */
 
 	import { Panel } from '$lib/ui/terminal';
@@ -16,10 +23,12 @@
 	import { Button, Badge } from '$lib/ui/primitives';
 	import { Stack, Row } from '$lib/ui/layout';
 	import { LevelBadge, AmountDisplay, PercentDisplay } from '$lib/ui/data-display';
+	import { SwapPanel } from '$lib/features/swap';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { getToasts } from '$lib/ui/toast';
 	import { LEVELS, LEVEL_CONFIG, type Level } from '$lib/core/types';
 	import { parseUnits, formatUnits } from 'viem';
+	import { formatWei } from '$lib/core/utils';
 
 	interface Props {
 		/** Callback to skip directly to command center (demo mode) */
@@ -33,12 +42,38 @@
 	const provider = getProvider();
 	const toast = getToasts();
 
+	// User balance state
+	let ethBalance = $derived(provider.currentUser?.ethBalance ?? 0n);
+	let dataBalance = $derived(provider.currentUser?.tokenBalance ?? 0n);
+	let hasEth = $derived(ethBalance > 0n);
+	let hasData = $derived(dataBalance > 0n);
+
+	// Determine initial step based on balances
+	let initialStep = $derived.by((): Step => {
+		if (!hasEth) return 'get-eth';
+		if (!hasData) return 'buy-data';
+		return 'level';
+	});
+
 	// Flow state
-	type Step = 'level' | 'amount' | 'confirm';
+	type Step = 'get-eth' | 'buy-data' | 'level' | 'amount' | 'confirm';
 	let step = $state<Step>('level');
 	let selectedLevel = $state<Level>('SUBNET');
 	let amountInput = $state('');
 	let isSubmitting = $state(false);
+
+	// Sync step with initial step when balances change
+	$effect(() => {
+		// Only auto-navigate to earlier steps, not forward
+		// This ensures we show buy-data if user has no DATA
+		if (initialStep === 'get-eth' && step !== 'get-eth') {
+			step = 'get-eth';
+		} else if (initialStep === 'buy-data' && step === 'level') {
+			// Only redirect to buy-data if we're on level step
+			// Don't interrupt if user is already past that
+			step = 'buy-data';
+		}
+	});
 
 	// Transaction state
 	type TxState = 'idle' | 'pending' | 'confirming' | 'success' | 'error';
@@ -109,6 +144,14 @@
 		selectedLevel = level;
 	}
 
+	function proceedToLevel() {
+		step = 'level';
+	}
+
+	function proceedToBuyData() {
+		step = 'buy-data';
+	}
+
 	function proceedToAmount() {
 		step = 'amount';
 		amountInput = minStakeFormatted.toString();
@@ -120,7 +163,9 @@
 	}
 
 	function goBack() {
-		if (step === 'amount') step = 'level';
+		if (step === 'buy-data' && !hasEth) step = 'get-eth';
+		else if (step === 'level' && !hasData) step = 'buy-data';
+		else if (step === 'amount') step = 'level';
 		else if (step === 'confirm') step = 'amount';
 	}
 
@@ -158,8 +203,93 @@
 
 <div class="jack-in-flow">
 	<Panel title="JACK IN" variant="single">
-		{#if step === 'level'}
-			<!-- Step 1: Level Selection -->
+		{#if step === 'get-eth'}
+			<!-- Step: No ETH - Instructions -->
+			<Stack gap={4}>
+				<div class="status-header">
+					<Badge variant="warning">NO ETH DETECTED</Badge>
+				</div>
+
+				<p class="step-description">
+					You need ETH in your wallet to pay for gas fees and acquire $DATA tokens.
+				</p>
+
+				<Box variant="single" borderColor="amber" padding={3}>
+					<Stack gap={3}>
+						<div class="instruction">
+							<span class="instruction-number">1</span>
+							<div class="instruction-content">
+								<span class="instruction-title">Buy ETH on an exchange</span>
+								<span class="instruction-detail">Coinbase, Kraken, Binance, etc.</span>
+							</div>
+						</div>
+						<div class="instruction">
+							<span class="instruction-number">2</span>
+							<div class="instruction-content">
+								<span class="instruction-title">Withdraw to your wallet</span>
+								<span class="instruction-detail">Send ETH to your connected wallet address</span>
+							</div>
+						</div>
+						<div class="instruction">
+							<span class="instruction-number">3</span>
+							<div class="instruction-content">
+								<span class="instruction-title">Bridge to MegaETH (if needed)</span>
+								<span class="instruction-detail">Use the official MegaETH bridge</span>
+							</div>
+						</div>
+					</Stack>
+				</Box>
+
+				<div class="balance-status">
+					<span class="balance-label">Current ETH Balance:</span>
+					<span class="balance-value zero">{formatWei(ethBalance, { displayDecimals: 4 })} ETH</span>
+				</div>
+
+				<Row justify="between" align="center">
+					{#if onSkip}
+						<button class="skip-link" onclick={onSkip}>skip to demo →</button>
+					{:else}
+						<div></div>
+					{/if}
+					<Button variant="secondary" disabled={!hasEth} onclick={proceedToBuyData}>
+						{hasEth ? 'Continue →' : 'Waiting for ETH...'}
+					</Button>
+				</Row>
+			</Stack>
+		{:else if step === 'buy-data'}
+			<!-- Step: Buy DATA -->
+			<Stack gap={4}>
+				<div class="status-header">
+					<Badge variant="default">ACQUIRE $DATA</Badge>
+					<span class="balance-inline">
+						Balance: <span class="balance-value">{formatWei(dataBalance)} $DATA</span>
+					</span>
+				</div>
+
+				<p class="step-description">
+					Swap ETH for $DATA tokens to participate in GHOSTNET.
+				</p>
+
+				<!-- Embedded Swap Panel -->
+				<div class="swap-container">
+					<SwapPanel />
+				</div>
+
+				<Row justify="between" align="center">
+					{#if !hasEth}
+						<Button variant="ghost" onclick={goBack}>← Back</Button>
+					{:else if onSkip}
+						<button class="skip-link" onclick={onSkip}>skip to demo →</button>
+					{:else}
+						<div></div>
+					{/if}
+					<Button variant="primary" disabled={!hasData} onclick={proceedToLevel}>
+						{hasData ? 'Continue to Stake →' : 'Get $DATA First'}
+					</Button>
+				</Row>
+			</Stack>
+		{:else if step === 'level'}
+			<!-- Step: Level Selection -->
 			<Stack gap={3}>
 				<p class="step-description">
 					Select your security clearance level. Higher levels offer better yields but greater risk
@@ -203,6 +333,13 @@
 							</div>
 						</button>
 					{/each}
+				</div>
+
+				<!-- Balance display with buy more option -->
+				<div class="balance-row">
+					<span class="balance-label">Your $DATA Balance:</span>
+					<span class="balance-value">{formatWei(dataBalance)}</span>
+					<button class="buy-more-link" onclick={proceedToBuyData}>Buy More</button>
 				</div>
 
 				<Row justify="between" align="center">
@@ -650,5 +787,135 @@
 	.skip-link:hover {
 		opacity: 0.8;
 		color: var(--color-text-tertiary);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   GET ETH / BUY DATA STEPS
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.status-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.balance-inline {
+		font-size: var(--text-sm);
+		color: var(--color-text-tertiary);
+	}
+
+	.balance-inline .balance-value {
+		color: var(--color-accent);
+		font-weight: var(--font-medium);
+	}
+
+	/* Instructions list */
+	.instruction {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+	}
+
+	.instruction-number {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		background: var(--color-accent-dim);
+		color: var(--color-accent);
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		font-weight: var(--font-bold);
+		flex-shrink: 0;
+	}
+
+	.instruction-content {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.instruction-title {
+		color: var(--color-text-primary);
+		font-size: var(--text-sm);
+		font-weight: var(--font-medium);
+	}
+
+	.instruction-detail {
+		color: var(--color-text-muted);
+		font-size: var(--text-xs);
+	}
+
+	/* Balance status */
+	.balance-status {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: var(--color-bg-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.balance-status .balance-label {
+		color: var(--color-text-tertiary);
+	}
+
+	.balance-status .balance-value {
+		color: var(--color-accent);
+		font-weight: var(--font-bold);
+		font-family: var(--font-mono);
+	}
+
+	.balance-status .balance-value.zero {
+		color: var(--color-amber);
+	}
+
+	/* Swap container */
+	.swap-container {
+		margin: 0 calc(-1 * var(--space-3));
+	}
+
+	.swap-container :global(.terminal-box) {
+		border-left: none;
+		border-right: none;
+	}
+
+	/* Balance row with buy more */
+	.balance-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-2);
+		background: var(--color-bg-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.balance-row .balance-label {
+		color: var(--color-text-tertiary);
+	}
+
+	.balance-row .balance-value {
+		color: var(--color-accent);
+		font-weight: var(--font-bold);
+		font-family: var(--font-mono);
+	}
+
+	.buy-more-link {
+		margin-left: auto;
+		padding: var(--space-1) var(--space-2);
+		background: transparent;
+		border: 1px solid var(--color-border-default);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-tertiary);
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.buy-more-link:hover {
+		border-color: var(--color-accent-dim);
+		color: var(--color-accent);
 	}
 </style>
