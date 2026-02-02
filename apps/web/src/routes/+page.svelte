@@ -96,11 +96,6 @@
 		browser ? localStorage.getItem('ghostnet_intro_seen') !== 'true' : false
 	);
 
-	// Risk selector state
-	let selectedRiskLevel = $state<'VAULT' | 'MAINFRAME' | 'SUBNET' | 'DARKNET' | 'BLACK_ICE'>(
-		'SUBNET'
-	);
-
 	// ═══════════════════════════════════════════════════════════════
 	// ACTION HANDLERS
 	// ═══════════════════════════════════════════════════════════════
@@ -123,11 +118,6 @@
 	}
 
 	function handleJackIn() {
-		showJackInModal = true;
-	}
-
-	function handleJackInWithLevel(level: typeof selectedRiskLevel) {
-		selectedRiskLevel = level;
 		showJackInModal = true;
 	}
 
@@ -358,13 +348,7 @@
 	     ═══════════════════════════════════════════════════════════════ -->
 	{:else if userMode === 'select-risk'}
 		<main class="main-risk-selector">
-			<RiskSelector
-				balance={provider.currentUser?.tokenBalance ?? 0n}
-				tokenSymbol="$DATA"
-				bind:selectedLevel={selectedRiskLevel}
-				onJackIn={handleJackInWithLevel}
-				onSkip={handleSkipToDemo}
-			/>
+			<RiskSelector tokenSymbol="$DATA" onSkip={handleSkipToDemo} />
 		</main>
 
 		<!-- ═══════════════════════════════════════════════════════════════
