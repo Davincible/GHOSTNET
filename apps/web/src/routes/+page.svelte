@@ -1,46 +1,77 @@
 <script lang="ts">
+	/**
+	 * GHOSTNET Homepage - Progressive Disclosure
+	 *
+	 * Three modes based on user state:
+	 * 1. No Wallet: LandingHero (simple pitch, connect wallet CTA)
+	 * 2. Wallet, No Position: RiskSelector (choose risk level, jack in)
+	 * 3. Has Position: Full Command Center (current complexity)
+	 *
+	 * The complexity is earned, not imposed.
+	 */
+
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { browser } from '$app/environment';
+
+	// Layout components
 	import { Header, KeyboardHints } from '$lib/features/header';
+	import { NavigationBar } from '$lib/features/nav';
+	import { Sidebar } from '$lib/features/sidebar';
+
+	// Landing components (progressive disclosure)
+	import { LandingHero, RiskSelector } from '$lib/features/landing';
+
+	// Command Center components (Mode 3: has position)
 	import { FeedPanel } from '$lib/features/feed';
 	import { PositionPanel, ModifiersPanel } from '$lib/features/position';
 	import { NetworkVitalsPanel } from '$lib/features/network';
-	import { QuickActionsPanel, GameNavigationCard } from '$lib/features/actions';
-	import { NavigationBar } from '$lib/features/nav';
-	import { Sidebar } from '$lib/features/sidebar';
-	import { WelcomePanel } from '$lib/features/welcome';
-	import { IntroVideoModal } from '$lib/features/intro';
-	import { JackInModal, ExtractModal, SettingsModal } from '$lib/features/modals';
-
+	import { GameNavigationCard } from '$lib/features/actions';
 	import { DailyOpsPanel } from '$lib/features/daily';
-	import { GettingStartedPanel } from '$lib/features/getting-started';
-	import { WalletModal } from '$lib/features/modals';
 	import { SwapPanel } from '$lib/features/swap';
-	import { ToastContainer, getToasts } from '$lib/ui/toast';
-	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { NetworkVisualizationPanel } from '$lib/ui/visualizations';
+
+	// Modals
+	import { IntroVideoModal } from '$lib/features/intro';
+	import { JackInModal, ExtractModal, SettingsModal, WalletModal } from '$lib/features/modals';
+
+	// UI components
+	import { ToastContainer, getToasts } from '$lib/ui/toast';
+
+	// State
+	import { getProvider } from '$lib/core/stores/index.svelte';
 	import {
 		generateMockDailyState,
 		simulateCheckIn,
 		claimMission,
 	} from '$lib/core/providers/mock/generators/daily';
 
-	import { browser } from '$app/environment';
-
 	const provider = getProvider();
 	const toast = getToasts();
+
+	// ═══════════════════════════════════════════════════════════════
+	// USER STATE - Determines which mode to show
+	// ═══════════════════════════════════════════════════════════════
+
+	// Derived state for progressive disclosure
+	let userMode = $derived<'landing' | 'select-risk' | 'command-center'>(
+		!provider.currentUser ? 'landing' : !provider.position ? 'select-risk' : 'command-center'
+	);
+
+	// ═══════════════════════════════════════════════════════════════
+	// PAGE STATE
+	// ═══════════════════════════════════════════════════════════════
 
 	// Navigation state
 	let activeNav = $state('network');
 
-	// Daily Ops state - initialize with mock data
+	// Daily Ops state
 	let dailyState = $state(generateMockDailyState({ todayCheckedIn: false }));
 	let checkingIn = $state(false);
 
-	// Mobile detection for responsive behavior
+	// Mobile detection
 	let isMobile = $state(false);
 
-	// Set up media query listener (client-side only)
 	$effect(() => {
 		if (!browser) return;
 
@@ -64,8 +95,25 @@
 		browser ? localStorage.getItem('ghostnet_intro_seen') !== 'true' : false
 	);
 
-	// Action handlers
+	// Risk selector state
+	let selectedRiskLevel = $state<'VAULT' | 'MAINFRAME' | 'SUBNET' | 'DARKNET' | 'BLACK_ICE'>(
+		'SUBNET'
+	);
+
+	// ═══════════════════════════════════════════════════════════════
+	// ACTION HANDLERS
+	// ═══════════════════════════════════════════════════════════════
+
+	function handleConnectWallet() {
+		showWalletModal = true;
+	}
+
 	function handleJackIn() {
+		showJackInModal = true;
+	}
+
+	function handleJackInWithLevel(level: typeof selectedRiskLevel) {
+		selectedRiskLevel = level;
 		showJackInModal = true;
 	}
 
@@ -73,6 +121,19 @@
 		showExtractModal = true;
 	}
 
+	function handleWatchFeed() {
+		// Scroll to the feed panel (only visible in command center mode)
+		const feedElement = document.querySelector('[data-feed-column]');
+		if (feedElement) {
+			feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
+	}
+
+	function handleNavigate(id: string) {
+		activeNav = id;
+	}
+
+	// Game navigation handlers
 	function handleTraceEvasion() {
 		goto(resolve('/typing'));
 	}
@@ -93,37 +154,17 @@
 		goto(resolve('/deadpool'));
 	}
 
-	function handleWatchFeed() {
-		// Scroll to the feed panel smoothly
-		const feedElement = document.querySelector('[data-feed-column]');
-		if (feedElement) {
-			feedElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}
-	}
-
-	function handleConnectWallet() {
-		showWalletModal = true;
-	}
-
-	function handleNavigate(id: string) {
-		activeNav = id;
-	}
-
 	// Daily Ops handlers
 	async function handleDailyCheckIn() {
 		if (dailyState.progress.todayCheckedIn) return;
 
 		checkingIn = true;
 		try {
-			// Simulate network delay
 			await new Promise((resolve) => setTimeout(resolve, 800));
-
-			// Update state
 			dailyState = {
 				...dailyState,
 				progress: simulateCheckIn(dailyState.progress),
 			};
-
 			toast.success(`Day ${dailyState.progress.currentStreak} reward claimed!`);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Check-in failed';
@@ -138,12 +179,10 @@
 		if (!mission || !mission.completed || mission.claimed) return;
 
 		try {
-			// Update mission state
 			dailyState = {
 				...dailyState,
 				missions: dailyState.missions.map((m) => (m.id === missionId ? claimMission(m) : m)),
 			};
-
 			toast.success(
 				`Mission reward claimed: ${mission.reward.type === 'tokens' ? `+${mission.reward.value} $DATA` : mission.title}`
 			);
@@ -153,17 +192,16 @@
 		}
 	}
 
-	// Keyboard shortcuts (SHIFT + key)
-	function handleKeydown(event: KeyboardEvent) {
-		// Require SHIFT modifier for all shortcuts
-		if (!event.shiftKey) return;
+	// ═══════════════════════════════════════════════════════════════
+	// KEYBOARD SHORTCUTS
+	// ═══════════════════════════════════════════════════════════════
 
-		// Ignore if user is typing in an input
+	function handleKeydown(event: KeyboardEvent) {
+		if (!event.shiftKey) return;
 		if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
 			return;
 		}
 
-		// Prevent default browser behavior for our shortcuts
 		const key = event.key.toLowerCase();
 		if (['j', 'e', 't', 'h', 'c', 'p'].includes(key)) {
 			event.preventDefault();
@@ -232,58 +270,87 @@
 </script>
 
 <svelte:head>
-	<title>GHOSTNET v1.0.7 - Command Center</title>
+	<title>GHOSTNET - Jack In. Don't Get Traced.</title>
 	<meta
 		name="description"
-		content="Jack In. Don't Get Traced. Real-time survival game on MegaETH."
+		content="Stake tokens. Survive the scan. Take the pot. Real-time survival game on MegaETH."
 	/>
 </svelte:head>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="command-center">
-	<Sidebar
-		onJackIn={handleJackIn}
-		onExtract={handleExtract}
-		onSettings={() => (showSettingsModal = true)}
-		onWallet={handleConnectWallet}
-	/>
+<div class="page-container" data-mode={userMode}>
+	<!-- Header is always visible -->
 	<Header onSettings={() => (showSettingsModal = true)} onIntro={() => (showIntroVideo = true)} />
-	<KeyboardHints />
 
-	<main class="main-content">
-		<div class="content-grid">
-			<!-- Left Column: Welcome, Feed, Arcade & Visualization -->
-			<div class="column column-left" data-feed-column>
-				<!-- Welcome panel (network initialization): hidden on mobile -->
-				<div class="hide-mobile">
-					<WelcomePanel onJackIn={handleJackIn} onWatchFeed={handleWatchFeed} />
+	<!-- Sidebar only visible in command center mode -->
+	{#if userMode === 'command-center'}
+		<Sidebar
+			onJackIn={handleJackIn}
+			onExtract={handleExtract}
+			onSettings={() => (showSettingsModal = true)}
+			onWallet={handleConnectWallet}
+		/>
+		<KeyboardHints />
+	{/if}
+
+	<!-- ═══════════════════════════════════════════════════════════════
+	     MODE 1: LANDING (No Wallet)
+	     Simple pitch, connect wallet CTA
+	     ═══════════════════════════════════════════════════════════════ -->
+	{#if userMode === 'landing'}
+		<main class="main-landing">
+			<LandingHero
+				onConnectWallet={handleConnectWallet}
+				onWatchFeed={handleWatchFeed}
+				playersOnline={provider.networkState.operatorsOnline}
+				totalLocked="$4.8M"
+				tracedToday={847}
+			/>
+		</main>
+
+		<!-- ═══════════════════════════════════════════════════════════════
+	     MODE 2: RISK SELECTOR (Wallet Connected, No Position)
+	     Choose risk level, jack in
+	     ═══════════════════════════════════════════════════════════════ -->
+	{:else if userMode === 'select-risk'}
+		<main class="main-risk-selector">
+			<RiskSelector
+				balance={provider.currentUser?.balance ?? 0n}
+				tokenSymbol="$DATA"
+				bind:selectedLevel={selectedRiskLevel}
+				onJackIn={handleJackInWithLevel}
+			/>
+		</main>
+
+		<!-- ═══════════════════════════════════════════════════════════════
+	     MODE 3: COMMAND CENTER (Has Position)
+	     Full complexity - for invested users
+	     ═══════════════════════════════════════════════════════════════ -->
+	{:else}
+		<main class="main-command-center">
+			<div class="content-grid">
+				<!-- Left Column: Feed, Arcade, Visualization -->
+				<div class="column column-left" data-feed-column>
+					<FeedPanel
+						collapsedCount={isMobile ? 4 : 6}
+						expandedCount={isMobile ? 12 : 20}
+						collapsedHeight={isMobile ? '100px' : '140px'}
+						expandedHeight={isMobile ? '300px' : '400px'}
+					/>
+
+					<GameNavigationCard />
+
+					<div class="hide-mobile">
+						<NetworkVisualizationPanel operatorCount={provider.networkState.operatorsOnline} />
+					</div>
 				</div>
 
-				<!-- Live Feed with built-in expand/collapse -->
-				<FeedPanel
-					collapsedCount={isMobile ? 4 : 6}
-					expandedCount={isMobile ? 12 : 20}
-					collapsedHeight={isMobile ? '100px' : '140px'}
-					expandedHeight={isMobile ? '300px' : '400px'}
-				/>
-
-				<!-- Arcade navigation card -->
-				<GameNavigationCard />
-
-				<!-- Network Visualization: hidden on mobile (too heavy) -->
-				<div class="hide-mobile">
-					<NetworkVisualizationPanel operatorCount={provider.networkState.operatorsOnline} />
-				</div>
-			</div>
-
-			<!-- Right Column: Position, Network Stats, Actions -->
-			<div class="column column-right">
-				<PositionPanel />
-				<SwapPanel />
-				<ModifiersPanel />
-				<!-- Getting Started replaces Daily Ops when wallet not connected -->
-				{#if provider.currentUser}
+				<!-- Right Column: Position, Stats, Actions -->
+				<div class="column column-right">
+					<PositionPanel />
+					<SwapPanel />
+					<ModifiersPanel />
 					<DailyOpsPanel
 						progress={dailyState.progress}
 						missions={dailyState.missions}
@@ -291,31 +358,15 @@
 						onClaimMission={handleClaimMission}
 						{checkingIn}
 					/>
-				{:else}
-					<GettingStartedPanel onConnectWallet={handleConnectWallet} />
-				{/if}
-				<!-- Network Vitals: hidden when wallet not connected, hidden on mobile -->
-				{#if provider.currentUser}
 					<div class="hide-mobile">
 						<NetworkVitalsPanel />
 					</div>
-				{/if}
-				<!-- QuickActionsPanel hidden for now
-				<QuickActionsPanel
-					onJackIn={handleJackIn}
-					onExtract={handleExtract}
-					onTraceEvasion={handleTraceEvasion}
-					onHackRun={handleHackRun}
-					onDuels={handleDuels}
-					onCrew={handleCrew}
-					onDeadPool={handleDeadPool}
-				/>
-				-->
-				<!-- FAQPanel hidden for now -->
+				</div>
 			</div>
-		</div>
-	</main>
+		</main>
+	{/if}
 
+	<!-- Navigation bar -->
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />
 </div>
 
@@ -336,14 +387,45 @@
 <ToastContainer />
 
 <style>
-	.command-center {
+	.page-container {
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
 		padding-bottom: var(--space-16); /* Room for fixed nav */
 	}
 
-	.main-content {
+	/* ═══════════════════════════════════════════════════════════════
+	   MODE 1: LANDING
+	   Full-page takeover, centered content
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.main-landing {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding-bottom: 10vh; /* Push content slightly above center */
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   MODE 2: RISK SELECTOR
+	   Centered, focused experience
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.main-risk-selector {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-4);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   MODE 3: COMMAND CENTER
+	   Full complexity, two-column layout
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.main-command-center {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -356,21 +438,18 @@
 
 	/* Make room for sidebar on desktop */
 	@media (min-width: 1024px) {
-		.main-content {
-			padding-left: calc(var(--space-6) + 60px); /* sidebar width + gap */
+		.page-container[data-mode='command-center'] .main-command-center {
+			padding-left: calc(var(--space-6) + 60px);
 		}
 	}
 
-	/* ════════════════════════════════════════════════════════════════
-	   RESPONSIVE GRID
-	   Mobile: single column, position panel first
-	   Tablet: 60/40 split
-	   Desktop: 2fr/1fr split
-	   ════════════════════════════════════════════════════════════════ */
+	/* ═══════════════════════════════════════════════════════════════
+	   RESPONSIVE GRID (Command Center only)
+	   ═══════════════════════════════════════════════════════════════ */
 
 	.content-grid {
 		display: grid;
-		grid-template-columns: 1fr; /* Mobile first: single column */
+		grid-template-columns: 1fr;
 		gap: var(--space-4);
 		height: 100%;
 	}
@@ -379,17 +458,29 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
-		min-width: 0; /* Allow column to shrink below content size */
+		min-width: 0;
 	}
 
-	/* Mobile: position panel (right column) appears first */
+	/* Mobile: position panel first */
 	@media (max-width: 767px) {
 		.column-right {
-			order: -1; /* Position panel first on mobile */
+			order: -1;
 		}
 
 		.column-left {
 			order: 1;
+		}
+
+		.main-command-center {
+			padding: var(--space-2);
+		}
+
+		.content-grid {
+			gap: var(--space-2);
+		}
+
+		.column {
+			gap: var(--space-2);
 		}
 	}
 
@@ -400,28 +491,24 @@
 		}
 	}
 
-	/* Desktop: 2fr/1fr split (original layout) */
+	/* Desktop: 2fr/1fr split */
 	@media (min-width: 1024px) {
 		.content-grid {
 			grid-template-columns: 2fr 1fr;
 		}
 	}
 
-	/* ════════════════════════════════════════════════════════════════
-	   MOBILE SPACING ADJUSTMENTS
-	   ════════════════════════════════════════════════════════════════ */
+	/* ═══════════════════════════════════════════════════════════════
+	   UTILITY CLASSES
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.hide-mobile {
+		display: block;
+	}
 
 	@media (max-width: 767px) {
-		.main-content {
-			padding: var(--space-2);
-		}
-
-		.content-grid {
-			gap: var(--space-2);
-		}
-
-		.column {
-			gap: var(--space-2);
+		.hide-mobile {
+			display: none;
 		}
 	}
 </style>

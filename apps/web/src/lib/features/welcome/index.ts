@@ -1,4 +1,5 @@
 export { default as WelcomePanel } from './WelcomePanel.svelte';
 export { default as GlitchText } from './GlitchText.svelte';
 export { default as MatrixRain } from './MatrixRain.svelte';
+export { default as MatrixRainLegacy } from './MatrixRainLegacy.svelte';
 export { default as AsciiTypewriter } from './AsciiTypewriter.svelte';

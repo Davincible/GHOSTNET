@@ -6,6 +6,14 @@
 
 	const componentSections = [
 		{
+			name: 'EXPERIMENTS',
+			description:
+				'UX experiments for simplifying the homepage. Testing different approaches to onboarding.',
+			href: '/dev/showcase/experiments',
+			status: 'ACTIVE',
+			count: '4 components: SimplifiedHero, QuickPitch, BigSteps, RiskLevelCards',
+		},
+		{
 			name: 'PANELS',
 			description:
 				'Container component with lifecycle animations, attention states, and ambient effects.',
@@ -15,11 +23,17 @@
 		},
 		{
 			name: 'AUDIO',
-			description:
-				'ZzFX sound system — UI feedback, game events, alerts, and crash game sounds.',
+			description: 'ZzFX sound system — UI feedback, game events, alerts, and crash game sounds.',
 			href: '/dev/showcase/audio',
 			status: 'ACTIVE',
 			count: '30 sounds, 5 categories',
+		},
+		{
+			name: 'EFFECTS',
+			description: 'Visual effects playground — compare Matrix Rain implementations.',
+			href: '/dev/showcase/effects',
+			status: 'ACTIVE',
+			count: 'Matrix Rain legacy vs refactor with live controls',
 		},
 		{
 			name: 'BUTTONS',

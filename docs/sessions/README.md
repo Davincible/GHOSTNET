@@ -18,6 +18,7 @@ Session logs capture:
 | 2026-01-19 | [Frontend Architecture Planning](./2026-01-19-frontend-architecture-planning.md) | Architecture |
 | 2026-01-19 | [Smart Contracts Architecture Planning](./2026-01-19-smart-contracts-architecture.md) | Architecture |
 | 2026-01-21 | [Randomness Congestion Mitigation Design](./2026-01-21-randomness-congestion-mitigation.md) | Architecture |
+| 2026-02-02 | [Matrix Rain Refactor](./2026-02-02-matrix-rain-refactor.md) | Implementation |
 
 ## Template
 
