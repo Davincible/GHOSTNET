@@ -12,6 +12,8 @@
 	 * - JACK IN as primary CTA
 	 */
 
+	import { formatWei } from '$lib/core/utils';
+
 	type RiskLevel = 'VAULT' | 'MAINFRAME' | 'SUBNET' | 'DARKNET' | 'BLACK_ICE';
 
 	interface Props {
@@ -23,6 +25,8 @@
 		selectedLevel?: RiskLevel;
 		/** Callback when Jack In is clicked with selected level */
 		onJackIn?: (level: RiskLevel) => void;
+		/** Callback to skip directly to command center (demo mode) */
+		onSkip?: () => void;
 	}
 
 	let {
@@ -30,6 +34,7 @@
 		tokenSymbol = '$DATA',
 		selectedLevel = $bindable<RiskLevel>('SUBNET'),
 		onJackIn,
+		onSkip,
 	}: Props = $props();
 
 	interface LevelData {
@@ -91,11 +96,6 @@
 	function handleJackIn() {
 		onJackIn?.(selectedLevel);
 	}
-
-	// Format balance for display
-	function formatBalance(bal: bigint): string {
-		return bal.toLocaleString();
-	}
 </script>
 
 <div class="risk-selector">
@@ -127,11 +127,16 @@
 	<!-- Balance Display -->
 	<div class="balance-display">
 		<span class="balance-label">Your balance:</span>
-		<span class="balance-value">{formatBalance(balance)} {tokenSymbol}</span>
+		<span class="balance-value">{formatWei(balance, { compact: true })} {tokenSymbol}</span>
 	</div>
 
 	<!-- CTA -->
 	<button class="cta-primary" onclick={handleJackIn}> JACK IN → </button>
+
+	<!-- Subtle skip link -->
+	{#if onSkip}
+		<button class="skip-link" onclick={onSkip}>skip to demo →</button>
+	{/if}
 </div>
 
 <style>
@@ -276,6 +281,28 @@
 		background: var(--color-accent-bright);
 		transform: scale(1.02);
 		box-shadow: 0 0 40px var(--color-accent-glow);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   SKIP LINK
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.skip-link {
+		margin-top: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		background: transparent;
+		border: none;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		cursor: pointer;
+		opacity: 0.4;
+		transition: opacity 0.2s ease;
+	}
+
+	.skip-link:hover {
+		opacity: 0.8;
+		color: var(--color-text-tertiary);
 	}
 
 	/* ═══════════════════════════════════════════════════════════════

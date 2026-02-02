@@ -97,34 +97,9 @@ export function createMockProvider(): DataProvider {
 			ethBalance: 5n * 10n ** 18n, // 5 ETH
 		};
 
-		// Generate a position for the user
-		position = generateMockPosition(currentUser.address);
-
-		// Add some modifiers
-		modifiers = [
-			{
-				id: '1',
-				source: 'typing',
-				type: 'death_rate',
-				value: -0.15,
-				expiresAt: position.nextScanTimestamp,
-				label: 'Trace Evasion -15%',
-			},
-			{
-				id: '2',
-				source: 'crew',
-				type: 'yield_multiplier',
-				value: 1.1,
-				expiresAt: null,
-				label: 'Crew Bonus +10%',
-			},
-		];
-
-		// Initialize inventory with starter items
-		ownedConsumables = generateMockInventory();
-
-		// Start position yield simulation
-		startPositionSimulation();
+		// NOTE: Don't auto-create a position here.
+		// This enables progressive disclosure: wallet connected -> risk selector -> jack in
+		// Position is created when user calls jackIn()
 	}
 
 	function disconnectWallet(): void {
@@ -150,6 +125,11 @@ export function createMockProvider(): DataProvider {
 
 		// Clear typing modifiers
 		modifiers = modifiers.filter((m) => m.source !== 'typing');
+
+		// Initialize inventory on first jack-in if empty
+		if (ownedConsumables.length === 0) {
+			ownedConsumables = generateMockInventory();
+		}
 
 		// Emit feed event
 		emitFeedEvent({

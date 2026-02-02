@@ -8,9 +8,11 @@
 	interface Props {
 		open: boolean;
 		onclose: () => void;
+		/** Called after successful wallet connection */
+		onConnected?: () => void;
 	}
 
-	let { open, onclose }: Props = $props();
+	let { open, onclose, onConnected }: Props = $props();
 
 	let isConnecting = $state<string | null>(null);
 	let error = $state<string | null>(null);
@@ -62,9 +64,7 @@
 	}
 
 	// ── Helper: find a provider from window.ethereum or .providers array ──
-	function findProvider(
-		flag: string
-	): (win: Window & Record<string, unknown>) => unknown {
+	function findProvider(flag: string): (win: Window & Record<string, unknown>) => unknown {
 		return (win: Window & Record<string, unknown>) => {
 			const eth = (win as Window & { ethereum?: Record<string, unknown> }).ethereum;
 			if (!eth) return undefined;
@@ -135,30 +135,246 @@
 	 * Alphabetical order. Each uses a provider function for correct detection.
 	 */
 	const tier2Wallets: WalletOption[] = [
-		{ id: '1inch', name: '1inch Wallet', icon: '🦄', description: 'DeFi-native wallet', connectionType: 'injected', target: { id: '1inch', name: '1inch Wallet', provider: findProvider('isOneInchIOSWallet') }, detectFlag: 'isOneInchIOSWallet' },
-		{ id: 'alphawallet', name: 'AlphaWallet', icon: 'α', description: 'Ethereum wallet for tokens', connectionType: 'injected', target: { id: 'alphaWallet', name: 'AlphaWallet', provider: findProvider('isAlphaWallet') }, detectFlag: 'isAlphaWallet' },
-		{ id: 'argent', name: 'Argent', icon: '🔷', description: 'Smart contract wallet', connectionType: 'injected', target: { id: 'argent', name: 'Argent', provider: findProvider('isArgent') }, detectFlag: 'isArgent' },
-		{ id: 'bitget', name: 'Bitget Wallet', icon: '🅱', description: 'Multi-chain Web3 wallet', connectionType: 'injected', target: { id: 'bitKeep', name: 'Bitget Wallet', provider: findProvider('isBitKeep') }, detectFlag: 'isBitKeep', rdns: 'com.bitget.web3' },
-		{ id: 'coin98', name: 'Coin98', icon: '🪙', description: 'Multi-chain DeFi gateway', connectionType: 'injected', target: { id: 'coin98', name: 'Coin98', provider: findProvider('isCoin98') }, detectFlag: 'isCoin98' },
-		{ id: 'enkrypt', name: 'Enkrypt', icon: '🔐', description: 'Multi-chain browser wallet', connectionType: 'injected', target: { id: 'enkrypt', name: 'Enkrypt', provider: findProvider('isEnkrypt') }, detectFlag: 'isEnkrypt' },
-		{ id: 'exodus', name: 'Exodus', icon: '✦', description: 'Multi-asset desktop & mobile wallet', connectionType: 'injected', target: { id: 'exodus', name: 'Exodus', provider: findProvider('isExodus') }, detectFlag: 'isExodus' },
-		{ id: 'frame', name: 'Frame', icon: '🖼', description: 'Privacy-focused system wallet', connectionType: 'injected', target: { id: 'frame', name: 'Frame', provider: findProvider('isFrame') }, detectFlag: 'isFrame' },
-		{ id: 'gridplus', name: 'GridPlus Lattice', icon: '⬡', description: 'Hardware wallet with smart screen', connectionType: 'injected', target: { id: 'gridPlus', name: 'GridPlus Lattice', provider: findProvider('isGridPlus') }, detectFlag: 'isGridPlus' },
-		{ id: 'imtoken', name: 'imToken', icon: '🔑', description: 'Digital asset wallet', connectionType: 'injected', target: { id: 'imToken', name: 'imToken', provider: findProvider('isImToken') }, detectFlag: 'isImToken' },
-		{ id: 'keystone', name: 'Keystone', icon: '🗝', description: 'Air-gapped hardware wallet', connectionType: 'injected', target: { id: 'keystone', name: 'Keystone', provider: findProvider('isKeystone') }, detectFlag: 'isKeystone' },
-		{ id: 'ledger', name: 'Ledger', icon: '📟', description: 'Hardware wallet via Ledger Live', connectionType: 'injected', target: { id: 'ledger', name: 'Ledger', provider: findProvider('isLedger') }, detectFlag: 'isLedger' },
-		{ id: 'mathwallet', name: 'MathWallet', icon: '🔢', description: 'Multi-platform crypto wallet', connectionType: 'injected', target: { id: 'mathWallet', name: 'MathWallet', provider: findProvider('isMathWallet') }, detectFlag: 'isMathWallet' },
-		{ id: 'mew', name: 'MyEtherWallet', icon: '🟢', description: 'Free client-side Ethereum wallet', connectionType: 'injected', target: { id: 'mew', name: 'MyEtherWallet', provider: findProvider('isMEW') }, detectFlag: 'isMEW' },
-		{ id: 'okx', name: 'OKX Wallet', icon: '⬟', description: 'Multi-chain Web3 wallet', connectionType: 'injected', target: { id: 'okxWallet', name: 'OKX Wallet', provider: (win: Window & Record<string, unknown>) => (win as unknown as Record<string, Record<string, unknown>>).okxwallet ?? findProvider('isOkxWallet')(win) }, detectFlag: 'isOkxWallet', rdns: 'com.okex.wallet' },
-		{ id: 'onekey', name: 'OneKey', icon: '🔏', description: 'Open-source hardware wallet', connectionType: 'injected', target: { id: 'oneKey', name: 'OneKey', provider: (win: Window & Record<string, unknown>) => (win as unknown as Record<string, Record<string, unknown>>).$onekey?.ethereum ?? findProvider('isOneKey')(win) }, detectFlag: 'isOneKey' },
-		{ id: 'phantom', name: 'Phantom', icon: '👻', description: 'Multi-chain crypto wallet', connectionType: 'injected', target: 'phantom', detectFlag: 'isPhantom', rdns: 'app.phantom' },
-		{ id: 'rainbow', name: 'Rainbow', icon: '🌈', description: 'Ethereum wallet for NFTs & DeFi', connectionType: 'injected', target: { id: 'rainbow', name: 'Rainbow', provider: findProvider('isRainbow') }, detectFlag: 'isRainbow', rdns: 'me.rainbow' },
-		{ id: 'safe', name: 'Safe', icon: '🔒', description: 'Multi-sig smart contract wallet', connectionType: 'injected', target: { id: 'safe', name: 'Safe', provider: findProvider('isSafe') }, detectFlag: 'isSafe' },
-		{ id: 'taho', name: 'Taho', icon: '🌿', description: 'Community-owned Web3 wallet', connectionType: 'injected', target: { id: 'taho', name: 'Taho', provider: findProvider('isTaho') }, detectFlag: 'isTaho' },
-		{ id: 'tokenpocket', name: 'TokenPocket', icon: '👝', description: 'Multi-chain wallet', connectionType: 'injected', target: { id: 'tokenPocket', name: 'TokenPocket', provider: findProvider('isTokenPocket') }, detectFlag: 'isTokenPocket', rdns: 'pro.tokenpocket' },
-		{ id: 'trezor', name: 'Trezor', icon: '🔳', description: 'Hardware wallet security', connectionType: 'injected', target: { id: 'trezor', name: 'Trezor', provider: findProvider('isTrezor') }, detectFlag: 'isTrezor' },
-		{ id: 'xdefi', name: 'XDEFI (Ctrl)', icon: '⚡', description: 'Multi-chain DeFi wallet', connectionType: 'injected', target: { id: 'xdefi', name: 'XDEFI', provider: (win: Window & Record<string, unknown>) => (win as unknown as Record<string, Record<string, unknown>>).xfi?.ethereum ?? findProvider('isXDEFI')(win) }, detectFlag: 'isXDEFI' },
-		{ id: 'zerion', name: 'Zerion', icon: '💎', description: 'DeFi portfolio & wallet', connectionType: 'injected', target: { id: 'zerion', name: 'Zerion', provider: findProvider('isZerion') }, detectFlag: 'isZerion', rdns: 'io.zerion.wallet' },
+		{
+			id: '1inch',
+			name: '1inch Wallet',
+			icon: '🦄',
+			description: 'DeFi-native wallet',
+			connectionType: 'injected',
+			target: { id: '1inch', name: '1inch Wallet', provider: findProvider('isOneInchIOSWallet') },
+			detectFlag: 'isOneInchIOSWallet',
+		},
+		{
+			id: 'alphawallet',
+			name: 'AlphaWallet',
+			icon: 'α',
+			description: 'Ethereum wallet for tokens',
+			connectionType: 'injected',
+			target: { id: 'alphaWallet', name: 'AlphaWallet', provider: findProvider('isAlphaWallet') },
+			detectFlag: 'isAlphaWallet',
+		},
+		{
+			id: 'argent',
+			name: 'Argent',
+			icon: '🔷',
+			description: 'Smart contract wallet',
+			connectionType: 'injected',
+			target: { id: 'argent', name: 'Argent', provider: findProvider('isArgent') },
+			detectFlag: 'isArgent',
+		},
+		{
+			id: 'bitget',
+			name: 'Bitget Wallet',
+			icon: '🅱',
+			description: 'Multi-chain Web3 wallet',
+			connectionType: 'injected',
+			target: { id: 'bitKeep', name: 'Bitget Wallet', provider: findProvider('isBitKeep') },
+			detectFlag: 'isBitKeep',
+			rdns: 'com.bitget.web3',
+		},
+		{
+			id: 'coin98',
+			name: 'Coin98',
+			icon: '🪙',
+			description: 'Multi-chain DeFi gateway',
+			connectionType: 'injected',
+			target: { id: 'coin98', name: 'Coin98', provider: findProvider('isCoin98') },
+			detectFlag: 'isCoin98',
+		},
+		{
+			id: 'enkrypt',
+			name: 'Enkrypt',
+			icon: '🔐',
+			description: 'Multi-chain browser wallet',
+			connectionType: 'injected',
+			target: { id: 'enkrypt', name: 'Enkrypt', provider: findProvider('isEnkrypt') },
+			detectFlag: 'isEnkrypt',
+		},
+		{
+			id: 'exodus',
+			name: 'Exodus',
+			icon: '✦',
+			description: 'Multi-asset desktop & mobile wallet',
+			connectionType: 'injected',
+			target: { id: 'exodus', name: 'Exodus', provider: findProvider('isExodus') },
+			detectFlag: 'isExodus',
+		},
+		{
+			id: 'frame',
+			name: 'Frame',
+			icon: '🖼',
+			description: 'Privacy-focused system wallet',
+			connectionType: 'injected',
+			target: { id: 'frame', name: 'Frame', provider: findProvider('isFrame') },
+			detectFlag: 'isFrame',
+		},
+		{
+			id: 'gridplus',
+			name: 'GridPlus Lattice',
+			icon: '⬡',
+			description: 'Hardware wallet with smart screen',
+			connectionType: 'injected',
+			target: { id: 'gridPlus', name: 'GridPlus Lattice', provider: findProvider('isGridPlus') },
+			detectFlag: 'isGridPlus',
+		},
+		{
+			id: 'imtoken',
+			name: 'imToken',
+			icon: '🔑',
+			description: 'Digital asset wallet',
+			connectionType: 'injected',
+			target: { id: 'imToken', name: 'imToken', provider: findProvider('isImToken') },
+			detectFlag: 'isImToken',
+		},
+		{
+			id: 'keystone',
+			name: 'Keystone',
+			icon: '🗝',
+			description: 'Air-gapped hardware wallet',
+			connectionType: 'injected',
+			target: { id: 'keystone', name: 'Keystone', provider: findProvider('isKeystone') },
+			detectFlag: 'isKeystone',
+		},
+		{
+			id: 'ledger',
+			name: 'Ledger',
+			icon: '📟',
+			description: 'Hardware wallet via Ledger Live',
+			connectionType: 'injected',
+			target: { id: 'ledger', name: 'Ledger', provider: findProvider('isLedger') },
+			detectFlag: 'isLedger',
+		},
+		{
+			id: 'mathwallet',
+			name: 'MathWallet',
+			icon: '🔢',
+			description: 'Multi-platform crypto wallet',
+			connectionType: 'injected',
+			target: { id: 'mathWallet', name: 'MathWallet', provider: findProvider('isMathWallet') },
+			detectFlag: 'isMathWallet',
+		},
+		{
+			id: 'mew',
+			name: 'MyEtherWallet',
+			icon: '🟢',
+			description: 'Free client-side Ethereum wallet',
+			connectionType: 'injected',
+			target: { id: 'mew', name: 'MyEtherWallet', provider: findProvider('isMEW') },
+			detectFlag: 'isMEW',
+		},
+		{
+			id: 'okx',
+			name: 'OKX Wallet',
+			icon: '⬟',
+			description: 'Multi-chain Web3 wallet',
+			connectionType: 'injected',
+			target: {
+				id: 'okxWallet',
+				name: 'OKX Wallet',
+				provider: (win: Window & Record<string, unknown>) =>
+					(win as unknown as Record<string, Record<string, unknown>>).okxwallet ??
+					findProvider('isOkxWallet')(win),
+			},
+			detectFlag: 'isOkxWallet',
+			rdns: 'com.okex.wallet',
+		},
+		{
+			id: 'onekey',
+			name: 'OneKey',
+			icon: '🔏',
+			description: 'Open-source hardware wallet',
+			connectionType: 'injected',
+			target: {
+				id: 'oneKey',
+				name: 'OneKey',
+				provider: (win: Window & Record<string, unknown>) =>
+					(win as unknown as Record<string, Record<string, unknown>>).$onekey?.ethereum ??
+					findProvider('isOneKey')(win),
+			},
+			detectFlag: 'isOneKey',
+		},
+		{
+			id: 'phantom',
+			name: 'Phantom',
+			icon: '👻',
+			description: 'Multi-chain crypto wallet',
+			connectionType: 'injected',
+			target: 'phantom',
+			detectFlag: 'isPhantom',
+			rdns: 'app.phantom',
+		},
+		{
+			id: 'rainbow',
+			name: 'Rainbow',
+			icon: '🌈',
+			description: 'Ethereum wallet for NFTs & DeFi',
+			connectionType: 'injected',
+			target: { id: 'rainbow', name: 'Rainbow', provider: findProvider('isRainbow') },
+			detectFlag: 'isRainbow',
+			rdns: 'me.rainbow',
+		},
+		{
+			id: 'safe',
+			name: 'Safe',
+			icon: '🔒',
+			description: 'Multi-sig smart contract wallet',
+			connectionType: 'injected',
+			target: { id: 'safe', name: 'Safe', provider: findProvider('isSafe') },
+			detectFlag: 'isSafe',
+		},
+		{
+			id: 'taho',
+			name: 'Taho',
+			icon: '🌿',
+			description: 'Community-owned Web3 wallet',
+			connectionType: 'injected',
+			target: { id: 'taho', name: 'Taho', provider: findProvider('isTaho') },
+			detectFlag: 'isTaho',
+		},
+		{
+			id: 'tokenpocket',
+			name: 'TokenPocket',
+			icon: '👝',
+			description: 'Multi-chain wallet',
+			connectionType: 'injected',
+			target: { id: 'tokenPocket', name: 'TokenPocket', provider: findProvider('isTokenPocket') },
+			detectFlag: 'isTokenPocket',
+			rdns: 'pro.tokenpocket',
+		},
+		{
+			id: 'trezor',
+			name: 'Trezor',
+			icon: '🔳',
+			description: 'Hardware wallet security',
+			connectionType: 'injected',
+			target: { id: 'trezor', name: 'Trezor', provider: findProvider('isTrezor') },
+			detectFlag: 'isTrezor',
+		},
+		{
+			id: 'xdefi',
+			name: 'XDEFI (Ctrl)',
+			icon: '⚡',
+			description: 'Multi-chain DeFi wallet',
+			connectionType: 'injected',
+			target: {
+				id: 'xdefi',
+				name: 'XDEFI',
+				provider: (win: Window & Record<string, unknown>) =>
+					(win as unknown as Record<string, Record<string, unknown>>).xfi?.ethereum ??
+					findProvider('isXDEFI')(win),
+			},
+			detectFlag: 'isXDEFI',
+		},
+		{
+			id: 'zerion',
+			name: 'Zerion',
+			icon: '💎',
+			description: 'DeFi portfolio & wallet',
+			connectionType: 'injected',
+			target: { id: 'zerion', name: 'Zerion', provider: findProvider('isZerion') },
+			detectFlag: 'isZerion',
+			rdns: 'io.zerion.wallet',
+		},
 	];
 
 	// ── Detection: which wallets are present in the browser? ──
@@ -210,6 +426,9 @@
 				// Close our modal first so WalletConnect QR modal is visible
 				onclose();
 				await wallet.connectWalletConnect();
+				if (wallet.isConnected) {
+					onConnected?.();
+				}
 			} else {
 				// For injected wallets not detected, show helpful error before attempting
 				if (!detectedIds.has(w.id)) {
@@ -221,6 +440,7 @@
 				await wallet.connect(w.target);
 
 				if (wallet.isConnected) {
+					onConnected?.();
 					onclose();
 				} else if (wallet.error) {
 					error = wallet.error;

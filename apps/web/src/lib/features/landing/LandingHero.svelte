@@ -16,6 +16,7 @@
 
 	import { BigSteps } from '$lib/features/experiments';
 	import { AsciiTypewriter } from '$lib/features/welcome';
+	import { formatNumber } from '$lib/core/utils';
 
 	// Track when logo animation completes to show subtitle
 	let logoComplete = $state(false);
@@ -35,6 +36,8 @@
 	interface Props {
 		/** Callback when Connect Wallet is clicked */
 		onConnectWallet?: () => void;
+		/** Callback to skip directly to command center (demo mode) */
+		onSkip?: () => void;
 		/** Live stats */
 		playersOnline?: number;
 		totalLocked?: string;
@@ -43,6 +46,7 @@
 
 	let {
 		onConnectWallet,
+		onSkip,
 		playersOnline = 1223,
 		totalLocked = '$4.8M',
 		tracedToday = 847,
@@ -92,7 +96,7 @@
 		<div class="stats-bar">
 			<span class="stat">
 				<span class="stat-label">LIVE:</span>
-				<span class="stat-value">{playersOnline.toLocaleString()}</span>
+				<span class="stat-value">{formatNumber(playersOnline, { decimals: 0 })}</span>
 				<span class="stat-unit">players</span>
 			</span>
 			<span class="stat-divider">|</span>
@@ -102,10 +106,15 @@
 			</span>
 			<span class="stat-divider">|</span>
 			<span class="stat">
-				<span class="stat-value highlight-traced">{tracedToday.toLocaleString()}</span>
+				<span class="stat-value highlight-traced">{formatNumber(tracedToday, { decimals: 0 })}</span>
 				<span class="stat-unit">traced today</span>
 			</span>
 		</div>
+
+		<!-- Subtle skip link -->
+		{#if onSkip}
+			<button class="skip-link" onclick={onSkip}>skip to demo →</button>
+		{/if}
 	</div>
 </div>
 
@@ -348,6 +357,28 @@
 
 	.stat-value.highlight-traced {
 		color: var(--color-red);
+	}
+
+	/* ═══════════════════════════════════════════════════════════════
+	   SKIP LINK
+	   ═══════════════════════════════════════════════════════════════ */
+
+	.skip-link {
+		margin-top: var(--space-6);
+		padding: var(--space-2) var(--space-3);
+		background: transparent;
+		border: none;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		color: var(--color-text-muted);
+		cursor: pointer;
+		opacity: 0.4;
+		transition: opacity 0.2s ease;
+	}
+
+	.skip-link:hover {
+		opacity: 0.8;
+		color: var(--color-text-tertiary);
 	}
 
 	.stat-unit {

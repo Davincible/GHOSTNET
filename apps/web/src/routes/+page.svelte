@@ -109,6 +109,19 @@
 		showWalletModal = true;
 	}
 
+	async function handleWalletConnected() {
+		// Sync the mock provider with the real wallet connection
+		// This triggers the transition from 'landing' to 'select-risk' mode
+		await provider.connectWallet();
+	}
+
+	async function handleSkipToDemo() {
+		// Skip directly to command center with a mock position
+		// Connects wallet and creates a demo position in one step
+		await provider.connectWallet();
+		await provider.jackIn('SUBNET', 1000n * 10n ** 18n);
+	}
+
 	function handleJackIn() {
 		showJackInModal = true;
 	}
@@ -332,6 +345,7 @@
 		<main class="main-landing">
 			<LandingHero
 				onConnectWallet={handleConnectWallet}
+				onSkip={handleSkipToDemo}
 				playersOnline={provider.networkState.operatorsOnline}
 				totalLocked="$4.8M"
 				tracedToday={847}
@@ -345,10 +359,11 @@
 	{:else if userMode === 'select-risk'}
 		<main class="main-risk-selector">
 			<RiskSelector
-				balance={provider.currentUser?.balance ?? 0n}
+				balance={provider.currentUser?.tokenBalance ?? 0n}
 				tokenSymbol="$DATA"
 				bind:selectedLevel={selectedRiskLevel}
 				onJackIn={handleJackInWithLevel}
+				onSkip={handleSkipToDemo}
 			/>
 		</main>
 
@@ -405,7 +420,11 @@
 <JackInModal open={showJackInModal} onclose={() => (showJackInModal = false)} />
 <ExtractModal open={showExtractModal} onclose={() => (showExtractModal = false)} />
 <SettingsModal open={showSettingsModal} onclose={() => (showSettingsModal = false)} />
-<WalletModal open={showWalletModal} onclose={() => (showWalletModal = false)} />
+<WalletModal
+	open={showWalletModal}
+	onclose={() => (showWalletModal = false)}
+	onConnected={handleWalletConnected}
+/>
 <IntroVideoModal
 	open={showIntroVideo}
 	onclose={() => {
