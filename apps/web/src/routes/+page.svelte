@@ -20,7 +20,7 @@
 	import { Sidebar } from '$lib/features/sidebar';
 
 	// Landing components (progressive disclosure)
-	import { LandingHero, RiskSelector } from '$lib/features/landing';
+	import { LandingHero, JackInFlow } from '$lib/features/landing';
 	import { MatrixRain } from '$lib/features/welcome';
 
 	// Command Center components (Mode 3: has position)
@@ -95,6 +95,8 @@
 	let showIntroVideo = $state(
 		browser ? localStorage.getItem('ghostnet_intro_seen') !== 'true' : false
 	);
+
+
 
 	// ═══════════════════════════════════════════════════════════════
 	// ACTION HANDLERS
@@ -343,12 +345,12 @@
 		</main>
 
 		<!-- ═══════════════════════════════════════════════════════════════
-	     MODE 2: RISK SELECTOR (Wallet Connected, No Position)
-	     Choose risk level, jack in
+	     MODE 2: JACK IN FLOW (Wallet Connected, No Position)
+	     Step-by-step: level selection → amount → confirm
 	     ═══════════════════════════════════════════════════════════════ -->
 	{:else if userMode === 'select-risk'}
-		<main class="main-risk-selector">
-			<RiskSelector tokenSymbol="$DATA" onSkip={handleSkipToDemo} />
+		<main class="main-jack-in">
+			<JackInFlow onSkip={handleSkipToDemo} />
 		</main>
 
 		<!-- ═══════════════════════════════════════════════════════════════
@@ -454,11 +456,11 @@
 	}
 
 	/* ═══════════════════════════════════════════════════════════════
-	   MODE 2: RISK SELECTOR
+	   MODE 2: JACK IN FLOW
 	   Centered, focused experience
 	   ═══════════════════════════════════════════════════════════════ */
 
-	.main-risk-selector {
+	.main-jack-in {
 		flex: 1;
 		display: flex;
 		align-items: center;
