@@ -307,7 +307,11 @@
 	{/if}
 
 	<!-- Header is always visible -->
-	<Header onSettings={() => (showSettingsModal = true)} onIntro={() => (showIntroVideo = true)} />
+	<Header
+		onSettings={() => (showSettingsModal = true)}
+		onIntro={() => (showIntroVideo = true)}
+		hideSettings={userMode === 'landing'}
+	/>
 
 	<!-- Sidebar only visible in command center mode -->
 	{#if userMode === 'command-center'}
@@ -391,8 +395,10 @@
 		</main>
 	{/if}
 
-	<!-- Navigation bar -->
-	<NavigationBar active={activeNav} onNavigate={handleNavigate} />
+	<!-- Navigation bar (hidden on landing) -->
+	{#if userMode !== 'landing'}
+		<NavigationBar active={activeNav} onNavigate={handleNavigate} />
+	{/if}
 </div>
 
 <!-- Modals -->
