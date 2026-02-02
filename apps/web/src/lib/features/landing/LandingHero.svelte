@@ -78,6 +78,10 @@
 		<!-- The Title - Animated ASCII Logo -->
 		<header class="hero-header">
 			<div class="ascii-logo">
+				<!-- Rabbit Hat Icon -->
+				<div class="rabbit-icon" class:visible={logoComplete}>
+					<img src="/rabbit_head.svg" alt="GHOSTNET Rabbit" />
+				</div>
 				<div class="logo-container">
 					<AsciiTypewriter
 						text={logoText}
@@ -207,6 +211,31 @@
 		gap: var(--space-2);
 	}
 
+	/* Rabbit Hat Icon */
+	.rabbit-icon {
+		width: clamp(48px, 10vw, 80px);
+		height: auto;
+		opacity: 0;
+		transform: translateY(-10px);
+		transition:
+			opacity 0.6s ease-out,
+			transform 0.6s ease-out;
+		filter: drop-shadow(0 0 12px rgba(0, 229, 204, 0.4)) brightness(1.1) saturate(1.2);
+		margin-bottom: var(--space-2);
+	}
+
+	.rabbit-icon.visible {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	.rabbit-icon img {
+		width: 100%;
+		height: auto;
+		/* Apply cyberpunk tint - shift colors toward cyan/teal */
+		filter: hue-rotate(-20deg) brightness(1.05);
+	}
+
 	/* Container for the typewriter to prevent layout shift during animation */
 	.logo-container {
 		min-height: 4.5rem; /* Reserve space for 6 lines of ASCII art */
@@ -308,6 +337,12 @@
 	@media (max-width: 640px) {
 		.landing-hero {
 			padding: var(--space-6) var(--space-3);
+		}
+
+		/* Rabbit icon smaller on mobile */
+		.rabbit-icon {
+			width: 48px;
+			margin-bottom: var(--space-1);
 		}
 
 		/* ASCII logo scales down on mobile */
