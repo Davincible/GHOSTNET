@@ -23,12 +23,16 @@
 	import { Button, Badge } from '$lib/ui/primitives';
 	import { Stack, Row } from '$lib/ui/layout';
 	import { LevelBadge, AmountDisplay, PercentDisplay } from '$lib/ui/data-display';
-	import { SwapPanel } from '$lib/features/swap';
 	import { getProvider } from '$lib/core/stores/index.svelte';
 	import { getToasts } from '$lib/ui/toast';
 	import { LEVELS, LEVEL_CONFIG, type Level } from '$lib/core/types';
 	import { parseUnits, formatUnits } from 'viem';
 	import { formatWei } from '$lib/core/utils';
+
+	// Swap components (used directly without SwapPanel wrapper)
+	import TokenInput from '$lib/features/swap/TokenInput.svelte';
+	import SwapDetails from '$lib/features/swap/SwapDetails.svelte';
+	import { createSwapStore } from '$lib/features/swap/store.svelte';
 
 	interface Props {
 		/** Callback to skip directly to command center (demo mode) */
@@ -41,6 +45,9 @@
 
 	const provider = getProvider();
 	const toast = getToasts();
+
+	// Swap store for buy-data step
+	const swap = createSwapStore();
 
 	// User balance state
 	let ethBalance = $derived(provider.currentUser?.ethBalance ?? 0n);
@@ -220,6 +227,91 @@
 </script>
 
 <div class="jack-in-flow">
+	{#if step === 'buy-data'}
+		<!-- Buy DATA step - separate panel to avoid nesting -->
+		<Panel title="ACQUIRE $DATA" variant="single">
+			<Stack gap={4}>
+				<p class="step-description">
+					Swap ETH for $DATA tokens to participate in GHOSTNET. You'll need $DATA to stake and earn yield.
+				</p>
+
+				<!-- Balance display -->
+				<div class="balance-status">
+					<Row justify="between">
+						<span>
+							<span class="balance-label">ETH Balance:</span>
+							<span class="balance-value">{formatWei(ethBalance, { displayDecimals: 4 })} ETH</span>
+						</span>
+						<span>
+							<span class="balance-label">$DATA Balance:</span>
+							<span class="balance-value" class:zero={!hasData}>{formatWei(dataBalance)} $DATA</span>
+						</span>
+					</Row>
+				</div>
+
+				<!-- Swap inputs -->
+				<TokenInput
+					label="From"
+					value={swap.inputAmount}
+					oninput={(v) => swap.setInputAmount(v)}
+					token={swap.inputToken}
+					tokens={swap.availableTokens}
+					ontokenchange={(t) => swap.setInputToken(t)}
+					balance={swap.inputBalance}
+					showMax
+					onmax={() => swap.setMaxInput()}
+				/>
+
+				<div class="swap-direction">
+					<span>↓</span>
+				</div>
+
+				<TokenInput
+					label="To"
+					value={swap.outputDisplay}
+					token={swap.outputToken}
+					balance={swap.outputBalance}
+					readonly
+					tokenFixed
+				/>
+
+				<!-- Swap button -->
+				<Button
+					variant={swap.status === 'error' ? 'danger' : swap.canSwap ? 'primary' : 'secondary'}
+					fullWidth
+					disabled={!swap.canSwap}
+					loading={swap.status === 'submitting'}
+					onclick={() => swap.executeSwap()}
+				>
+					{swap.buttonLabel}
+				</Button>
+
+				{#if swap.status === 'error' && swap.errorMessage}
+					<div class="swap-error">{swap.errorMessage}</div>
+				{/if}
+
+				{#if swap.status === 'success'}
+					<div class="swap-success">SWAP EXECUTED SUCCESSFULLY</div>
+				{/if}
+
+				<!-- Quote details -->
+				<SwapDetails
+					quote={swap.quote}
+					slippage={swap.slippage}
+					onslippagechange={(v) => swap.setSlippage(v)}
+					inputSymbol={swap.inputToken.symbol}
+					outputSymbol={swap.outputToken.symbol}
+				/>
+
+				<Row justify="between" align="center">
+					<Button variant="ghost" onclick={goBack}>← Back</Button>
+					<Button variant="primary" disabled={!hasData} onclick={proceedToLevel}>
+						{hasData ? 'Continue to Stake →' : 'Get $DATA First'}
+					</Button>
+				</Row>
+			</Stack>
+		</Panel>
+	{:else}
 	<Panel title="JACK IN" variant="single">
 		{#if step === 'get-eth'}
 			<!-- Step: No ETH - Instructions -->
@@ -271,32 +363,6 @@
 					{/if}
 					<Button variant="secondary" disabled={!hasEth} onclick={proceedToBuyData}>
 						{hasEth ? 'Continue →' : 'Waiting for ETH...'}
-					</Button>
-				</Row>
-			</Stack>
-		{:else if step === 'buy-data'}
-			<!-- Step: Buy DATA -->
-			<Stack gap={4}>
-				<div class="status-header">
-					<Badge variant="default">ACQUIRE $DATA</Badge>
-					<span class="balance-inline">
-						Balance: <span class="balance-value">{formatWei(dataBalance)} $DATA</span>
-					</span>
-				</div>
-
-				<p class="step-description">
-					Swap ETH for $DATA tokens to participate in GHOSTNET.
-				</p>
-
-				<!-- Embedded Swap Panel -->
-				<div class="swap-container">
-					<SwapPanel />
-				</div>
-
-				<Row justify="between" align="center">
-					<Button variant="ghost" onclick={goBack}>← Back</Button>
-					<Button variant="primary" disabled={!hasData} onclick={proceedToLevel}>
-						{hasData ? 'Continue to Stake →' : 'Get $DATA First'}
 					</Button>
 				</Row>
 			</Stack>
@@ -523,6 +589,7 @@
 			</Stack>
 		{/if}
 	</Panel>
+	{/if}
 </div>
 
 <style>
@@ -894,14 +961,44 @@
 		color: var(--color-amber);
 	}
 
-	/* Swap container */
-	.swap-container {
-		margin: 0 calc(-1 * var(--space-3));
+	/* Swap direction indicator */
+	.swap-direction {
+		display: flex;
+		justify-content: center;
+		color: var(--color-text-tertiary);
+		font-size: var(--text-lg);
+		padding: var(--space-1) 0;
 	}
 
-	.swap-container :global(.terminal-box) {
-		border-left: none;
-		border-right: none;
+	/* Swap status messages */
+	.swap-error {
+		padding: var(--space-2);
+		background: rgba(255, 0, 85, 0.1);
+		border: 1px solid var(--color-red-dim);
+		color: var(--color-red);
+		font-size: var(--text-xs);
+		text-align: center;
+	}
+
+	.swap-success {
+		padding: var(--space-2);
+		background: rgba(0, 229, 204, 0.1);
+		border: 1px solid var(--color-accent-dim);
+		color: var(--color-accent);
+		font-size: var(--text-xs);
+		text-align: center;
+		animation: flash-success 0.3s ease-out;
+	}
+
+	@keyframes flash-success {
+		0% {
+			opacity: 0;
+			transform: scale(0.98);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* Balance row */
