@@ -335,11 +335,10 @@
 					{/each}
 				</div>
 
-				<!-- Balance display with buy more option -->
+				<!-- Balance display -->
 				<div class="balance-row">
 					<span class="balance-label">Your $DATA Balance:</span>
 					<span class="balance-value">{formatWei(dataBalance)}</span>
-					<button class="buy-more-link" onclick={proceedToBuyData}>Buy More</button>
 				</div>
 
 				<Row justify="between" align="center">
@@ -348,7 +347,10 @@
 					{:else}
 						<div></div>
 					{/if}
-					<Button variant="primary" onclick={proceedToAmount}>Continue →</Button>
+					<Row gap={2}>
+						<Button variant="secondary" onclick={proceedToBuyData}>Buy More</Button>
+						<Button variant="primary" onclick={proceedToAmount}>Continue →</Button>
+					</Row>
 				</Row>
 			</Stack>
 		{:else if step === 'amount'}
@@ -483,20 +485,25 @@
 
 				<Row justify="between" align="center">
 					<Button variant="ghost" onclick={goBack} disabled={isSubmitting}>← Back</Button>
-					<Button
-						variant="primary"
-						onclick={handleJackIn}
-						loading={isSubmitting}
-						disabled={isSubmitting}
-					>
-						{#if txState === 'pending'}
-							CONFIRM IN WALLET
-						{:else if txState === 'confirming'}
-							CONFIRMING...
-						{:else}
-							JACK IN →
-						{/if}
-					</Button>
+					<Row gap={2}>
+						<Button variant="secondary" onclick={proceedToBuyData} disabled={isSubmitting}>
+							Buy More
+						</Button>
+						<Button
+							variant="primary"
+							onclick={handleJackIn}
+							loading={isSubmitting}
+							disabled={isSubmitting}
+						>
+							{#if txState === 'pending'}
+								CONFIRM IN WALLET
+							{:else if txState === 'confirming'}
+								CONFIRMING...
+							{:else}
+								JACK IN →
+							{/if}
+						</Button>
+					</Row>
 				</Row>
 			</Stack>
 		{/if}
@@ -882,7 +889,7 @@
 		border-right: none;
 	}
 
-	/* Balance row with buy more */
+	/* Balance row */
 	.balance-row {
 		display: flex;
 		align-items: center;
@@ -900,22 +907,5 @@
 		color: var(--color-accent);
 		font-weight: var(--font-bold);
 		font-family: var(--font-mono);
-	}
-
-	.buy-more-link {
-		margin-left: auto;
-		padding: var(--space-1) var(--space-2);
-		background: transparent;
-		border: 1px solid var(--color-border-default);
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		color: var(--color-text-tertiary);
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.buy-more-link:hover {
-		border-color: var(--color-accent-dim);
-		color: var(--color-accent);
 	}
 </style>
