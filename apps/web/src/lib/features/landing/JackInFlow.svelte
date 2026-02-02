@@ -139,6 +139,9 @@
 		},
 	};
 
+	// Track where user came from when navigating to buy-data
+	let returnFromBuyData = $state<Step | null>(null);
+
 	// Actions
 	function selectLevel(level: Level) {
 		selectedLevel = level;
@@ -149,6 +152,8 @@
 	}
 
 	function proceedToBuyData() {
+		// Remember where we came from so Back returns there
+		returnFromBuyData = step;
 		step = 'buy-data';
 	}
 
@@ -163,10 +168,23 @@
 	}
 
 	function goBack() {
-		if (step === 'buy-data' && !hasEth) step = 'get-eth';
-		else if (step === 'level' && !hasData) step = 'buy-data';
-		else if (step === 'amount') step = 'level';
-		else if (step === 'confirm') step = 'amount';
+		if (step === 'buy-data') {
+			// Return to where user came from, or get-eth if no ETH
+			if (!hasEth) {
+				step = 'get-eth';
+			} else if (returnFromBuyData && returnFromBuyData !== 'buy-data') {
+				step = returnFromBuyData;
+			} else {
+				step = 'level';
+			}
+			returnFromBuyData = null;
+		} else if (step === 'level' && !hasData) {
+			step = 'buy-data';
+		} else if (step === 'amount') {
+			step = 'level';
+		} else if (step === 'confirm') {
+			step = 'amount';
+		}
 	}
 
 	async function handleJackIn() {
@@ -276,13 +294,7 @@
 				</div>
 
 				<Row justify="between" align="center">
-					{#if !hasEth}
-						<Button variant="ghost" onclick={goBack}>← Back</Button>
-					{:else if onSkip}
-						<button class="skip-link" onclick={onSkip}>skip to demo →</button>
-					{:else}
-						<div></div>
-					{/if}
+					<Button variant="ghost" onclick={goBack}>← Back</Button>
 					<Button variant="primary" disabled={!hasData} onclick={proceedToLevel}>
 						{hasData ? 'Continue to Stake →' : 'Get $DATA First'}
 					</Button>
