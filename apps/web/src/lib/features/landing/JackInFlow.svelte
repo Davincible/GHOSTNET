@@ -224,6 +224,31 @@
 	function setMaxAmount() {
 		amountInput = userBalanceFormatted.toString();
 	}
+
+	// Swap percentage helper
+	// Reserve ~0.01 ETH for gas when using 100% (MAX)
+	const GAS_RESERVE_ETH = 0.01;
+
+	function setSwapPercent(percent: number) {
+		const balance = swap.inputBalance;
+		if (balance <= 0) return;
+
+		let amount: number;
+		if (percent >= 100) {
+			// For MAX, reserve some ETH for gas if swapping ETH
+			if (swap.inputToken.symbol === 'ETH') {
+				amount = Math.max(0, balance - GAS_RESERVE_ETH);
+			} else {
+				amount = balance;
+			}
+		} else {
+			amount = balance * (percent / 100);
+		}
+
+		// Format to reasonable precision
+		const formatted = amount < 0.0001 ? '0' : amount.toFixed(6).replace(/\.?0+$/, '');
+		swap.setInputAmount(formatted);
+	}
 </script>
 
 <div class="jack-in-flow">
@@ -258,9 +283,16 @@
 					tokens={swap.availableTokens}
 					ontokenchange={(t) => swap.setInputToken(t)}
 					balance={swap.inputBalance}
-					showMax
-					onmax={() => swap.setMaxInput()}
 				/>
+
+				<!-- Quick percentage buttons -->
+				<div class="quick-amounts">
+					<button class="quick-btn" onclick={() => setSwapPercent(10)}>10%</button>
+					<button class="quick-btn" onclick={() => setSwapPercent(25)}>25%</button>
+					<button class="quick-btn" onclick={() => setSwapPercent(50)}>50%</button>
+					<button class="quick-btn" onclick={() => setSwapPercent(75)}>75%</button>
+					<button class="quick-btn max" onclick={() => setSwapPercent(100)}>MAX</button>
+				</div>
 
 				<div class="swap-direction">
 					<span>↓</span>
@@ -959,6 +991,41 @@
 
 	.balance-status .balance-value.zero {
 		color: var(--color-amber);
+	}
+
+	/* Quick amount buttons */
+	.quick-amounts {
+		display: flex;
+		gap: var(--space-2);
+		justify-content: center;
+	}
+
+	.quick-btn {
+		padding: var(--space-1) var(--space-2);
+		background: var(--color-bg-secondary);
+		border: 1px solid var(--color-border-default);
+		color: var(--color-text-secondary);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		cursor: pointer;
+		transition: all 0.15s ease;
+		min-width: 44px;
+	}
+
+	.quick-btn:hover {
+		border-color: var(--color-accent-dim);
+		color: var(--color-accent);
+		background: var(--color-bg-tertiary);
+	}
+
+	.quick-btn.max {
+		border-color: var(--color-accent-dim);
+		color: var(--color-accent);
+	}
+
+	.quick-btn.max:hover {
+		background: var(--color-accent-dim);
+		color: var(--color-bg-primary);
 	}
 
 	/* Swap direction indicator */
