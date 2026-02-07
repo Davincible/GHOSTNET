@@ -11,6 +11,16 @@
 #
 { pkgs ? import <nixpkgs> {} }:
 
+let
+  # NOTE: slither 0.11.5 currently triggers a non-sandbox-safe import check in
+  # solc-select that tries to create ~/.solc-select during Nix builds.
+  # Disable package checks/import checks so the shell can build reliably.
+  slitherPatched = pkgs.slither-analyzer.overrideAttrs (_old: {
+    doCheck = false;
+    doInstallCheck = false;
+    pythonImportsCheck = [];
+  });
+in
 pkgs.mkShell {
   name = "ghostnet-monorepo";
 
@@ -25,7 +35,7 @@ pkgs.mkShell {
     python312Packages.setuptools
 
     # === Security Tools ===
-    slither-analyzer   # Solidity static analysis
+    slitherPatched     # Solidity static analysis
 
     # === Testing ===
     playwright-driver.browsers  # E2E browser binaries
