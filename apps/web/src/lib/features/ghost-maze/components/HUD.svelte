@@ -37,18 +37,19 @@
 	}: Props = $props();
 
 	let livesDisplay = $derived(
-		MAZE_CHARS.LIFE_FULL.repeat(lives) + MAZE_CHARS.LIFE_EMPTY.repeat(Math.max(0, MAX_LIVES - lives))
+		MAZE_CHARS.LIFE_FULL.repeat(lives) +
+			MAZE_CHARS.LIFE_EMPTY.repeat(Math.max(0, MAX_LIVES - lives))
 	);
 
 	let dataCollected = $derived(dataTotal - dataRemaining);
 
 	let ghostProgress = $derived(
-		ghostModeActive && ghostModeTotal > 0 ? Math.round((ghostModeRemaining / ghostModeTotal) * 10) : 0
+		ghostModeActive && ghostModeTotal > 0
+			? Math.round((ghostModeRemaining / ghostModeTotal) * 10)
+			: 0
 	);
 	let ghostBar = $derived(
-		ghostModeActive
-			? '\u2588'.repeat(ghostProgress) + '\u2591'.repeat(10 - ghostProgress)
-			: ''
+		ghostModeActive ? '\u2588'.repeat(ghostProgress) + '\u2591'.repeat(10 - ghostProgress) : ''
 	);
 
 	let formattedScore = $derived(score.toLocaleString());
@@ -192,17 +193,30 @@
 	}
 
 	@keyframes combo-glow {
-		from { text-shadow: 0 0 2px rgba(255, 215, 0, 0.2); }
-		to { text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+		from {
+			text-shadow: 0 0 2px rgba(255, 215, 0, 0.2);
+		}
+		to {
+			text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+		}
 	}
 
 	@keyframes chase-blink {
-		from { opacity: 0.6; }
-		to { opacity: 1; }
+		from {
+			opacity: 0.6;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	@keyframes danger-pulse {
-		from { opacity: 0.5; }
-		to { opacity: 1; text-shadow: 0 0 4px var(--color-red-glow); }
+		from {
+			opacity: 0.5;
+		}
+		to {
+			opacity: 1;
+			text-shadow: 0 0 4px var(--color-red-glow);
+		}
 	}
 </style>

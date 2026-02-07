@@ -36,6 +36,10 @@
 	interface Props {
 		/** Callback when Connect Wallet is clicked */
 		onConnectWallet?: () => void;
+		/** Callback when Continue is clicked (already connected) */
+		onContinue?: () => void;
+		/** Whether wallet is already connected */
+		isConnected?: boolean;
 		/** Callback to skip directly to command center (demo mode) */
 		onSkip?: () => void;
 		/** Live stats */
@@ -46,6 +50,8 @@
 
 	let {
 		onConnectWallet,
+		onContinue,
+		isConnected = false,
 		onSkip,
 		playersOnline = 1223,
 		totalLocked = '$4.8M',
@@ -89,7 +95,7 @@
 
 		<!-- The Steps - BigSteps component (exactly as in showcase, with CTA button) -->
 		<div class="steps-section">
-			<BigSteps {onConnectWallet} showCta={true} variant="default" />
+			<BigSteps {onConnectWallet} {onContinue} {isConnected} showCta={true} variant="default" />
 		</div>
 
 		<!-- Live Stats - Social Proof -->

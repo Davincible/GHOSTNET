@@ -21,7 +21,7 @@
 	}
 
 	let avgPrice = $derived(
-		allocation > 0n ? (Number(contributed) / Number(allocation)).toFixed(6) : '0',
+		allocation > 0n ? (Number(contributed) / Number(allocation)).toFixed(6) : '0'
 	);
 </script>
 

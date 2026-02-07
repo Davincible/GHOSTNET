@@ -65,7 +65,7 @@
 	// Proximity glow intensity (0-1)
 	let proximityIntensity = $derived(
 		nearestTracerDistance <= PROXIMITY_ALERT_RANGE
-			? 1 - (nearestTracerDistance / PROXIMITY_ALERT_RANGE)
+			? 1 - nearestTracerDistance / PROXIMITY_ALERT_RANGE
 			: 0
 	);
 
@@ -150,7 +150,9 @@
 		inset: 0;
 		pointer-events: none;
 		z-index: 20;
-		box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.4), inset 0 0 40px rgba(255, 0, 0, 0.2);
+		box-shadow:
+			inset 0 0 20px rgba(255, 0, 0, 0.4),
+			inset 0 0 40px rgba(255, 0, 0, 0.2);
 	}
 
 	/* Near-miss flash — brief white flash */
@@ -159,8 +161,12 @@
 	}
 
 	@keyframes near-miss-burst {
-		0% { filter: brightness(1.8) contrast(1.2); }
-		100% { filter: brightness(1) contrast(1); }
+		0% {
+			filter: brightness(1.8) contrast(1.2);
+		}
+		100% {
+			filter: brightness(1) contrast(1);
+		}
 	}
 
 	/* Danger zone — maze walls pulse red */
@@ -169,8 +175,12 @@
 	}
 
 	@keyframes danger-walls {
-		from { color: var(--color-accent-dim); }
-		to { color: color-mix(in srgb, var(--color-red) 30%, var(--color-accent-dim)); }
+		from {
+			color: var(--color-accent-dim);
+		}
+		to {
+			color: color-mix(in srgb, var(--color-red) 30%, var(--color-accent-dim));
+		}
 	}
 
 	/* Chase mode — subtle border throb */
@@ -184,7 +194,9 @@
 		pointer-events: none;
 		font-weight: bold;
 		/* Tracers glide smoothly between positions */
-		transition: left 120ms ease-out, top 120ms ease-out;
+		transition:
+			left 120ms ease-out,
+			top 120ms ease-out;
 		will-change: left, top;
 	}
 
@@ -197,7 +209,9 @@
 
 	.ghost-player {
 		color: var(--color-cyan);
-		text-shadow: 0 0 12px var(--color-cyan-glow), 0 0 24px var(--color-cyan-glow);
+		text-shadow:
+			0 0 12px var(--color-cyan-glow),
+			0 0 24px var(--color-cyan-glow);
 		animation: ghost-pulse 0.5s ease-in-out infinite alternate;
 	}
 
@@ -250,7 +264,9 @@
 		color: var(--color-text-secondary);
 		opacity: 0.6;
 		text-shadow: 0 0 3px var(--color-accent-glow);
-		transition: left 80ms ease-out, top 80ms ease-out; /* Faster than normal — they're rushing home */
+		transition:
+			left 80ms ease-out,
+			top 80ms ease-out; /* Faster than normal — they're rushing home */
 	}
 
 	/* Power nodes */
@@ -281,7 +297,9 @@
 		color: var(--color-accent);
 		text-shadow: 0 0 4px var(--color-accent-glow);
 		white-space: nowrap;
-		transition: transform 60ms linear, opacity 60ms linear;
+		transition:
+			transform 60ms linear,
+			opacity 60ms linear;
 	}
 
 	.score-popup-tracer {
@@ -308,9 +326,15 @@
 	}
 
 	@keyframes emp-burst {
-		0% { filter: brightness(3) saturate(0); }
-		30% { filter: brightness(2) saturate(0.3); }
-		100% { filter: brightness(1) saturate(1); }
+		0% {
+			filter: brightness(3) saturate(0);
+		}
+		30% {
+			filter: brightness(2) saturate(0.3);
+		}
+		100% {
+			filter: brightness(1) saturate(1);
+		}
 	}
 
 	@keyframes ghost-pulse {
@@ -318,30 +342,37 @@
 			text-shadow: 0 0 8px var(--color-cyan-glow);
 		}
 		to {
-			text-shadow: 0 0 16px var(--color-cyan-glow), 0 0 32px var(--color-cyan-glow);
+			text-shadow:
+				0 0 16px var(--color-cyan-glow),
+				0 0 32px var(--color-cyan-glow);
 		}
 	}
 
 	@keyframes blink {
-		0%, 49% {
+		0%,
+		49% {
 			opacity: 1;
 		}
-		50%, 100% {
+		50%,
+		100% {
 			opacity: 0;
 		}
 	}
 
 	@keyframes death-flash {
-		0%, 49% {
+		0%,
+		49% {
 			opacity: 1;
 		}
-		50%, 100% {
+		50%,
+		100% {
 			opacity: 0;
 		}
 	}
 
 	@keyframes power-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: 0 0 4px rgba(255, 215, 0, 0.3);
 		}
 		50% {
@@ -350,7 +381,8 @@
 	}
 
 	@keyframes power-danger-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			text-shadow: 0 0 6px rgba(255, 215, 0, 0.3);
 			color: #ffd700;
 		}
@@ -365,7 +397,9 @@
 			text-shadow: 0 0 4px rgba(0, 255, 136, 0.3);
 		}
 		to {
-			text-shadow: 0 0 12px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.4);
+			text-shadow:
+				0 0 12px rgba(0, 255, 136, 0.8),
+				0 0 20px rgba(0, 255, 136, 0.4);
 		}
 	}
 </style>

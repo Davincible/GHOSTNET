@@ -45,7 +45,7 @@ export function shouldTracerMove(
 	type: TracerType,
 	tick: number,
 	playerSpeed: number,
-	isFrightened: boolean,
+	isFrightened: boolean
 ): boolean {
 	const baseSpeed = TRACER_SPEED[type];
 	const speed = isFrightened ? baseSpeed * 0.5 : baseSpeed;
@@ -71,7 +71,7 @@ export function updatePatrol(
 	tracer: TracerState,
 	grid: MazeGrid,
 	_playerPos: Coord,
-	rng: () => number,
+	rng: () => number
 ): Direction | null {
 	const data = tracer.data as PatrolTracerData;
 
@@ -133,7 +133,7 @@ export function updateHunter(
 	tracer: TracerState,
 	grid: MazeGrid,
 	playerPos: Coord,
-	isScatter = false,
+	isScatter = false
 ): Direction | null {
 	const data = tracer.data as HunterTracerData;
 
@@ -165,9 +165,10 @@ export function updateHunter(
 		data.chaseTicks++;
 
 		// Disengage: timeout AND out of range (stay longer when close)
-		const chaseTimeout = dist <= HUNTER_PROXIMITY_RANGE
-			? HUNTER_CHASE_TICKS * 2  // Double persistence when close
-			: HUNTER_CHASE_TICKS;
+		const chaseTimeout =
+			dist <= HUNTER_PROXIMITY_RANGE
+				? HUNTER_CHASE_TICKS * 2 // Double persistence when close
+				: HUNTER_CHASE_TICKS;
 
 		if (data.chaseTicks > chaseTimeout && !inLOS && !inProximity) {
 			data.chasing = false;
@@ -185,10 +186,7 @@ export function updateHunter(
 
 			// Follow path
 			if (data.currentPath.length > 1) {
-				if (
-					data.currentPath[0].x === tracer.pos.x &&
-					data.currentPath[0].y === tracer.pos.y
-				) {
+				if (data.currentPath[0].x === tracer.pos.x && data.currentPath[0].y === tracer.pos.y) {
 					data.currentPath.shift();
 				}
 				const dir = getPathDirection([tracer.pos, ...data.currentPath]);
@@ -265,7 +263,7 @@ export function updatePhantom(
 	tracer: TracerState,
 	grid: MazeGrid,
 	playerPos: Coord,
-	rng: () => number,
+	rng: () => number
 ): PhantomAction {
 	const data = tracer.data as PhantomTracerData;
 
@@ -303,7 +301,7 @@ function findSmartTeleportDestination(
 	grid: MazeGrid,
 	playerPos: Coord,
 	phantomPos: Coord,
-	rng: () => number,
+	rng: () => number
 ): Coord {
 	const candidates: { pos: Coord; score: number }[] = [];
 
@@ -369,7 +367,7 @@ export function updateSwarm(
 	grid: MazeGrid,
 	playerPos: Coord,
 	allTracers?: TracerState[],
-	isScatter = false,
+	isScatter = false
 ): Direction | null {
 	const data = tracer.data as SwarmTracerData;
 	const validDirs = getValidDirectionsExcept(grid, tracer.pos, OPPOSITE_DIRECTION[tracer.dir]);
@@ -385,9 +383,7 @@ export function updateSwarm(
 	}
 
 	// Find partner position (if available)
-	const partner = allTracers?.find(
-		(t) => t.id === data.partnerId && t.mode !== 'dead',
-	);
+	const partner = allTracers?.find((t) => t.id === data.partnerId && t.mode !== 'dead');
 
 	// Compute target: direct pursuit or flanked offset
 	let target: Coord;
@@ -445,7 +441,7 @@ export function updateSwarm(
 export function updateFrightened(
 	tracer: TracerState,
 	grid: MazeGrid,
-	playerPos: Coord,
+	playerPos: Coord
 ): Direction | null {
 	const validDirs = getValidDirections(grid, tracer.pos);
 	if (validDirs.length === 0) return null;
@@ -484,7 +480,7 @@ function randomDirection(
 	grid: MazeGrid,
 	pos: Coord,
 	currentDir: Direction,
-	rng: () => number,
+	rng: () => number
 ): Direction | null {
 	const dirs = getValidDirectionsExcept(grid, pos, OPPOSITE_DIRECTION[currentDir]);
 
@@ -506,7 +502,7 @@ function directionToward(
 	grid: MazeGrid,
 	pos: Coord,
 	target: Coord,
-	currentDir: Direction,
+	currentDir: Direction
 ): Direction | null {
 	const validDirs = getValidDirections(grid, pos);
 
@@ -545,7 +541,7 @@ function directionToward(
 export function generatePatrolWaypoints(
 	grid: MazeGrid,
 	spawnPos: Coord,
-	rng: () => number,
+	rng: () => number
 ): Coord[] {
 	const count = 4 + Math.floor(rng() * 5); // 4-8 waypoints
 	const radius = Math.max(3, Math.floor(Math.min(grid.width, grid.height) / 4));

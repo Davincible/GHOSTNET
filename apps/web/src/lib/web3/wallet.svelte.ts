@@ -10,6 +10,7 @@ import { browser } from '$app/environment';
 import {
 	connect,
 	disconnect,
+	reconnect,
 	getAccount,
 	getBalance,
 	watchAccount,
@@ -20,7 +21,13 @@ import {
 } from '@wagmi/core';
 import { UserRejectedRequestError, ChainMismatchError } from 'viem';
 import { getConfig } from './config';
-import { defaultChain, getChainById, supportedChains } from './chains';
+import {
+	defaultChain,
+	getChainById,
+	isAcceptableChain,
+	MEGAETH_TESTNET_LEGACY_CHAIN_ID,
+	supportedChains,
+} from './chains';
 
 // ════════════════════════════════════════════════════════════════
 // TYPES
@@ -33,7 +40,10 @@ export interface WalletState {
 	address: `0x${string}` | null;
 	chainId: number | null;
 	chainName: string | null;
-	isCorrectChain: boolean;
+	/** true if on correct chain, null if unknown (no chainId), false if wrong chain */
+	isCorrectChain: boolean | null;
+	/** true only when we KNOW the chain is wrong (chainId exists and doesn't match) */
+	isWrongChain: boolean;
 	ethBalance: bigint;
 	connector: Connector | null;
 	error: string | null;
@@ -47,6 +57,15 @@ export interface WalletState {
  * Parse wallet errors into user-friendly messages
  */
 function parseWalletError(err: unknown): string {
+	const message = err instanceof Error ? err.message : '';
+	if (message.includes('Could not add network that points to same RPC endpoint')) {
+		// This shouldn't normally be seen — switchToCorrectChain handles this
+		// automatically by falling back to the legacy chain ID.
+		return (
+			'Network conflict detected. Your wallet has an older MegaETH Testnet configured. ' +
+			'Please remove the existing "Mega Testnet" network from your wallet settings, then try again.'
+		);
+	}
 	if (err instanceof UserRejectedRequestError) {
 		return 'Transaction cancelled by user';
 	}
@@ -100,7 +119,10 @@ export function createWalletStore() {
 	// ─────────────────────────────────────────────────────────────
 
 	const chainName = $derived(chainId ? (getChainById(chainId)?.name ?? 'Unknown') : null);
-	const isCorrectChain = $derived(chainId === defaultChain.id);
+	// isCorrectChain: true if on correct/acceptable chain, null if unknown, false if wrong
+	const isCorrectChain = $derived(chainId === null ? null : isAcceptableChain(chainId));
+	// isWrongChain: explicitly true only when we KNOW the chain and it's not acceptable
+	const isWrongChain = $derived(chainId !== null && !isAcceptableChain(chainId));
 	const isConnected = $derived(status === 'connected' && address !== null);
 	const shortAddress = $derived(address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null);
 
@@ -109,6 +131,10 @@ export function createWalletStore() {
 	// ─────────────────────────────────────────────────────────────
 
 	async function handleAccountChange(account: GetAccountReturnType) {
+		const prevStatus = status;
+		const prevAddress = address;
+		const prevChainId = chainId;
+
 		address = account.address ?? null;
 		chainId = account.chainId ?? null;
 		connector = account.connector ?? null;
@@ -131,10 +157,30 @@ export function createWalletStore() {
 				ethBalance = 0n;
 				break;
 		}
+
+		// Log state changes
+		console.log('[Wallet] Account changed:', {
+			status: { from: prevStatus, to: status },
+			address: { from: prevAddress, to: address },
+			chainId: { from: prevChainId, to: chainId },
+			connector: connector?.name ?? null,
+			isAcceptableChain: chainId === null ? 'unknown' : isAcceptableChain(chainId),
+			expectedChain: defaultChain.id,
+		});
 	}
 
 	async function handleChainChange(newChainId: number) {
+		const prevChainId = chainId;
 		chainId = newChainId;
+
+		console.log('[Wallet] Chain changed:', {
+			from: prevChainId,
+			to: newChainId,
+			isAcceptableChain: isAcceptableChain(newChainId),
+			expectedChain: defaultChain.id,
+			chainName: getChainById(newChainId)?.name ?? 'Unknown',
+		});
+
 		if (address) {
 			await refreshBalance();
 		}
@@ -153,6 +199,8 @@ export function createWalletStore() {
 		// SSR guard - expected during server-side rendering
 		if (!browser) return () => {};
 
+		console.log('[Wallet] Initializing wallet store...');
+
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
@@ -163,7 +211,10 @@ export function createWalletStore() {
 		}
 
 		// Already initialized - not an error
-		if (initialized) return () => {};
+		if (initialized) {
+			console.log('[Wallet] Already initialized, skipping');
+			return () => {};
+		}
 		initialized = true;
 
 		// Watch account changes
@@ -178,7 +229,33 @@ export function createWalletStore() {
 
 		// Check if already connected
 		const account = getAccount(config);
+		console.log('[Wallet] Initial account state:', {
+			status: account.status,
+			address: account.address,
+			chainId: account.chainId,
+			connector: account.connector?.name ?? null,
+		});
 		handleAccountChange(account);
+
+		// Attempt to reconnect if not already connected
+		// This restores wallet sessions from previous page loads
+		if (account.status === 'disconnected') {
+			console.log('[Wallet] Attempting auto-reconnect...');
+			reconnect(config)
+				.then((connections) => {
+					console.log('[Wallet] Reconnect result:', {
+						success: connections.length > 0,
+						connections: connections.map((c) => ({
+							accounts: c.accounts,
+							chainId: c.chainId,
+						})),
+					});
+				})
+				.catch((err) => {
+					// Silent fail - user may have explicitly disconnected
+				console.debug('[Wallet] Reconnect attempt:', err);
+			});
+		}
 
 		// Return cleanup function
 		return () => {
@@ -223,6 +300,7 @@ export function createWalletStore() {
 		try {
 			error = null;
 			status = 'connecting';
+			console.log('[Wallet] Connecting...', { target: target ?? 'any injected' });
 
 			// Import injected connector dynamically to create with target
 			const { injected } = await import('@wagmi/connectors');
@@ -235,12 +313,19 @@ export function createWalletStore() {
 
 			const result = await connect(config, {
 				connector,
-				chainId: defaultChain.id,
 			});
 
 			address = result.accounts[0];
 			chainId = result.chainId;
 			status = 'connected';
+
+			console.log('[Wallet] Connected successfully:', {
+				address: result.accounts[0],
+				chainId: result.chainId,
+				isAcceptableChain: isAcceptableChain(result.chainId),
+				expectedChain: defaultChain.id,
+			});
+
 			await refreshBalance();
 		} catch (err) {
 			status = 'disconnected';
@@ -281,7 +366,6 @@ export function createWalletStore() {
 
 			const result = await connect(config, {
 				connector: wcConnector,
-				chainId: defaultChain.id,
 			});
 
 			address = result.accounts[0];
@@ -315,7 +399,9 @@ export function createWalletStore() {
 		}
 
 		try {
+			console.log('[Wallet] Disconnecting...', { currentAddress: address });
 			await disconnect(config);
+			console.log('[Wallet] Disconnected successfully');
 			status = 'disconnected';
 			address = null;
 			chainId = null;
@@ -337,6 +423,12 @@ export function createWalletStore() {
 			return;
 		}
 
+		// Already on an acceptable chain
+		if (chainId !== null && isAcceptableChain(chainId)) {
+			error = null;
+			return;
+		}
+
 		const config = getConfig();
 		if (!config) {
 			error = 'Wallet configuration not available';
@@ -348,8 +440,40 @@ export function createWalletStore() {
 
 		try {
 			error = null;
+			console.log('[Wallet] Switching to chain:', defaultChain.id);
 			await switchChain(config, { chainId: defaultChain.id });
+			console.log('[Wallet] Chain switch successful');
 		} catch (err) {
+			const errMsg = err instanceof Error ? err.message : '';
+
+			// Handle "same RPC endpoint" conflict — user has old MegaETH chain (6342)
+			// that shares the same RPC URL as the new chain (6343).
+			// Fall back: try switching to the old chain since it's the same network.
+			if (errMsg.includes('Could not add network that points to same RPC endpoint')) {
+				console.log(
+					'[Wallet] RPC conflict detected — trying legacy chain ID:',
+					MEGAETH_TESTNET_LEGACY_CHAIN_ID
+				);
+
+				try {
+					// Try switching to the old chain ID that's already in the wallet
+					const provider = await connector?.getProvider();
+					if (provider && 'request' in (provider as Record<string, unknown>)) {
+						await (provider as { request: (args: unknown) => Promise<unknown> }).request({
+							method: 'wallet_switchEthereumChain',
+							params: [
+								{ chainId: `0x${MEGAETH_TESTNET_LEGACY_CHAIN_ID.toString(16)}` },
+							],
+						});
+						console.log('[Wallet] Switched to legacy chain ID successfully');
+						error = null;
+						return;
+					}
+				} catch (legacyErr) {
+					console.error('[Wallet] Legacy chain switch also failed:', legacyErr);
+				}
+			}
+
 			error = parseWalletError(err);
 			console.error('[Wallet] Chain switch error:', err);
 		}
@@ -406,6 +530,9 @@ export function createWalletStore() {
 		},
 		get isCorrectChain() {
 			return isCorrectChain;
+		},
+		get isWrongChain() {
+			return isWrongChain;
 		},
 		get isConnected() {
 			return isConnected;

@@ -127,7 +127,12 @@ describe('generateMaze', () => {
 			const pos = queue.shift()!;
 			for (const dir of DIRECTIONS) {
 				if (!hasWall(maze, pos.x, pos.y, dir)) {
-					const { x: dx, y: dy } = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } }[dir];
+					const { x: dx, y: dy } = {
+						up: { x: 0, y: -1 },
+						down: { x: 0, y: 1 },
+						left: { x: -1, y: 0 },
+						right: { x: 1, y: 0 },
+					}[dir];
 					const nx = pos.x + dx;
 					const ny = pos.y + dy;
 					const key = `${nx},${ny}`;

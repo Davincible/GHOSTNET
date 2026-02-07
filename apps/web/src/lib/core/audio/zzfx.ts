@@ -140,7 +140,7 @@ export function zzfxGenerate(
 	delay = 0,
 	sustainVolume = 1,
 	decay = 0,
-	tremolo = 0,
+	tremolo = 0
 ): Float32Array {
 	// ── Init parameters ──
 	const PI2 = Math.PI * 2;
@@ -176,11 +176,7 @@ export function zzfxGenerate(
 	repeatTime = (repeatTime * SAMPLE_RATE) | 0;
 
 	// ── Generate waveform ──
-	for (
-		length = (attack + decay + sustain + release + delay) | 0;
-		i < length;
-		b[i++] = s * volume
-	) {
+	for (length = (attack + decay + sustain + release + delay) | 0; i < length; b[i++] = s * volume) {
 		if (!(++crush % ((bitCrush * 100) | 0))) {
 			// ── Wave shape ──
 			s = shape
@@ -189,7 +185,7 @@ export function zzfxGenerate(
 						? shape > 3
 							? shape > 4
 								? // 5: square duty
-									t / PI2 % 1 < shapeCurve / 2
+									(t / PI2) % 1 < shapeCurve / 2
 									? 1
 									: -1
 								: // 4: noise
@@ -197,7 +193,7 @@ export function zzfxGenerate(
 							: // 3: tan
 								Math.max(Math.min(Math.tan(t), 1), -1)
 						: // 2: saw
-							1 - ((((2 * t) / PI2) % 2 + 2) % 2)
+							1 - (((((2 * t) / PI2) % 2) + 2) % 2)
 					: // 1: triangle
 						1 - 4 * abs(Math.round(t / PI2) - t / PI2)
 				: // 0: sin

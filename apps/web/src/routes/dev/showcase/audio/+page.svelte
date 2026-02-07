@@ -73,7 +73,7 @@
 				{ name: 'crashWinMedium' as SoundName, label: 'WIN MEDIUM', desc: '2x - 5x' },
 				{ name: 'crashWinBig' as SoundName, label: 'WIN BIG', desc: '5x - 20x' },
 				{ name: 'crashWinMassive' as SoundName, label: 'WIN MASSIVE', desc: '20x+' },
-				{ name: 'crashLoss' as SoundName, label: 'LOSS', desc: 'Didn\'t cash out' },
+				{ name: 'crashLoss' as SoundName, label: 'LOSS', desc: "Didn't cash out" },
 			],
 		},
 	];
@@ -149,11 +149,7 @@
 			<div class="section-header">
 				<div class="section-header-row">
 					<h2 class="section-title">{category.name}</h2>
-					<Button
-						size="sm"
-						variant="ghost"
-						onclick={() => playCategory(category.sounds)}
-					>
+					<Button size="sm" variant="ghost" onclick={() => playCategory(category.sounds)}>
 						PLAY ALL
 					</Button>
 				</div>

@@ -7,6 +7,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+// Mock $app/environment before importing the provider
+vi.mock('$app/environment', () => ({
+	browser: true,
+}));
+
 import { createMockProvider } from './provider.svelte';
 import type { DataProvider } from '../types';
 import type { FeedEvent } from '$lib/core/types';
@@ -125,21 +131,22 @@ describe('createMockProvider', () => {
 			expect(provider.currentUser?.address).toBeDefined();
 		});
 
-		it('connectWallet creates position', async () => {
+		it('connectWallet does NOT auto-create position (progressive disclosure)', async () => {
 			const walletPromise = provider.connectWallet();
 			await vi.advanceTimersByTimeAsync(400);
 			await walletPromise;
 
-			expect(provider.position).not.toBeNull();
-			expect(provider.position?.level).toBeDefined();
+			// Position is NOT created on connect - user must explicitly jackIn
+			expect(provider.position).toBeNull();
 		});
 
-		it('connectWallet adds modifiers', async () => {
+		it('connectWallet does NOT add modifiers (no position yet)', async () => {
 			const walletPromise = provider.connectWallet();
 			await vi.advanceTimersByTimeAsync(400);
 			await walletPromise;
 
-			expect(provider.modifiers.length).toBeGreaterThan(0);
+			// No modifiers until jackIn
+			expect(provider.modifiers.length).toBe(0);
 		});
 
 		it('disconnectWallet clears user', async () => {
@@ -190,11 +197,7 @@ describe('createMockProvider', () => {
 
 		describe('jackIn', () => {
 			it('creates new position', async () => {
-				// First extract to clear existing position
-				const extractPromise = provider.extract();
-				await vi.advanceTimersByTimeAsync(1100);
-				await extractPromise;
-
+				// No need to extract - position doesn't exist on connect
 				const jackInPromise = provider.jackIn('SUBNET', 100n * 10n ** 18n);
 				await vi.advanceTimersByTimeAsync(1100);
 				await jackInPromise;
@@ -204,10 +207,6 @@ describe('createMockProvider', () => {
 			});
 
 			it('returns transaction hash', async () => {
-				const extractPromise = provider.extract();
-				await vi.advanceTimersByTimeAsync(1100);
-				await extractPromise;
-
 				const jackInPromise = provider.jackIn('DARKNET', 200n * 10n ** 18n);
 				await vi.advanceTimersByTimeAsync(1100);
 				const txHash = await jackInPromise;
@@ -224,10 +223,6 @@ describe('createMockProvider', () => {
 			});
 
 			it('emits JACK_IN feed event', async () => {
-				const extractPromise = provider.extract();
-				await vi.advanceTimersByTimeAsync(1100);
-				await extractPromise;
-
 				const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
 				await vi.advanceTimersByTimeAsync(1100);
 				await jackInPromise;
@@ -238,7 +233,15 @@ describe('createMockProvider', () => {
 		});
 
 		describe('extract', () => {
+			// Helper to create a position before extract tests
+			async function jackInFirst() {
+				const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
+				await vi.advanceTimersByTimeAsync(1100);
+				await jackInPromise;
+			}
+
 			it('clears position', async () => {
+				await jackInFirst();
 				expect(provider.position).not.toBeNull();
 
 				const extractPromise = provider.extract();
@@ -249,6 +252,8 @@ describe('createMockProvider', () => {
 			});
 
 			it('returns transaction hash', async () => {
+				await jackInFirst();
+
 				const extractPromise = provider.extract();
 				await vi.advanceTimersByTimeAsync(1100);
 				const txHash = await extractPromise;
@@ -257,14 +262,13 @@ describe('createMockProvider', () => {
 			});
 
 			it('throws if no position', async () => {
-				const extractPromise = provider.extract();
-				await vi.advanceTimersByTimeAsync(1100);
-				await extractPromise;
-
+				// No position exists after just connectWallet
 				await expect(provider.extract()).rejects.toThrow('No position');
 			});
 
 			it('emits EXTRACT feed event', async () => {
+				await jackInFirst();
+
 				const extractPromise = provider.extract();
 				await vi.advanceTimersByTimeAsync(1100);
 				await extractPromise;
@@ -313,18 +317,14 @@ describe('createMockProvider', () => {
 				const walletPromise = provider.connectWallet();
 				await vi.advanceTimersByTimeAsync(400);
 				await walletPromise;
+
+				// Must jack in to have a position for typing modifiers
+				const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
+				await vi.advanceTimersByTimeAsync(1100);
+				await jackInPromise;
 			});
 
 			it('adds modifier when reward present', async () => {
-				// Clear existing typing modifiers by submitting with no reward first
-				await provider.submitTypingResult({
-					accuracy: 0.4,
-					wpm: 20,
-					timeElapsed: 30000,
-					reward: null,
-				});
-
-				// Now submit with reward
 				await provider.submitTypingResult({
 					accuracy: 0.95,
 					wpm: 60,
@@ -372,15 +372,7 @@ describe('createMockProvider', () => {
 			});
 
 			it('does nothing when no reward and no existing modifier', async () => {
-				// Extract and jack in fresh to clear modifiers
-				const extractPromise = provider.extract();
-				await vi.advanceTimersByTimeAsync(1100);
-				await extractPromise;
-
-				const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
-				await vi.advanceTimersByTimeAsync(1100);
-				await jackInPromise;
-
+				// Fresh position has no typing modifiers
 				const initialTypingCount = provider.modifiers.filter((m) => m.source === 'typing').length;
 				expect(initialTypingCount).toBe(0);
 
@@ -417,6 +409,11 @@ describe('createMockProvider', () => {
 			await vi.advanceTimersByTimeAsync(400);
 			await walletPromise;
 
+			// Jack in first to create a position
+			const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
+			await vi.advanceTimersByTimeAsync(1100);
+			await jackInPromise;
+
 			const events: FeedEvent[] = [];
 			const unsubscribe = provider.subscribeFeed((event) => {
 				events.push(event);
@@ -440,6 +437,11 @@ describe('createMockProvider', () => {
 			const walletPromise = provider.connectWallet();
 			await vi.advanceTimersByTimeAsync(400);
 			await walletPromise;
+
+			// Jack in first to create a position
+			const jackInPromise = provider.jackIn('MAINFRAME', 100n * 10n ** 18n);
+			await vi.advanceTimersByTimeAsync(1100);
+			await jackInPromise;
 
 			const events: FeedEvent[] = [];
 			const unsubscribe = provider.subscribeFeed((event) => {

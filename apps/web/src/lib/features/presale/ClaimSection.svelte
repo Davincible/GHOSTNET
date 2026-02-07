@@ -94,9 +94,7 @@
 			<div class="welcome">
 				<p class="hint">Welcome to GHOSTNET, operator.</p>
 				<a href="/" class="enter-link">
-					<Button variant="primary" size="lg" fullWidth>
-						ENTER THE NETWORK →
-					</Button>
+					<Button variant="primary" size="lg" fullWidth>ENTER THE NETWORK →</Button>
 				</a>
 			</div>
 		</div>

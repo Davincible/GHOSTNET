@@ -55,9 +55,20 @@
 	// ═══════════════════════════════════════════════════════════════
 
 	// Derived state for progressive disclosure
-	let userMode = $derived<'landing' | 'select-risk' | 'command-center'>(
-		!provider.currentUser ? 'landing' : !provider.position ? 'select-risk' : 'command-center'
-	);
+	// Show landing page always on first load, even if connected (user can click Continue)
+	let hasClickedContinue = $state(false);
+
+	// User mode determines which view to show
+	let userMode = $derived.by(() => {
+		// If user has a position, always show command center
+		if (provider.position) return 'command-center' as const;
+
+		// If user clicked continue (or connected just now), show jack-in flow
+		if (provider.currentUser && hasClickedContinue) return 'select-risk' as const;
+
+		// Otherwise show landing (even if connected - they'll see "Continue" button)
+		return 'landing' as const;
+	});
 
 	// ═══════════════════════════════════════════════════════════════
 	// PAGE STATE
@@ -110,6 +121,13 @@
 		// Sync the mock provider with the real wallet connection
 		// This triggers the transition from 'landing' to 'select-risk' mode
 		await provider.connectWallet();
+		// Auto-continue after connecting
+		hasClickedContinue = true;
+	}
+
+	function handleContinue() {
+		// User clicked Continue on landing page (already connected)
+		hasClickedContinue = true;
 	}
 
 	async function handleSkipToDemo() {
@@ -337,6 +355,8 @@
 		<main class="main-landing">
 			<LandingHero
 				onConnectWallet={handleConnectWallet}
+				onContinue={handleContinue}
+				isConnected={!!provider.currentUser}
 				onSkip={handleSkipToDemo}
 				playersOnline={provider.networkState.operatorsOnline}
 				totalLocked="$4.8M"

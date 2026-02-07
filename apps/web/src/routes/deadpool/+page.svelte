@@ -139,7 +139,6 @@
 				</section>
 			</Stack>
 		</Panel>
-
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

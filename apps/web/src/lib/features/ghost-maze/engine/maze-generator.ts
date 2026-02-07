@@ -15,10 +15,7 @@
 
 import type { Cell, CellContent, Coord, Direction, MazeGrid } from '../types';
 import { DIRECTIONS, DIRECTION_VECTORS, OPPOSITE_DIRECTION } from '../types';
-import {
-	MAX_DEAD_END_LENGTH,
-	MIN_TRACER_SPAWN_DISTANCE,
-} from '../constants';
+import { MAX_DEAD_END_LENGTH, MIN_TRACER_SPAWN_DISTANCE } from '../constants';
 
 /** Default fallback for power nodes when not specified in config */
 const POWER_NODES_PER_LEVEL = 4;
@@ -126,7 +123,16 @@ export function generateMaze(config: GenerateMazeConfig): MazeGrid {
 	const tracerSpawns = placeTracerSpawns(cells, width, height, tracerCount, playerSpawn, rng);
 	const powerNodeCount = config.powerNodes ?? POWER_NODES_PER_LEVEL;
 	const powerNodePositions = placePowerNodes(cells, width, height, rng, powerNodeCount);
-	const totalDataPackets = placeDataPackets(cells, width, height, dataPackets, playerSpawn, tracerSpawns, powerNodePositions, rng);
+	const totalDataPackets = placeDataPackets(
+		cells,
+		width,
+		height,
+		dataPackets,
+		playerSpawn,
+		tracerSpawns,
+		powerNodePositions,
+		rng
+	);
 
 	// 6. Reset visited flags (used during generation only)
 	for (const cell of cells) {
@@ -148,12 +154,7 @@ export function generateMaze(config: GenerateMazeConfig): MazeGrid {
 // STEP 1: RECURSIVE BACKTRACKER (iterative)
 // ============================================================================
 
-function carveMaze(
-	cells: Cell[],
-	width: number,
-	height: number,
-	rng: () => number,
-): void {
+function carveMaze(cells: Cell[], width: number, height: number, rng: () => number): void {
 	// Start from random cell
 	const startX = Math.floor(rng() * width);
 	const startY = Math.floor(rng() * height);
@@ -186,7 +187,7 @@ function getUnvisitedNeighbors(
 	x: number,
 	y: number,
 	width: number,
-	height: number,
+	height: number
 ): Array<[Direction, number, number]> {
 	const result: Array<[Direction, number, number]> = [];
 	for (const dir of DIRECTIONS) {
@@ -230,7 +231,7 @@ function addLoops(
 	width: number,
 	height: number,
 	loopFactor: number,
-	rng: () => number,
+	rng: () => number
 ): void {
 	// Collect all internal walls that could be removed
 	const removableWalls: Array<{ x: number; y: number; dir: Direction }> = [];
@@ -281,7 +282,13 @@ function trimDeadEnds(cells: Cell[], width: number, height: number): void {
 }
 
 /** Count how deep a dead-end corridor goes from a given cell. Returns 0 if not a dead end. */
-function measureDeadEnd(cells: Cell[], x: number, y: number, width: number, height: number): number {
+function measureDeadEnd(
+	cells: Cell[],
+	x: number,
+	y: number,
+	width: number,
+	height: number
+): number {
 	const cell = cells[cellIndex(x, y, width)];
 	const openDirs = DIRECTIONS.filter((d) => !cell.walls[d]);
 
@@ -347,7 +354,7 @@ function placeTracerSpawns(
 	height: number,
 	count: number,
 	playerSpawn: Coord,
-	rng: () => number,
+	rng: () => number
 ): Coord[] {
 	// Prefer corners and edges, far from player
 	const candidates: Coord[] = [];
@@ -397,7 +404,7 @@ function placePowerNodes(
 	width: number,
 	height: number,
 	rng: () => number,
-	powerNodeCount: number,
+	powerNodeCount: number
 ): Coord[] {
 	// Place one per quadrant
 	const quadrants = [
@@ -448,7 +455,7 @@ function placeDataPackets(
 	playerSpawn: Coord,
 	tracerSpawns: Coord[],
 	powerNodePositions: Coord[],
-	rng: () => number,
+	rng: () => number
 ): number {
 	// Place data packets on all empty corridor cells
 	const reserved = new Set<string>();

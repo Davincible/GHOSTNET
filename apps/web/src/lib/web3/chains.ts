@@ -88,6 +88,31 @@ export const supportedChains = [megaethTestnet, megaethMainnet, localhost] as co
 /** Default chain for development */
 export const defaultChain = megaethTestnet;
 
+/**
+ * Legacy MegaETH testnet chain ID.
+ * MegaETH changed their testnet from 6342 to 6343.
+ * Many wallets still have the old chain configured with the same RPC endpoint,
+ * which prevents adding the new chain ID. We accept both as valid.
+ */
+export const MEGAETH_TESTNET_LEGACY_CHAIN_ID = 6342;
+
+/**
+ * Check if a chain ID is an acceptable MegaETH testnet chain.
+ * Accepts both legacy (6342) and current (6343) chain IDs since
+ * they share the same RPC endpoint.
+ */
+export function isAcceptableChain(chainId: number): boolean {
+	// Current default chain
+	if (chainId === defaultChain.id) return true;
+
+	// Legacy MegaETH testnet — same RPC, different chain ID
+	if (defaultChain.id === megaethTestnet.id && chainId === MEGAETH_TESTNET_LEGACY_CHAIN_ID) {
+		return true;
+	}
+
+	return false;
+}
+
 /** Get chain by ID */
 export function getChainById(chainId: number) {
 	return supportedChains.find((chain) => chain.id === chainId);

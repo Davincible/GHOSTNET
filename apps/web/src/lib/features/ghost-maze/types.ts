@@ -95,11 +95,7 @@ export interface TracerState {
 }
 
 /** Type-specific tracer data */
-export type TracerData =
-	| PatrolTracerData
-	| HunterTracerData
-	| PhantomTracerData
-	| SwarmTracerData;
+export type TracerData = PatrolTracerData | HunterTracerData | PhantomTracerData | SwarmTracerData;
 
 export interface PatrolTracerData {
 	readonly type: 'patrol';

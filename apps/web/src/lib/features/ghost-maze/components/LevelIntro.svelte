@@ -21,7 +21,7 @@
 			LEVELS.slice(0, level - 1).flatMap((l) => {
 				const configs = computeTracers(l);
 				return configs.map((t) => t.type);
-			}),
+			})
 		);
 		const currentTypes = tracerConfigs.map((t) => t.type);
 		const newType = currentTypes.find((t) => !prevTypes.has(t));
@@ -35,9 +35,7 @@
 	});
 
 	let levelText = $derived(`L E V E L   ${level}`);
-	let themeText = $derived(
-		theme.split('').join(' '),
-	);
+	let themeText = $derived(theme.split('').join(' '));
 </script>
 
 <div class="level-intro">
@@ -116,7 +114,13 @@
 	}
 
 	@keyframes fade-in {
-		from { opacity: 0; transform: translateY(8px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

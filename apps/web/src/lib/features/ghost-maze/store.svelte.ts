@@ -581,7 +581,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 	function createTracers(
 		configs: readonly { type: TracerType; count: number }[],
-		maze: MazeGrid,
+		maze: MazeGrid
 	): TracerState[] {
 		const tracers: TracerState[] = [];
 		let id = 0;
@@ -609,8 +609,14 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 					dir: 'left',
 					mode: 'normal',
 					respawnTimer: 0,
-					data: createTracerData(cfg.type, spawnPos, maze, currentId, rng!,
-						cfg.type === 'swarm' ? { swarmBaseId, swarmIndexInGroup } : undefined),
+					data: createTracerData(
+						cfg.type,
+						spawnPos,
+						maze,
+						currentId,
+						rng!,
+						cfg.type === 'swarm' ? { swarmBaseId, swarmIndexInGroup } : undefined
+					),
 				};
 				tracers.push(tracer);
 
@@ -629,7 +635,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		maze: MazeGrid,
 		id: number,
 		rng: () => number,
-		swarmInfo?: { swarmBaseId: number; swarmIndexInGroup: number },
+		swarmInfo?: { swarmBaseId: number; swarmIndexInGroup: number }
 	) {
 		switch (type) {
 			case 'patrol':
@@ -665,9 +671,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 				return {
 					type: 'swarm' as const,
 					partnerId,
-					flockOffset: (['up', 'down', 'left', 'right'] as const)[
-						Math.floor(rng() * 4)
-					],
+					flockOffset: (['up', 'down', 'left', 'right'] as const)[Math.floor(rng() * 4)],
 				};
 			}
 		}
@@ -808,7 +812,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 			}
 			if (boost > state.escalationSpeedBoost) {
 				state.escalationSpeedBoost = boost;
-				if (boost >= 0.20) audio?.dangerZone();
+				if (boost >= 0.2) audio?.dangerZone();
 			}
 		}
 
@@ -965,30 +969,30 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 		if (cell.content === 'data') {
 			// Collect
-		(cell as { content: CellContent }).content = 'empty';
-		state.dataRemaining--;
-		state.totalDataCollected++;
+			(cell as { content: CellContent }).content = 'empty';
+			state.dataRemaining--;
+			state.totalDataCollected++;
 
-		// Combo
-		state.combo++;
-		state.comboTimer = COMBO_DECAY_TICKS;
-		if (state.combo > state.maxCombo) {
-			state.maxCombo = state.combo;
-		}
+			// Combo
+			state.combo++;
+			state.comboTimer = COMBO_DECAY_TICKS;
+			if (state.combo > state.maxCombo) {
+				state.maxCombo = state.combo;
+			}
 
-		// Score with combo multiplier
-		const mult = getComboMultiplier(state.combo);
-		const points = SCORE_DATA_PACKET * mult;
-		state.score += points;
+			// Score with combo multiplier
+			const mult = getComboMultiplier(state.combo);
+			const points = SCORE_DATA_PACKET * mult;
+			state.score += points;
 
-		// Score popup
-		addScorePopup(`+${points}`, state.playerPos);
+			// Score popup
+			addScorePopup(`+${points}`, state.playerPos);
 
-		// Audio
-		audio?.dataCollect(state.combo);
-		if (state.combo === 5 || state.combo === 10 || state.combo === 20 || state.combo === 50) {
-			audio?.comboMilestone();
-		}
+			// Audio
+			audio?.dataCollect(state.combo);
+			if (state.combo === 5 || state.combo === 10 || state.combo === 20 || state.combo === 50) {
+				audio?.comboMilestone();
+			}
 		}
 	}
 
@@ -1062,14 +1066,23 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 	 * Random direction for a tracer, avoiding reversal.
 	 * Used for phantom scatter mode and other random walk behaviors.
 	 */
-	function randomTracerDirection(maze: MazeGrid, pos: Coord, currentDir: Direction): Direction | null {
+	function randomTracerDirection(
+		maze: MazeGrid,
+		pos: Coord,
+		currentDir: Direction
+	): Direction | null {
 		const opposite = OPPOSITE_DIRECTION[currentDir];
-		const dirs = getValidDirections(maze, pos).filter(d => d !== opposite);
+		const dirs = getValidDirections(maze, pos).filter((d) => d !== opposite);
 		if (dirs.length > 0) return dirs[Math.floor((rng?.() ?? Math.random()) * dirs.length)];
 		return canMove(maze, pos, opposite) ? opposite : null;
 	}
 
-	function updateTracers(maze: MazeGrid, playerSpeed: number, isScatter: boolean, escalationBoost: number): void {
+	function updateTracers(
+		maze: MazeGrid,
+		playerSpeed: number,
+		isScatter: boolean,
+		escalationBoost: number
+	): void {
 		for (const tracer of state.tracers) {
 			// Handle returning tracers (eyes going home)
 			if (tracer.mode === 'returning') {
@@ -1110,7 +1123,15 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 			// Speed check (with escalation boost)
 			const isFrightened = tracer.mode === 'frightened';
-			if (!shouldTracerMove(tracer.type, currentTick, playerSpeed * (1 + escalationBoost), isFrightened)) continue;
+			if (
+				!shouldTracerMove(
+					tracer.type,
+					currentTick,
+					playerSpeed * (1 + escalationBoost),
+					isFrightened
+				)
+			)
+				continue;
 
 			// Get movement direction based on AI type
 			let dir: Direction | null = null;
@@ -1162,7 +1183,8 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		if (state.isInvincible) return;
 
 		for (const tracer of state.tracers) {
-			if (tracer.mode === 'dead' || tracer.mode === 'frozen' || tracer.mode === 'returning') continue;
+			if (tracer.mode === 'dead' || tracer.mode === 'frozen' || tracer.mode === 'returning')
+				continue;
 			if (!overlaps(state.playerPos, tracer.pos)) continue;
 
 			if (tracer.mode === 'frightened') {
@@ -1170,8 +1192,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 				tracer.mode = 'returning';
 
 				// Score (doubling cascade)
-				const destroyScore =
-					SCORE_TRACER_DESTROY_BASE * 2 ** state.tracersDestroyedThisGhostMode;
+				const destroyScore = SCORE_TRACER_DESTROY_BASE * 2 ** state.tracersDestroyedThisGhostMode;
 				state.score += destroyScore;
 				state.tracersDestroyedThisGhostMode++;
 				state.totalTracersDestroyed++;
@@ -1274,7 +1295,7 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 
 		// Perfect clear (all data + all tracers destroyed)
 		const allTracersDestroyed = state.tracers.every(
-			(t) => t.mode === 'dead' || t.mode === 'returning' || t.respawnTimer > 0,
+			(t) => t.mode === 'dead' || t.mode === 'returning' || t.respawnTimer > 0
 		);
 		if (allTracersDestroyed) {
 			state.score += SCORE_PERFECT_CLEAR * levelNum;
@@ -1342,7 +1363,11 @@ export function createGhostMazeStore(options: GhostMazeStoreOptions = {}): Ghost
 		return 1;
 	}
 
-	function addScorePopup(text: string, pos: Coord, variant: ScorePopup['variant'] = 'default'): void {
+	function addScorePopup(
+		text: string,
+		pos: Coord,
+		variant: ScorePopup['variant'] = 'default'
+	): void {
 		const tp = { x: pos.x * 2 + 1, y: pos.y * 2 + 1 };
 		state.scorePopups.push({
 			id: popupIdCounter++,

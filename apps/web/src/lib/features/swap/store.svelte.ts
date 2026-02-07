@@ -1,11 +1,5 @@
 import type { SwapToken, SwapQuote, SwapStatus, SwapValidation } from './types';
-import {
-	DATA_TOKEN,
-	INPUT_TOKENS,
-	DEFAULT_SLIPPAGE,
-	MOCK_RATES,
-	MOCK_BALANCES,
-} from './constants';
+import { DATA_TOKEN, INPUT_TOKENS, DEFAULT_SLIPPAGE, MOCK_RATES, MOCK_BALANCES } from './constants';
 
 /**
  * Creates a reactive swap store managing input/output state,
@@ -44,7 +38,8 @@ export function createSwapStore() {
 	let outputDisplay = $derived.by(() => {
 		if (inputNumber === 0) return '';
 		if (outputNumber >= 1_000_000) return `${(outputNumber / 1_000_000).toFixed(2)}M`;
-		if (outputNumber >= 1_000) return outputNumber.toLocaleString('en-US', { maximumFractionDigits: 2 });
+		if (outputNumber >= 1_000)
+			return outputNumber.toLocaleString('en-US', { maximumFractionDigits: 2 });
 		return outputNumber.toFixed(2);
 	});
 
@@ -166,24 +161,60 @@ export function createSwapStore() {
 
 	return {
 		// State (read-only via getters)
-		get inputToken() { return inputToken; },
-		get outputToken() { return outputToken; },
-		get inputAmount() { return inputAmount; },
-		get inputNumber() { return inputNumber; },
-		get inputBalance() { return inputBalance; },
-		get outputBalance() { return outputBalance; },
-		get outputDisplay() { return outputDisplay; },
-		get rate() { return rate; },
-		get priceImpact() { return priceImpact; },
-		get minimumReceived() { return minimumReceived; },
-		get slippage() { return slippage; },
-		get quote() { return quote; },
-		get validation() { return validation; },
-		get canSwap() { return canSwap; },
-		get buttonLabel() { return buttonLabel; },
-		get status() { return status; },
-		get errorMessage() { return errorMessage; },
-		get availableTokens() { return INPUT_TOKENS; },
+		get inputToken() {
+			return inputToken;
+		},
+		get outputToken() {
+			return outputToken;
+		},
+		get inputAmount() {
+			return inputAmount;
+		},
+		get inputNumber() {
+			return inputNumber;
+		},
+		get inputBalance() {
+			return inputBalance;
+		},
+		get outputBalance() {
+			return outputBalance;
+		},
+		get outputDisplay() {
+			return outputDisplay;
+		},
+		get rate() {
+			return rate;
+		},
+		get priceImpact() {
+			return priceImpact;
+		},
+		get minimumReceived() {
+			return minimumReceived;
+		},
+		get slippage() {
+			return slippage;
+		},
+		get quote() {
+			return quote;
+		},
+		get validation() {
+			return validation;
+		},
+		get canSwap() {
+			return canSwap;
+		},
+		get buttonLabel() {
+			return buttonLabel;
+		},
+		get status() {
+			return status;
+		},
+		get errorMessage() {
+			return errorMessage;
+		},
+		get availableTokens() {
+			return INPUT_TOKENS;
+		},
 
 		// Actions
 		setInputToken,

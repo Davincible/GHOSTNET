@@ -4,8 +4,55 @@
  * Simulated data provider for development without blockchain
  */
 
+import { browser } from '$app/environment';
 import type { DataProvider } from '../types';
 import { SvelteSet } from 'svelte/reactivity';
+
+// ════════════════════════════════════════════════════════════════
+// PERSISTENCE
+// ════════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = 'ghostnet:mock-wallet';
+
+interface PersistedState {
+	address: string;
+	tokenBalance: string; // bigint as string
+	ethBalance: string; // bigint as string
+}
+
+function saveWalletState(user: { address: string; tokenBalance: bigint; ethBalance: bigint }): void {
+	if (!browser) return;
+	try {
+		const state: PersistedState = {
+			address: user.address,
+			tokenBalance: user.tokenBalance.toString(),
+			ethBalance: user.ethBalance.toString(),
+		};
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+	} catch {
+		// localStorage may be unavailable (private browsing, quota exceeded)
+	}
+}
+
+function loadWalletState(): PersistedState | null {
+	if (!browser) return null;
+	try {
+		const stored = localStorage.getItem(STORAGE_KEY);
+		if (!stored) return null;
+		return JSON.parse(stored) as PersistedState;
+	} catch {
+		return null;
+	}
+}
+
+function clearWalletState(): void {
+	if (!browser) return;
+	try {
+		localStorage.removeItem(STORAGE_KEY);
+	} catch {
+		// Ignore errors
+	}
+}
 import type {
 	User,
 	Position,
@@ -74,6 +121,9 @@ export function createMockProvider(): DataProvider {
 
 		connectionStatus = 'connected';
 
+		// Attempt to restore wallet from previous session
+		await tryReconnect();
+
 		// Start simulations
 		startFeedSimulation();
 		startNetworkSimulation();
@@ -97,9 +147,33 @@ export function createMockProvider(): DataProvider {
 			ethBalance: 5n * 10n ** 18n, // 5 ETH
 		};
 
+		// Persist wallet state for auto-reconnect
+		saveWalletState(currentUser);
+
 		// NOTE: Don't auto-create a position here.
 		// This enables progressive disclosure: wallet connected -> risk selector -> jack in
 		// Position is created when user calls jackIn()
+	}
+
+	/**
+	 * Attempt to reconnect from persisted state.
+	 * Called on page load to restore wallet session.
+	 */
+	async function tryReconnect(): Promise<boolean> {
+		const saved = loadWalletState();
+		if (!saved) return false;
+
+		// Validate address format before restoring
+		if (!saved.address.startsWith('0x')) return false;
+
+		// Restore user state
+		currentUser = {
+			address: saved.address as `0x${string}`,
+			tokenBalance: BigInt(saved.tokenBalance),
+			ethBalance: BigInt(saved.ethBalance),
+		};
+
+		return true;
 	}
 
 	function disconnectWallet(): void {
@@ -108,6 +182,7 @@ export function createMockProvider(): DataProvider {
 		modifiers = [];
 		ownedConsumables = [];
 		stopPositionSimulation();
+		clearWalletState();
 	}
 
 	// ─────────────────────────────────────────────────────────────
@@ -116,10 +191,20 @@ export function createMockProvider(): DataProvider {
 
 	async function jackIn(level: Level, amount: bigint): Promise<string> {
 		if (!currentUser) throw new Error('Wallet not connected');
+		if (currentUser.tokenBalance < amount) throw new Error('Insufficient balance');
 
 		await sleep(1000); // Simulate tx
 
 		const txHash = `0x${Math.random().toString(16).slice(2)}`;
+
+		// Deduct staked amount from balance
+		currentUser = {
+			...currentUser,
+			tokenBalance: currentUser.tokenBalance - amount,
+		};
+
+		// Persist updated balance
+		saveWalletState(currentUser);
 
 		position = createPosition(currentUser.address, level, amount);
 
@@ -166,6 +251,9 @@ export function createMockProvider(): DataProvider {
 			...currentUser,
 			tokenBalance: currentUser.tokenBalance + amount,
 		};
+
+		// Persist updated balance
+		saveWalletState(currentUser);
 
 		position = null;
 		modifiers = modifiers.filter((m) => m.source !== 'typing');
@@ -295,6 +383,9 @@ export function createMockProvider(): DataProvider {
 			...currentUser,
 			tokenBalance: currentUser.tokenBalance - totalCost,
 		};
+
+		// Persist updated balance
+		saveWalletState(currentUser);
 
 		const txHash = `0x${Math.random().toString(16).slice(2)}`;
 		return txHash;

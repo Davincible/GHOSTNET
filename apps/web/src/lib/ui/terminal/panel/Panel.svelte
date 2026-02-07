@@ -457,7 +457,8 @@
 	/* ── EXPAND: Left-to-right reveal ──
 	   Only start/end keyframes — easing curve handles all motion. */
 	.panel-enter-expand {
-		animation: panel-enter-expand var(--panel-expand-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation: panel-enter-expand var(--panel-expand-duration) cubic-bezier(0.16, 1, 0.3, 1)
+			forwards;
 	}
 
 	@keyframes panel-enter-expand {
@@ -874,12 +875,20 @@
 	}
 
 	@keyframes coming-soon-glow-pulse {
-		0%, 100% { opacity: 0.5; transform: scale(1); }
-		50% { opacity: 0.8; transform: scale(1.05); }
+		0%,
+		100% {
+			opacity: 0.5;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.8;
+			transform: scale(1.05);
+		}
 	}
 
 	@keyframes coming-soon-badge-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			box-shadow:
 				0 0 12px color-mix(in srgb, var(--color-accent) 18%, transparent),
 				0 0 30px color-mix(in srgb, var(--color-accent) 8%, transparent);
@@ -892,11 +901,24 @@
 	}
 
 	@keyframes coming-soon-scanline {
-		0% { top: calc(50% - 30px); opacity: 0; }
-		20% { opacity: 0.6; }
-		50% { top: calc(50% + 30px); opacity: 0.6; }
-		80% { opacity: 0; }
-		100% { top: calc(50% - 30px); opacity: 0; }
+		0% {
+			top: calc(50% - 30px);
+			opacity: 0;
+		}
+		20% {
+			opacity: 0.6;
+		}
+		50% {
+			top: calc(50% + 30px);
+			opacity: 0.6;
+		}
+		80% {
+			opacity: 0;
+		}
+		100% {
+			top: calc(50% - 30px);
+			opacity: 0;
+		}
 	}
 
 	/* ═══════════════════════════════════════════════════════════

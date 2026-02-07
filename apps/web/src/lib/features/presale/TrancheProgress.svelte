@@ -21,7 +21,7 @@
 	const BAR_WIDTH = 20;
 
 	let fillPercent = $derived(
-		totalSupply > 0n ? Number((totalSold * 10000n) / totalSupply) / 100 : 0,
+		totalSupply > 0n ? Number((totalSold * 10000n) / totalSupply) / 100 : 0
 	);
 
 	let filledChars = $derived(Math.round((fillPercent / 100) * BAR_WIDTH));

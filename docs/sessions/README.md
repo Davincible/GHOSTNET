@@ -19,6 +19,8 @@ Session logs capture:
 | 2026-01-19 | [Smart Contracts Architecture Planning](./2026-01-19-smart-contracts-architecture.md) | Architecture |
 | 2026-01-21 | [Randomness Congestion Mitigation Design](./2026-01-21-randomness-congestion-mitigation.md) | Architecture |
 | 2026-02-02 | [Matrix Rain Refactor](./2026-02-02-matrix-rain-refactor.md) | Implementation |
+| 2026-02-02 | [Wallet Chain Switch Error Handling](./2026-02-02-wallet-chain-switch-error-handling.md) | Debug |
+| 2026-02-02 | [Wallet Icons Local Assets](./2026-02-02-wallet-icons-local-assets.md) | Implementation |
 
 ## Template
 

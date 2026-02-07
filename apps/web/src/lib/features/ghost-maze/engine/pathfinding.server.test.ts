@@ -72,18 +72,38 @@ describe('getPathDirection', () => {
 	});
 
 	it('returns correct direction for right movement', () => {
-		expect(getPathDirection([{ x: 5, y: 5 }, { x: 6, y: 5 }])).toBe('right');
+		expect(
+			getPathDirection([
+				{ x: 5, y: 5 },
+				{ x: 6, y: 5 },
+			])
+		).toBe('right');
 	});
 
 	it('returns correct direction for left movement', () => {
-		expect(getPathDirection([{ x: 5, y: 5 }, { x: 4, y: 5 }])).toBe('left');
+		expect(
+			getPathDirection([
+				{ x: 5, y: 5 },
+				{ x: 4, y: 5 },
+			])
+		).toBe('left');
 	});
 
 	it('returns correct direction for down movement', () => {
-		expect(getPathDirection([{ x: 5, y: 5 }, { x: 5, y: 6 }])).toBe('down');
+		expect(
+			getPathDirection([
+				{ x: 5, y: 5 },
+				{ x: 5, y: 6 },
+			])
+		).toBe('down');
 	});
 
 	it('returns correct direction for up movement', () => {
-		expect(getPathDirection([{ x: 5, y: 5 }, { x: 5, y: 4 }])).toBe('up');
+		expect(
+			getPathDirection([
+				{ x: 5, y: 5 },
+				{ x: 5, y: 4 },
+			])
+		).toBe('up');
 	});
 });

@@ -23,14 +23,8 @@
 		oncontributed?: () => void;
 	}
 
-	let {
-		config,
-		progress,
-		pricingMode,
-		userContribution,
-		userAllocation,
-		oncontributed,
-	}: Props = $props();
+	let { config, progress, pricingMode, userContribution, userAllocation, oncontributed }: Props =
+		$props();
 
 	// ─────────────────────────────────────────────────────────────
 	// State
@@ -49,9 +43,7 @@
 	// ─────────────────────────────────────────────────────────────
 
 	/** Whether operator has already contributed and repeat contributions are blocked */
-	let alreadyContributed = $derived(
-		userContribution > 0n && !config.allowMultipleContributions,
-	);
+	let alreadyContributed = $derived(userContribution > 0n && !config.allowMultipleContributions);
 
 	/** Parsed wei from input (0n if invalid) */
 	let parsedWei = $derived.by(() => {
@@ -116,9 +108,7 @@
 	});
 
 	/** Minimum allocation after 1% slippage */
-	let minAllocation = $derived(
-		preview ? (preview.allocation * 99n) / 100n : 0n,
-	);
+	let minAllocation = $derived(preview ? (preview.allocation * 99n) / 100n : 0n);
 
 	/** Price impact percentage (bonding curve only) */
 	let priceImpact = $derived.by(() => {
@@ -133,7 +123,7 @@
 
 	/** Whether the submit button should be enabled */
 	let canSubmit = $derived(
-		validation.valid && preview !== null && !isSubmitting && !previewLoading,
+		validation.valid && preview !== null && !isSubmitting && !previewLoading
 	);
 
 	// ─────────────────────────────────────────────────────────────

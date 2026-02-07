@@ -65,7 +65,7 @@ export interface LevelConfig {
  */
 export function computeTracers(config: LevelConfig): TracerSpawnConfig[] {
 	const area = config.gridWidth * config.gridHeight;
-	const total = Math.max(1, Math.floor(area * config.tracerDensity / 100));
+	const total = Math.max(1, Math.floor((area * config.tracerDensity) / 100));
 
 	const mix = config.tracerMix;
 	const totalWeight = mix.patrol + mix.hunter + mix.phantom + mix.swarm;
@@ -122,20 +122,20 @@ export const LEVELS: readonly LevelConfig[] = [
 		gridWidth: 21,
 		gridHeight: 15,
 		tracerMix: { patrol: 1, hunter: 0, phantom: 0, swarm: 0 },
-		tracerDensity: 0.7,       // ~2 tracers on 21×15
-		dataDensity: 0.50,        // More dots — less empty walking
+		tracerDensity: 0.7, // ~2 tracers on 21×15
+		dataDensity: 0.5, // More dots — less empty walking
 		playerSpeed: 1.0,
 		theme: 'MAINFRAME',
 		loopFactor: 0.2,
-		ghostModeDuration: 7,     // Generous intro
-		powerNodes: 2,            // Only 2 — don't trivialize
+		ghostModeDuration: 7, // Generous intro
+		powerNodes: 2, // Only 2 — don't trivialize
 	},
 	{
 		level: 2,
 		gridWidth: 25,
 		gridHeight: 17,
 		tracerMix: { patrol: 2, hunter: 1, phantom: 0, swarm: 0 },
-		tracerDensity: 0.8,       // ~3 tracers
+		tracerDensity: 0.8, // ~3 tracers
 		dataDensity: 0.55,
 		playerSpeed: 1.1,
 		theme: 'SUBNET',
@@ -148,11 +148,11 @@ export const LEVELS: readonly LevelConfig[] = [
 		gridWidth: 29,
 		gridHeight: 19,
 		tracerMix: { patrol: 2, hunter: 1, phantom: 1, swarm: 0 },
-		tracerDensity: 0.9,       // ~5 tracers
+		tracerDensity: 0.9, // ~5 tracers
 		dataDensity: 0.55,
 		playerSpeed: 1.2,
 		theme: 'DARKNET',
-		loopFactor: 0.18,         // Fewer loops = more dead ends
+		loopFactor: 0.18, // Fewer loops = more dead ends
 		ghostModeDuration: 5,
 		powerNodes: 3,
 	},
@@ -161,7 +161,7 @@ export const LEVELS: readonly LevelConfig[] = [
 		gridWidth: 33,
 		gridHeight: 21,
 		tracerMix: { patrol: 1, hunter: 1, phantom: 1, swarm: 2 },
-		tracerDensity: 1.0,       // ~7 tracers
+		tracerDensity: 1.0, // ~7 tracers
 		dataDensity: 0.55,
 		playerSpeed: 1.3,
 		theme: 'BLACK ICE',
@@ -174,11 +174,11 @@ export const LEVELS: readonly LevelConfig[] = [
 		gridWidth: 37,
 		gridHeight: 23,
 		tracerMix: { patrol: 0, hunter: 2, phantom: 1, swarm: 4 },
-		tracerDensity: 1.2,       // ~10 tracers
-		dataDensity: 0.60,
+		tracerDensity: 1.2, // ~10 tracers
+		dataDensity: 0.6,
 		playerSpeed: 1.5,
 		theme: 'CORE',
-		loopFactor: 0.14,         // Tight mazes
+		loopFactor: 0.14, // Tight mazes
 		ghostModeDuration: 3.5,
 		powerNodes: 4,
 	},
@@ -285,11 +285,11 @@ export interface ScatterChaseConfig {
  * Each cycle: scatter → chase → scatter → chase → ...
  */
 export const SCATTER_CHASE_CONFIGS: readonly ScatterChaseConfig[] = [
-	{ scatterTicks: Math.round(7 * TICK_RATE), chaseTicks: Math.round(7 * TICK_RATE) },   // L1: balanced
-	{ scatterTicks: Math.round(6 * TICK_RATE), chaseTicks: Math.round(8 * TICK_RATE) },   // L2: slight chase bias
-	{ scatterTicks: Math.round(5 * TICK_RATE), chaseTicks: Math.round(10 * TICK_RATE) },  // L3: aggressive
-	{ scatterTicks: Math.round(4 * TICK_RATE), chaseTicks: Math.round(12 * TICK_RATE) },  // L4: relentless
-	{ scatterTicks: Math.round(3 * TICK_RATE), chaseTicks: Math.round(15 * TICK_RATE) },  // L5: brutal
+	{ scatterTicks: Math.round(7 * TICK_RATE), chaseTicks: Math.round(7 * TICK_RATE) }, // L1: balanced
+	{ scatterTicks: Math.round(6 * TICK_RATE), chaseTicks: Math.round(8 * TICK_RATE) }, // L2: slight chase bias
+	{ scatterTicks: Math.round(5 * TICK_RATE), chaseTicks: Math.round(10 * TICK_RATE) }, // L3: aggressive
+	{ scatterTicks: Math.round(4 * TICK_RATE), chaseTicks: Math.round(12 * TICK_RATE) }, // L4: relentless
+	{ scatterTicks: Math.round(3 * TICK_RATE), chaseTicks: Math.round(15 * TICK_RATE) }, // L5: brutal
 ] as const;
 
 // ============================================================================
@@ -301,8 +301,8 @@ export const SCATTER_CHASE_CONFIGS: readonly ScatterChaseConfig[] = [
  * This creates end-of-level tension where the last few packets are frantic.
  */
 export const ESCALATION_THRESHOLDS = [
-	{ dataFraction: 0.30, speedBoost: 0.10 }, // 30% remaining: +10% speed
-	{ dataFraction: 0.15, speedBoost: 0.20 }, // 15% remaining: +20% speed (danger zone)
+	{ dataFraction: 0.3, speedBoost: 0.1 }, // 30% remaining: +10% speed
+	{ dataFraction: 0.15, speedBoost: 0.2 }, // 15% remaining: +20% speed (danger zone)
 ] as const;
 
 /**
@@ -365,7 +365,10 @@ export const INPUT_BUFFER_TICKS = 3; // ~200ms at 15 ticks/s
 export const COMBO_DECAY_TICKS = Math.round(0.8 * TICK_RATE); // 0.8 seconds (was 1.5 — too easy)
 
 /** Combo multiplier thresholds */
-export const COMBO_MULTIPLIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
+export const COMBO_MULTIPLIERS: readonly {
+	readonly minCombo: number;
+	readonly multiplier: number;
+}[] = [
 	{ minCombo: 50, multiplier: 10 },
 	{ minCombo: 20, multiplier: 5 },
 	{ minCombo: 10, multiplier: 3 },

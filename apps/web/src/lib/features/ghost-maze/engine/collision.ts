@@ -59,7 +59,7 @@ export function getValidDirections(grid: MazeGrid, pos: Coord): Direction[] {
 export function getValidDirectionsExcept(
 	grid: MazeGrid,
 	pos: Coord,
-	exclude: Direction,
+	exclude: Direction
 ): Direction[] {
 	return getValidDirections(grid, pos).filter((d) => d !== exclude);
 }

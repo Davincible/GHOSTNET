@@ -119,7 +119,7 @@ function createPresaleStore() {
 	const percentSold = $derived(
 		progress.totalSupply > 0n
 			? Number((progress.totalSold * 10000n) / progress.totalSupply) / 100
-			: 0,
+			: 0
 	);
 
 	const userPosition = $derived<UserPresalePosition>({
@@ -220,26 +220,50 @@ function createPresaleStore() {
 
 	return {
 		// Contract state
-		get contractState() { return contractState; },
-		get pricingMode() { return pricingMode; },
-		get config() { return config; },
-		get progress() { return progress; },
-		get curveConfig() { return curveConfig; },
+		get contractState() {
+			return contractState;
+		},
+		get pricingMode() {
+			return pricingMode;
+		},
+		get config() {
+			return config;
+		},
+		get progress() {
+			return progress;
+		},
+		get curveConfig() {
+			return curveConfig;
+		},
 
 		// User state
-		get userPosition() { return userPosition; },
-		get hasContributed() { return hasContributed; },
+		get userPosition() {
+			return userPosition;
+		},
+		get hasContributed() {
+			return hasContributed;
+		},
 
 		// Claim state
-		get claimEnabled() { return claimEnabled; },
+		get claimEnabled() {
+			return claimEnabled;
+		},
 
 		// Derived
-		get pageState() { return pageState; },
-		get percentSold() { return percentSold; },
+		get pageState() {
+			return pageState;
+		},
+		get percentSold() {
+			return percentSold;
+		},
 
 		// Loading / error
-		get loading() { return loading; },
-		get error() { return error; },
+		get loading() {
+			return loading;
+		},
+		get error() {
+			return error;
+		},
 
 		// Actions
 		init,

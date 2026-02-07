@@ -615,12 +615,16 @@
 			<div class="demo-grid demo-grid-2">
 				<div class="demo-card">
 					<Panel title="DEFAULT (EMPTY)">
-						<p class="demo-desc">borderFill=false (default). Clean minimal look &mdash; only corners and title visible.</p>
+						<p class="demo-desc">
+							borderFill=false (default). Clean minimal look &mdash; only corners and title visible.
+						</p>
 					</Panel>
 				</div>
 				<div class="demo-card">
 					<Panel title="FILLED" borderFill>
-						<p class="demo-desc">borderFill=true &mdash; dash characters fill horizontal borders.</p>
+						<p class="demo-desc">
+							borderFill=true &mdash; dash characters fill horizontal borders.
+						</p>
 					</Panel>
 				</div>
 				<div class="demo-card">

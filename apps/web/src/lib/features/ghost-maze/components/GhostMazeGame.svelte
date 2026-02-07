@@ -26,16 +26,13 @@
 	let phase = $derived(gameState.phase);
 
 	let isPlaying = $derived(
-		phase === 'playing' ||
-		phase === 'ghost_mode' ||
-		phase === 'player_death' ||
-		phase === 'respawn'
+		phase === 'playing' || phase === 'ghost_mode' || phase === 'player_death' || phase === 'respawn'
 	);
 
 	let ghostModeWarning = $derived(
 		gameState.ghostModeActive &&
-		gameState.ghostModeRemaining > 0 &&
-		gameState.ghostModeRemaining <= GHOST_MODE_WARNING_TICKS
+			gameState.ghostModeRemaining > 0 &&
+			gameState.ghostModeRemaining <= GHOST_MODE_WARNING_TICKS
 	);
 
 	let ghostModeTotal = $derived(
@@ -50,7 +47,9 @@
 		// Detect EMP going from true -> false
 		if (prevHasEmp && !gameState.hasEmp) {
 			empFlash = true;
-			setTimeout(() => { empFlash = false; }, 300);
+			setTimeout(() => {
+				empFlash = false;
+			}, 300);
 		}
 		prevHasEmp = gameState.hasEmp;
 	});
@@ -89,7 +88,9 @@
 	<header class="game-header">
 		<h1 class="game-title">GHOST MAZE</h1>
 		{#if gameState.seed !== null}
-			<span class="seed-display">SEED: {gameState.seed?.toString(16).toUpperCase().padStart(8, '0')}</span>
+			<span class="seed-display"
+				>SEED: {gameState.seed?.toString(16).toUpperCase().padStart(8, '0')}</span
+			>
 		{/if}
 		{#if isPlaying}
 			<span class="level-display">
@@ -111,13 +112,11 @@
   ╚═══════════════════════════════╝`}</pre>
 				</div>
 				<p class="start-desc">
-					Navigate the maze. Collect data. Evade tracers.<br/>
+					Navigate the maze. Collect data. Evade tracers.<br />
 					You are the ghost in the machine.
 				</p>
 				<div class="start-actions">
-					<button class="start-btn" onclick={() => handleStart('free')}>
-						[F] FREE PLAY
-					</button>
+					<button class="start-btn" onclick={() => handleStart('free')}> [F] FREE PLAY </button>
 					<button class="start-btn paid" onclick={() => handleStart('standard')}>
 						[S] STANDARD (25 $DATA)
 					</button>
@@ -128,13 +127,15 @@
 					<span>[ESC] Pause</span>
 				</div>
 			</div>
-
 		{:else if phase === 'level_intro'}
 			<LevelIntro level={gameState.currentLevel} />
-
 		{:else if isPlaying}
 			<div class="game-area" style="position: relative;">
-				<Box variant="double" borderColor={gameState.ghostModeActive ? 'cyan' : 'default'} borderFill>
+				<Box
+					variant="double"
+					borderColor={gameState.ghostModeActive ? 'cyan' : 'default'}
+					borderFill
+				>
 					<MazeRenderer
 						mazeText={store.mazeText}
 						entities={store.renderEntities}
@@ -170,19 +171,14 @@
 				/>
 
 				{#if phase === 'paused' || gameState.isPaused}
-					<PauseOverlay
-						onResume={handleResume}
-						onQuit={handleQuit}
-					/>
+					<PauseOverlay onResume={handleResume} onQuit={handleQuit} />
 				{/if}
 			</div>
-
 		{:else if phase === 'level_clear'}
 			<div class="level-clear">
-				<h2 class="clear-title">L E V E L   C L E A R</h2>
+				<h2 class="clear-title">L E V E L C L E A R</h2>
 				<p class="clear-score">+{(gameState.currentLevel * 1000).toLocaleString()} points</p>
 			</div>
-
 		{:else if phase === 'game_over' || phase === 'results'}
 			<GameOver
 				score={gameState.score}
@@ -202,7 +198,8 @@
 	<!-- Error display -->
 	{#if gameState.error}
 		<div class="error-banner">
-			<span>[!]</span> {gameState.error}
+			<span>[!]</span>
+			{gameState.error}
 		</div>
 	{/if}
 </div>
@@ -364,7 +361,13 @@
 	}
 
 	@keyframes fade-in {
-		from { opacity: 0; transform: translateY(8px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

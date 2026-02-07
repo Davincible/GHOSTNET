@@ -59,8 +59,8 @@
 					{/snippet}
 					{#snippet action()}
 						<div class="connect-button-wrapper">
-						<Button variant="inverted" onclick={onConnectWallet} fullWidth>CONNECT WALLET</Button>
-					</div>
+							<Button variant="inverted" onclick={onConnectWallet} fullWidth>CONNECT WALLET</Button>
+						</div>
 					{/snippet}
 				</GettingStartedStep>
 

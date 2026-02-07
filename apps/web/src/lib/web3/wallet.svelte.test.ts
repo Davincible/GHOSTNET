@@ -42,6 +42,8 @@ vi.mock('./chains', () => ({
 		};
 		return chains[id];
 	}),
+	isAcceptableChain: vi.fn((id: number) => id === 1),
+	MEGAETH_TESTNET_LEGACY_CHAIN_ID: 6342,
 	supportedChains: [{ id: 1, name: 'Ethereum' }],
 }));
 
@@ -49,6 +51,7 @@ vi.mock('./chains', () => ({
 vi.mock('@wagmi/core', () => ({
 	connect: vi.fn(),
 	disconnect: vi.fn(),
+	reconnect: vi.fn(() => Promise.resolve([])),
 	getAccount: vi.fn(() => ({
 		status: 'disconnected',
 		address: null,
@@ -112,10 +115,16 @@ describe('createWalletStore', () => {
 			expect(store.chainName).toBeNull();
 		});
 
-		it('isCorrectChain is false when no chain', () => {
+		it('isCorrectChain is null when no chain (unknown state)', () => {
 			const store = createWalletStore();
-			// When chainId is null, it's not the correct chain
-			expect(store.isCorrectChain).toBe(false);
+			// When chainId is null, we don't know if it's correct or not
+			expect(store.isCorrectChain).toBeNull();
+		});
+
+		it('isWrongChain is false when no chain (need chainId to determine)', () => {
+			const store = createWalletStore();
+			// isWrongChain is only true when we KNOW the chain is wrong
+			expect(store.isWrongChain).toBe(false);
 		});
 	});
 
@@ -331,6 +340,21 @@ describe('wallet operations', () => {
 				expect.anything(),
 				{ chainId: 1 } // defaultChain.id from mock
 			);
+		});
+
+		it('skips switch when already on default chain', async () => {
+			const { connect: mockConnect, switchChain: mockSwitchChain } = await import('@wagmi/core');
+			vi.mocked(mockConnect).mockResolvedValueOnce({
+				accounts: ['0x1234567890123456789012345678901234567890' as `0x${string}`],
+				chainId: 1,
+			});
+
+			await store.connect();
+			vi.mocked(mockSwitchChain).mockClear();
+			await store.switchChain();
+
+			expect(mockSwitchChain).not.toHaveBeenCalled();
+			expect(store.error).toBeNull();
 		});
 
 		it('sets error state when chain switch fails', async () => {

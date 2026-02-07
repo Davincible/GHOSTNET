@@ -70,7 +70,13 @@
 	let c = $derived(chars[variant]);
 </script>
 
-<div class="box box-border-{borderColor}" class:box-glow={glow} class:box-border-fill={borderFill} class:box-no-background={noBackground} style:--box-padding={padding}>
+<div
+	class="box box-border-{borderColor}"
+	class:box-glow={glow}
+	class:box-border-fill={borderFill}
+	class:box-no-background={noBackground}
+	style:--box-padding={padding}
+>
 	<!-- Top border -->
 	<div class="box-border box-border-top">
 		<span class="box-corner">{c.tl}</span>

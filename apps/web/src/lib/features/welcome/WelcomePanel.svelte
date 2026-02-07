@@ -269,7 +269,7 @@
 						</div>
 					{/if}
 
-				<!-- Slide 3: THE TRUST -->
+					<!-- Slide 3: THE TRUST -->
 					{#if currentSlide === 3}
 						<div class="slide slide-trust">
 							<div class="trust-icon-container">

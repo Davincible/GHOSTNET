@@ -133,7 +133,6 @@
 				<InventoryPanel inventory={ownedConsumables} onUse={handleUseConsumable} />
 			</Stack>
 		</Panel>
-
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

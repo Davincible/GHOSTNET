@@ -28,7 +28,8 @@
 		<div class="detail-row">
 			<span class="detail-label">RATE</span>
 			<span class="detail-value">
-				1 {inputSymbol} = {quote.rate.toLocaleString('en-US')} {outputSymbol}
+				1 {inputSymbol} = {quote.rate.toLocaleString('en-US')}
+				{outputSymbol}
 			</span>
 		</div>
 
@@ -45,7 +46,8 @@
 			<div class="detail-row">
 				<span class="detail-label">MIN RECEIVED</span>
 				<span class="detail-value">
-					{quote.minimumReceived} {outputSymbol}
+					{quote.minimumReceived}
+					{outputSymbol}
 				</span>
 			</div>
 		{/if}

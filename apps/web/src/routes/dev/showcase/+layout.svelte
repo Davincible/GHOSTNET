@@ -16,6 +16,7 @@
 		{ id: 'overview', label: 'OVERVIEW', icon: '>', href: '/dev/showcase' },
 		{ id: 'panels', label: 'PANELS', icon: '#', href: '/dev/showcase/panels' },
 		{ id: 'audio', label: 'AUDIO', icon: '~', href: '/dev/showcase/audio' },
+		{ id: 'effects', label: 'EFFECTS', icon: '*', href: '/dev/showcase/effects' },
 		// Future sections:
 		// { id: 'buttons', label: 'BUTTONS', icon: '*', href: '/dev/showcase/buttons' },
 		// { id: 'badges', label: 'BADGES', icon: '@', href: '/dev/showcase/badges' },

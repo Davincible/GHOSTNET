@@ -62,7 +62,7 @@
 	});
 
 	let fillPath = $derived(
-		`M ${x0},${PAD.top + plotH} L ${x0},${y0} L ${soldX},${soldY()} L ${soldX},${PAD.top + plotH} Z`,
+		`M ${x0},${PAD.top + plotH} L ${x0},${y0} L ${soldX},${soldY()} L ${soldX},${PAD.top + plotH} Z`
 	);
 
 	let linePath = $derived(`M ${x0},${y0} L ${x1},${y1}`);
@@ -90,7 +90,7 @@
 				stroke-dasharray="2 2"
 				opacity="0.5"
 			/>
-			<circle cx={cx} cy={cy} r="3" fill="var(--color-accent)" />
+			<circle {cx} {cy} r="3" fill="var(--color-accent)" />
 
 			<!-- YOU ARE HERE label -->
 			<text

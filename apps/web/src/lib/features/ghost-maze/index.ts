@@ -28,7 +28,13 @@ export type {
 	RenderEntity,
 } from './types';
 
-export { DIRECTIONS, DIRECTION_VECTORS, OPPOSITE_DIRECTION, MAZE_CHARS, PHASE_TRANSITIONS } from './types';
+export {
+	DIRECTIONS,
+	DIRECTION_VECTORS,
+	OPPOSITE_DIRECTION,
+	MAZE_CHARS,
+	PHASE_TRANSITIONS,
+} from './types';
 
 // Engine
 export * from './engine';

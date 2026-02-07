@@ -44,9 +44,4 @@ export { default as RefundSection } from './RefundSection.svelte';
 export { default as ClaimSection } from './ClaimSection.svelte';
 
 // Contract helpers
-export {
-	contribute,
-	refund,
-	claimTokens,
-	previewContribution,
-} from './presale-contracts';
+export { contribute, refund, claimTokens, previewContribution } from './presale-contracts';

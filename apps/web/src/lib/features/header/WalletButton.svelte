@@ -15,6 +15,21 @@
 		return wallet.init();
 	});
 
+	// Debug: Log wallet state changes
+	$effect(() => {
+		if (browser) {
+			console.log('[WalletButton] State:', {
+				status: wallet.status,
+				isConnected: wallet.isConnected,
+				address: wallet.address,
+				chainId: wallet.chainId,
+				isCorrectChain: wallet.isCorrectChain,
+				isWrongChain: wallet.isWrongChain,
+				defaultChain: wallet.defaultChain.id,
+			});
+		}
+	});
+
 	function openModal() {
 		showWalletModal = true;
 	}
@@ -49,10 +64,15 @@
 		<Button variant="primary" size="sm" onclick={openModal}>Connect</Button>
 	{/if}
 
-	{#if wallet.isConnected && !wallet.isCorrectChain}
-		<button class="chain-warning" onclick={() => wallet.switchChain()} type="button">
-			Wrong network - Click to switch to {wallet.defaultChain.name}
-		</button>
+	{#if wallet.isConnected && wallet.isWrongChain}
+		<div class="chain-warning-container">
+			<button class="chain-warning" onclick={() => wallet.switchChain()} type="button">
+				Wrong network - Click to switch to {wallet.defaultChain.name}
+			</button>
+			{#if wallet.error}
+				<div class="chain-error">{wallet.error}</div>
+			{/if}
+		</div>
 	{/if}
 
 	<!-- Wallet Selection Modal -->
@@ -101,11 +121,19 @@
 		transition: all var(--duration-fast) var(--ease-default);
 	}
 
-	.chain-warning {
+	.chain-warning-container {
 		position: absolute;
 		top: 100%;
 		right: 0;
 		margin-top: var(--space-2);
+		z-index: 100;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		max-width: 320px;
+	}
+
+	.chain-warning {
 		padding: var(--space-2) var(--space-3);
 		background: var(--color-surface-raised);
 		border: var(--border-width) solid var(--color-yellow-dim);
@@ -114,7 +142,16 @@
 		font-size: var(--text-xs);
 		cursor: pointer;
 		transition: all var(--duration-fast) var(--ease-default);
-		z-index: 100;
+	}
+
+	.chain-error {
+		padding: var(--space-2) var(--space-3);
+		background: var(--color-surface-raised);
+		border: var(--border-width) solid var(--color-red-dim);
+		color: var(--color-red);
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		line-height: var(--leading-relaxed);
 	}
 
 	.chain-warning:hover {

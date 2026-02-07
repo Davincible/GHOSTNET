@@ -6,11 +6,26 @@
  */
 
 // Maze generation
-export { generateMaze, getCell, getCellIndex, hasWall, isInBounds, manhattanDistance, createRng } from './maze-generator';
+export {
+	generateMaze,
+	getCell,
+	getCellIndex,
+	hasWall,
+	isInBounds,
+	manhattanDistance,
+	createRng,
+} from './maze-generator';
 export type { GenerateMazeConfig } from './maze-generator';
 
 // Collision detection
-export { canMove, tryMove, overlaps, getValidDirections, getValidDirectionsExcept, hasLineOfSight } from './collision';
+export {
+	canMove,
+	tryMove,
+	overlaps,
+	getValidDirections,
+	getValidDirectionsExcept,
+	hasLineOfSight,
+} from './collision';
 
 // Pathfinding
 export { findPath, getPathDirection } from './pathfinding';

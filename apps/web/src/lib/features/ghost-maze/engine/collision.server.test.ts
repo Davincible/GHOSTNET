@@ -19,7 +19,7 @@ describe('canMove', () => {
 
 		// At least one direction should be valid from spawn
 		const validCount = ['up', 'down', 'left', 'right'].filter((d) =>
-			canMove(maze, spawn, d as any),
+			canMove(maze, spawn, d as any)
 		).length;
 		expect(validCount).toBeGreaterThan(0);
 	});

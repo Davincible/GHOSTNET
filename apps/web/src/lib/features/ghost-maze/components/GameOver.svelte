@@ -78,12 +78,8 @@
 	</div>
 
 	<div class="actions">
-		<button class="action-btn primary" onclick={onPlayAgain}>
-			[ENTER] PLAY AGAIN
-		</button>
-		<button class="action-btn" onclick={onExit}>
-			[ESC] EXIT TO ARCADE
-		</button>
+		<button class="action-btn primary" onclick={onPlayAgain}> [ENTER] PLAY AGAIN </button>
+		<button class="action-btn" onclick={onExit}> [ESC] EXIT TO ARCADE </button>
 	</div>
 </div>
 
@@ -202,7 +198,13 @@
 	}
 
 	@keyframes fade-in {
-		from { opacity: 0; transform: translateY(16px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

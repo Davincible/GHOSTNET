@@ -84,7 +84,7 @@
 		{
 			id: 'metamask',
 			name: 'MetaMask',
-			icon: '🦊',
+			icon: '/wallets/metamask.png',
 			description: 'Popular browser extension wallet',
 			connectionType: 'injected',
 			target: 'metaMask', // built-in wagmi targetMap
@@ -94,7 +94,7 @@
 		{
 			id: 'rabby',
 			name: 'Rabby',
-			icon: '🐰',
+			icon: '/wallets/rabby.png',
 			description: 'Multi-chain browser wallet',
 			connectionType: 'injected',
 			target: { id: 'rabby', name: 'Rabby', provider: findProvider('isRabby') },
@@ -104,7 +104,7 @@
 		{
 			id: 'coinbase',
 			name: 'Coinbase Wallet',
-			icon: '🔵',
+			icon: '/wallets/coinbase.png',
 			description: 'Coinbase self-custody wallet',
 			connectionType: 'injected',
 			target: 'coinbaseWallet', // built-in wagmi targetMap
@@ -114,7 +114,7 @@
 		{
 			id: 'trust',
 			name: 'Trust Wallet',
-			icon: '🛡️',
+			icon: '/wallets/trust.ico',
 			description: 'Multi-chain mobile & extension wallet',
 			connectionType: 'injected',
 			target: { id: 'trust', name: 'Trust Wallet', provider: findProvider('isTrust') },
@@ -124,7 +124,7 @@
 		{
 			id: 'walletconnect',
 			name: 'WalletConnect',
-			icon: '🔗',
+			icon: '/wallets/walletconnect.ico',
 			description: 'Scan QR code with mobile wallet',
 			connectionType: 'walletconnect',
 		},
@@ -138,7 +138,7 @@
 		{
 			id: '1inch',
 			name: '1inch Wallet',
-			icon: '🦄',
+			icon: '/wallets/1inch.png',
 			description: 'DeFi-native wallet',
 			connectionType: 'injected',
 			target: { id: '1inch', name: '1inch Wallet', provider: findProvider('isOneInchIOSWallet') },
@@ -147,7 +147,7 @@
 		{
 			id: 'alphawallet',
 			name: 'AlphaWallet',
-			icon: 'α',
+			icon: '/wallets/alphawallet.png',
 			description: 'Ethereum wallet for tokens',
 			connectionType: 'injected',
 			target: { id: 'alphaWallet', name: 'AlphaWallet', provider: findProvider('isAlphaWallet') },
@@ -156,7 +156,7 @@
 		{
 			id: 'argent',
 			name: 'Argent',
-			icon: '🔷',
+			icon: '/wallets/argent.png',
 			description: 'Smart contract wallet',
 			connectionType: 'injected',
 			target: { id: 'argent', name: 'Argent', provider: findProvider('isArgent') },
@@ -165,7 +165,7 @@
 		{
 			id: 'bitget',
 			name: 'Bitget Wallet',
-			icon: '🅱',
+			icon: '/wallets/bitget.ico',
 			description: 'Multi-chain Web3 wallet',
 			connectionType: 'injected',
 			target: { id: 'bitKeep', name: 'Bitget Wallet', provider: findProvider('isBitKeep') },
@@ -175,7 +175,7 @@
 		{
 			id: 'coin98',
 			name: 'Coin98',
-			icon: '🪙',
+			icon: '/wallets/coin98.ico',
 			description: 'Multi-chain DeFi gateway',
 			connectionType: 'injected',
 			target: { id: 'coin98', name: 'Coin98', provider: findProvider('isCoin98') },
@@ -184,7 +184,7 @@
 		{
 			id: 'enkrypt',
 			name: 'Enkrypt',
-			icon: '🔐',
+			icon: '/wallets/enkrypt.ico',
 			description: 'Multi-chain browser wallet',
 			connectionType: 'injected',
 			target: { id: 'enkrypt', name: 'Enkrypt', provider: findProvider('isEnkrypt') },
@@ -193,7 +193,7 @@
 		{
 			id: 'exodus',
 			name: 'Exodus',
-			icon: '✦',
+			icon: '/wallets/exodus.ico',
 			description: 'Multi-asset desktop & mobile wallet',
 			connectionType: 'injected',
 			target: { id: 'exodus', name: 'Exodus', provider: findProvider('isExodus') },
@@ -202,7 +202,7 @@
 		{
 			id: 'frame',
 			name: 'Frame',
-			icon: '🖼',
+			icon: '/wallets/frame.png',
 			description: 'Privacy-focused system wallet',
 			connectionType: 'injected',
 			target: { id: 'frame', name: 'Frame', provider: findProvider('isFrame') },
@@ -211,7 +211,7 @@
 		{
 			id: 'gridplus',
 			name: 'GridPlus Lattice',
-			icon: '⬡',
+			icon: '/wallets/gridplus.png',
 			description: 'Hardware wallet with smart screen',
 			connectionType: 'injected',
 			target: { id: 'gridPlus', name: 'GridPlus Lattice', provider: findProvider('isGridPlus') },
@@ -220,7 +220,7 @@
 		{
 			id: 'imtoken',
 			name: 'imToken',
-			icon: '🔑',
+			icon: '/wallets/imtoken.png',
 			description: 'Digital asset wallet',
 			connectionType: 'injected',
 			target: { id: 'imToken', name: 'imToken', provider: findProvider('isImToken') },
@@ -229,7 +229,7 @@
 		{
 			id: 'keystone',
 			name: 'Keystone',
-			icon: '🗝',
+			icon: '/wallets/keystone.ico',
 			description: 'Air-gapped hardware wallet',
 			connectionType: 'injected',
 			target: { id: 'keystone', name: 'Keystone', provider: findProvider('isKeystone') },
@@ -238,7 +238,7 @@
 		{
 			id: 'ledger',
 			name: 'Ledger',
-			icon: '📟',
+			icon: '/wallets/ledger.png',
 			description: 'Hardware wallet via Ledger Live',
 			connectionType: 'injected',
 			target: { id: 'ledger', name: 'Ledger', provider: findProvider('isLedger') },
@@ -247,7 +247,7 @@
 		{
 			id: 'mathwallet',
 			name: 'MathWallet',
-			icon: '🔢',
+			icon: '/wallets/mathwallet.png',
 			description: 'Multi-platform crypto wallet',
 			connectionType: 'injected',
 			target: { id: 'mathWallet', name: 'MathWallet', provider: findProvider('isMathWallet') },
@@ -256,7 +256,7 @@
 		{
 			id: 'mew',
 			name: 'MyEtherWallet',
-			icon: '🟢',
+			icon: '/wallets/mew.ico',
 			description: 'Free client-side Ethereum wallet',
 			connectionType: 'injected',
 			target: { id: 'mew', name: 'MyEtherWallet', provider: findProvider('isMEW') },
@@ -265,7 +265,7 @@
 		{
 			id: 'okx',
 			name: 'OKX Wallet',
-			icon: '⬟',
+			icon: '/wallets/okx.png',
 			description: 'Multi-chain Web3 wallet',
 			connectionType: 'injected',
 			target: {
@@ -281,7 +281,7 @@
 		{
 			id: 'onekey',
 			name: 'OneKey',
-			icon: '🔏',
+			icon: '/wallets/onekey.png',
 			description: 'Open-source hardware wallet',
 			connectionType: 'injected',
 			target: {
@@ -296,7 +296,7 @@
 		{
 			id: 'phantom',
 			name: 'Phantom',
-			icon: '👻',
+			icon: '/wallets/phantom.ico',
 			description: 'Multi-chain crypto wallet',
 			connectionType: 'injected',
 			target: 'phantom',
@@ -306,7 +306,7 @@
 		{
 			id: 'rainbow',
 			name: 'Rainbow',
-			icon: '🌈',
+			icon: '/wallets/rainbow.png',
 			description: 'Ethereum wallet for NFTs & DeFi',
 			connectionType: 'injected',
 			target: { id: 'rainbow', name: 'Rainbow', provider: findProvider('isRainbow') },
@@ -316,7 +316,7 @@
 		{
 			id: 'safe',
 			name: 'Safe',
-			icon: '🔒',
+			icon: '/wallets/safe.ico',
 			description: 'Multi-sig smart contract wallet',
 			connectionType: 'injected',
 			target: { id: 'safe', name: 'Safe', provider: findProvider('isSafe') },
@@ -325,7 +325,7 @@
 		{
 			id: 'taho',
 			name: 'Taho',
-			icon: '🌿',
+			icon: '/wallets/taho.png',
 			description: 'Community-owned Web3 wallet',
 			connectionType: 'injected',
 			target: { id: 'taho', name: 'Taho', provider: findProvider('isTaho') },
@@ -334,7 +334,7 @@
 		{
 			id: 'tokenpocket',
 			name: 'TokenPocket',
-			icon: '👝',
+			icon: '/wallets/tokenpocket.png',
 			description: 'Multi-chain wallet',
 			connectionType: 'injected',
 			target: { id: 'tokenPocket', name: 'TokenPocket', provider: findProvider('isTokenPocket') },
@@ -344,7 +344,7 @@
 		{
 			id: 'trezor',
 			name: 'Trezor',
-			icon: '🔳',
+			icon: '/wallets/trezor.ico',
 			description: 'Hardware wallet security',
 			connectionType: 'injected',
 			target: { id: 'trezor', name: 'Trezor', provider: findProvider('isTrezor') },
@@ -353,7 +353,7 @@
 		{
 			id: 'xdefi',
 			name: 'XDEFI (Ctrl)',
-			icon: '⚡',
+			icon: '/wallets/xdefi.png',
 			description: 'Multi-chain DeFi wallet',
 			connectionType: 'injected',
 			target: {
@@ -368,7 +368,7 @@
 		{
 			id: 'zerion',
 			name: 'Zerion',
-			icon: '💎',
+			icon: '/wallets/zerion.png',
 			description: 'DeFi portfolio & wallet',
 			connectionType: 'injected',
 			target: { id: 'zerion', name: 'Zerion', provider: findProvider('isZerion') },
@@ -477,7 +477,7 @@
 					onclick={() => connectWallet(w)}
 					disabled={isConnecting !== null}
 				>
-					<span class="card-icon">{w.icon}</span>
+					<img class="card-icon" src={w.icon} alt={w.name} />
 					<span class="card-name">{w.name}</span>
 					{#if detectedIds.has(w.id)}
 						<span class="detected-dot" title="Detected"></span>
@@ -497,7 +497,7 @@
 				onclick={() => connectWallet(w)}
 				disabled={isConnecting !== null}
 			>
-				<span class="wc-icon">{w.icon}</span>
+				<img class="wc-icon" src={w.icon} alt={w.name} />
 				<span class="wc-label">WalletConnect</span>
 				<span class="wc-desc">Scan QR code with any mobile wallet</span>
 				{#if isConnecting === w.id}
@@ -524,7 +524,7 @@
 							onclick={() => connectWallet(w)}
 							disabled={isConnecting !== null}
 						>
-							<span class="cell-icon">{w.icon}</span>
+							<img class="cell-icon" src={w.icon} alt={w.name} />
 							<span class="cell-name">{w.name}</span>
 							{#if detectedIds.has(w.id)}
 								<span class="detected-dot small" title="Detected"></span>
@@ -608,8 +608,10 @@
 	}
 
 	.card-icon {
-		font-size: var(--text-3xl);
-		line-height: 1;
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
+		image-rendering: auto;
 	}
 
 	.card-name {
@@ -671,9 +673,9 @@
 	}
 
 	.wc-icon {
-		font-size: var(--text-2xl);
-		width: 36px;
-		text-align: center;
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
 		flex-shrink: 0;
 	}
 
@@ -796,8 +798,9 @@
 	}
 
 	.cell-icon {
-		font-size: var(--text-lg);
-		line-height: 1;
+		width: 20px;
+		height: 20px;
+		object-fit: contain;
 	}
 
 	.cell-name {

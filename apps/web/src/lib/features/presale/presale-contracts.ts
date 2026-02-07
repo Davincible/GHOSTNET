@@ -269,10 +269,7 @@ export async function getTotalPresaleSupply(): Promise<bigint> {
  * @param minAllocation - Minimum $DATA tokens expected (slippage protection)
  * @returns Transaction hash
  */
-export async function contribute(
-	ethAmount: bigint,
-	minAllocation: bigint,
-): Promise<`0x${string}`> {
+export async function contribute(ethAmount: bigint, minAllocation: bigint): Promise<`0x${string}`> {
 	if (!browser) throw new Error('Requires browser');
 
 	const config = requireConfig();

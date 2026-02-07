@@ -38,7 +38,27 @@ export function createGhostMazeAudio(audioManager: AudioManager): GhostMazeAudio
 		dataCollect(combo: number) {
 			// Quick ascending blip, pitch rises with combo
 			const pitch = 400 + combo * 20;
-			const params: ZzFXParams = [0.5, , pitch, 0.01, 0.02, 0.03, 1, 1.5, , , , , , , , , , 0.5, 0.01];
+			const params: ZzFXParams = [
+				0.5,
+				,
+				pitch,
+				0.01,
+				0.02,
+				0.03,
+				1,
+				1.5,
+				,
+				,
+				,
+				,
+				,
+				,
+				,
+				,
+				,
+				0.5,
+				0.01,
+			];
 			audioManager.playDynamic(params);
 		},
 

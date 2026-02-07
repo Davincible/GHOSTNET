@@ -88,7 +88,7 @@
 	class:modal-md={maxWidth === 'md' && !width}
 	class:modal-lg={maxWidth === 'lg' && !width}
 	class:modal-xl={maxWidth === 'xl' && !width}
-	style:width={width}
+	style:width
 	onclick={handleClick}
 	onclose={handleClose}
 	oncancel={handleCancel}

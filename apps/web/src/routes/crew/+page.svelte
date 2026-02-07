@@ -200,7 +200,6 @@
 				/>
 			{/if}
 		</Panel>
-
 	</main>
 
 	<NavigationBar active={activeNav} onNavigate={handleNavigate} />

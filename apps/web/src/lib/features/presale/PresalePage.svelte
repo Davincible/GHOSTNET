@@ -54,7 +54,7 @@
 	// ─────────────────────────────────────────────────────────────
 
 	let presaleAddress = $derived(
-		wallet.chainId ? getContractAddress(wallet.chainId, 'ghostPresale') : null,
+		wallet.chainId ? getContractAddress(wallet.chainId, 'ghostPresale') : null
 	);
 
 	// ─────────────────────────────────────────────────────────────
@@ -80,7 +80,8 @@
 			</div>
 		{:else if presale.error}
 			<div class="presale-error">
-				<span class="error-prefix">[ERR]</span> {presale.error}
+				<span class="error-prefix">[ERR]</span>
+				{presale.error}
 				<button class="retry-btn" onclick={() => presale.refresh()}>RETRY</button>
 			</div>
 		{:else}
@@ -135,7 +136,6 @@
 						/>
 					</section>
 				{/if}
-
 			{:else if presale.pageState === 'SOLD_OUT' || presale.pageState === 'ENDED'}
 				<!-- Position (if contributed) -->
 				{#if presale.hasContributed}
@@ -147,12 +147,10 @@
 						/>
 					</section>
 				{/if}
-
 			{:else if presale.pageState === 'REFUNDING'}
 				<section class="section-gap">
 					<RefundSection contributed={presale.userPosition.contributed} />
 				</section>
-
 			{:else if presale.pageState === 'CLAIM_ACTIVE'}
 				<section class="section-gap">
 					<ClaimSection
@@ -161,7 +159,6 @@
 						hasClaimed={presale.userPosition.hasClaimed}
 					/>
 				</section>
-
 			{:else if presale.pageState === 'CLAIMED'}
 				<section class="section-gap">
 					<ClaimSection
