@@ -47,18 +47,29 @@ Primary references:
 - `docs/design/contracts/specifications.md`
 - `docs/archive/architecture/smart-contracts-plan.md` (historical)
 
-### Indexer (`services/ghostnet-indexer`)
+### Backend Services (`services/` — Ishizue framework)
 
-**Goal:** The canonical off-chain projection of chain events.
+**Goal:** The canonical off-chain projection of chain events, signing infrastructure, and fleet orchestration.
 
-Must provide:
+The backend is built on the **Ishizue microservices framework** (which we also develop). GHOSTNET is the first real-world proof-of-concept for the framework.
+
+**ghostnet-api** (MVP-critical):
 - Ingest blocks/logs from MegaETH (WS where available, HTTP fallback)
 - Decode core contract events and persist to TimescaleDB
-- Stream events via WebSocket API to power the web feed
+- Serve REST + gRPC query APIs (positions, scans, stats)
+- Stream events via WebSocket to power the web feed
+
+**ghostnet-signer** (MVP-critical):
+- EIP-712 typed data signing for daily missions / reward claims
+- Signature verification
+
+**ghostnet-fleet** (post-MVP):
+- Wallet orchestration and automation
+- Admin APIs
 
 Primary references:
-- `docs/design/backend/indexer-architecture.md`
-- `services/ghostnet-indexer/README.md`
+- `docs/design/services/ishizue-migration-plan.md` — Migration strategy and step-by-step plan
+- `docs/design/services/ishizue-integration-plan.md` — Proto definitions, API contracts, workspace config
 
 ---
 
@@ -72,10 +83,11 @@ These may exist in the repo, but are **not** part of the MVP shipping contract:
   - `packages/contracts/test/games/**`
   - `apps/web/src/routes/arcade/**`
   - `apps/web/src/lib/features/daily/**` (and other arcade-specific features)
-- Ghost Fleet automation
-  - `services/ghost-fleet/**`
-  - `services/ghostnet-actions/**`
-  - `services/crates/fleet-core/**`
+- Ghost Fleet automation (ghostnet-fleet service)
+- Old pre-Ishizue services (archived on `archive/pre-ishizue-services` branch)
+  - `services/ghost-fleet/` (old)
+  - `services/ghostnet-actions/` (old — library logic migrates to libs/)
+  - `services/ghostnet-indexer/` (old — replaced by ghostnet-api)
 
 ---
 

@@ -27,7 +27,10 @@ MVP scope defined. Core infrastructure complete (1275 tests passing). Phase 3A g
 
 | Epic | Description | Status | Progress |
 |------|-------------|--------|----------|
-| [[epics/EPIC-001-core-game-loop/epic\|EPIC-001]] | Core game mechanics (jack in, scan, extract) | 🚧 In Progress | 0/3 stories |
+| [[epics/EPIC-002-ishizue-foundation/epic\|EPIC-002]] | Ishizue workspace, protos, domain crate | 🟣 Ready | 0/4 stories |
+| [[epics/EPIC-003-ghostnet-api/epic\|EPIC-003]] | ghostnet-api service (ingestion + queries) | 🟣 Ready | 0/6 stories |
+| [[epics/EPIC-004-ghostnet-signer/epic\|EPIC-004]] | ghostnet-signer service (EIP-712 signing) | 🟣 Ready | 0/2 stories |
+| [[epics/EPIC-001-core-game-loop/epic\|EPIC-001]] | Core game mechanics (jack in, scan, extract) | 🟣 Ready | 0/3 stories |
 
 ---
 

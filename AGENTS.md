@@ -402,11 +402,26 @@ See `packages/contracts/docs/guides/solidity/` for comprehensive guides:
 
 ## Services (services/)
 
+### Ishizue Framework (CRITICAL CONTEXT)
+
+**We are the developers of the Ishizue microservices framework.** The framework source lives at `/Users/tyler/Launchpad/IshizueOrg/ishizue/`. GHOSTNET's backend services are built on Ishizue as one of the first real-world proof-of-concept applications.
+
+**What this means for you as an agent:**
+
+1. **Never work around Ishizue limitations.** If the framework doesn't support what we need, or the DX is poor, we note the issue and fix Ishizue itself. No shims, no hacks, no "we'll deal with it later."
+2. **If you encounter a framework bug or missing feature**, document it in `docs/learnings/ishizue-framework-issues.md` with: what you tried, what went wrong, and what the fix should be.
+3. **You can read and modify the Ishizue source** at `/Users/tyler/Launchpad/IshizueOrg/ishizue/` if needed. The handbook is at `/Users/tyler/Launchpad/IshizueOrg/ishizue/docs/handbook/README.md`.
+4. **The testing infrastructure is in `ishizue-core::testing` and `ishizue-testing` crate.** Key tools: `TestContext`, `TestHarness`, `MockTransport`, `ContainerFixture`.
+5. **GHOSTNET validates the framework.** Every friction point we discover here becomes a framework improvement. Treat this as a dual mission: build great services AND improve Ishizue.
+
+See `docs/design/services/ishizue-migration-plan.md` for the full migration strategy and `docs/design/services/ishizue-integration-plan.md` for API contracts and proto definitions.
+
 ### Technology Stack
 
-- **Language**: Rust 1.85+ (Edition 2024)
+- **Framework**: Ishizue (our own microservices framework)
+- **Language**: Rust 1.88+ (Edition 2024)
 - **Toolchain**: rustup via `rust-toolchain.toml`
-- **Testing**: cargo-nextest (parallel), proptest (property-based)
+- **Testing**: cargo-nextest (parallel), proptest (property-based), Ishizue test harness
 - **Security**: cargo-deny, cargo-audit
 - **Lints**: Clippy pedantic, forbid unsafe
 
@@ -653,6 +668,7 @@ See `docs/integrations/megaeth.md` for complete MegaETH developer guide.
 7. **Review the docs/** - Comprehensive guides available in each subproject
 8. **Run `just check-all` before commits** - Enforces quality across all projects
 9. **Never suggest committing secrets** - .env, private keys, etc.
+10. **We build Ishizue** - If services code hits a framework limitation, don't work around it. Document the issue in `docs/learnings/ishizue-framework-issues.md` and fix the framework source at `/Users/tyler/Launchpad/IshizueOrg/ishizue/`
 
 ## Resources
 

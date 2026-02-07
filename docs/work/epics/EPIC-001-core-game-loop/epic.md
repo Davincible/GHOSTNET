@@ -117,7 +117,7 @@ The core game loop is what makes GHOSTNET unique — it combines DeFi staking me
 | GhostCore.sol | ✅ Complete | Core staking contract |
 | TraceScan.sol | ✅ Complete | Death roll mechanics |
 | DataToken.sol | ✅ Complete | ERC20 with 10% tax |
-| Indexer | 🚧 In Progress | Event processing for feed |
+| ghostnet-api (Ishizue) | 🟣 Ready | See [[EPIC-003-ghostnet-api]] — replaces old indexer |
 | Web wallet integration | ✅ Complete | WalletConnect working |
 
 ### External Dependencies
